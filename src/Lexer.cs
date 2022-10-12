@@ -41,7 +41,9 @@ namespace Espionage
             string lexeme;
             while ((lexeme = text.Substring(index)) != "")
             {
-                tokens.Add(Generate(lexeme));
+                Token token = Generate(lexeme);
+                if (token != null)
+                    tokens.Add(token);
             }
             return tokens;
         }
@@ -58,12 +60,23 @@ namespace Espionage
                     col += match.Length;
                     if (pattern.type == "WHITESPACE")
                     {
-                        if (lexeme[0].ToString() == "\n")
+                        if (lexeme[0] == '\n')
                         {
                             line++;
                             col = 0;
                         }
-                        return new Token(pattern.type, "", "");
+                        return null;
+                    }
+                    if (pattern.type == "IDENTIFIER")
+                    {
+                        if (TokenList.reserved.Contains(lexeme))
+                        {
+                            return new Token(pattern.type, GetLiteral(pattern.type, match.ToString()), match.ToString());
+                        }
+                    }
+                    if (pattern.type == "COMMENT")
+                    {
+                        return null;
                     }
                     return new Token(pattern.type, GetLiteral(pattern.type, match.ToString()), match.ToString());
                 }
@@ -112,9 +125,9 @@ namespace Espionage
     }
     class Token
     {
-        string type;
-        string lexeme;
-        object literal;
+        internal string type;
+        internal string lexeme;
+        internal object literal;
 
         public Token(string type)
         {
@@ -131,7 +144,8 @@ namespace Espionage
 
         public override string ToString()
         {
-            return $"{{ {type} }}:{{ {lexeme} }}:{{ {literal} }}";
+            //return $"{{ {type} }}:{{ {literal} }}:{{ {lexeme} }}";
+            return $"{{ {type} }}:{{ {Regex.Replace((literal ?? "").ToString(), "[\r\n]|[\n]", "")} }}:{{ {Regex.Replace(lexeme, "[\r\n]|[\n]", "")} }}";
         }
     }
 }

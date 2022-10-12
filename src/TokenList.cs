@@ -68,8 +68,7 @@ namespace Espionage
             // Others
             { "COMMA", "[,]" },
             { "SEMICOLON", "[;]" },
-            { "DOT", /*lang=regex*/"[.](?=[^0-9])" },
-            { "HASH", "[#]" },
+            { "COMMENT", /*lang=regex*/"(?m)[#].*$" },
         };
 
         public static readonly HashSet<string> reserved = new HashSet<string>()
@@ -84,13 +83,6 @@ namespace Espionage
             "for",
             "while",
             "print"
-        };
-
-        public static readonly HashSet<string> special = new HashSet<string>()
-        {
-            "CLEAR",
-            "clear",
-            "exit"
         };
     }
 }
