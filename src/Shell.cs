@@ -37,8 +37,8 @@ namespace Espionage
             }
             Parser parser = new Parser(tokens);
             List<Expr> expressions = parser.Parse();
-            ASTPrinter.PrintAST(expressions);
-            tASTPrinter t = new();
+            Tools.ASTPrinter.PrintAST(expressions);
+            Tools.tASTPrinter t = new();
             t.PrintAST(expressions);
             //try
             //{
