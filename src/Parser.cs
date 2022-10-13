@@ -85,7 +85,15 @@ namespace Espionage
             Expr expr = Logical();
             if (!isAtEnd())
             {
-                if (TypeMatch("EQUALS", "PLUSEQUALS", "MINUSEQUALS"))
+                if (current.type == "IDENTIFIER")
+                {
+                    Expr left = Additive();
+                    Expect("EQUALS", "Expected '=' when declaring variable");
+                    Token op = previous(); 
+                    Expr right = Additive();
+                    expr = new Expr.Declare(expr, left, op, right);
+                }
+                else if (TypeMatch("EQUALS", "PLUSEQUALS", "MINUSEQUALS"))
                 {
                     Token op = previous();
                     Expr right = Additive();
@@ -157,7 +165,7 @@ namespace Espionage
                 List<Expr> arguments = new();
                 while (true)
                 {
-                    arguments.Add(Start());
+                    arguments.Add(Assignment());
                     if (TypeMatch("RPAREN"))
                     {
                         break;

@@ -16,8 +16,8 @@ namespace Espionage
             public T visitUnaryExpr(Unary expr);
             public T visitGroupingExpr(Grouping expr);
             public T visitLiteralExpr(Literal expr);
+            public T visitDeclareExpr(Declare expr);
 
-            //public T visitAssignExpr(Assign expr);
             public T visitCallExpr(Call expr);
             public T visitGetExpr(Get expr);
             //public T visitLogicalExpr(Logical expr);
@@ -96,6 +96,28 @@ namespace Espionage
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.visitLiteralExpr(this);
+            }
+
+        }
+
+        public class Declare : Expr
+        {
+            public Expr type;
+            public Expr left;
+            public Token op;
+            public Expr right;
+
+            public Declare(Expr type, Expr left, Token op, Expr right)
+            {
+                this.type = type;
+                this.left = left;
+                this.op = op;
+                this.right = right;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.visitDeclareExpr(this);
             }
 
         }

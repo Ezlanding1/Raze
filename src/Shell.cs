@@ -33,6 +33,9 @@ namespace Espionage
             #endif
             try
             {
+                #if DEBUG
+                Espionage.tools.InputPrinter.PrintInput(text);
+                #endif
                 // Pass Input Into Lexer
                 Lexer lexer = new Lexer(text);
                 var tokens = lexer.Tokenize();

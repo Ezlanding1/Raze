@@ -6,6 +6,13 @@ using System.Threading.Tasks;
 
 namespace Espionage.tools
 {
+    internal class InputPrinter
+    {
+        internal static void PrintInput(string input)
+        {
+            Console.WriteLine(input);
+        }
+    }
     internal class TokenPrinter
     {
         internal static void PrintTokens(List<Token> tokens)

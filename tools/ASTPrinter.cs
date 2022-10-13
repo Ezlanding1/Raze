@@ -54,44 +54,70 @@ namespace Espionage.Tools
     }
     internal class ASTPrinter : Expr.IVisitor<object?>
     {
-        public void PrintAST(List<Expr> exprs)
+        string offset;
+        public ASTPrinter()
+        {
+            offset = "";
+        }
+        public void PrintAST(List<Expr> exprs, bool first=true)
         {
             foreach (Expr expr in exprs)
             {
+                if (first)
+                {
+                    offset = "";
+                }
                 PrintAST(expr);
-                Console.WriteLine(" ");
+                if (first)
+                {
+                    Console.WriteLine(" ");
+                }
             }
         }
-        void PrintAST(Expr expr)
+
+        private void PrintAST(Expr expr)
         {
+            string tmp = offset;
+            Console.Write(offset);
+            Console.WriteLine("├─" + expr);
+            offset += "|  ";
             expr.Accept(this);
+            offset = tmp;
         }
-        void PrintAST(Token token)
+
+        private void PrintAST(Token token)
         {
-            Console.Write(token.lexeme);
+            Console.Write(offset);
+            Console.WriteLine("├─'" + token.lexeme + "'");
         }
-        //public object visitAssignExpr(Expr.Assign expr)
-        //{
-        //    throw new NotImplementedException();
-        //}
 
         public object? visitBinaryExpr(Expr.Binary expr)
         {
-            expr.left.Accept(this);
+            PrintAST(expr.left);
             PrintAST(expr.op);
-            expr.right.Accept(this);
+            PrintAST(expr.right);
             return null;
         }
 
         public object? visitCallExpr(Expr.Call expr)
         {
-            expr.callee.Accept(this);
-            Console.Write("(");
-            foreach (var argument in expr.arguments)
-            {
-                argument.Accept(this);
-            }
-            Console.Write(")");
+            PrintAST(expr.callee);
+            PrintAST(expr.arguments, false);
+            return null;
+        }
+
+        public object? visitClassExpr(Expr.Class expr)
+        {
+            PrintAST(expr.name);
+            PrintAST(expr.block, false);
+            return null;
+        }
+
+        public object? visitFunctionExpr(Expr.Function expr)
+        {
+            PrintAST(expr.name);
+            PrintAST(expr.parameters, false);
+            PrintAST(expr.block, false);
             return null;
         }
 
@@ -102,10 +128,7 @@ namespace Espionage.Tools
 
         public object? visitGroupingExpr(Expr.Grouping expr)
         {
-            Console.Write("(");
-            expr.expression.Accept(this);
-            Console.Write(")");
-            return null;
+            throw new NotImplementedException();
         }
 
         public object? visitLiteralExpr(Expr.Literal expr)
@@ -113,11 +136,6 @@ namespace Espionage.Tools
             PrintAST(expr.literal);
             return null;
         }
-
-        //public object visitLogicalExpr(Expr.Logical expr)
-        //{
-        //    throw new NotImplementedException();
-        //}
 
         public object? visitSetExpr(Expr.Set expr)
         {
@@ -136,7 +154,7 @@ namespace Espionage.Tools
 
         public object? visitUnaryExpr(Expr.Unary expr)
         {
-            expr.operand.Accept(this);
+            PrintAST(expr.operand);
             PrintAST(expr.op);
             return null;
         }
@@ -147,30 +165,12 @@ namespace Espionage.Tools
             return null;
         }
 
-        public object? visitFunctionExpr(Expr.Function expr)
+        public object? visitDeclareExpr(Expr.Declare expr)
         {
-            Console.Write("function ");
-            PrintAST(expr.name);
-            Console.Write(" ( ");
-            foreach (var param in expr.parameters)
-            {
-                param.Accept(this);
-                Console.Write(", ");
-            }
-            Console.Write(" ) ");
-            Console.WriteLine(" { ");
-            PrintAST(expr.block);
-            Console.WriteLine("} ");
-            return null;
-        }
-
-        public object? visitClassExpr(Expr.Class expr)
-        {
-            Console.Write("class ");
-            PrintAST(expr.name);
-            Console.WriteLine(" { ");
-            PrintAST(expr.block);
-            Console.WriteLine("} ");
+            PrintAST(expr.type);
+            PrintAST(expr.left);
+            PrintAST(expr.op);
+            PrintAST(expr.right);
             return null;
         }
     }
