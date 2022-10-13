@@ -69,9 +69,9 @@ namespace Espionage
                     }
                     if (pattern.type == "IDENTIFIER")
                     {
-                        if (TokenList.reserved.Contains(lexeme))
+                        if (TokenList.reserved.Contains(match.ToString()))
                         {
-                            return new Token(pattern.type, GetLiteral(pattern.type, match.ToString()), match.ToString());
+                            return new Token(match.ToString(), GetLiteral(pattern.type, match.ToString()), match.ToString());
                         }
                     }
                     if (pattern.type == "COMMENT")

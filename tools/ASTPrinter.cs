@@ -36,7 +36,16 @@ namespace Espionage.Tools
             {
                 PrintAST(((Expr.Literal)expr).literal);
             }
-            
+            else if (expr is Expr.Variable)
+            {
+                PrintAST(((Expr.Variable)expr).variable);
+            }
+            else if (expr is Expr.Unary)
+            {
+                PrintAST(((Expr.Unary)expr).operand);
+                PrintAST(((Expr.Unary)expr).op);
+            }
+
         }
         static void PrintAST(Token token)
         {
@@ -61,12 +70,12 @@ namespace Espionage.Tools
         {
             Console.Write(token.lexeme);
         }
-        public object visitAssignExpr(Expr.Assign expr)
-        {
-            throw new NotImplementedException();
-        }
+        //public object visitAssignExpr(Expr.Assign expr)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
-        public object visitBinaryExpr(Expr.Binary expr)
+        public object? visitBinaryExpr(Expr.Binary expr)
         {
             expr.left.Accept(this);
             PrintAST(expr.op);
@@ -74,17 +83,24 @@ namespace Espionage.Tools
             return null;
         }
 
-        public object visitCallExpr(Expr.Call expr)
+        public object? visitCallExpr(Expr.Call expr)
+        {
+            expr.callee.Accept(this);
+            Console.Write("(");
+            foreach (var argument in expr.arguments)
+            {
+                argument.Accept(this);
+            }
+            Console.Write(")");
+            return null;
+        }
+
+        public object? visitGetExpr(Expr.Get expr)
         {
             throw new NotImplementedException();
         }
 
-        public object visitGetExpr(Expr.Get expr)
-        {
-            throw new NotImplementedException();
-        }
-
-        public object visitGroupingExpr(Expr.Grouping expr)
+        public object? visitGroupingExpr(Expr.Grouping expr)
         {
             Console.Write("(");
             expr.expression.Accept(this);
@@ -92,38 +108,63 @@ namespace Espionage.Tools
             return null;
         }
 
-        public object visitLiteralExpr(Expr.Literal expr)
+        public object? visitLiteralExpr(Expr.Literal expr)
         {
             PrintAST(expr.literal);
             return null;
         }
 
-        public object visitLogicalExpr(Expr.Logical expr)
+        //public object visitLogicalExpr(Expr.Logical expr)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+        public object? visitSetExpr(Expr.Set expr)
         {
             throw new NotImplementedException();
         }
 
-        public object visitSetExpr(Expr.Set expr)
+        public object? visitSuperExpr(Expr.Super expr)
         {
             throw new NotImplementedException();
         }
 
-        public object visitSuperExpr(Expr.Super expr)
+        public object? visitThisExpr(Expr.This expr)
         {
             throw new NotImplementedException();
         }
 
-        public object visitThisExpr(Expr.This expr)
+        public object? visitUnaryExpr(Expr.Unary expr)
         {
-            throw new NotImplementedException();
+            expr.operand.Accept(this);
+            PrintAST(expr.op);
+            return null;
         }
 
-        public object visitUnaryExpr(Expr.Unary expr)
+        public object? visitVariableExpr(Expr.Variable expr)
         {
-            throw new NotImplementedException();
+            PrintAST(expr.variable);
+            return null;
         }
 
-        public object visitVariableExpr(Expr.Variable expr)
+        public object? visitFunctionExpr(Expr.Function expr)
+        {
+            Console.Write("function ");
+            PrintAST(expr.name);
+            Console.Write(" ( ");
+            foreach (var param in expr.parameters)
+            {
+                param.Accept(this);
+                Console.Write(", ");
+            }
+            Console.Write(" ) ");
+            Console.WriteLine(" { ");
+            PrintAST(expr.block);
+            Console.WriteLine(" } ");
+            return null;
+        }
+
+        public object? visitClassExpr(Expr.Class expr)
         {
             throw new NotImplementedException();
         }

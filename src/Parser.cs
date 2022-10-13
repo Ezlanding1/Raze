@@ -22,14 +22,135 @@ namespace Espionage
 
         internal List<Expr> Parse()
         {
-            expressions.Add(Start());
+            while (!isAtEnd())
+            {
+                expressions.Add(Start());
+            }
             return expressions;
         }
-
+        //IMPORTANT NOTE: not everything can be in parenthesis. Make a canGoInParen function and make grouping call it
+        //IMPORTANT NOTE: not everything can be in parameters. Make a canBeParam function and make "call" call it
+        //IMPORTANT NOTE: make a getParams function
         private Expr Start()
         {
-            return Additive();
+            return Definition();
         }
+
+        private Expr Definition()
+        {
+            if (!isAtEnd() && TypeMatch("function", "class"))
+            {
+                Token definitionType = previous();
+                Expect("IDENTIFIER", "Expected " + definitionType.type + " name");
+                Token name = previous();
+                List<Expr> expressions = new();
+                if (definitionType == null)
+                {
+                    //IMPORTANT NOTE: ERROR HERE
+                    throw new NotImplementedException();
+                }
+                if (definitionType.type == "function")
+                {
+                    Expect("LPAREN", "Expected '(' after function name");
+                    List<Expr> parameters = new();
+                    while (true)
+                    {
+                        parameters.Add(Assignment());
+                        if (TypeMatch("RPAREN"))
+                        {
+                            break;
+                        }
+                        Expect("COMMA", "Expected ',' between parameters");
+                        if (isAtEnd())
+                        {
+                            //IMPORTANT NOTE: ERROR HERE
+                            throw new NotImplementedException();
+                        }
+                    }
+                    expressions = GetBlock(definitionType.type);
+                    return new Expr.Function(name, parameters, expressions);
+                }
+                else if (definitionType.type == "class")
+                {
+                    expressions = GetBlock(definitionType.type);
+                    return new Expr.Class(name, expressions);
+                }
+            }
+            return Semicolon();
+        }
+
+        private Expr Semicolon()
+        {
+            Expr expr = Assignment();
+            Expect("SEMICOLON", "Expected ';' after expression");
+            return expr;
+        }
+
+        private Expr Assignment()
+        {
+            Expr expr = Logical();
+            if (!isAtEnd())
+            {
+                if (TypeMatch("EQUALS", "PLUSEQUALS", "MINUSEQUALS"))
+                {
+                    Token op = previous();
+                    if (op == null)
+                    {
+                        //IMPORTANT NOTE: ERROR HERE
+                        throw new NotImplementedException();
+                    }
+                    Expr right = Additive();
+                    expr = new Expr.Binary(expr, op, right);
+                }
+                //IMPORTANT NOTE: fix the precedence of ++ and -- (and add prefix modifier)
+                else if (TypeMatch("PLUSPLUS", "MINUSMINUS"))
+                {
+                    Token op = previous();
+                    if (op == null)
+                    {
+                        //IMPORTANT NOTE: ERROR HERE
+                        throw new NotImplementedException();
+                    }
+                    expr = new Expr.Unary(op, expr);
+                }
+            }
+            return expr;
+        }
+
+        private Expr Logical()
+        {
+            Expr expr = Bitwise();
+            if (!isAtEnd() && TypeMatch("AND", "OR"))
+            {
+                Token op = previous();
+                if (op == null)
+                {
+                    //IMPORTANT NOTE: ERROR HERE
+                    throw new NotImplementedException();
+                }
+                Expr right = Additive();
+                expr = new Expr.Binary(expr, op, right);
+            }
+            return expr;
+        }
+
+        private Expr Bitwise()
+        {
+            Expr expr = Additive();
+            if (!isAtEnd() && TypeMatch("B_OR", "B_AND", "B_XOR", "B_NOT"))
+            {
+                Token op = previous();
+                if (op == null)
+                {
+                    //IMPORTANT NOTE: ERROR HERE
+                    throw new NotImplementedException();
+                }
+                Expr right = Additive();
+                expr = new Expr.Binary(expr, op, right);
+            }
+            return expr;
+        }
+
         private Expr Additive()
         {
             Expr expr = Multiplicative();
@@ -49,7 +170,7 @@ namespace Espionage
 
         private Expr Multiplicative()
         {
-            Expr expr = Primary();
+            Expr expr = Call();
             if (!isAtEnd() && TypeMatch("MULTIPLY", "DIVIDE", "MODULO"))
             {
                 Token op = previous();
@@ -60,6 +181,31 @@ namespace Espionage
                 }
                 Expr right = Additive();
                 expr = new Expr.Binary(expr, op, right);
+            }
+            return expr;
+        }
+
+        private Expr Call()
+        {
+            Expr expr = Primary();
+            if (!isAtEnd() && TypeMatch("LPAREN"))
+            {
+                List<Expr> arguments = new();
+                while (true)
+                {
+                    arguments.Add(Start());
+                    if (TypeMatch("RPAREN"))
+                    {
+                        break;
+                    }
+                    Expect("COMMA", "Expected ',' between parameters");
+                    if (isAtEnd())
+                    {
+                        //IMPORTANT NOTE: ERROR HERE
+                        throw new NotImplementedException();
+                    }
+                }
+                expr = new Expr.Call(expr, arguments);
             }
             return expr;
         }
@@ -79,6 +225,11 @@ namespace Espionage
                     Expect("RPAREN", "Expected ')' after expression.");
                     return new Expr.Grouping(expr);
                 }
+
+                if (TypeMatch("IDENTIFIER"))
+                {
+                    return new Expr.Variable(previous());
+                }
             }
             throw End();
         }
@@ -89,11 +240,49 @@ namespace Espionage
             return new NotImplementedException();
         }
 
+        private List<Expr> GetBlock(string bodytype)
+        {
+            List<Expr> expressions = new();
+            Expect("LBRACE", "Expect '{' before " + bodytype + " body");
+            while (!isAtEnd())
+            {
+                expressions.Add(Start());
+                if (isAtEnd())
+                {
+                    //IMPORTANT NOTE: ERROR HERE
+                    throw new NotImplementedException();
+                    //IMPORTANT NOTE: change this to say 'function'/'class' instead of block
+                    //Expect("RBRACE", "Expect '}' after block");
+                }
+                if (TypeMatch("RBRACE"))
+                {
+                    break;
+                }
+            }
+            return expressions;
+        }
+
         private bool TypeMatch(params string[] types)
         {
             foreach (var type in types)
             {
                 if (current.type == type)
+                {
+                    advance();
+                    return true;
+                }
+            }
+            return false;
+        }
+        private bool ValueMatch(string type, params string[] values)
+        {
+            if (current.type != type)
+            {
+                return false;
+            }
+            foreach (var value in values)
+            {
+                if ((current.literal??"").ToString() == value)
                 {
                     advance();
                     return true;

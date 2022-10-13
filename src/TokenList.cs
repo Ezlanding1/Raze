@@ -32,7 +32,7 @@ namespace Espionage
             { "MINUSEQUALS", /*lang=regex*/"[-][=]" },
             { "PLUSPLUS", /*lang=regex*/"[+][+]" },
             { "MINUSMINUS", /*lang=regex*/"[-][-]" },
-            { "EQUAL", "=" },
+            { "EQUALS", "=" },
 
             // Logical Operators
             { "OR", /*lang=regex*/"[|][|]" },
@@ -45,12 +45,14 @@ namespace Espionage
             { "MULTIPLY", "[*]" },
             { "MODULO", "[%]" },
 
+            // Bitwise Operators
             { "SHIFTRIGHT", /*lang=regex*/"[>][>]" },
             { "SHIFTLEFT", /*lang=regex*/"[<][<]" },
 
-            { "BAR", "[|]" },
-            { "AMPERSAND", "[&]" },
-            { "CARET", @"[\^]" },
+            { "B_OR", "[|]" },
+            { "B_AND", "[&]" },
+            { "B_XOR", @"[\^]" },
+            { "B_NOT", @"[~]" },
 
             // GreaterThan and LessThan
             { "GREATER", "[>]" },
@@ -67,6 +69,7 @@ namespace Espionage
 
             // Others
             { "COMMA", "[,]" },
+            { "DOT", "[.]" },
             { "SEMICOLON", "[;]" },
             { "COMMENT", /*lang=regex*/"(?m)[#].*$" },
         };
@@ -82,7 +85,7 @@ namespace Espionage
             "return",
             "for",
             "while",
-            "print"
+            "function"
         };
     }
 }
