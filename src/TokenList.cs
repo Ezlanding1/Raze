@@ -11,7 +11,7 @@ namespace Espionage
     {
         //IMPORTANT NOTE: CHANGE STRINGS TO int/enum for better performance?
         //IMPORTANT NOTE: switch from type : token to token : type?
-        //IMPORTANT NOTE: highr tokens have a higher precedence
+        //NOTE: higher tokens have a higher precedence
         public static readonly Dictionary<string, string> Tokens = new Dictionary<string, string>()
         {
             // Non Finite Tokens

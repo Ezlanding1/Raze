@@ -21,7 +21,6 @@ namespace Espionage
             this.tokens = new();
             this.text = text;
             this.line = 1;
-            // IMPORTANT NOTE: should col be 1 or 0 indexed?
             this.col = 0;
             this.index = 0;
             initRegex();
@@ -81,7 +80,6 @@ namespace Espionage
                     return new Token(pattern.type, GetLiteral(pattern.type, match.ToString()), match.ToString());
                 }
             }
-            // IMPORTANT NOTE: add error here
             if (lexeme[0] == '"')
                 throw new Errors.LexError(ErrorType.LexerException, line, col, "Non Terminated String", $"String: \'{GetLiteral("STRING", lexeme)}\'\nwas not ternimated");
             if (lexeme[0] == '.')
@@ -117,6 +115,7 @@ namespace Espionage
         public Match Match(string str)
         {
             if (regex == null)
+                //IMPORTANT NOTE: make the static == comarison for this instead of using normal match/new regex match
                 //IMPORTANT NOTE: make sure this is actually more memory efficient
                 return new Regex(pattern).Match(str);
             else

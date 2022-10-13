@@ -1,4 +1,6 @@
-﻿using System;
+﻿#define DEBUG
+
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -26,42 +28,46 @@ namespace Espionage
 
         static void Run(string text)
         {
-            var watch = System.Diagnostics.Stopwatch.StartNew();
-            // the code that you want to measure comes here
-            Lexer lexer = new Lexer(text);
-            var tokens = lexer.Tokenize();
-            foreach (var item in tokens)
+            #if DEBUG
+            var watch = Stopwatch.StartNew();
+            #endif
+            try
             {
-                string str = item.ToString();
-                Console.WriteLine(str);
+                // Pass Input Into Lexer
+                Lexer lexer = new Lexer(text);
+                var tokens = lexer.Tokenize();
+
+                #if DEBUG
+                Espionage.tools.TokenPrinter.PrintTokens(tokens);
+                #endif
+
+                // Parse Tokens
+                Parser parser = new Parser(tokens);
+                List<Expr> expressions = parser.Parse();
+
+                #if DEBUG
+                Tools.ASTPrinter astPrinter = new();
+                astPrinter.PrintAST(expressions);
+                #endif
             }
-            Parser parser = new Parser(tokens);
-            List<Expr> expressions = parser.Parse();
-            Tools.ASTPrinter.PrintAST(expressions);
-            Tools.tASTPrinter t = new();
-            t.PrintAST(expressions);
-            //try
-            //{
-            //    Lexer lexer = new Lexer(text);
-            //    var tokens = lexer.Tokenize();
-            //    foreach (var item in tokens)
-            //    {
-            //        string str = item.ToString();
-            //        Console.WriteLine(str);
-            //        Thread.Sleep(500);
-            //    }
-            //    Parser parser = new Parser(tokens);
-            //    List<Expr> expressions = parser.Parse();
-            //}
-            //catch (Exception e)
-            //{
-            //    Console.WriteLine(e.Message);
-            //    Environment.Exit(65);
-            //}
-            
+            catch (Exception e)
+            {
+                if (e is Errors.LexError || e is Errors.ParseError)
+                {
+                    Console.WriteLine(e.Message);
+                }
+                else
+                {
+                    Console.WriteLine("INTERNAL ERROR:");
+                    Console.WriteLine(e.Message);
+                }
+                Environment.Exit(65);
+            }
+            #if DEBUG
             watch.Stop();
             var elapsedMs = watch.ElapsedMilliseconds;
             Console.WriteLine("ELASPED MS: " + elapsedMs);
+            #endif
             
         }
     }

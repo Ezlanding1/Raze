@@ -44,11 +44,6 @@ namespace Espionage
                 Expect("IDENTIFIER", "Expected " + definitionType.type + " name");
                 Token name = previous();
                 List<Expr> expressions = new();
-                if (definitionType == null)
-                {
-                    //IMPORTANT NOTE: ERROR HERE
-                    throw new NotImplementedException();
-                }
                 if (definitionType.type == "function")
                 {
                     Expect("LPAREN", "Expected '(' after function name");
@@ -63,8 +58,7 @@ namespace Espionage
                         Expect("COMMA", "Expected ',' between parameters");
                         if (isAtEnd())
                         {
-                            //IMPORTANT NOTE: ERROR HERE
-                            throw new NotImplementedException();
+                            throw new Errors.ParseError(ErrorType.ParserException, "Unexpected End In Function Parameters", $"Function '{name.lexeme}' reached an unexpected end during it's parameters");
                         }
                     }
                     expressions = GetBlock(definitionType.type);
@@ -94,11 +88,6 @@ namespace Espionage
                 if (TypeMatch("EQUALS", "PLUSEQUALS", "MINUSEQUALS"))
                 {
                     Token op = previous();
-                    if (op == null)
-                    {
-                        //IMPORTANT NOTE: ERROR HERE
-                        throw new NotImplementedException();
-                    }
                     Expr right = Additive();
                     expr = new Expr.Binary(expr, op, right);
                 }
@@ -106,11 +95,6 @@ namespace Espionage
                 else if (TypeMatch("PLUSPLUS", "MINUSMINUS"))
                 {
                     Token op = previous();
-                    if (op == null)
-                    {
-                        //IMPORTANT NOTE: ERROR HERE
-                        throw new NotImplementedException();
-                    }
                     expr = new Expr.Unary(op, expr);
                 }
             }
@@ -123,11 +107,6 @@ namespace Espionage
             if (!isAtEnd() && TypeMatch("AND", "OR"))
             {
                 Token op = previous();
-                if (op == null)
-                {
-                    //IMPORTANT NOTE: ERROR HERE
-                    throw new NotImplementedException();
-                }
                 Expr right = Additive();
                 expr = new Expr.Binary(expr, op, right);
             }
@@ -140,11 +119,6 @@ namespace Espionage
             if (!isAtEnd() && TypeMatch("B_OR", "B_AND", "B_XOR", "B_NOT"))
             {
                 Token op = previous();
-                if (op == null)
-                {
-                    //IMPORTANT NOTE: ERROR HERE
-                    throw new NotImplementedException();
-                }
                 Expr right = Additive();
                 expr = new Expr.Binary(expr, op, right);
             }
@@ -157,11 +131,6 @@ namespace Espionage
             if (!isAtEnd() && TypeMatch("PLUS", "MINUS"))
             {
                 Token op = previous();
-                if (op == null)
-                {
-                    //IMPORTANT NOTE: ERROR HERE
-                    throw new NotImplementedException();
-                }
                 Expr right = Additive();
                 expr = new Expr.Binary(expr, op, right);
             }
@@ -174,11 +143,6 @@ namespace Espionage
             if (!isAtEnd() && TypeMatch("MULTIPLY", "DIVIDE", "MODULO"))
             {
                 Token op = previous();
-                if (op == null)
-                {
-                    //IMPORTANT NOTE: ERROR HERE
-                    throw new NotImplementedException();
-                }
                 Expr right = Additive();
                 expr = new Expr.Binary(expr, op, right);
             }
@@ -199,11 +163,6 @@ namespace Espionage
                         break;
                     }
                     Expect("COMMA", "Expected ',' between parameters");
-                    if (isAtEnd())
-                    {
-                        //IMPORTANT NOTE: ERROR HERE
-                        throw new NotImplementedException();
-                    }
                 }
                 expr = new Expr.Call(expr, arguments);
             }
@@ -236,8 +195,7 @@ namespace Espionage
 
         private Exception End()
         {
-            //IMPORTANT NOTE: add error here
-            return new NotImplementedException();
+            return new Errors.ParseError(ErrorType.ParserException, "Expression Reached Unexpected End", $"Expression '{((previous() != null)? previous().lexeme : "")}' reached an unexpected end");
         }
 
         private List<Expr> GetBlock(string bodytype)
@@ -298,8 +256,7 @@ namespace Espionage
                 return;
             }
 
-            //IMPORTANT NOTE: add error here
-            throw new NotImplementedException();
+            throw new Errors.ParseError(ErrorType.ParserException, type, errorMessage);
         }
 
         private Token previous()

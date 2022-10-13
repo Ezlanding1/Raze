@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Espionage.Tools
 {
-    internal class ASTPrinter
+    internal class bASTPrinter
     {
         public static void PrintAST(List<Expr> exprs)
         {
@@ -52,7 +52,7 @@ namespace Espionage.Tools
             Console.Write(token.lexeme);
         }
     }
-    internal class tASTPrinter : Expr.IVisitor<object?>
+    internal class ASTPrinter : Expr.IVisitor<object?>
     {
         public void PrintAST(List<Expr> exprs)
         {
@@ -160,13 +160,18 @@ namespace Espionage.Tools
             Console.Write(" ) ");
             Console.WriteLine(" { ");
             PrintAST(expr.block);
-            Console.WriteLine(" } ");
+            Console.WriteLine("} ");
             return null;
         }
 
         public object? visitClassExpr(Expr.Class expr)
         {
-            throw new NotImplementedException();
+            Console.Write("class ");
+            PrintAST(expr.name);
+            Console.WriteLine(" { ");
+            PrintAST(expr.block);
+            Console.WriteLine("} ");
+            return null;
         }
     }
 }
