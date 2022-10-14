@@ -84,6 +84,15 @@ namespace Espionage.Tools
             expr.Accept(this);
             offset = tmp;
         }
+        private void PrintAST(List<Token> tokens)
+        {
+            foreach (Token token in tokens)
+            {
+                Console.Write(offset);
+                Console.WriteLine("├─'" + token.lexeme + "'");
+            }
+            
+        }
 
         private void PrintAST(Token token)
         {
@@ -109,15 +118,15 @@ namespace Espionage.Tools
         public object? visitClassExpr(Expr.Class expr)
         {
             PrintAST(expr.name);
-            PrintAST(expr.block, false);
+            expr.block.Accept(this);
             return null;
         }
 
         public object? visitFunctionExpr(Expr.Function expr)
         {
             PrintAST(expr.name);
-            PrintAST(expr.parameters, false);
-            PrintAST(expr.block, false);
+            PrintAST(expr.parameters);
+            expr.block.Accept(this);
             return null;
         }
 
@@ -128,7 +137,8 @@ namespace Espionage.Tools
 
         public object? visitGroupingExpr(Expr.Grouping expr)
         {
-            throw new NotImplementedException();
+            expr.expression.Accept(this);
+            return null;
         }
 
         public object? visitLiteralExpr(Expr.Literal expr)
@@ -168,9 +178,21 @@ namespace Espionage.Tools
         public object? visitDeclareExpr(Expr.Declare expr)
         {
             PrintAST(expr.type);
-            PrintAST(expr.left);
-            PrintAST(expr.op);
-            PrintAST(expr.right);
+            PrintAST(expr.name);
+            PrintAST(expr.value);
+            return null;
+        }
+
+        public object? visitIfExpr(Expr.If expr)
+        {
+            PrintAST(expr.condition);
+            PrintAST(expr.block);
+            return null;
+        }
+
+        public object? visitBlockExpr(Expr.Block expr)
+        {
+            PrintAST(expr.block, false);
             return null;
         }
     }

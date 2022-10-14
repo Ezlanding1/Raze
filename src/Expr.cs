@@ -17,10 +17,10 @@ namespace Espionage
             public T visitGroupingExpr(Grouping expr);
             public T visitLiteralExpr(Literal expr);
             public T visitDeclareExpr(Declare expr);
-
+            public T visitIfExpr(If expr);
             public T visitCallExpr(Call expr);
             public T visitGetExpr(Get expr);
-            //public T visitLogicalExpr(Logical expr);
+            public T visitBlockExpr(Block expr);
             public T visitSetExpr(Set expr);
             public T visitSuperExpr(Super expr);
             public T visitThisExpr(This expr);
@@ -102,17 +102,15 @@ namespace Espionage
 
         public class Declare : Expr
         {
-            public Expr type;
-            public Expr left;
-            public Token op;
-            public Expr right;
+            public Token type;
+            public Token name;
+            public Expr value;
 
-            public Declare(Expr type, Expr left, Token op, Expr right)
+            public Declare(Token type, Token left, Expr right)
             {
                 this.type = type;
-                this.left = left;
-                this.op = op;
-                this.right = right;
+                this.name = left;
+                this.value = right;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -122,28 +120,37 @@ namespace Espionage
 
         }
 
-        //public class Assign : Expr
-        //{
-        //    public Token name;
-        //    public Expr value;
+        public abstract class Conditional : Expr
+        {
+            public Expr condition;
+            public Block block;
 
-        //    public Assign(Token name, Expr value)
-        //    {
-        //        this.name = name;
-        //        this.value = value;
-        //    }
+            public Conditional(Expr condition, Block block)
+            {
+                this.condition = condition;
+                this.block = block;
+            }
 
-        //    public override T Accept<T>(IVisitor<T> visitor)
-        //    {
-        //        return visitor.visitAssignExpr(this);
-        //    }
-        //}
+            public abstract override T Accept<T>(IVisitor<T> visitor);
+        }
+        public class If : Conditional
+        {
+            public If(Expr condition, Block block)
+                : base(condition, block)
+            {
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.visitIfExpr(this);
+            }
+        }
 
         public class Call : Expr
         {
-            public Expr callee;
+            public Token callee;
             public List<Expr> arguments;
-            public Call(Expr callee, List<Expr> arguments)
+            public Call(Token callee, List<Expr> arguments)
             {
                 this.callee = callee;
                 this.arguments = arguments;
@@ -173,24 +180,19 @@ namespace Espionage
 
         }
 
-        //public class Logical : Expr
-        //{
-        //    public Expr left;
-        //    public Token op;
-        //    public Expr right;
-        //    public Logical(Expr left, Token op, Expr right)
-        //    {
-        //        this.left = left;
-        //        this.op = op;
-        //        this.right = right;
-        //    }
+        public class Block : Expr
+        {
+            public List<Expr> block;
+            public Block(List<Expr> block)
+            {
+                this.block = block;
+            }
 
-        //    public override T Accept<T>(IVisitor<T> visitor)
-        //    {
-        //        return visitor.visitLogicalExpr(this);
-        //    }
-
-        //}
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.visitBlockExpr(this);
+            }
+        }
 
         public class Set : Expr
         {
@@ -258,9 +260,9 @@ namespace Espionage
         public abstract class Definition : Expr
         {
             public Token name;
-            public List<Expr> block;
+            public Block block;
 
-            public Definition(Token name, List<Expr> block)
+            public Definition(Token name, Block block)
             {
                 this.name = name;
                 this.block = block;
@@ -270,8 +272,8 @@ namespace Espionage
         }
 
         public class Function : Definition {
-            public List<Expr> parameters;
-            public Function(Token name, List<Expr> parameters, List<Expr> block)
+            public List<Token> parameters;
+            public Function(Token name, List<Token> parameters, Block block)
                 : base(name, block)
             {
                 this.parameters = parameters;
@@ -285,7 +287,7 @@ namespace Espionage
 
         public class Class : Definition
         {
-            public Class(Token name, List<Expr> block) : base(name, block) { }
+            public Class(Token name, Block block) : base(name, block) { }
 
             public override T Accept<T>(IVisitor<T> visitor)
             {

@@ -1,0 +1,378 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Espionage
+{
+    internal class Assembler : Expr.IVisitor<Instruction.Register?>
+    {
+        List<Expr> expressions;
+        List<Instruction> data;
+        List<Instruction> instructions;
+        Stack<KeyValuePair<string, Instruction.Register>> Stack;
+        public Assembler(List<Expr> expressions)
+        {
+            this.expressions = expressions;
+            this.data = new();
+            this.instructions = new();
+            this.Stack = new();
+        }
+        
+        internal List<Instruction> Assemble()
+        {
+            foreach (Expr expr in expressions)
+            {
+                expr.Accept(this);
+            }
+            return instructions;
+        }
+
+        public Instruction.Register? visitBinaryExpr(Expr.Binary expr)
+        {
+            string instruction = InstructionTypes.ToType(expr.op.type);
+            Instruction.Register operand1 = expr.left.Accept(this);
+            Instruction.Register operand2 = expr.right.Accept(this);
+
+            if (operand1.name == "RAX")
+            {
+                emit(new Instruction.Binary(instruction, operand1.name, operand2.name));
+            }
+            else if (operand2.name == "RAX")
+            {
+                emit(new Instruction.Binary(instruction, operand2.name, operand1.name));
+            }
+            else
+            {
+                MovToRegister("RAX", operand1.name);
+                operand1.name = "RAX";
+                emit(new Instruction.Binary(instruction, operand1.name, operand2.name));
+            }
+            return new Instruction.Register(false, "RAX");
+        }
+
+        public Instruction.Register? visitCallExpr(Expr.Call expr)
+        {
+            //Important Note: Emit arguments (to stack) first
+            for (int i = 0; i < expr.arguments.Count; i++)
+            {
+                Instruction.Register arg = expr.arguments[i].Accept(this);
+                MovToRegister(InstructionTypes.paramRegister[i], arg.name);
+            }
+
+            string operand1 = expr.callee.literal.ToString();
+            emit(new Instruction.Unary("CALL", operand1));
+            return null;
+        }
+
+        public Instruction.Register? visitClassExpr(Expr.Class expr)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Instruction.Register? visitDeclareExpr(Expr.Declare expr)
+        {
+            string type = expr.type.literal.ToString();
+            string operand1 = expr.name.literal.ToString();
+            Instruction.Register operand2 = expr.value.Accept(this);
+            Declare(type, operand1, operand2.name);
+            return null;
+        }
+
+        public Instruction.Register? visitFunctionExpr(Expr.Function expr)
+        {
+            // Important Note: Deal With Return
+            for (int i = 0; i < expr.parameters.Count; i++)
+            {
+                Stack.Push(new KeyValuePair<string, Instruction.Register>(expr.parameters[i].literal.ToString(), new Instruction.Register(true, InstructionTypes.paramRegister[i])));
+            }
+
+            emit(new Instruction.Function(expr.name.literal.ToString()));
+            // Emit Function Header
+            emit(new Instruction.Unary("PUSH", "RBP"));
+            emit(new Instruction.Binary("MOV", "RBP", "RSP"));
+
+            expr.block.Accept(this);
+
+            // Emit Function Footer
+            emit(new Instruction.Unary("POP", "RBP"));
+            emit(new Instruction.Zero("RET"));
+            return new Instruction.Register(false, "RAX");
+        }
+
+        public Instruction.Register? visitGetExpr(Expr.Get expr)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Instruction.Register? visitGroupingExpr(Expr.Grouping expr)
+        {
+            return expr.expression.Accept(this);
+        }
+
+        public Instruction.Register? visitLiteralExpr(Expr.Literal expr)
+        {
+            return new Instruction.Register(true, expr.literal.literal.ToString());
+        }
+
+        public Instruction.Register? visitSetExpr(Expr.Set expr)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Instruction.Register? visitSuperExpr(Expr.Super expr)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Instruction.Register? visitThisExpr(Expr.This expr)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Instruction.Register? visitUnaryExpr(Expr.Unary expr)
+        {
+            string instruction = InstructionTypes.ToType(expr.op.type);
+            Instruction.Register operand1 = expr.operand.Accept(this);
+            if (instruction == "RET")
+            {
+                MovToRegister("RAX", operand1.name);
+                return new Instruction.Register(true, "RET");
+            }
+            throw new NotImplementedException();
+        }
+
+        public Instruction.Register? visitVariableExpr(Expr.Variable expr)
+        {
+            Instruction.Register variable = InstructionTypes.StackAt(Stack, expr.variable.literal.ToString());
+            if (variable == null)
+            {
+                // Important Note: ERROR HERE!!!
+                throw new NotImplementedException();
+            }
+            if (variable.simple)
+            {
+                return new Instruction.Register(false, variable.name);
+            }
+            else
+            {
+                MovToRegister("RAX", "[rbp-"+variable.name+"]");
+                return new Instruction.Register(false, "RAX");
+            }
+        }
+
+        public Instruction.Register? visitIfExpr(Expr.If expr)
+        {
+            Instruction.Register contidional = expr.condition.Accept(this);
+            emit(new Instruction.Unary("JNE", "TMP"));
+            int jmpindex = (instructions.Count - 1);
+
+            expr.block.Accept(this);
+
+            emit(new Instruction.Zero("NOP"));
+            ((Instruction.Unary)instructions[jmpindex]).operand = (instructions.Count - 1).ToString();
+            return null;
+        }
+
+        public Instruction.Register? visitBlockExpr(Expr.Block expr)
+        {
+            int frameStart = Stack.Count;
+            foreach (Expr blockExpr in expr.block)
+            {
+                Instruction.Register register = blockExpr.Accept(this);
+                if (register != null && register.name == "RET" && register.simple)
+                {
+                    PeekDeAlloc(frameStart);
+                }
+            }
+            // De-alloc variables
+            for (int i = frameStart, frameEnd = Stack.Count; i < frameEnd; i++)
+            {
+                Instruction.Register register = Stack.Pop().Value;
+                if (register == null)
+                {
+                    // Important Note: ERROR HERE!!!
+                    throw new NotImplementedException();
+                }
+                if (!register.simple)
+                {
+                    emit(new Instruction.Binary("ADD", "RSP", register.name));
+                }
+                else
+                {
+                    // Important Note: the Error probably shouldn't happen, right? (it may because of recursion/something else so if it does just take out the error + else statement)
+                    throw new NotImplementedException();
+                }
+            }
+            return null;
+        }
+
+        private void PeekDeAlloc(int frameStart)
+        {
+            for (int i = frameStart, frameEnd = Stack.Count; i < frameEnd; i++)
+            {
+                Instruction.Register register = Stack.Skip((frameEnd - i) - 1).First().Value;
+                if (register == null)
+                {
+                    // Important Note: ERROR HERE!!!
+                    throw new NotImplementedException();
+                }
+                if (!register.simple)
+                {
+                    emit(new Instruction.Binary("ADD", "RSP", register.name));
+                }
+                else
+                {
+                    // Important Note: the Error probably shouldn't happen, right? (it may because of recursion/something else so if it does just take out the error + else statement)
+                    //throw new NotImplementedException();
+                }
+            }
+            emit(new Instruction.Unary("POP", "RBP"));
+            emit(new Instruction.Zero("RET"));
+        }
+
+        private void Declare(string type, string name, object value)
+        {
+            emit(new Instruction.Binary("MOV", "RAX", value.ToString()));
+            emit(new Instruction.Unary("PUSH", "RAX"));
+            int size = SizeOf(type);
+            Stack.Push(new KeyValuePair<string, Instruction.Register>(name, new Instruction.Register(false, size.ToString())));
+        }
+        private string MovToRegister(string register, string literal)
+        {
+            emit(new Instruction.Binary("MOV", register, literal));
+            return "";
+        }
+        private void emit(Instruction instruction)
+        {
+            instructions.Add(instruction);
+        }
+        private void emitData(Instruction instruction)
+        {
+            data.Add(instruction);
+        }
+        private int SizeOf(string type)
+        {
+            if (type == "int")
+            {
+                return 8;
+            }
+            return 8;
+        }
+
+    }
+    internal class Instruction
+    {
+        internal class Register
+        {
+            public bool simple;
+            public string name;
+            public Register(bool simple, string name)
+            {
+                this.simple = simple;
+                this.name = name;
+            }
+        }
+        internal class Data : Instruction
+        {
+            string name;
+            string size;
+            string value;
+            public Data(string name, string size, string value)
+            {
+                this.name = name;
+                this.size = size;
+                this.value = value;
+            }
+        }
+
+        internal class Function : Instruction
+        {
+            public string name;
+            public Function(string name)
+            {
+                this.name = name;
+            }
+        }
+        internal class Binary : Instruction
+        {
+            public string instruction, operand1, operand2;
+            public Binary(string instruction, string operand1, string operand2)
+            {
+                this.instruction = instruction;
+                this.operand1 = operand1;
+                this.operand2 = operand2;
+            }
+        }
+
+        internal class Unary : Instruction
+        {
+            public string instruction, operand;
+            public Unary(string instruction, string operand)
+            {
+                this.instruction = instruction;
+                this.operand = operand;
+            }
+        }
+
+        internal class Zero : Instruction 
+        {
+            public string instruction;
+            public Zero(string instruction)
+            {
+                this.instruction = instruction;
+            }
+        }
+    }
+
+    internal class InstructionTypes
+    {
+        internal static string ToType(string input)
+        {
+            return StringToOperatorType[input];
+        }
+        private readonly static Dictionary<string, string> StringToOperatorType = new()
+        {
+            // Binary
+            { "SHIFTRIGHT" , "SHR" },
+            { "SHIFTLEFT" , "SHL" },
+            { "DIVIDE" , "DIV" },
+            { "MULTIPLY" , "MUL" },
+            { "B_NOT" , "NOT" },
+            { "B_OR" , "OR" },
+            { "B_AND" , "AND" },
+            { "B_XOR" , "XOR" },
+            { "MINUS" , "SUB" },
+            { "PLUS" , "ADD" },
+            { "EQUALTO" , "CMP" },
+
+            // Unary
+            { "return",  "RET" },
+
+            // Zero
+        };
+
+        internal readonly static string[] paramRegister = new string[] 
+        {
+            "RDI",
+            "RSI",
+            "RDX",
+            "RCX",
+            "R8",
+            "R9"
+        };
+        
+        internal static Instruction.Register StackAt(Stack<KeyValuePair<string, Instruction.Register>> stack, string input)
+        {
+            foreach (KeyValuePair<string, Instruction.Register> pair in stack)
+            {
+                if (pair.Key == input)
+                {
+                    return pair.Value;
+                }
+            }
+            return null;
+        }
+    }
+}
