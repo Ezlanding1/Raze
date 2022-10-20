@@ -77,12 +77,15 @@ namespace Espionage.Tools
 
         private void PrintAST(Expr expr)
         {
-            string tmp = offset;
-            Console.Write(offset);
-            Console.WriteLine("├─" + expr);
-            offset += "|  ";
-            expr.Accept(this);
-            offset = tmp;
+            if (expr != null)
+            {
+                string tmp = offset;
+                Console.Write(offset);
+                Console.WriteLine("├─" + expr);
+                offset += "|  ";
+                expr.Accept(this);
+                offset = tmp;
+            }
         }
         private void PrintAST(List<Token> tokens)
         {
@@ -125,7 +128,10 @@ namespace Espionage.Tools
         public object? visitFunctionExpr(Expr.Function expr)
         {
             PrintAST(expr.name);
-            PrintAST(expr.parameters);
+            foreach (Expr paramExpr in expr.parameters)
+            {
+                PrintAST(paramExpr);
+            }
             expr.block.Accept(this);
             return null;
         }
@@ -183,8 +189,9 @@ namespace Espionage.Tools
             return null;
         }
 
-        public object? visitIfExpr(Expr.If expr)
+        public object? visitConditionalExpr(Expr.Conditional expr)
         {
+            PrintAST(expr.type);
             PrintAST(expr.condition);
             PrintAST(expr.block);
             return null;
@@ -193,6 +200,19 @@ namespace Espionage.Tools
         public object? visitBlockExpr(Expr.Block expr)
         {
             PrintAST(expr.block, false);
+            return null;
+        }
+
+        public object? visitReturnExpr(Expr.Return expr)
+        {
+            PrintAST(expr.value);
+            return null;
+        }
+
+        public object? visitAssignExpr(Expr.Assign expr)
+        {
+            PrintAST(expr.value);
+            PrintAST(expr.variable);
             return null;
         }
     }

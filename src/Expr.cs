@@ -17,7 +17,7 @@ namespace Espionage
             public T visitGroupingExpr(Grouping expr);
             public T visitLiteralExpr(Literal expr);
             public T visitDeclareExpr(Declare expr);
-            public T visitIfExpr(If expr);
+            public T visitConditionalExpr(Conditional expr);
             public T visitCallExpr(Call expr);
             public T visitGetExpr(Get expr);
             public T visitBlockExpr(Block expr);
@@ -27,6 +27,8 @@ namespace Espionage
             public T visitVariableExpr(Variable expr);
             public T visitFunctionExpr(Function expr);
             public T visitClassExpr(Class expr);
+            public T visitReturnExpr(Return expr);
+            public T visitAssignExpr(Assign expr);
         }
 
         public class Binary : Expr
@@ -105,7 +107,7 @@ namespace Espionage
             public Token type;
             public Token name;
             public Expr value;
-
+            public int offset;
             public Declare(Token type, Token left, Expr right)
             {
                 this.type = type;
@@ -120,29 +122,22 @@ namespace Espionage
 
         }
 
-        public abstract class Conditional : Expr
+        public class Conditional : Expr
         {
+            public Token type;
             public Expr condition;
             public Block block;
 
-            public Conditional(Expr condition, Block block)
+            public Conditional(Token type, Expr condition, Block block)
             {
+                this.type = type;
                 this.condition = condition;
                 this.block = block;
             }
 
-            public abstract override T Accept<T>(IVisitor<T> visitor);
-        }
-        public class If : Conditional
-        {
-            public If(Expr condition, Block block)
-                : base(condition, block)
-            {
-            }
-
             public override T Accept<T>(IVisitor<T> visitor)
             {
-                return visitor.visitIfExpr(this);
+                return visitor.visitConditionalExpr(this);
             }
         }
 
@@ -246,9 +241,27 @@ namespace Espionage
         public class Variable : Expr
         {
             public Token variable;
+            public string stackPos;
+            public bool register;
+
             public Variable(Token variable)
             {
                 this.variable = variable;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.visitVariableExpr(this);
+            }
+        }
+
+        public class Parameter : Variable
+        {
+            public Token type;
+            public Parameter(Token type, Token variable)
+                : base(variable)
+            {
+                this.type = type;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -272,8 +285,8 @@ namespace Espionage
         }
 
         public class Function : Definition {
-            public List<Token> parameters;
-            public Function(Token name, List<Token> parameters, Block block)
+            public List<Parameter> parameters;
+            public Function(Token name, List<Parameter> parameters, Block block)
                 : base(name, block)
             {
                 this.parameters = parameters;
@@ -292,6 +305,30 @@ namespace Espionage
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.visitClassExpr(this);
+            }
+        }
+        
+        public class Return : Expr
+        {
+            public Expr value;
+            public Return(Expr value)
+            {
+                this.value = value;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.visitReturnExpr(this);
+            }
+        }
+
+        public class Assign : Expr
+        {
+            public Token variable;
+            public Expr value;
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.visitAssignExpr(this);
             }
         }
     }

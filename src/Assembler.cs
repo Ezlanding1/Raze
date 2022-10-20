@@ -11,13 +11,11 @@ namespace Espionage
         List<Expr> expressions;
         List<Instruction> data;
         List<Instruction> instructions;
-        Stack<KeyValuePair<string, Instruction.Register>> Stack;
         public Assembler(List<Expr> expressions)
         {
             this.expressions = expressions;
             this.data = new();
             this.instructions = new();
-            this.Stack = new();
         }
         
         internal List<Instruction> Assemble()
@@ -63,7 +61,7 @@ namespace Espionage
 
             string operand1 = expr.callee.literal.ToString();
             emit(new Instruction.Unary("CALL", operand1));
-            return null;
+            return new Instruction.Register(true, "RAX");
         }
 
         public Instruction.Register? visitClassExpr(Expr.Class expr)
@@ -76,28 +74,14 @@ namespace Espionage
             string type = expr.type.literal.ToString();
             string operand1 = expr.name.literal.ToString();
             Instruction.Register operand2 = expr.value.Accept(this);
-            Declare(type, operand1, operand2.name);
+            Declare(type, expr.offset, operand1, operand2.name);
             return null;
         }
 
         public Instruction.Register? visitFunctionExpr(Expr.Function expr)
         {
-            // Important Note: Deal With Return
-            for (int i = 0; i < expr.parameters.Count; i++)
-            {
-                Stack.Push(new KeyValuePair<string, Instruction.Register>(expr.parameters[i].literal.ToString(), new Instruction.Register(true, InstructionTypes.paramRegister[i])));
-            }
-
             emit(new Instruction.Function(expr.name.literal.ToString()));
-            // Emit Function Header
-            emit(new Instruction.Unary("PUSH", "RBP"));
-            emit(new Instruction.Binary("MOV", "RBP", "RSP"));
-
             expr.block.Accept(this);
-
-            // Emit Function Footer
-            emit(new Instruction.Unary("POP", "RBP"));
-            emit(new Instruction.Zero("RET"));
             return new Instruction.Register(false, "RAX");
         }
 
@@ -145,104 +129,67 @@ namespace Espionage
 
         public Instruction.Register? visitVariableExpr(Expr.Variable expr)
         {
-            Instruction.Register variable = InstructionTypes.StackAt(Stack, expr.variable.literal.ToString());
-            if (variable == null)
-            {
-                // Important Note: ERROR HERE!!!
-                throw new NotImplementedException();
-            }
-            if (variable.simple)
-            {
-                return new Instruction.Register(false, variable.name);
-            }
+            if (expr.register)
+                return new Instruction.Register(false, expr.stackPos);
             else
-            {
-                MovToRegister("RAX", "[rbp-"+variable.name+"]");
-                return new Instruction.Register(false, "RAX");
-            }
+                return new Instruction.Register(false, "[RBP-" + expr.stackPos + "]");
         }
 
-        public Instruction.Register? visitIfExpr(Expr.If expr)
+        public Instruction.Register? visitConditionalExpr(Expr.Conditional expr)
         {
-            Instruction.Register contidional = expr.condition.Accept(this);
-            emit(new Instruction.Unary("JNE", "TMP"));
-            int jmpindex = (instructions.Count - 1);
+            if (expr.type.literal.ToString() == "if")
+            {
+                Instruction.Register contidional = expr.condition.Accept(this);
+                emit(new Instruction.Unary("JNE", "TMP"));
+                int jmpindex = (instructions.Count - 1);
 
-            expr.block.Accept(this);
+                expr.block.Accept(this);
 
-            emit(new Instruction.Zero("NOP"));
-            ((Instruction.Unary)instructions[jmpindex]).operand = (instructions.Count - 1).ToString();
+                emit(new Instruction.Zero("NOP"));
+                ((Instruction.Unary)instructions[jmpindex]).operand = (instructions.Count - 1).ToString();
+            }
             return null;
         }
 
         public Instruction.Register? visitBlockExpr(Expr.Block expr)
         {
-            int frameStart = Stack.Count;
+            // Emit Block Header
+            emit(new Instruction.Unary("PUSH", "RBP"));
+            emit(new Instruction.Binary("MOV", "RBP", "RSP"));
+
             foreach (Expr blockExpr in expr.block)
             {
-                Instruction.Register register = blockExpr.Accept(this);
-                if (register != null && register.name == "RET" && register.simple)
-                {
-                    PeekDeAlloc(frameStart);
-                }
+                blockExpr.Accept(this);
             }
-            // De-alloc variables
-            for (int i = frameStart, frameEnd = Stack.Count; i < frameEnd; i++)
-            {
-                Instruction.Register register = Stack.Pop().Value;
-                if (register == null)
-                {
-                    // Important Note: ERROR HERE!!!
-                    throw new NotImplementedException();
-                }
-                if (!register.simple)
-                {
-                    emit(new Instruction.Binary("ADD", "RSP", register.name));
-                }
-                else
-                {
-                    // Important Note: the Error probably shouldn't happen, right? (it may because of recursion/something else so if it does just take out the error + else statement)
-                    throw new NotImplementedException();
-                }
-            }
+
+            // Emit Block Footer
+            emit(new Instruction.Unary("POP", "RBP"));
+            emit(new Instruction.Zero("RET"));
             return null;
         }
 
-        private void PeekDeAlloc(int frameStart)
+        public Instruction.Register? visitReturnExpr(Expr.Return expr)
         {
-            for (int i = frameStart, frameEnd = Stack.Count; i < frameEnd; i++)
-            {
-                Instruction.Register register = Stack.Skip((frameEnd - i) - 1).First().Value;
-                if (register == null)
-                {
-                    // Important Note: ERROR HERE!!!
-                    throw new NotImplementedException();
-                }
-                if (!register.simple)
-                {
-                    emit(new Instruction.Binary("ADD", "RSP", register.name));
-                }
-                else
-                {
-                    // Important Note: the Error probably shouldn't happen, right? (it may because of recursion/something else so if it does just take out the error + else statement)
-                    //throw new NotImplementedException();
-                }
-            }
+            Instruction.Register register = expr.value.Accept(this);
+            MovToRegister("RAX", register.name);
             emit(new Instruction.Unary("POP", "RBP"));
             emit(new Instruction.Zero("RET"));
+            return register;
         }
 
-        private void Declare(string type, string name, object value)
+        public Instruction.Register? visitAssignExpr(Expr.Assign expr)
         {
-            emit(new Instruction.Binary("MOV", "RAX", value.ToString()));
-            emit(new Instruction.Unary("PUSH", "RAX"));
-            int size = SizeOf(type);
-            Stack.Push(new KeyValuePair<string, Instruction.Register>(name, new Instruction.Register(false, size.ToString())));
+            throw new NotImplementedException();
         }
-        private string MovToRegister(string register, string literal)
+
+        private void Declare(string type, int stackOffset, string name, object value)
+        {
+            int size = Analyzer.SizeOf(type);
+            emit(new Instruction.Binary("MOV", $"{InstructionTypes.wordSize[size]} [RBP-{stackOffset}]", value.ToString()));
+        }
+        private void MovToRegister(string register, string literal)
         {
             emit(new Instruction.Binary("MOV", register, literal));
-            return "";
         }
         private void emit(Instruction instruction)
         {
@@ -252,15 +199,6 @@ namespace Espionage
         {
             data.Add(instruction);
         }
-        private int SizeOf(string type)
-        {
-            if (type == "int")
-            {
-                return 8;
-            }
-            return 8;
-        }
-
     }
     internal class Instruction
     {
@@ -332,6 +270,11 @@ namespace Espionage
         {
             return StringToOperatorType[input];
         }
+        internal static string ToRegister(int input, bool bits=false, string register="RAX")
+        {
+            input = bits ? (input / 8) : input;
+            return raxRegister[input];
+        }
         private readonly static Dictionary<string, string> StringToOperatorType = new()
         {
             // Binary
@@ -348,7 +291,7 @@ namespace Espionage
             { "EQUALTO" , "CMP" },
 
             // Unary
-            { "return",  "RET" },
+            { "return",  "RET" }
 
             // Zero
         };
@@ -362,17 +305,22 @@ namespace Espionage
             "R8",
             "R9"
         };
-        
-        internal static Instruction.Register StackAt(Stack<KeyValuePair<string, Instruction.Register>> stack, string input)
+
+        internal readonly static Dictionary<int, string> raxRegister = new()
         {
-            foreach (KeyValuePair<string, Instruction.Register> pair in stack)
-            {
-                if (pair.Key == input)
-                {
-                    return pair.Value;
-                }
-            }
-            return null;
-        }
+            { 8, "RAX"}, // 64-Bits
+            { 4, "EAX"}, // Lower 32-Bits
+            { 2, "AX"}, // Lower 16-Bits
+            { 1, "AL"}, // Lower 8-Bits
+            { 0, "AH"} // Upper 8-Bits
+        };
+
+        internal readonly static Dictionary<int, string> wordSize = new()
+        {
+            { 8, "QWORD"}, // 64-Bits
+            { 4, "DWORD"}, // 32-Bits
+            { 2, "WORD"}, // 16-Bits
+            { 1, "BYTE"}, // 8-Bits
+        };
     }
 }

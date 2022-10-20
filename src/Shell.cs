@@ -53,6 +53,10 @@ namespace Espionage
                 astPrinter.PrintAST(expressions);
                 #endif
 
+                // Analyze Code for Syntax Violations
+                Analyzer analyzer = new Analyzer(expressions);
+                expressions = analyzer.Analyze();
+
                 // Lower AST to ASM
                 Assembler assembler = new(expressions);
                 List<Instruction> output = assembler.Assemble();
@@ -106,7 +110,7 @@ namespace Espionage
             }
             catch (Exception e)
             {
-                if (e is Errors.LexError || e is Errors.ParseError)
+                if (e is Errors.LexError || e is Errors.ParseError || e is Errors.BackendError)
                 {
                     Console.WriteLine(e.Message);
                 }

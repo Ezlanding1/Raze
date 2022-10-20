@@ -47,12 +47,15 @@ namespace Espionage
                 if (definitionType.type == "function")
                 {
                     Expect("LPAREN", "Expected '(' after function name");
-                    List<Token> parameters = new();
+                    List<Expr.Parameter> parameters = new();
                     while (!TypeMatch("RPAREN"))
                     {
-
+                        Expect("IDENTIFIER", "Expected identifier as function parameter type");
+                        Token type = previous();
                         Expect("IDENTIFIER", "Expected identifier as function parameter");
-                        parameters.Add(previous());
+                        Token variable = previous();
+
+                        parameters.Add(new Expr.Parameter(type, variable));
                         if (TypeMatch("RPAREN"))
                         {
                             break;
@@ -80,20 +83,32 @@ namespace Espionage
             if (!isAtEnd() && TypeMatch("if", "else", "while"))
             {
                 Token conditionalType = previous();
-                Expect("LPAREN", "Expected '(' after conditional");
-                Expr condition;
                 Expr.Block block;
                 if (conditionalType.type == "if")
                 {
                     // Important Note: change to conditional ( '==', '>=', etc. ) once they're implmented
+                    Expect("LPAREN", "Expected '(' after conditional");
+                    Expr condition;
                     condition = Assignment();
                     Expect("RPAREN", "Expected ')' after condition");
                     block = GetBlock(conditionalType.type);
-                    return new Expr.If(condition, block);
+                    return new Expr.Conditional(conditionalType, condition, block);
                 }
                 else if (conditionalType.type == "else")
                 {
-                    throw new NotImplementedException();
+                    if (current.literal.ToString() == "if")
+                    {
+                        // Important Note: change to conditional ( '==', '>=', etc. ) once they're implmented
+                        Expect("LPAREN", "Expected '(' after conditional");
+                        Expr condition;
+                        condition = Assignment();
+                        Expect("RPAREN", "Expected ')' after condition");
+                        conditionalType.type = "else if";
+                        block = GetBlock(conditionalType.type);
+                        return new Expr.Conditional(conditionalType, condition, block);
+                    }
+                    block = GetBlock(conditionalType.type);
+                    return new Expr.Conditional(conditionalType, null, block);
                 }
                 else if (conditionalType.type == "while")
                 {
@@ -231,9 +246,8 @@ namespace Espionage
 
                 if (TypeMatch("return"))
                 {
-                    Token type = previous();
                     Expr value = Additive();
-                    return new Expr.Unary(type, value);
+                    return new Expr.Return(value);
                 }
             }
             throw End();
@@ -262,15 +276,12 @@ namespace Espionage
         {
             List<Expr> bodyExprs = new();
             Expect("LBRACE", "Expect '{' before " + bodytype + " body");
-            while (!isAtEnd())
+            while (true)
             {
                 bodyExprs.Add(Start());
                 if (isAtEnd())
                 {
-                    //IMPORTANT NOTE: ERROR HERE
-                    throw new NotImplementedException();
-                    //IMPORTANT NOTE: change this to say 'function'/'class' instead of block
-                    //Expect("RBRACE", "Expect '}' after block");
+                    Expect("RBRACE", "Expected '}' after block");
                 }
                 if (TypeMatch("RBRACE"))
                 {
@@ -320,7 +331,7 @@ namespace Espionage
                 return;
             }
 
-            throw new Errors.ParseError(ErrorType.ParserException, type, errorMessage);
+            throw new Errors.ParseError(ErrorType.ParserException, $"Expected {type}", errorMessage);
         }
 
         private Token previous()

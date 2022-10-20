@@ -32,5 +32,14 @@ namespace Espionage
 
             }
         }
+
+        public class BackendError : Exception
+        {
+            public BackendError(ErrorType e, string name, string details)
+                : base($"{e}, {name}: {details}")
+            {
+
+            }
+        }
     }
 }
