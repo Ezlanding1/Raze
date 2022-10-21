@@ -59,7 +59,7 @@ namespace Espionage
                 MovToRegister(InstructionTypes.paramRegister[i], arg.name);
             }
 
-            string operand1 = expr.callee.literal.ToString();
+            string operand1 = expr.callee.lexeme;
             emit(new Instruction.Unary("CALL", operand1));
             return new Instruction.Register(true, "RAX");
         }
@@ -71,8 +71,8 @@ namespace Espionage
 
         public Instruction.Register? visitDeclareExpr(Expr.Declare expr)
         {
-            string type = expr.type.literal.ToString();
-            string operand1 = expr.name.literal.ToString();
+            string type = expr.type.lexeme;
+            string operand1 = expr.name.lexeme;
             Instruction.Register operand2 = expr.value.Accept(this);
             Declare(type, expr.offset, operand1, operand2.name);
             return null;
@@ -80,7 +80,7 @@ namespace Espionage
 
         public Instruction.Register? visitFunctionExpr(Expr.Function expr)
         {
-            emit(new Instruction.Function(expr.name.literal.ToString()));
+            emit(new Instruction.Function(expr.name.lexeme));
             expr.block.Accept(this);
             return new Instruction.Register(false, "RAX");
         }
@@ -97,7 +97,7 @@ namespace Espionage
 
         public Instruction.Register? visitLiteralExpr(Expr.Literal expr)
         {
-            return new Instruction.Register(true, expr.literal.literal.ToString());
+            return new Instruction.Register(true, expr.literal.lexeme);
         }
 
         public Instruction.Register? visitSetExpr(Expr.Set expr)
@@ -137,7 +137,7 @@ namespace Espionage
 
         public Instruction.Register? visitConditionalExpr(Expr.Conditional expr)
         {
-            if (expr.type.literal.ToString() == "if")
+            if (expr.type.lexeme == "if")
             {
                 Instruction.Register contidional = expr.condition.Accept(this);
                 emit(new Instruction.Unary("JNE", "TMP"));

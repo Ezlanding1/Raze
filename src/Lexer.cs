@@ -70,31 +70,22 @@ namespace Espionage
                     {
                         if (TokenList.reserved.Contains(match.ToString()))
                         {
-                            return new Token(match.ToString(), GetLiteral(pattern.type, match.ToString()), match.ToString());
+                            return new Token(match.ToString(), match.ToString());
                         }
                     }
                     if (pattern.type == "COMMENT")
                     {
                         return null;
                     }
-                    return new Token(pattern.type, GetLiteral(pattern.type, match.ToString()), match.ToString());
+                    return new Token(pattern.type, match.ToString());
                 }
             }
             if (lexeme[0] == '"')
-                throw new Errors.LexError(ErrorType.LexerException, line, col, "Non Terminated String", $"String: \'{GetLiteral("STRING", lexeme)}\'\nwas not ternimated");
+                throw new Errors.LexError(ErrorType.LexerException, line, col, "Non Terminated String", $"String: \'{((lexeme.Length <= 40) ? lexeme + "'": lexeme.Substring(0, 40) + "'...")}\nwas not ternimated");
             if (lexeme[0] == '.')
                 throw new Errors.LexError(ErrorType.LexerException, line, col, "Invalid Formatted Number", $"{lexeme.Split()[0]} is incorectly formatted");
 
             throw new Errors.LexError(ErrorType.LexerException, line, col, "Illegal Char Error", $"Character '{lexeme[0]}' is Illegal");
-        }
-
-        private string GetLiteral(string type, string lexeme)
-        {
-            if (type == "STRING")
-            {
-                return lexeme.Substring(1, lexeme.Length - 2);
-            }
-            return lexeme;
         }
     }
     class TokenDefinition{
@@ -126,25 +117,22 @@ namespace Espionage
     {
         internal string type;
         internal string lexeme;
-        internal object literal;
 
         public Token(string type)
         {
             this.type = type;
-            this.lexeme = null;
-            this.literal = null;
+            this.lexeme = "";
         }
-        public Token(string type, object literal, string lexeme)
+        public Token(string type, string lexeme)
         {
             this.type = type;
-            this.literal = literal;
             this.lexeme = lexeme;
         }
 
         public override string ToString()
         {
-            //return $"{{ {type} }}:{{ {literal} }}:{{ {lexeme} }}";
-            return $"{{ {type} }}:{{ {Regex.Replace((literal ?? "").ToString(), "[\r\n]|[\n]", "")} }}:{{ {Regex.Replace(lexeme, "[\r\n]|[\n]", "")} }}";
+            //return $"{{ {type} }}:{{ {Regex.Replace((literal ?? "").ToString(), "[\r\n]|[\n]", "")} }}:{{ {Regex.Replace(lexeme, "[\r\n]|[\n]", "")} }}";
+            return $"{{ {type} }}:{{ {lexeme} }}";
         }
     }
 }

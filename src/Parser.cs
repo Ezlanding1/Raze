@@ -96,7 +96,7 @@ namespace Espionage
                 }
                 else if (conditionalType.type == "else")
                 {
-                    if (current.literal.ToString() == "if")
+                    if (current.lexeme == "if")
                     {
                         // Important Note: change to conditional ( '==', '>=', etc. ) once they're implmented
                         Expect("LPAREN", "Expected '(' after conditional");
@@ -300,22 +300,6 @@ namespace Espionage
             foreach (var type in types)
             {
                 if (current.type == type)
-                {
-                    advance();
-                    return true;
-                }
-            }
-            return false;
-        }
-        private bool ValueMatch(string type, params string[] values)
-        {
-            if (current.type != type)
-            {
-                return false;
-            }
-            foreach (var value in values)
-            {
-                if ((current.literal??"").ToString() == value)
                 {
                     advance();
                     return true;

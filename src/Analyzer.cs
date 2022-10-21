@@ -31,7 +31,7 @@ namespace Espionage
             {
                 for (int i = 0, stackCount = callStack.Count; i < stackCount; i++)
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The function '{callStack[i].callee.literal.ToString()}' does not exist in the current context");
+                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The function '{callStack[i].callee.lexeme}' does not exist in the current context");
                 }
             }
             if (!mainDeclared)
@@ -85,10 +85,10 @@ namespace Espionage
             // Function Todo Notice:
             // Note: since classes aren't implemented yet, functions are in a very early stage.
             // The flaws with storing functions on the stack, function defitions, function calls, sizeof, and typeof will be resolved in later commits.
-            string type = expr.type.literal.ToString();
-            string name = expr.name.literal.ToString();
+            string type = expr.type.lexeme;
+            string name = expr.name.lexeme;
             expr.value.Accept(this);
-            int size = SizeOf(expr.type.literal.ToString());
+            int size = SizeOf(type);
 
             if (stack.ContainsKey(name))
             {
@@ -105,7 +105,7 @@ namespace Espionage
             // Note: since classes aren't implemented yet, functions are in a very early stage.
             // The flaws with storing functions on the stack, function defitions, function calls, sizeof, and typeof will be resolved in later commits.
             ResolveFunction(expr);
-            if (!mainDeclared && expr.name.literal.ToString() == "Main")
+            if (!mainDeclared && expr.name.lexeme == "Main")
             {
                 mainDeclared = true;
             }
@@ -117,7 +117,7 @@ namespace Espionage
             for (int i = 0; i < paramsCount; i++)
             {
                 Expr.Parameter paramExpr = expr.parameters[i];
-                stack.Add(paramExpr.variable.literal.ToString(), paramExpr.variable.literal.ToString(), InstructionTypes.paramRegister[i]);
+                stack.Add(paramExpr.variable.lexeme, paramExpr.variable.lexeme, InstructionTypes.paramRegister[i]);
             }
             expr.block.Accept(this);
             for (int i = 0; i < paramsCount; i++)
@@ -174,7 +174,7 @@ namespace Espionage
         public object? visitVariableExpr(Expr.Variable expr)
         {
             string value;
-            string name = expr.variable.literal.ToString();
+            string name = expr.variable.lexeme;
             if (stack.ContainsKey(name, out value))
             {
                 expr.stackPos = value;
@@ -198,7 +198,7 @@ namespace Espionage
 
         public object? visitAssignExpr(Expr.Assign expr)
         {
-            string name = expr.variable.literal.ToString();
+            string name = expr.variable.lexeme;
             if (stack.ContainsKey(name))
             {
                 if (!TypeMatch(stack.Gestring(name), expr.value))
@@ -225,17 +225,17 @@ namespace Espionage
 
         private void ResolveFunction(Expr.Function expr)
         {
-            Expr.Call call = callStack.Find(x => x.callee.literal.ToString() == expr.name.literal.ToString());
+            Expr.Call call = callStack.Find(x => x.callee.lexeme == expr.name.lexeme);
             string value = "";
             foreach (Expr.Parameter paramExpr in expr.parameters)
             {
-                value += $"{paramExpr.type.literal.ToString()} {paramExpr.variable.literal.ToString()} ";
+                value += $"{paramExpr.type.lexeme} {paramExpr.variable.lexeme} ";
             }
-            stack.Add("function", expr.name.literal.ToString(), value);
+            stack.Add("function", expr.name.lexeme, value);
 
             if (call != null)
             {
-                ValidCallCheck(expr.name.literal.ToString(), value, call.arguments);
+                ValidCallCheck(expr.name.lexeme, value, call.arguments);
                 callStack.Remove(call);
             }
         }
@@ -243,7 +243,7 @@ namespace Espionage
         private void ResolveCall(Expr.Call expr)
         {
             string value;
-            string name = expr.callee.literal.ToString();
+            string name = expr.callee.lexeme;
             if (stack.ContainsKey(name, out value))
             {
                 ValidCallCheck(name, value, expr.arguments);
