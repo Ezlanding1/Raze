@@ -132,9 +132,17 @@ namespace Espionage
             {
                 if (TypeMatch("EQUALS", "PLUSEQUALS", "MINUSEQUALS"))
                 {
-                    Token op = previous();
-                    Expr right = Additive();
-                    expr = new Expr.Binary(expr, op, right);
+                    Expr right = Assignment();
+                    if (expr is Expr.Variable variable)
+                    {
+                        expr = new Expr.Assign(variable.variable, right);
+                    }
+                    else
+                    {
+                        //ERROR HERE: (?)
+                        throw new NotImplementedException();
+                    }
+                    
                 }
                 //IMPORTANT NOTE: fix the precedence of ++ and -- (and add prefix modifier)
                 else if (TypeMatch("PLUSPLUS", "MINUSMINUS"))
@@ -152,7 +160,7 @@ namespace Espionage
             if (!isAtEnd() && TypeMatch("AND", "OR"))
             {
                 Token op = previous();
-                Expr right = Additive();
+                Expr right = Bitwise();
                 expr = new Expr.Binary(expr, op, right);
             }
             return expr;
@@ -164,7 +172,7 @@ namespace Espionage
             if (!isAtEnd() && TypeMatch("B_OR", "B_AND", "B_XOR", "B_NOT"))
             {
                 Token op = previous();
-                Expr right = Additive();
+                Expr right = Equality();
                 expr = new Expr.Binary(expr, op, right);
             }
             return expr;
@@ -172,8 +180,20 @@ namespace Espionage
 
         private Expr Equality()
         {
-            Expr expr = Additive();
+            Expr expr = Comparison();
             if (!isAtEnd() && TypeMatch("EQUALTO", "NOTEQUALTO"))
+            {
+                Token op = previous();
+                Expr right = Comparison();
+                expr = new Expr.Binary(expr, op, right);
+            }
+            return expr;
+        }
+
+        private Expr Comparison()
+        {
+            Expr expr = Additive();
+            if (!isAtEnd() && TypeMatch("GREATEREQUAL", "LESSEQUAL", "GREATER", "LESS"))
             {
                 Token op = previous();
                 Expr right = Additive();
@@ -188,7 +208,7 @@ namespace Espionage
             if (!isAtEnd() && TypeMatch("PLUS", "MINUS"))
             {
                 Token op = previous();
-                Expr right = Additive();
+                Expr right = Multiplicative();
                 expr = new Expr.Binary(expr, op, right);
             }
             return expr;
@@ -200,7 +220,7 @@ namespace Espionage
             if (!isAtEnd() && TypeMatch("MULTIPLY", "DIVIDE", "MODULO"))
             {
                 Token op = previous();
-                Expr right = Additive();
+                Expr right = Primary();
                 expr = new Expr.Binary(expr, op, right);
             }
             return expr;
