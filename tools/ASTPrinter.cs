@@ -215,5 +215,11 @@ namespace Espionage.Tools
             PrintAST(expr.variable);
             return null;
         }
+
+        public object? visitKeywordExpr(Expr.Keyword expr)
+        {
+            PrintAST(expr.keyword);
+            return null;
+        }
     }
 }

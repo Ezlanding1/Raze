@@ -29,6 +29,7 @@ namespace Espionage
             public T visitClassExpr(Class expr);
             public T visitReturnExpr(Return expr);
             public T visitAssignExpr(Assign expr);
+            public T visitKeywordExpr(Keyword expr);
         }
 
         public class Binary : Expr
@@ -255,6 +256,21 @@ namespace Espionage
             }
         }
 
+        public class Keyword : Expr
+        {
+            public Token keyword;
+
+            public Keyword(Token keyword)
+            {
+                this.keyword = keyword;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.visitKeywordExpr(this);
+            }
+        }
+
         public class Parameter : Variable
         {
             public Token type;
@@ -326,6 +342,15 @@ namespace Espionage
         {
             public Token variable;
             public Expr value;
+            public string type;
+            public int offset;
+
+            public Assign(Token variable, Expr value)
+            {
+                this.variable = variable;
+                this.value = value;
+            }
+
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.visitAssignExpr(this);

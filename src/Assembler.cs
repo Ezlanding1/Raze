@@ -67,6 +67,9 @@ namespace Espionage
         public Instruction.Register? visitClassExpr(Expr.Class expr)
         {
             throw new NotImplementedException();
+            //emit(new Instruction.Class(expr.name.lexeme));
+            //expr.block.Accept(this);
+            //return null;
         }
 
         public Instruction.Register? visitDeclareExpr(Expr.Declare expr)
@@ -74,7 +77,10 @@ namespace Espionage
             string type = expr.type.lexeme;
             string operand1 = expr.name.lexeme;
             Instruction.Register operand2 = expr.value.Accept(this);
-            Declare(type, expr.offset, operand1, operand2.name);
+            if (operand2.name != "null")
+            {
+                Declare(type, expr.offset, operand1, operand2.name);
+            }
             return null;
         }
 
@@ -179,7 +185,19 @@ namespace Espionage
 
         public Instruction.Register? visitAssignExpr(Expr.Assign expr)
         {
-            throw new NotImplementedException();
+            string type = expr.type;
+            string operand1 = expr.variable.lexeme;
+            Instruction.Register operand2 = expr.value.Accept(this);
+            if (operand2.name != "null")
+            {
+                Declare(type, expr.offset, operand1, operand2.name);
+            }
+            return null;
+        }
+
+        public Instruction.Register? visitKeywordExpr(Expr.Keyword expr)
+        {
+            return new Instruction.Register(false, "null");
         }
 
         private void Declare(string type, int stackOffset, string name, object value)
@@ -233,6 +251,16 @@ namespace Espionage
                 this.name = name;
             }
         }
+        
+        internal class Class : Instruction
+        {
+            public string name;
+            public Class(string name)
+            {
+                this.name = name;
+            }
+        }
+
         internal class Binary : Instruction
         {
             public string instruction, operand1, operand2;
@@ -281,7 +309,7 @@ namespace Espionage
             { "SHIFTRIGHT" , "SHR" },
             { "SHIFTLEFT" , "SHL" },
             { "DIVIDE" , "DIV" },
-            { "MULTIPLY" , "MUL" },
+            { "MULTIPLY" , "IMUL" },
             { "B_NOT" , "NOT" },
             { "B_OR" , "OR" },
             { "B_AND" , "AND" },

@@ -89,7 +89,7 @@ namespace Espionage
                     // Important Note: change to conditional ( '==', '>=', etc. ) once they're implmented
                     Expect("LPAREN", "Expected '(' after conditional");
                     Expr condition;
-                    condition = Assignment();
+                    condition = Logical();
                     Expect("RPAREN", "Expected ')' after condition");
                     block = GetBlock(conditionalType.type);
                     return new Expr.Conditional(conditionalType, condition, block);
@@ -101,7 +101,7 @@ namespace Espionage
                         // Important Note: change to conditional ( '==', '>=', etc. ) once they're implmented
                         Expect("LPAREN", "Expected '(' after conditional");
                         Expr condition;
-                        condition = Assignment();
+                        condition = Logical();
                         Expect("RPAREN", "Expected ')' after condition");
                         conditionalType.type = "else if";
                         block = GetBlock(conditionalType.type);
@@ -120,37 +120,8 @@ namespace Espionage
 
         private Expr Semicolon()
         {
-            Expr expr = Assignment();
-            Expect("SEMICOLON", "Expected ';' after expression");
-            return expr;
-        }
-
-        private Expr Assignment()
-        {
             Expr expr = Logical();
-            if (!isAtEnd())
-            {
-                if (TypeMatch("EQUALS", "PLUSEQUALS", "MINUSEQUALS"))
-                {
-                    Expr right = Assignment();
-                    if (expr is Expr.Variable variable)
-                    {
-                        expr = new Expr.Assign(variable.variable, right);
-                    }
-                    else
-                    {
-                        //ERROR HERE: (?)
-                        throw new NotImplementedException();
-                    }
-                    
-                }
-                //IMPORTANT NOTE: fix the precedence of ++ and -- (and add prefix modifier)
-                else if (TypeMatch("PLUSPLUS", "MINUSMINUS"))
-                {
-                    Token op = previous();
-                    expr = new Expr.Unary(op, expr);
-                }
-            }
+            Expect("SEMICOLON", "Expected ';' after expression");
             return expr;
         }
 
@@ -239,35 +210,48 @@ namespace Espionage
 
                 if (TypeMatch("LPAREN", "RPAREN"))
                 {
-                    Expr expr = Assignment();
+                    Expr expr = Logical();
                     Expect("RPAREN", "Expected ')' after expression.");
                     return new Expr.Grouping(expr);
                 }
 
                 if (TypeMatch("IDENTIFIER"))
                 {
+                    Expr expr;
+
                     Token variable = previous();
                     if (TypeMatch("IDENTIFIER"))
                     {
                         Token name = previous();
                         Expect("EQUALS", "Expected '=' when declaring variable");
-                        Expr value = Additive();
-                        return new Expr.Declare(variable, name, value);
+                        Expr value = Logical();
+                        expr = new Expr.Declare(variable, name, value);
+                    }
+                    else if (TypeMatch("EQUALS", "PLUSEQUALS", "MINUSEQUALS"))
+                    {
+                        Expr right = Logical();
+                        expr = new Expr.Assign(variable, right);
                     }
                     else if (TypeMatch("LPAREN"))
                     {
-                        return Call(variable);
+                        expr = Call(variable);
                     }
                     else
                     {
-                        return new Expr.Variable(variable);
+                        expr = new Expr.Variable(variable);
                     }
+                    return expr;
                 }
 
                 if (TypeMatch("return"))
                 {
                     Expr value = Additive();
                     return new Expr.Return(value);
+                }
+
+                if (TypeMatch("null"))
+                {
+                    return new Expr.Keyword(previous());
                 }
             }
             throw End();
@@ -282,7 +266,7 @@ namespace Espionage
             List<Expr> arguments = new();
             while (!TypeMatch("RPAREN"))
             {
-                arguments.Add(Assignment());
+                arguments.Add(Logical());
                 if (TypeMatch("RPAREN"))
                 {
                     break;

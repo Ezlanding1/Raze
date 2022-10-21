@@ -77,6 +77,11 @@ namespace Espionage
 
         public object? visitClassExpr(Expr.Class expr)
         {
+            //foreach (Expr blockExpr in collection)
+            //{
+
+            //}
+            expr.block.Accept(this);
             return null;
         }
 
@@ -199,13 +204,16 @@ namespace Espionage
         public object? visitAssignExpr(Expr.Assign expr)
         {
             string name = expr.variable.lexeme;
-            if (stack.ContainsKey(name))
-            {
-                if (!TypeMatch(stack.Gestring(name), expr.value))
-                {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"Cannot assign {name} to given type");
-                }
-            }
+            string type = stack.GetType(name);
+            expr.value.Accept(this);
+            int size = SizeOf(type);
+            stack.Modify(type, name, size);
+            expr.offset = stack.stackOffet;
+            return null;
+        }
+
+        public object? visitKeywordExpr(Expr.Keyword expr)
+        {
             return null;
         }
 
@@ -278,6 +286,7 @@ namespace Espionage
             // Important Note: for now return true. In the future return the type of the object
             return true;
         }
+
     }
 
     internal class KeyValueStack
@@ -299,11 +308,21 @@ namespace Espionage
             dictStack[key] = stackOffet.ToString();
             listStack.Add(new Tuple<string, string>(key, type));
         }
+
+
         public void Add(string type, string key, string value)
         {
             dictStack[key] = value;
             listStack.Add(new Tuple<string, string>(key, type));
         }
+
+        public void Modify(string type, string key, int? value)
+        {
+            dictStack[key] = stackOffet.ToString();
+            listStack.Remove(listStack.Find(x => x.Item1 == key));
+            listStack.Add(new Tuple<string, string>(key, type));
+        }
+
         public bool ContainsKey(string key)
         {
             return (dictStack.ContainsKey(key) && dictStack[key] != null);
@@ -312,7 +331,7 @@ namespace Espionage
         {
             return (dictStack.TryGetValue(key, out value) && value != null);
         }
-        public string Gestring(string variable)
+        public string GetType(string variable)
         {
             return listStack.Find(x => x.Item1.Equals(variable)).Item2;
         }

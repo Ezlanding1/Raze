@@ -77,6 +77,11 @@ namespace Espionage
                 {
                     foreach (Instruction instruction in instructions)
                     {
+                        if (instruction is Instruction.Class)
+                        {
+                            var ins = (Instruction.Class)instruction;
+                            Console.WriteLine(ins.name + ":");
+                        }
                         if (instruction is Instruction.Function)
                         {
                             var ins = (Instruction.Function)instruction;
