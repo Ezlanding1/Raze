@@ -120,15 +120,21 @@ namespace Espionage
 
         private Expr Semicolon()
         {
-            Expr expr = Logical();
+            Expr expr = NoSemicolon();
             Expect("SEMICOLON", "Expected ';' after expression");
+            return expr;
+        }
+
+        private Expr NoSemicolon()
+        {
+            Expr expr = Logical();
             return expr;
         }
 
         private Expr Logical()
         {
             Expr expr = Bitwise();
-            if (!isAtEnd() && TypeMatch("AND", "OR"))
+            while (!isAtEnd() && TypeMatch("AND", "OR"))
             {
                 Token op = previous();
                 Expr right = Bitwise();
@@ -140,7 +146,7 @@ namespace Espionage
         private Expr Bitwise()
         {
             Expr expr = Equality();
-            if (!isAtEnd() && TypeMatch("B_OR", "B_AND", "B_XOR", "B_NOT"))
+            while (!isAtEnd() && TypeMatch("B_OR", "B_AND", "B_XOR", "B_NOT"))
             {
                 Token op = previous();
                 Expr right = Equality();
@@ -152,7 +158,7 @@ namespace Espionage
         private Expr Equality()
         {
             Expr expr = Comparison();
-            if (!isAtEnd() && TypeMatch("EQUALTO", "NOTEQUALTO"))
+            while (!isAtEnd() && TypeMatch("EQUALTO", "NOTEQUALTO"))
             {
                 Token op = previous();
                 Expr right = Comparison();
@@ -164,7 +170,7 @@ namespace Espionage
         private Expr Comparison()
         {
             Expr expr = Additive();
-            if (!isAtEnd() && TypeMatch("GREATEREQUAL", "LESSEQUAL", "GREATER", "LESS"))
+            while (!isAtEnd() && TypeMatch("GREATEREQUAL", "LESSEQUAL", "GREATER", "LESS"))
             {
                 Token op = previous();
                 Expr right = Additive();
@@ -176,7 +182,7 @@ namespace Espionage
         private Expr Additive()
         {
             Expr expr = Multiplicative();
-            if (!isAtEnd() && TypeMatch("PLUS", "MINUS"))
+            while (!isAtEnd() && TypeMatch("PLUS", "MINUS"))
             {
                 Token op = previous();
                 Expr right = Multiplicative();
@@ -188,7 +194,7 @@ namespace Espionage
         private Expr Multiplicative()
         {
             Expr expr = Primary();
-            if (!isAtEnd() && TypeMatch("MULTIPLY", "DIVIDE", "MODULO"))
+            while (!isAtEnd() && TypeMatch("MULTIPLY", "DIVIDE", "MODULO"))
             {
                 Token op = previous();
                 Expr right = Primary();
@@ -279,8 +285,8 @@ namespace Espionage
         private Expr.Block GetBlock(string bodytype)
         {
             List<Expr> bodyExprs = new();
-            Expect("LBRACE", "Expect '{' before " + bodytype + " body");
-            while (true)
+            Expect("LBRACE", "Expected '{' before " + bodytype + " body");
+            while (!TypeMatch("RBRACE"))
             {
                 bodyExprs.Add(Start());
                 if (isAtEnd())
@@ -319,7 +325,7 @@ namespace Espionage
                 return;
             }
 
-            throw new Errors.ParseError(ErrorType.ParserException, $"Expected {type}", errorMessage);
+            throw new Errors.ParseError(ErrorType.ParserException, $"Expected {type}", errorMessage + $"{((current != null)? "\nGot: '" + current.lexeme + "' Instead" : "")}");
         }
 
         private Token previous()
