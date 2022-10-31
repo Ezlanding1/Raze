@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Espionage.Expr;
 
 namespace Espionage
 {
@@ -18,7 +19,7 @@ namespace Espionage
         public class LexError : Exception
         {
             public LexError(ErrorType e, int line, int col, string name, string details)
-                : base($"{e}, LINE: {line}, COL: {col + 1}, {name}: {details}")
+                : base($"{e}\n{name}: {details}\nLine: {line}, COL: {col + 1}")
             {
 
             }
@@ -35,11 +36,26 @@ namespace Espionage
 
         public class BackendError : Exception
         {
-            public BackendError(ErrorType e, string name, string details)
-                : base($"{e}, {name}: {details}")
+            public BackendError(ErrorType e, string name, string details, CallStack? callStack)
+                : base(CreateBackend(e, name, details, callStack))
             {
 
             }
+            public BackendError(ErrorType e, string name, string details)
+                : base(CreateBackend(e, name, details, null))
+            {
+
+            }
+        }
+
+        private static string CreateBackend(ErrorType e, string name, string details, CallStack? callStack)
+        {
+            string str = $"{e}\n{name}: {details}";
+            if (callStack == null)
+            {
+                return str;
+            }
+            return (str + "\n" + callStack.ToString());
         }
     }
 }

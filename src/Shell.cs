@@ -53,7 +53,7 @@ namespace Espionage
                 astPrinter.PrintAST(expressions);
                 #endif
 
-                // Analyze Code for Syntax Violations
+                // Run Analysis on the Code 
                 Analyzer analyzer = new Analyzer(expressions);
                 expressions = analyzer.Analyze();
 

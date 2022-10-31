@@ -1,220 +1,37 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
+using System.Linq.Expressions;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Espionage
 {
-    internal class Analyzer : Expr.IVisitor<object?>
+    internal partial class Analyzer
     {
         List<Expr> expressions;
-        KeyValueStack stack;
-        List<Expr.Call> callStack;
-        int frameStart;
-        bool mainDeclared;
+
         public Analyzer(List<Expr> expressions)
         {
             this.expressions = expressions;
-            this.stack = new();
-            this.callStack = new();
         }
 
-        internal List<Expr> Analyze()
-        {
-            foreach (Expr expr in expressions)
+        internal List<Expr> Analyze(){
+            Pass initialPass = new InitialPass(expressions);
+            expressions = initialPass.Run();
+            Expr.Function main = ((InitialPass)initialPass).getMain();
+
+            if (main == null)
             {
-                expr.Accept(this);
+                throw new Errors.BackendError(ErrorType.BackendException, "Main Not Found", "No Main method for entrypoint found");
             }
-            if (callStack.Count > 0)
-            {
-                for (int i = 0, stackCount = callStack.Count; i < stackCount; i++)
-                {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The function '{callStack[i].callee.lexeme}' does not exist in the current context");
-                }
-            }
-            if (!mainDeclared)
-            {
-                throw new Errors.BackendError(ErrorType.BackendException, "Entrypoint Not Found", "Program does not contain a Main method");
-            }
+            Pass mainPass = new MainPass(expressions, main);
+            expressions = mainPass.Run();
+
             return expressions;
-        }
-
-        public object? visitBinaryExpr(Expr.Binary expr)
-        {
-            expr.left.Accept(this);
-            expr.right.Accept(this);
-            return null;
-        }
-
-        public object? visitBlockExpr(Expr.Block expr)
-        {
-            frameStart = stack.Count;
-            foreach (Expr blockExpr in expr.block)
-            {
-                blockExpr.Accept(this);
-            }
-            // De-alloc variables
-            for (int i = frameStart, frameEnd = stack.Count; i < frameEnd; i++)
-            {
-                stack.RemoveLast();
-            }
-            return null;
-        }
-
-        public object? visitCallExpr(Expr.Call expr)
-        {
-            // Important Note: Check if function exists and see if they have the same arity (which should be less than or equal to 6) and the parameter types match
-            ResolveCall(expr);
-
-            foreach (Expr argExpr in expr.arguments)
-            {
-                argExpr.Accept(this);
-            }
-            return null;
-        }
-
-        public object? visitClassExpr(Expr.Class expr)
-        {
-            //foreach (Expr blockExpr in collection)
-            //{
-
-            //}
-            expr.block.Accept(this);
-            return null;
-        }
-
-        public object? visitDeclareExpr(Expr.Declare expr)
-        {
-            // Function Todo Notice:
-            // Note: since classes aren't implemented yet, functions are in a very early stage.
-            // The flaws with storing functions on the stack, function defitions, function calls, sizeof, and typeof will be resolved in later commits.
-            string type = expr.type.lexeme;
-            string name = expr.name.lexeme;
-            expr.value.Accept(this);
-            int size = SizeOf(type);
-
-            if (stack.ContainsKey(name))
-            {
-                throw new Errors.BackendError(ErrorType.BackendException, "Double Declaration", $"A variable named '{name}' is already defined in this scope");
-            }
-            stack.Add(type, name, size);
-            expr.offset = stack.stackOffet;
-            return null;
-        }
-
-        public object? visitFunctionExpr(Expr.Function expr)
-        {
-            // Function Todo Notice:
-            // Note: since classes aren't implemented yet, functions are in a very early stage.
-            // The flaws with storing functions on the stack, function defitions, function calls, sizeof, and typeof will be resolved in later commits.
-            ResolveFunction(expr);
-            if (!mainDeclared && expr.name.lexeme == "Main")
-            {
-                mainDeclared = true;
-            }
-            int paramsCount = expr.parameters.Count;
-            if (paramsCount > 6)
-            {
-                throw new Errors.BackendError(ErrorType.BackendException, "Too Many Parameters", "A function cannot have more than 6 parameters");
-            }
-            for (int i = 0; i < paramsCount; i++)
-            {
-                Expr.Parameter paramExpr = expr.parameters[i];
-                stack.Add(paramExpr.variable.lexeme, paramExpr.variable.lexeme, InstructionTypes.paramRegister[i]);
-            }
-            expr.block.Accept(this);
-            for (int i = 0; i < paramsCount; i++)
-            {
-                stack.RemoveLast();
-            }
-            return null;
-        }
-
-        public object? visitGetExpr(Expr.Get expr)
-        {
-            return null;
-        }
-
-        public object? visitGroupingExpr(Expr.Grouping expr)
-        {
-            expr.expression.Accept(this);
-            return null;
-        }
-
-        public object? visitConditionalExpr(Expr.Conditional expr)
-        {
-            expr.condition.Accept(this);
-            expr.block.Accept(this);
-            return null;
-        }
-
-        public object? visitLiteralExpr(Expr.Literal expr)
-        {
-            return null;
-        }
-
-        public object? visitSetExpr(Expr.Set expr)
-        {
-            return null;
-        }
-
-        public object? visitSuperExpr(Expr.Super expr)
-        {
-            return null;
-        }
-
-        public object? visitThisExpr(Expr.This expr)
-        {
-            return null;
-        }
-
-        public object? visitUnaryExpr(Expr.Unary expr)
-        {
-            expr.operand.Accept(this);
-            return null;
-        }
-
-        public object? visitVariableExpr(Expr.Variable expr)
-        {
-            string value;
-            string name = expr.variable.lexeme;
-            if (stack.ContainsKey(name, out value))
-            {
-                expr.stackPos = value;
-                if (char.IsLetter(value[0]))
-                {
-                    expr.register = true;
-                }
-            }
-            else
-            {
-                throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The variable '{name}' does not exist in the current context");
-            }
-            return null;
-        }
-
-        public object? visitReturnExpr(Expr.Return expr)
-        {
-            expr.value.Accept(this);
-            return null;
-        }
-
-        public object? visitAssignExpr(Expr.Assign expr)
-        {
-            string name = expr.variable.lexeme;
-            string type = stack.GetType(name);
-            expr.value.Accept(this);
-            int size = SizeOf(type);
-            stack.Modify(type, name, size);
-            expr.offset = stack.stackOffet;
-            return null;
-        }
-
-        public object? visitKeywordExpr(Expr.Keyword expr)
-        {
-            return null;
         }
 
         internal static string TypeOf(Expr literal)
@@ -230,69 +47,12 @@ namespace Espionage
             }
             return 8;
         }
-
-        private void ResolveFunction(Expr.Function expr)
-        {
-            Expr.Call call = callStack.Find(x => x.callee.lexeme == expr.name.lexeme);
-            string value = "";
-            foreach (Expr.Parameter paramExpr in expr.parameters)
-            {
-                value += $"{paramExpr.type.lexeme} {paramExpr.variable.lexeme} ";
-            }
-            stack.Add("function", expr.name.lexeme, value);
-
-            if (call != null)
-            {
-                ValidCallCheck(expr.name.lexeme, value, call.arguments);
-                callStack.Remove(call);
-            }
-        }
-
-        private void ResolveCall(Expr.Call expr)
-        {
-            string value;
-            string name = expr.callee.lexeme;
-            if (stack.ContainsKey(name, out value))
-            {
-                ValidCallCheck(name, value, expr.arguments);
-            }
-            else
-            {
-                callStack.Add(expr);
-            }
-        }
-
-        private void ValidCallCheck(string name, string value, List<Expr> arguments)
-        {
-            // Arity Check
-            string[] parameters = value.Split();
-            int functionArity = ((parameters.Length - 1) / 2);
-            if (functionArity != arguments.Count)
-            {
-                throw new Errors.BackendError(ErrorType.BackendException, "Arity Mismatch", $"Arity of call for {name} ({arguments.Count}) does not match the definition's arity ({functionArity})");
-            }
-
-            for (int i = 0, j = 0; i < functionArity; i++, j+=2)
-            {
-                if (parameters[i*2] != TypeOf(arguments[i]))
-                {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"In call for {name}, type of '{parameters[i * 2]}' does not match the definition's type '{TypeOf(arguments[i])}'");
-                }
-            }
-        }
-
-        private bool TypeMatch(string type, object input)
-        {
-            // Important Note: for now return true. In the future return the type of the object
-            return true;
-        }
-
     }
 
     internal class KeyValueStack
     {
         private Dictionary<string, string> dictStack;
-        private List<Tuple<string,string>> listStack;
+        private List<Tuple<string, string>> listStack;
         public int stackOffet;
         public int Count { get { return listStack.Count; } }
         public KeyValueStack()
@@ -348,6 +108,82 @@ namespace Espionage
         {
             dictStack[listStack[listStack.Count - 1].Item1] = null;
             listStack.RemoveAt(listStack.Count - 1);
+        }
+    }
+
+    internal class CallStack
+    {
+        List<Expr> stack;
+        // True = class, False = fucntion
+        List<Tuple<string, bool>> stackString;
+        public CallStack()
+        {
+            this.stack = new();
+            this.stackString = new();
+        }
+
+        public void Add(Expr.Class c)
+        {
+            stack.Add(c);
+            stackString.Add(new Tuple<string, bool>(c.name.lexeme, true));
+        }
+
+        public void Add(Expr.Function f)
+        {
+            if (stack.Count == 0 && !(f._static))
+            {
+                throw new Errors.BackendError(ErrorType.BackendException, "Top-Level Function", $"function {f.name.lexeme} must have an enclosing class");
+            }
+            stack.Add(f);
+            stackString.Add(new Tuple<string, bool>(f.name.lexeme, false));
+        }
+
+        public void RemoveLast()
+        {
+            stack.RemoveAt(stack.Count - 1);
+            stackString.RemoveAt(stackString.Count - 1);
+        }
+
+        public override string ToString()
+        {
+            string str = "at:\n";
+            string _classPath = "";
+            List<string> _strings = new();
+            foreach (var call in stackString)
+            {
+                if (call.Item2)
+                {
+                    _classPath += call.Item1 + ".";
+                }
+                else
+                {
+                    _strings.Add((_classPath + call.Item1 + "();"));
+                }
+            }
+            _strings.Reverse();
+            foreach (var item in _strings)
+            {
+                str += ("\t" + item + "\n");
+            }
+            return str;
+        }
+
+        public string Current()
+        {
+            string str = "";
+            string _classPath = "";
+            foreach (var call in stackString)
+            {
+                if (call.Item2)
+                {
+                    _classPath += call.Item1 + ".";
+                }
+                else
+                {
+                    str += (_classPath + call.Item1 + "();");
+                }
+            }
+            return str;
         }
     }
 }

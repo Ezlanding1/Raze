@@ -145,6 +145,7 @@ namespace Espionage
         public class Call : Expr
         {
             public Token callee;
+            public Function internalFunction;
             public List<Expr> arguments;
             public Call(Token callee, List<Expr> arguments)
             {
@@ -302,6 +303,12 @@ namespace Espionage
 
         public class Function : Definition {
             public List<Parameter> parameters;
+            public int arity
+            {
+                get { return parameters.Count; }
+            }
+            public bool _static;
+            public bool found;
             public Function(Token name, List<Parameter> parameters, Block block)
                 : base(name, block)
             {
