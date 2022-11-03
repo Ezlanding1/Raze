@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -10,15 +11,17 @@ namespace Espionage
     {
         List<Expr> expressions;
         List<Instruction> data;
-        List<Instruction> instructions;
+        List<List<Instruction>> instructions;
+        int index;
         public Assembler(List<Expr> expressions)
         {
             this.expressions = expressions;
             this.data = new();
             this.instructions = new();
+            this.index = -1;
         }
         
-        internal List<Instruction> Assemble()
+        internal List<List<Instruction>> Assemble()
         {
             foreach (Expr expr in expressions)
             {
@@ -86,8 +89,10 @@ namespace Espionage
 
         public Instruction.Register? visitFunctionExpr(Expr.Function expr)
         {
+            index++;
             emit(new Instruction.Function(expr.name.lexeme));
             expr.block.Accept(this);
+            index--;
             return new Instruction.Register(false, "RAX");
         }
 
@@ -152,7 +157,7 @@ namespace Espionage
                 expr.block.Accept(this);
 
                 emit(new Instruction.Zero("NOP"));
-                ((Instruction.Unary)instructions[jmpindex]).operand = (instructions.Count - 1).ToString();
+                ((Instruction.Unary)instructions[index][jmpindex]).operand = (instructions.Count - 1).ToString();
             }
             return null;
         }
@@ -211,7 +216,11 @@ namespace Espionage
         }
         private void emit(Instruction instruction)
         {
-            instructions.Add(instruction);
+            if (instructions.Count <= index)
+            {
+                instructions.Add(new List<Instruction>());
+            }
+            instructions[index].Add(instruction);
         }
         private void emitData(Instruction instruction)
         {

@@ -59,7 +59,7 @@ namespace Espionage
 
                 // Lower AST to ASM
                 Assembler assembler = new(expressions);
-                List<Instruction> output = assembler.Assemble();
+                List<List<Instruction>> output = assembler.Assemble();
 
 
                 Console.WriteLine("global _start");
@@ -72,7 +72,14 @@ namespace Espionage
                     { new Instruction.Zero("SYSCALL") }
                 };
                 PrintInstructions(header);
-                PrintInstructions(output);
+                PrintInstructionsList(output);
+                static void PrintInstructionsList(List<List<Instruction>> instructions)
+                {
+                    foreach (List<Instruction> instructionList in instructions)
+                    {
+                        PrintInstructions(instructionList);
+                    }
+                }
                 static void PrintInstructions(List<Instruction> instructions)
                 {
                     foreach (Instruction instruction in instructions)
