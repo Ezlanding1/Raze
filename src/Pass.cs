@@ -87,7 +87,9 @@ namespace Espionage
 
             public virtual object? visitConditionalExpr(Expr.Conditional expr)
             {
-                expr.condition.Accept(this);
+                if (expr.condition != null)
+                    expr.condition.Accept(this);
+
                 expr.block.Accept(this);
                 return null;
             }

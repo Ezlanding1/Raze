@@ -13,11 +13,13 @@ namespace Espionage
         Dictionary<string, Instruction> data;
         List<List<Instruction>> instructions;
         int index;
+        int conditionalCount;
         public Assembler(List<Expr> expressions)
         {
             this.expressions = expressions;
             this.data = new();
             this.instructions = new();
+            this.conditionalCount = 0;
             this.index = -1;
         }
         
@@ -159,14 +161,59 @@ namespace Espionage
         {
             if (expr.type.lexeme == "if")
             {
-                Instruction.Register contidional = expr.condition.Accept(this);
-                emit(new Instruction.Unary("JNE", "TMP"));
-                int jmpindex = (instructions.Count - 1);
+                instructions.ForEach(x => x = x);
+                var _if = (Expr.If)expr;
 
-                expr.block.Accept(this);
+                expr.condition.Accept(this);
+                var fJump = new Instruction.Unary("JNE", "TMP");
+                emit(fJump);
 
-                emit(new Instruction.Zero("NOP"));
-                ((Instruction.Unary)instructions[index][jmpindex]).operand = (instructions.Count - 1).ToString();
+                foreach (Expr blockExpr in expr.block.block)
+                {
+                    blockExpr.Accept(this);
+                }
+
+
+                var tJump = new Instruction.Unary("JMP", "TMP");
+                emit(tJump);
+
+
+                foreach (Expr.ElseIf elif in _if.ElseIfs)
+                {
+                    fJump.operand = (".L" + conditionalCount);
+                    emit(new Instruction.Function(".L" + conditionalCount));
+                    conditionalCount++;
+
+                    elif.condition.Accept(this);
+
+                    fJump = new Instruction.Unary("JNE", "TMP");
+
+                    emit(fJump);
+                    foreach (Expr blockExpr in elif.block.block)
+                    {
+                        blockExpr.Accept(this);
+                    }
+
+                    emit(tJump);
+                }
+
+                fJump.operand = (".L" + conditionalCount);
+                emit(new Instruction.Function(".L" + conditionalCount));
+                conditionalCount++;
+                if (_if._else != null)
+                {
+                    foreach (Expr blockExpr in _if._else.block.block)
+                    {
+                        blockExpr.Accept(this);
+                    }
+                }
+                emit(new Instruction.Function(".L" + conditionalCount));
+                tJump.operand = (".L" + conditionalCount);
+
+                index++;
+
+                conditionalCount++;
+
             }
             return null;
         }

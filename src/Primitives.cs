@@ -33,7 +33,7 @@ namespace Espionage
             }
             else
             {
-                throw new Exception("Espionage Error: Internal Type Not Implemented (class)");
+                throw new Exception($"Espionage Error: Internal Type Not Implemented (class) for type of '{type}'");
             }
         }
 

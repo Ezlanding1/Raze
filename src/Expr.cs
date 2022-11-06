@@ -125,7 +125,7 @@ namespace Espionage
 
         }
 
-        public class Conditional : Expr
+        public abstract class Conditional : Expr
         {
             public Token type;
             public Expr condition;
@@ -141,6 +141,44 @@ namespace Espionage
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.visitConditionalExpr(this);
+            }
+        }
+
+        public abstract class IfThenElse : Conditional 
+        {
+            public IfThenElse(Token type, Expr condition, Block block)
+                : base(type, condition, block)
+            {
+
+            }
+        }
+
+        public class If : IfThenElse
+        {
+            public List<ElseIf> ElseIfs;
+            public Else _else;
+            public If(Token type, Expr condition, Block block)
+                : base(type, condition, block)
+            {
+                this.ElseIfs = new();
+            }
+        }
+        public class ElseIf : IfThenElse
+        {
+            public If top;
+            public ElseIf(Token type, Expr condition, Block block)
+                : base(type, condition, block)
+            {
+
+            }
+        }
+        public class Else : IfThenElse
+        {
+            public If top;
+            public Else(Token type, Expr condition, Block block)
+                : base(type, condition, block)
+            {
+
             }
         }
 

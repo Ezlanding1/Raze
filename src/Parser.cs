@@ -82,7 +82,7 @@ namespace Espionage
 
         private Expr Conditional()
         {
-            if (!isAtEnd() && TypeMatch("if", "else", "while"))
+            if (!isAtEnd() && TypeMatch("if", "else if", "else", "while"))
             {
                 Token conditionalType = previous();
                 Expr.Block block;
@@ -94,11 +94,11 @@ namespace Espionage
                     condition = Logical();
                     Expect("RPAREN", "Expected ')' after condition");
                     block = GetBlock(conditionalType.type);
-                    return new Expr.Conditional(conditionalType, condition, block);
+                    return new Expr.If(conditionalType, condition, block);
                 }
                 else if (conditionalType.type == "else")
                 {
-                    if (current.lexeme == "if")
+                    if (TypeMatch("if"))
                     {
                         // Important Note: change to conditional ( '==', '>=', etc. ) once they're implmented
                         Expect("LPAREN", "Expected '(' after conditional");
@@ -107,10 +107,10 @@ namespace Espionage
                         Expect("RPAREN", "Expected ')' after condition");
                         conditionalType.type = "else if";
                         block = GetBlock(conditionalType.type);
-                        return new Expr.Conditional(conditionalType, condition, block);
+                        return new Expr.ElseIf(conditionalType, condition, block);
                     }
                     block = GetBlock(conditionalType.type);
-                    return new Expr.Conditional(conditionalType, null, block);
+                    return new Expr.Else(conditionalType, null, block);
                 }
                 else if (conditionalType.type == "while")
                 {

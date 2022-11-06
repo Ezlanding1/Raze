@@ -2,8 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection.Metadata;
-using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,10 +13,14 @@ namespace Espionage
         {
             Dictionary<string, Expr.Class> classes;
             List<Expr.New> undefClass;
-
+            
             string declClassName;
             Dictionary<string, Expr.Function> functions;
             List<Expr.Call> undefCalls;
+
+            Tuple<bool, int, Expr.If> waitingIf;
+
+            int index;
             Expr.Function main;
             public InitialPass(List<Expr> expressions) : base(expressions)
             {
@@ -27,6 +29,8 @@ namespace Espionage
 
                 this.functions = new();
                 this.undefCalls = new();
+
+                this.index = 0;
             }
 
             internal override List<Expr> Run()
@@ -61,6 +65,15 @@ namespace Espionage
                 return main;
             }
 
+            public override object? visitBlockExpr(Expr.Block expr)
+            {
+                foreach (var blockExpr in expr.block)
+                {
+                    blockExpr.Accept(this);
+                    index++;
+                }
+                return null;
+            }
 
             public override object? visitFunctionExpr(Expr.Function expr)
             {
@@ -106,6 +119,45 @@ namespace Espionage
                 expr.block.Accept(this);
                 return null;
             }
+            public override object? visitConditionalExpr(Expr.Conditional expr)
+            {
+                if (expr.type.type == "if")
+                {
+                    waitingIf = new Tuple<bool, int, Expr.If>(true, index, (Expr.If)expr);
+                }
+                else if (expr.type.type == "else if")
+                {
+                    if (waitingIf.Item1 == true && waitingIf.Item2 == (index - 1))
+                    {
+                        Expr.ElseIf elif = (Expr.ElseIf)expr;
+                        elif.top = waitingIf.Item3;
+                        waitingIf.Item3.ElseIfs.Add(elif);
+                        waitingIf = new(true, waitingIf.Item2+1, waitingIf.Item3);
+                    }
+                    else
+                    {
+                        throw new Errors.BackendError(ErrorType.BackendException, "Invalid Else If", "'else if' conditional has no matching 'if'");
+                    }
+                }
+                else if (expr.type.type == "else")
+                {
+                    if (waitingIf.Item1 == true && waitingIf.Item2 == (index - 1))
+                    {
+                        Expr.Else _else = (Expr.Else)expr;
+                        _else.top = waitingIf.Item3;
+                        waitingIf.Item3._else = _else;
+                        waitingIf = new(false, waitingIf.Item2, null);
+                    }
+                    else
+                    {
+                        throw new Errors.BackendError(ErrorType.BackendException, "Invalid Else", "'else' conditional has no matching 'if'");
+                    }
+                }
+                int tmpidx = index;
+                base.visitConditionalExpr(expr);
+                index = tmpidx;
+                return null;
+            }
 
             public override object? visitNewExpr(Expr.New expr)
             {
@@ -145,6 +197,7 @@ namespace Espionage
                     undefClass.RemoveAll(x => resolvedClass.Contains(x));
                 }
             }
+
 
             private Expr.Function ResolveCall(Expr.Call expr)
             {
