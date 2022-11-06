@@ -75,19 +75,42 @@ namespace Espionage
                 return null;
             }
 
+            public override object? visitPrimitiveExpr(Expr.Primitive expr)
+            {
+                // Function Todo Notice:
+                // Note: since classes aren't implemented yet, functions are in a very early stage.
+                // The flaws with storing functions on the stack, function defitions, function calls, sizeof, and typeof will be resolved in later commits.
+                string type = expr.literal.type.lexeme;
+                string name = expr.literal.name.lexeme;
+
+                base.visitPrimitiveExpr(expr);
+
+                int size = expr.literal.size;
+                if (stack.ContainsKey(name))
+                {
+                    throw new Errors.BackendError(ErrorType.BackendException, "Double Declaration", $"A variable named '{name}' is already defined in this scope", callStack);
+                }
+                stack.AddPrim(type, name, expr.literal.Location(size), size);
+                expr.stackOffset = stack.stackOffset;
+                return null;
+            }
+
             public override object? visitFunctionExpr(Expr.Function expr)
             {
+                stack.AddFunc(expr.name.lexeme, expr._static);
+
                 int paramsCount = expr.parameters.Count;
                 for (int i = 0; i < paramsCount; i++)
                 {
                     Expr.Parameter paramExpr = expr.parameters[i];
-                    stack.Add(paramExpr.variable.lexeme, paramExpr.variable.lexeme, InstructionTypes.paramRegister[i]);
+                    stack.Add(paramExpr.type.lexeme, paramExpr.variable.lexeme, InstructionTypes.paramRegister[i]);
                 }
                 callStack.Add(expr);
 
                 expr.block.Accept(this);
 
                 callStack.RemoveLast();
+
                 for (int i = 0; i < paramsCount; i++)
                 {
                     stack.RemoveLast();

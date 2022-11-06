@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -36,16 +34,44 @@ namespace Espionage
 
         internal static string TypeOf(Expr literal)
         {
-            return "int";
+            if (literal is Expr.Class)
+            {
+                return ((Expr.Class)literal).name.lexeme;
+        }
+            if (literal is Expr.Function)
+            {
+                return ((Expr.Function)literal).name.lexeme;
+            }
+            if (literal is Expr.Literal)
+            {
+                var l = (Expr.Literal)literal;
+                if (Regex.IsMatch(l.literal.lexeme, TokenList.Tokens["NUMBERDOT"]))
+                {
+                    return "number";
+                }
+
+                if (Regex.IsMatch(l.literal.lexeme, TokenList.Tokens["STRING"]))
+                {
+                    return "string";
+                }
+
+                if (Regex.IsMatch(l.literal.lexeme, TokenList.Tokens["NUMBER"]))
+                {
+                    return "number";
+                }
+            }
+            throw new Exception("Invalid TypeOf");
         }
 
         internal static int SizeOf(string type)
         {
-            if (type == "int")
+            if (Primitives.PrimitiveSize.ContainsKey(type))
             {
-                return 8;
+                return Primitives.PrimitiveSize[type];
             }
             return 8;
+            throw new Exception("Invalid sizeOf");
+
         }
     }
 

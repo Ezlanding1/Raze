@@ -59,29 +59,38 @@ namespace Espionage
 
                 // Lower AST to ASM
                 Assembler assembler = new(expressions);
-                List<List<Instruction>> output = assembler.Assemble();
+                var output = assembler.Assemble();
+                var instrucitons = output.Item1;
+                var data = output.Item2;
 
 
                 Console.WriteLine("global _start");
-                Console.WriteLine("_start:");
                 List<Instruction> header = new List<Instruction>()
                 {
+                    { new Instruction.Function("_start") },
                     { new Instruction.Unary("CALL", "Main") },
                     { new Instruction.Binary("MOV", "RDI", "RAX") },
                     { new Instruction.Binary("MOV", "RAX", "60") },
                     { new Instruction.Zero("SYSCALL") }
                 };
-                PrintInstructions(header);
-                PrintInstructionsList(output);
+                PrintInstructions("section .text", header);
+                PrintInstructionsList(instrucitons);
+                PrintInstructions("section .data", data);
                 static void PrintInstructionsList(List<List<Instruction>> instructions)
                 {
                     foreach (List<Instruction> instructionList in instructions)
                     {
-                        PrintInstructions(instructionList);
+                        PrintInstructions("", instructionList);
                     }
                 }
-                static void PrintInstructions(List<Instruction> instructions)
+                static void PrintInstructions(string header, List<Instruction> instructions)
                 {
+                    if (header != "")
+                    {
+                        Console.WriteLine();
+                        Console.WriteLine(header);
+                        Console.WriteLine();
+                    }
                     foreach (Instruction instruction in instructions)
                     {
                         if (instruction is Instruction.Class)
@@ -108,6 +117,11 @@ namespace Espionage
                         {
                             var ins = (Instruction.Zero)instruction;
                             Console.WriteLine(ins.instruction);
+                        }
+                        else if (instruction is Instruction.Data)
+                        {
+                            var ins = (Instruction.Data)instruction;
+                            Console.WriteLine($"{ins.name}: {ins.size} {ins.value}");
                         }
                     }
                 }

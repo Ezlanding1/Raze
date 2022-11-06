@@ -10,7 +10,7 @@ namespace Espionage
     internal class Assembler : Expr.IVisitor<Instruction.Register?>
     {
         List<Expr> expressions;
-        List<Instruction> data;
+        Dictionary<string, Instruction> data;
         List<List<Instruction>> instructions;
         int index;
         public Assembler(List<Expr> expressions)
@@ -21,13 +21,13 @@ namespace Espionage
             this.index = -1;
         }
         
-        internal List<List<Instruction>> Assemble()
+        internal (List<List<Instruction>>, List<Instruction>) Assemble()
         {
             foreach (Expr expr in expressions)
             {
                 expr.Accept(this);
             }
-            return instructions;
+            return (instructions, data.Values.ToList());
         }
 
         public Instruction.Register? visitBinaryExpr(Expr.Binary expr)
@@ -62,7 +62,7 @@ namespace Espionage
                 MovToRegister(InstructionTypes.paramRegister[i], arg.name);
             }
 
-            string operand1 = expr.callee.lexeme;
+            string operand1 = expr.callee.variable.lexeme;
             emit(new Instruction.Unary("CALL", operand1));
             return new Instruction.Register(true, "RAX");
         }
@@ -190,13 +190,19 @@ namespace Espionage
 
         public Instruction.Register? visitAssignExpr(Expr.Assign expr)
         {
-            string type = expr.type;
-            string operand1 = expr.variable.lexeme;
+            string type = expr.variable.type;
+            string operand1 = expr.variable.Accept(this).name;
             Instruction.Register operand2 = expr.value.Accept(this);
             if (operand2.name != "null")
             {
                 Declare(type, expr.offset, operand1, operand2.name);
             }
+            return null;
+        }
+
+        public Instruction.Register? visitPrimitiveExpr(Expr.Primitive expr)
+        {
+            Declare(expr);
             return null;
         }
 
@@ -208,8 +214,34 @@ namespace Espionage
         private void Declare(string type, int stackOffset, string name, object value)
         {
             int size = Analyzer.SizeOf(type);
+            if (type == "string")
+            {
+                emitData(name, new Instruction.Data(name, InstructionTypes.dataSize[1], value.ToString()));
+                return;
+            }
             emit(new Instruction.Binary("MOV", $"{InstructionTypes.wordSize[size]} [RBP-{stackOffset}]", value.ToString()));
         }
+        private void Declare(Expr.Primitive primitive)
+        {
+            string name = primitive.literal.name.lexeme;
+            string type = primitive.literal.type.lexeme;
+            int size = primitive.literal.size;
+            Instruction.Register operand2 = primitive.literal.value.Accept(this);
+            string value = operand2.name;
+            if (type == "string")
+            {
+                emitData(name, new Instruction.Data(name, InstructionTypes.dataSize[1], value));
+            }
+            else if (type == "number")
+            {
+                emit(new Instruction.Binary("MOV", $"{InstructionTypes.wordSize[size]} [RBP-{primitive.stackOffset}]", value));
+            }
+            else
+            {
+                throw new Exception("Espionage Error: Internal Type Not Implemented (declare)");
+            }
+        }
+
         private void MovToRegister(string register, string literal)
         {
             emit(new Instruction.Binary("MOV", register, literal));
@@ -222,9 +254,9 @@ namespace Espionage
             }
             instructions[index].Add(instruction);
         }
-        private void emitData(Instruction instruction)
+        private void emitData(string name, Instruction instruction)
         {
-            data.Add(instruction);
+            data[name] = instruction;
         }
     }
     internal class Instruction
@@ -241,9 +273,9 @@ namespace Espionage
         }
         internal class Data : Instruction
         {
-            string name;
-            string size;
-            string value;
+            public string name;
+            public string size;
+            public string value;
             public Data(string name, string size, string value)
             {
                 this.name = name;
@@ -358,6 +390,14 @@ namespace Espionage
             { 4, "DWORD"}, // 32-Bits
             { 2, "WORD"}, // 16-Bits
             { 1, "BYTE"}, // 8-Bits
+        };
+
+        internal readonly static Dictionary<int, string> dataSize = new()
+        {
+            { 8, "dq"}, // 64-Bits
+            { 4, "dd"}, // 32-Bits
+            { 2, "dw"}, // 16-Bits
+            { 1, "db"}, // 8-Bits
         };
     }
 }

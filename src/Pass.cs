@@ -138,6 +138,12 @@ namespace Espionage
             {
                 return null;
             }
+
+            public virtual object? visitPrimitiveExpr(Expr.Primitive expr)
+            {
+                expr.literal.value.Accept(this);
+                return null;
+            }
         }
     }
 }

@@ -231,9 +231,11 @@ namespace Espionage
                         Token name = previous();
                         Expect("EQUALS", "Expected '=' when declaring variable");
                         Expr value = Logical();
-                        expr = new Expr.Declare(variable, name, value);
+                        if (value is Expr.Literal)
+                        {
+                            expr = new Expr.Primitive(Primitives.ToPrimitive(variable, name, (Expr.Literal)value));
                     }
-                    else if (TypeMatch("EQUALS", "PLUSEQUALS", "MINUSEQUALS"))
+                        else
                     {
                         Expr right = Logical();
                         expr = new Expr.Assign(variable, right);
@@ -317,6 +319,24 @@ namespace Espionage
             }
             return false;
         }
+
+        private bool TypeMatch(Dictionary<string, Primitives.PrimitiveType>.KeyCollection types)
+        {
+            if (current == null)
+            {
+                return false;
+            }
+            foreach (var type in types)
+            {
+                if (current.type == type)
+                {
+                    advance();
+                    return true;
+                }
+            }
+            return false;
+        }
+
         private void Expect(string type, string errorMessage)
         {
             if (current != null && current.type == type)

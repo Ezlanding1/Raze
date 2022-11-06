@@ -29,6 +29,7 @@ namespace Espionage
             public T visitClassExpr(Class expr);
             public T visitReturnExpr(Return expr);
             public T visitAssignExpr(Assign expr);
+            public T visitPrimitiveExpr(Primitive expr);
             public T visitKeywordExpr(Keyword expr);
         }
 
@@ -255,6 +256,23 @@ namespace Espionage
             {
                 return visitor.visitVariableExpr(this);
             }
+        }
+
+        public class Primitive : Expr
+        {
+            public Primitives.PrimitiveType literal;
+            public int stackOffset;
+
+            public Primitive(Primitives.PrimitiveType literal)
+            {
+                this.literal = literal;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.visitPrimitiveExpr(this);
+        }
+
         }
 
         public class Keyword : Expr

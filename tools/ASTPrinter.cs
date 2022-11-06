@@ -221,5 +221,11 @@ namespace Espionage.Tools
             PrintAST(expr.keyword);
             return null;
         }
+
+        public object? visitPrimitiveExpr(Expr.Primitive expr)
+        {
+            PrintAST(expr.literal.value);
+            return null;
+        }
     }
 }
