@@ -18,6 +18,7 @@ namespace Espionage
         {
             this.expressions = expressions;
             this.data = new();
+            data.Add("", new Instruction.Section("data"));
             this.instructions = new();
             this.conditionalCount = 0;
             this.index = -1;
@@ -40,17 +41,17 @@ namespace Espionage
 
             if (operand1.name == "RAX") 
             {
-                emit(new Instruction.Binary(instruction, operand1.name, operand2.name));
+                emit(new Instruction.Binary(instruction, operand1, operand2));
             }
             else if (operand2.name == "RAX")
             {
-                emit(new Instruction.Binary(instruction, operand2.name, operand1.name));
+                emit(new Instruction.Binary(instruction, operand2, operand1));
             }
             else
             {
-                MovToRegister("RAX", operand1.name);
+                MovToRegister("RAX", new Instruction.Register(operand1));
                 operand1.name = "RAX";
-                emit(new Instruction.Binary(instruction, operand1.name, operand2.name));
+                emit(new Instruction.Binary(instruction, operand1, operand2));
             }
             return new Instruction.Register(false, "RAX");
         }
@@ -61,7 +62,7 @@ namespace Espionage
             for (int i = 0; i < expr.arguments.Count; i++)
             {
                 Instruction.Register arg = expr.arguments[i].Accept(this);
-                MovToRegister(InstructionTypes.paramRegister[i], arg.name);
+                MovToRegister(InstructionTypes.paramRegister[i], arg);
             }
 
             string operand1 = expr.callee.variable.lexeme;
@@ -143,7 +144,7 @@ namespace Espionage
             Instruction.Register operand1 = expr.operand.Accept(this);
             if (instruction == "RET")
             {
-                MovToRegister("RAX", operand1.name);
+                MovToRegister("RAX", operand1);
                 return new Instruction.Register(true, "RET");
             }
             throw new NotImplementedException();
@@ -180,7 +181,7 @@ namespace Espionage
 
                 foreach (Expr.ElseIf elif in _if.ElseIfs)
                 {
-                    fJump.operand = (".L" + conditionalCount);
+                    fJump.operand = new Instruction.FunctionRef(".L" + conditionalCount);
                     emit(new Instruction.Function(".L" + conditionalCount));
                     conditionalCount++;
 
@@ -197,7 +198,7 @@ namespace Espionage
                     emit(tJump);
                 }
 
-                fJump.operand = (".L" + conditionalCount);
+                fJump.operand = new Instruction.FunctionRef(".L" + conditionalCount);
                 emit(new Instruction.Function(".L" + conditionalCount));
                 conditionalCount++;
                 if (_if._else != null)
@@ -208,7 +209,7 @@ namespace Espionage
                     }
                 }
                 emit(new Instruction.Function(".L" + conditionalCount));
-                tJump.operand = (".L" + conditionalCount);
+                tJump.operand = new Instruction.FunctionRef(".L" + conditionalCount);
 
                 index++;
 
@@ -238,7 +239,7 @@ namespace Espionage
         public Instruction.Register? visitReturnExpr(Expr.Return expr)
         {
             Instruction.Register register = expr.value.Accept(this);
-            MovToRegister("RAX", register.name);
+            MovToRegister("RAX", register);
             emit(new Instruction.Unary("POP", "RBP"));
             emit(new Instruction.Zero("RET"));
             return register;
@@ -298,9 +299,9 @@ namespace Espionage
             }
         }
 
-        private void MovToRegister(string register, string literal)
+        private void MovToRegister(string register, Instruction.Register literal)
         {
-            emit(new Instruction.Binary("MOV", register, literal));
+            emit(new Instruction.Binary("MOV", new Instruction.Register(false, register), literal));
         }
         private void emit(Instruction instruction)
         {
@@ -321,7 +322,7 @@ namespace Espionage
             for (int i = 0; i < expr.arguments.Count; i++)
             {
                 Instruction.Register arg = expr.arguments[i].Accept(this);
-                MovToRegister(InstructionTypes.paramRegister[i], arg.name);
+                MovToRegister(InstructionTypes.paramRegister[i], arg);
             }
 
             foreach (var blockExpr in expr.internalClass.block.block)
@@ -331,9 +332,53 @@ namespace Espionage
             return new Instruction.Register(false, "CLASS");
         }
     }
-    internal class Instruction
+    internal abstract class Instruction
     {
-        internal class Register
+        public abstract string Accept(IVisitor visitor);
+
+        public interface IVisitor
+        {
+            public string visitGlobal(Global instruction);
+            public string visitSection(Section instruction);
+            public string visitRegister(Register instruction);
+            public string visitData(Data instruction);
+            public string visitFunction(Function instruction);
+            public string visitReference(FunctionRef instruction);
+            public string visitClass(Class instruction);
+            public string visitBinary(Binary instruction);
+            public string visitUnary(Unary instruction);
+            public string visitZero(Zero instruction);
+            public string visitComment(Comment instruction);
+        }
+
+        internal class Global : Instruction
+        {
+            public string name;
+            public Global(string name)
+            {
+                this.name = name;
+            }
+
+            public override string Accept(IVisitor visitor)
+            {
+                return visitor.visitGlobal(this);
+            }
+        }
+
+        internal class Section : Instruction
+        {
+            public string name;
+            public Section(string name)
+            {
+                this.name = name;
+            }
+
+            public override string Accept(IVisitor visitor)
+            {
+                return visitor.visitSection(this);
+            }
+        }
+        internal class Register : Instruction
         {
             public bool simple;
             public string name;
@@ -341,6 +386,17 @@ namespace Espionage
             {
                 this.simple = simple;
                 this.name = name;
+            }
+
+            public Register(Register @this)
+            {
+                this.simple = @this.simple;
+                this.name = @this.name;
+            }
+
+            public override string Accept(IVisitor visitor)
+            {
+                return visitor.visitRegister(this);
             }
         }
         internal class Data : Instruction
@@ -354,6 +410,11 @@ namespace Espionage
                 this.size = size;
                 this.value = value;
             }
+
+            public override string Accept(IVisitor visitor)
+            {
+                return visitor.visitData(this);
+            }
         }
 
         internal class Function : Instruction
@@ -363,8 +424,27 @@ namespace Espionage
             {
                 this.name = name;
             }
+
+            public override string Accept(IVisitor visitor)
+            {
+                return visitor.visitFunction(this);
+            }
         }
-        
+
+        internal class FunctionRef : Instruction
+        {
+            public string name;
+            public FunctionRef(string name)
+            {
+                this.name = name;
+            }
+
+            public override string Accept(IVisitor visitor)
+            {
+                return visitor.visitReference(this);
+            }
+        }
+
         internal class Class : Instruction
         {
             public string name;
@@ -372,26 +452,56 @@ namespace Espionage
             {
                 this.name = name;
             }
+
+            public override string Accept(IVisitor visitor)
+            {
+                return visitor.visitClass(this);
+            }
         }
 
         internal class Binary : Instruction
         {
-            public string instruction, operand1, operand2;
-            public Binary(string instruction, string operand1, string operand2)
+            public string instruction;
+            public Instruction operand1, operand2;
+            public Binary(string instruction, Instruction operand1, Instruction operand2)
             {
                 this.instruction = instruction;
                 this.operand1 = operand1;
                 this.operand2 = operand2;
             }
+
+            public Binary(string instruction, string operand1, string operand2)
+            {
+                this.instruction = instruction;
+                this.operand1 = new Register(false, operand1);
+                this.operand2 = new Register(false, operand2);
+            }
+
+            public override string Accept(IVisitor visitor)
+            {
+                return visitor.visitBinary(this);
+            }
         }
 
         internal class Unary : Instruction
         {
-            public string instruction, operand;
-            public Unary(string instruction, string operand)
+            public Instruction operand;
+            public string instruction;
+            public Unary(string instruction, Instruction operand)
             {
                 this.instruction = instruction;
                 this.operand = operand;
+            }
+
+            public Unary(string instruction, string operand)
+            {
+                this.instruction = instruction;
+                this.operand = new Instruction.Register(false, operand);
+            }
+
+            public override string Accept(IVisitor visitor)
+            {
+                return visitor.visitUnary(this);
             }
         }
 
@@ -401,6 +511,25 @@ namespace Espionage
             public Zero(string instruction)
             {
                 this.instruction = instruction;
+            }
+
+            public override string Accept(IVisitor visitor)
+            {
+                return visitor.visitZero(this);
+            }
+        }
+
+        internal class Comment : Instruction
+        {
+            public string comment;
+            public Comment(string comment)
+            {
+                this.comment = comment;
+            }
+
+            public override string Accept(IVisitor visitor)
+            {
+                return visitor.visitComment(this);
             }
         }
     }
