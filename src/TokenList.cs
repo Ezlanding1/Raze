@@ -85,7 +85,8 @@ namespace Espionage
             "return",
             "for",
             "while",
-            "function"
+            "function",
+            "new"
         };
     }
 }

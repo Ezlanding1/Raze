@@ -13,13 +13,20 @@ namespace Espionage
     {
         internal partial class InitialPass : Pass
         {
+            Dictionary<string, Expr.Class> classes;
+            List<Expr.New> undefClass;
+
+            string declClassName;
             Dictionary<string, Expr.Function> functions;
             List<Expr.Call> undefCalls;
             Expr.Function main;
             public InitialPass(List<Expr> expressions) : base(expressions)
             {
-                this.undefCalls = new();
+                this.classes = new();
+                this.undefClass = new();
+
                 this.functions = new();
+                this.undefCalls = new();
             }
 
             internal override List<Expr> Run()
@@ -32,7 +39,14 @@ namespace Espionage
                 {
                     for (int i = 0, stackCount = undefCalls.Count; i < stackCount; i++)
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The function '{undefCalls[i].callee.lexeme}' does not exist in the current context");
+                        throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The function '{undefCalls[i].callee.variable.lexeme}' does not exist in the current context");
+                    }
+                }
+                if (undefClass.Count > 0)
+                {
+                    for (int i = 0, stackCount = undefClass.Count; i < stackCount; i++)
+                    {
+                        throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The function '{undefClass[i]._className.lexeme}' does not exist in the current context");
                     }
                 }
                 if (main == null)
@@ -46,6 +60,7 @@ namespace Espionage
             {
                 return main;
             }
+
 
             public override object? visitFunctionExpr(Expr.Function expr)
             {
@@ -72,9 +87,42 @@ namespace Espionage
                 return null;
             }
 
+            public override object? visitCallExpr(Expr.Call expr)
+            {
+                var function = ResolveCall(expr);
+                expr.internalFunction = function;
+                return null;
+            }
+
+            public override object? visitDeclareExpr(Expr.Declare expr)
+            {
+                declClassName = expr.name.lexeme;
+                return base.visitDeclareExpr(expr);
+            }
+
+            public override object? visitClassExpr(Expr.Class expr)
+            {
+                ResolveClass(expr);
+                expr.block.Accept(this);
+                return null;
+            }
+
+            public override object? visitNewExpr(Expr.New expr)
+            {
+                var _class = ResolveClassRef(expr);
+                expr.internalClass = _class;
+                expr.internalClass.dName = declClassName;
+                expr.internalClass.block._classBlock = true;
+
+                var function = ResolveCall(new Expr.Call(new Expr.Variable(expr._className), expr.arguments));
+                function.constructor = true;
+                expr.internalFunction = function;
+                return null;
+            }
+
             private void ResolveFunction(Expr.Function expr)
             {
-                List<Expr.Call> resolvedCalls = undefCalls.FindAll(x => x.callee.lexeme == expr.name.lexeme);
+                List<Expr.Call> resolvedCalls = undefCalls.FindAll(x => x.callee.variable.lexeme == expr.name.lexeme);
 
                 functions.Add(expr.name.lexeme, expr);
 
@@ -85,10 +133,23 @@ namespace Espionage
                 }
             }
 
+            private void ResolveClass(Expr.Class expr)
+            {
+                List<Expr.New> resolvedClass = undefClass.FindAll(x => x._className.lexeme == expr.name.lexeme);
+
+                classes.Add(expr.name.lexeme, expr);
+
+                if (resolvedClass != null && resolvedClass.Count != 0)
+                {
+                    ValidClassCheck(expr, resolvedClass);
+                    undefClass.RemoveAll(x => resolvedClass.Contains(x));
+                }
+            }
+
             private Expr.Function ResolveCall(Expr.Call expr)
             {
                 Expr.Function value;
-                string name = expr.callee.lexeme;
+                string name = expr.callee.variable.lexeme;
                 if (functions.TryGetValue(name, out value))
                 {
                     ValidCallCheck(value, new List<Expr.Call>() { expr });
@@ -96,6 +157,21 @@ namespace Espionage
                 else
                 {
                     undefCalls.Add(expr);
+                }
+                return value;
+            }
+
+            private Expr.Class ResolveClassRef(Expr.New expr)
+            {
+                Expr.Class value;
+                string name = expr._className.lexeme;
+                if (classes.TryGetValue(name, out value))
+                {
+                    ValidClassCheck(value, new List<Expr.New>() { expr });
+                }
+                else
+                {
+                    undefClass.Add(expr);
                 }
                 return value;
             }
@@ -124,11 +200,13 @@ namespace Espionage
                 }
             }
 
-            public override object? visitCallExpr(Expr.Call expr)
+            private void ValidClassCheck(Expr.Class _class, List<Expr.New> resolvedRefs)
             {
-                var function = ResolveCall(expr);
-                expr.internalFunction = function;
-                return null;
+                //string name = _class.name.lexeme;
+                foreach (var c in resolvedRefs)
+                {
+                    c.internalClass = _class;
+                }
             }
         }
     }

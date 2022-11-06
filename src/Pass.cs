@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Espionage.Tools;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -96,11 +97,6 @@ namespace Espionage
                 return null;
             }
 
-            public virtual object? visitSetExpr(Expr.Set expr)
-            {
-                return null;
-            }
-
             public virtual object? visitSuperExpr(Expr.Super expr)
             {
                 return null;
@@ -142,6 +138,23 @@ namespace Espionage
             public virtual object? visitPrimitiveExpr(Expr.Primitive expr)
             {
                 expr.literal.value.Accept(this);
+                return null;
+            }
+
+            public virtual object? visitNewExpr(Expr.New expr)
+            {
+
+                expr.internalClass.Accept(this);
+
+
+                foreach (Expr argExpr in expr.arguments)
+                {
+                    argExpr.Accept(this);
+                }
+                expr.internalFunction.found = true;
+                expr.internalFunction.Accept(this);
+                expr.internalFunction.found = false;
+
                 return null;
             }
         }

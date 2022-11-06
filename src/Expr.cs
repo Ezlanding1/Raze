@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.AccessControl;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -21,7 +22,6 @@ namespace Espionage
             public T visitCallExpr(Call expr);
             public T visitGetExpr(Get expr);
             public T visitBlockExpr(Block expr);
-            public T visitSetExpr(Set expr);
             public T visitSuperExpr(Super expr);
             public T visitThisExpr(This expr);
             public T visitVariableExpr(Variable expr);
@@ -31,6 +31,7 @@ namespace Espionage
             public T visitAssignExpr(Assign expr);
             public T visitPrimitiveExpr(Primitive expr);
             public T visitKeywordExpr(Keyword expr);
+            public T visitNewExpr(New expr);
         }
 
         public class Binary : Expr
@@ -145,10 +146,10 @@ namespace Espionage
 
         public class Call : Expr
         {
-            public Token callee;
+            public Var callee;
             public Function internalFunction;
             public List<Expr> arguments;
-            public Call(Token callee, List<Expr> arguments)
+            public Call(Var callee, List<Expr> arguments)
             {
                 this.callee = callee;
                 this.arguments = arguments;
@@ -161,16 +162,14 @@ namespace Espionage
 
         }
 
-        public class Get : Expr
+        public class Get : Var
         {
-            public Expr obj;
-            public Token name;
-            public Get(Expr obj, Token name)
+            public Var get;
+            public Get(Token getter, Var get)
+                : base(getter)
             {
-                this.obj = obj;
-                this.name = name;
+                this.get = get;
             }
-
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.visitGetExpr(this);
@@ -181,6 +180,8 @@ namespace Espionage
         public class Block : Expr
         {
             public List<Expr> block;
+            public bool _classBlock;
+
             public Block(List<Expr> block)
             {
                 this.block = block;
@@ -192,24 +193,6 @@ namespace Espionage
             }
         }
 
-        public class Set : Expr
-        {
-            public Expr obj;
-            public Token name;
-            public Expr value;
-            public Set(Expr obj, Token name, Expr value)
-            {
-                this.obj = obj;
-                this.name = name;
-                this.value = value;
-            }
-
-            public override T Accept<T>(IVisitor<T> visitor)
-            {
-                return visitor.visitSetExpr(this);
-            }
-
-        }
         public class Super : Expr
         {
             public Token keyword;
@@ -241,15 +224,14 @@ namespace Espionage
 
         }
 
-        public class Variable : Expr
+        public class Variable : Var
         {
-            public Token variable;
             public string stackPos;
             public bool register;
-
             public Variable(Token variable)
+                :base(variable)
             {
-                this.variable = variable;
+
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -271,7 +253,7 @@ namespace Espionage
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.visitPrimitiveExpr(this);
-        }
+            }
 
         }
 
@@ -287,6 +269,26 @@ namespace Espionage
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.visitKeywordExpr(this);
+            }
+        }
+
+        public class New : Expr
+        {
+            public Token _className;
+            public List<Expr> arguments;
+
+            public Function internalFunction;
+            public Class internalClass;
+
+            public New(Token _className, List<Expr> arguments)
+            {
+                this._className = _className;
+                this.arguments = arguments;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.visitNewExpr(this);
             }
         }
 
@@ -326,6 +328,7 @@ namespace Espionage
                 get { return parameters.Count; }
             }
             public bool _static;
+            public bool constructor;
             public bool found;
             public Function(Token name, List<Parameter> parameters, Block block)
                 : base(name, block)
@@ -341,6 +344,7 @@ namespace Espionage
 
         public class Class : Definition
         {
+            public string dName;
             public Class(Token name, Block block) : base(name, block) { }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -365,12 +369,11 @@ namespace Espionage
 
         public class Assign : Expr
         {
-            public Token variable;
+            public Var variable;
             public Expr value;
-            public string type;
             public int offset;
 
-            public Assign(Token variable, Expr value)
+            public Assign(Var variable, Expr value)
             {
                 this.variable = variable;
                 this.value = value;
@@ -380,6 +383,18 @@ namespace Espionage
             {
                 return visitor.visitAssignExpr(this);
             }
+        }
+
+        public abstract class Var : Expr
+        {
+            public Token variable;
+            public string type;
+            public Var(Token variable)
+            {
+                this.variable = variable;
+            }
+
+            public abstract override T Accept<T>(IVisitor<T> visitor);
         }
     }
 }

@@ -36,7 +36,7 @@ namespace Espionage
             Instruction.Register operand1 = expr.left.Accept(this);
             Instruction.Register operand2 = expr.right.Accept(this);
 
-            if (operand1.name == "RAX")
+            if (operand1.name == "RAX") 
             {
                 emit(new Instruction.Binary(instruction, operand1.name, operand2.name));
             }
@@ -69,7 +69,8 @@ namespace Espionage
 
         public Instruction.Register? visitClassExpr(Expr.Class expr)
         {
-            throw new NotImplementedException();
+            return null;
+            //throw new NotImplementedException();
             //emit(new Instruction.Class(expr.name.lexeme));
             //expr.block.Accept(this);
             //return null;
@@ -80,6 +81,10 @@ namespace Espionage
             string type = expr.type.lexeme;
             string operand1 = expr.name.lexeme;
             Instruction.Register operand2 = expr.value.Accept(this);
+            if (!operand2.simple && operand2.name == "CLASS")
+            {
+                return null;
+            }
             if (operand2.name != "null")
             {
                 Declare(type, expr.offset, operand1, operand2.name);
@@ -89,6 +94,14 @@ namespace Espionage
 
         public Instruction.Register? visitFunctionExpr(Expr.Function expr)
         {
+            if (expr.constructor)
+            {
+                foreach (var blockExpr in expr.block.block)
+                {
+                    blockExpr.Accept(this);
+                }
+                return new Instruction.Register(false, "RAX");
+            }
             index++;
             emit(new Instruction.Function(expr.name.lexeme));
             expr.block.Accept(this);
@@ -98,7 +111,8 @@ namespace Espionage
 
         public Instruction.Register? visitGetExpr(Expr.Get expr)
         {
-            throw new NotImplementedException();
+            
+            return expr.get.Accept(this);
         }
 
         public Instruction.Register? visitGroupingExpr(Expr.Grouping expr)
@@ -109,11 +123,6 @@ namespace Espionage
         public Instruction.Register? visitLiteralExpr(Expr.Literal expr)
         {
             return new Instruction.Register(true, expr.literal.lexeme);
-        }
-
-        public Instruction.Register? visitSetExpr(Expr.Set expr)
-        {
-            throw new NotImplementedException();
         }
 
         public Instruction.Register? visitSuperExpr(Expr.Super expr)
@@ -257,6 +266,22 @@ namespace Espionage
         private void emitData(string name, Instruction instruction)
         {
             data[name] = instruction;
+        }
+
+        public Instruction.Register? visitNewExpr(Expr.New expr)
+        {
+            //Important Note: Emit arguments (to stack) first
+            for (int i = 0; i < expr.arguments.Count; i++)
+            {
+                Instruction.Register arg = expr.arguments[i].Accept(this);
+                MovToRegister(InstructionTypes.paramRegister[i], arg.name);
+            }
+
+            foreach (var blockExpr in expr.internalClass.block.block)
+            {
+                blockExpr.Accept(this);
+            }
+            return new Instruction.Register(false, "CLASS");
         }
     }
     internal class Instruction

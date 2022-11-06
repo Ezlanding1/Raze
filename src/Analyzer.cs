@@ -37,7 +37,7 @@ namespace Espionage
             if (literal is Expr.Class)
             {
                 return ((Expr.Class)literal).name.lexeme;
-        }
+            }
             if (literal is Expr.Function)
             {
                 return ((Expr.Function)literal).name.lexeme;
@@ -77,63 +77,298 @@ namespace Espionage
 
     internal class KeyValueStack
     {
-        private Dictionary<string, string> dictStack;
-        private List<Tuple<string, string>> listStack;
-        public int stackOffet;
-        public int Count { get { return listStack.Count; } }
+        private stackObject.Container head;
+        private stackObject.Container current;
+        private stackObject.Container tempCurrent;
+
+        private List<string> history;
+        public int stackOffset;
+        public int count;
         public KeyValueStack()
         {
-            this.dictStack = new();
-            this.listStack = new();
-            this.stackOffet = 0;
+            this.history = new();
+            InitHead();
+            current = head;
+            this.stackOffset = 0;
+            this.tempCurrent = null;
+        }
+
+        private void InitHead()
+        {
+            count = 0;
+            AddHistory("Container_C");
+            head = new stackObject.Class("GLOBAL", "");
+        }
+
+        private void AddHistory(string action)
+        {
+            count++;
+            history.Add(action);
+        }
+
+        private void RemoveLastHistory()
+        {
+            count--;
+            history.RemoveAt(history.Count - 1);
+        }
+
+        public void RemoveLastParam()
+        {
+            count--;
+            history.RemoveAt(history.Count - 1);
+        }
+
+        public bool SwitchContext(string type, string to="")
+        {
+            switch (type)
+            {
+                case "BACK":
+                    return BackContext();
+                case "DOWN":
+                    AddHistory(to);
+                    return DownContext(to, current);
+                case "UP":
+                    AddHistory(to);
+                    return UpContext(to);
+                default:
+                    return false;
+            }
+        }
+
+        private bool BackContext()
+        {
+            RemoveLastHistory();
+            if (tempCurrent == null)
+            {
+                return false;
+            }
+            current = tempCurrent;
+            return true;
+        }
+
+        private bool DownContext(string to, stackObject.Container currentContainer)
+        {
+            foreach (stackObject.Container container in currentContainer.containers)
+            {
+                if (container.type == "C" && ((stackObject.Container.Class)container).dName == to)
+                {
+                    tempCurrent = current;
+                    current = container;
+                    return true;
+                }
+                if (DownContext(to, container))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private bool UpContext(string to)
+        {
+            throw new NotImplementedException();
         }
 
         public void Add(string type, string key, int? value)
         {
-            stackOffet += (int)value;
-            dictStack[key] = stackOffet.ToString();
-            listStack.Add(new Tuple<string, string>(key, type));
+            AddHistory("Var");
+
+            stackOffset += (int)value;
+            stackObject.Var var = new stackObject.Var(type, key, stackOffset.ToString());
+            current.vars.Add(var);
         }
 
+        public void AddFunc(string name, bool _static)
+        {
+            AddHistory("Container_F");
+
+            stackObject.Function func = new stackObject.Function(name, _static);
+            func.enclosing = current;
+            current.containers.Add(func);
+            current = func;
+        }
+
+        public void AddClass(string type, string name)
+        {
+            AddHistory("Container_C");
+
+            stackObject.Class _class = new stackObject.Class(type, name);
+            _class.enclosing = current;
+            current.containers.Add(_class);
+            current = _class;
+        }
+
+        public void CurrentUp()
+        {
+            current = current.enclosing;
+        }
 
         public void Add(string type, string key, string value)
         {
-            dictStack[key] = value;
-            listStack.Add(new Tuple<string, string>(key, type));
+            AddHistory("Var");
+            stackObject.Var var = new stackObject.Var(type, key, value);
+            current.vars.Add(var);
+        }
+
+        public void AddPrim(string type, string key, string value, int offset)
+        {
+            AddHistory("Var");
+            stackOffset += offset;
+            stackObject.Var var = new stackObject.Var(type, key, value);
+            current.vars.Add(var);
         }
 
         public void Modify(string type, string key, int? value)
         {
-            dictStack[key] = stackOffet.ToString();
-            listStack.Remove(listStack.Find(x => x.Item1 == key));
-            listStack.Add(new Tuple<string, string>(key, type));
+            //dictStack[key].offset = stackOffset.ToString();
+            //stackObject.Container pointer = current;
+            //for (; pointer != null; pointer = pointer.enclosing)
+            //{
+            //    foreach (stackObject.Var var in pointer.vars)
+            //    {
+            //        if (var.name == key)
+            //        {
+            //            var.
+            //        }
+            //    }
+            //}
+            //var newVal = new Tuple<string, string>(key, type);
+            //for (int i = 0; i < listStack.Count; i++)
+            //{
+            //    if (listStack[i].Item1 == key)
+            //    {
+            //        listStack[i] = newVal;
+            //        break;
+            //    }
+            //}
         }
 
         public bool ContainsKey(string key)
         {
-            return (dictStack.ContainsKey(key) && dictStack[key] != null);
+            stackObject.Container pointer = current;
+            for (; pointer != null; pointer = pointer.enclosing)
+            {
+                foreach (stackObject.Var var in pointer.vars)
+                {
+                    if (var.name == key)
+                    {
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
-        public bool ContainsKey(string key, out string value)
+        public bool ContainsKey(string key, out string value, out string type)
         {
-            return (dictStack.TryGetValue(key, out value) && value != null);
+            stackObject.Container pointer = current;
+            for (; pointer != null; pointer = pointer.enclosing)
+            {
+                foreach (stackObject.Var var in pointer.vars)
+                {
+                    if (var.name == key)
+                    {
+                        value = var.offset;
+                        type = var.type;
+                        return true;
+                    }
+                }
+            }
+            value = "";
+            type = "";
+            return false;
         }
-        public string GetType(string variable)
-        {
-            return listStack.Find(x => x.Item1.Equals(variable)).Item2;
-        }
-        public string this[string index]
-        {
-            get { return dictStack[index]; }
-            set { dictStack[index] = value; }
-        }
-        public Tuple<string, string> this[int index]
-        {
-            get { return listStack[index]; }
-        }
+
         public void RemoveLast()
         {
-            dictStack[listStack[listStack.Count - 1].Item1] = null;
-            listStack.RemoveAt(listStack.Count - 1);
+            if (history[history.Count - 1] == "Var")
+            {
+                RemoveLastVar();
+                count--;
+                history.RemoveAt(history.Count - 1);
+            }
+            else if (history[history.Count - 1][..9] == "Container")
+            {
+                RemoveLastContainer();
+                count--;
+                history.RemoveAt(history.Count - 1);
+            }
+        }
+        public void RemoveLastContainer()
+        {
+            var enc = current.enclosing;
+            enc.containers.RemoveAt(enc.containers.Count - 1);
+            current = enc;
+        }
+        public void RemoveLastVar()
+        {
+            current.vars.RemoveAt(current.vars.Count - 1);
+        }
+
+        public void RemoveUnderCurrent(int frameEnd)
+        {
+            if (frameEnd - count == 0)
+            {
+                return;
+            }
+            current.containers.Clear();
+            current.vars.Clear();
+            history.RemoveRange(frameEnd, (history.Count) - frameEnd);
+            count = frameEnd;
+        }
+
+
+
+        class stackObject
+        {
+            internal class Container : stackObject
+            {
+                internal Container enclosing;
+                internal string type;
+                internal string name;
+                internal List<Var> vars;
+                internal List<Container> containers;
+                public Container(string type, string name)
+                {
+                    this.vars = new();
+                    this.containers = new();
+                    this.type = type;
+                    this.name = name;
+                    this.enclosing = null;
+                }
+            }
+
+            internal class Function : Container
+            {
+                internal bool _static;
+                public Function(string name, bool _static)
+                    : base("F", name)
+                {
+                    this._static = _static;
+                }
+            }
+
+            internal class Class : Container
+            {
+                internal string dName;
+                public Class(string type, string name)
+                    : base("C", type)
+                {
+                    this.dName = name;
+                }
+            }
+
+            internal class Var : stackObject
+            {
+                internal string type;
+                internal string name;
+                internal string offset;
+                public Var(string type, string name, string offset)
+                {
+                    this.type = type;
+                    this.name = name;
+                    this.offset = offset;
+                }
+            }
         }
     }
 

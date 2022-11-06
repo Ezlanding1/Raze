@@ -15,13 +15,11 @@ namespace Espionage
         {
             KeyValueStack stack;
             CallStack callStack;
-            int frameStart;
             Expr.Function mainFunc;
             public MainPass(List<Expr> expressions, Expr.Function main) : base(expressions)
             {
                 this.stack = new();
                 this.callStack = new();
-                this.frameStart = 0;
                 this.mainFunc = main;
             }
 
@@ -33,23 +31,30 @@ namespace Espionage
 
             public override object? visitBlockExpr(Expr.Block expr)
             {
-                frameStart = stack.Count;
+                int frameStart = stack.count;
                 foreach (Expr blockExpr in expr.block)
                 {
                     blockExpr.Accept(this);
                 }
                 // De-alloc variables
-                for (int i = frameStart, frameEnd = stack.Count; i < frameEnd; i++)
+                if (!expr._classBlock)
                 {
-                    stack.RemoveLast();
+                    stack.RemoveUnderCurrent(frameStart);
+                    //for (int i = frameStart, frameEnd = stack.count; i < frameEnd; i++)
+                    //{
+                    //    stack.RemoveLast();
+                    //}
                 }
                 return null;
             }
 
             public override object? visitClassExpr(Expr.Class expr)
             {
+                stack.AddClass(expr.name.lexeme, expr.dName);
                 callStack.Add(expr);
                 base.visitClassExpr(expr);
+                stack.CurrentUp();
+                //stack.RemoveLast();
                 callStack.RemoveLast();
                 return null;
             }
@@ -65,13 +70,13 @@ namespace Espionage
                 base.visitDeclareExpr(expr);
 
                 int size = SizeOf(type);
-
                 if (stack.ContainsKey(name))
                 {
                     throw new Errors.BackendError(ErrorType.BackendException, "Double Declaration", $"A variable named '{name}' is already defined in this scope", callStack);
                 }
+
                 stack.Add(type, name, size);
-                expr.offset = stack.stackOffet;
+                expr.offset = stack.stackOffset;
                 return null;
             }
 
@@ -113,22 +118,25 @@ namespace Espionage
 
                 for (int i = 0; i < paramsCount; i++)
                 {
-                    stack.RemoveLast();
+                    stack.RemoveLastParam();
                 }
+                stack.RemoveLast();
                 return null;
             }
 
             public override object? visitVariableExpr(Expr.Variable expr)
             {
                 string value;
+                string type;
                 string name = expr.variable.lexeme;
-                if (stack.ContainsKey(name, out value))
+                if (stack.ContainsKey(name, out value, out type))
                 {
                     if (value == null)
                     {
                         throw new Errors.BackendError(ErrorType.BackendException, "Null Reference Exception", $"reference to object {name} not set to an instance of an object.", callStack);
                     }
                     expr.stackPos = value;
+                    expr.type = type;
                     if (char.IsLetter(value[0]))
                     {
                         expr.register = true;
@@ -143,14 +151,43 @@ namespace Espionage
 
             public override object? visitAssignExpr(Expr.Assign expr)
             {
-                string name = expr.variable.lexeme;
-                string type = stack.GetType(name);
+                string name = "";
+                expr.variable.Accept(this);
+                string type = expr.variable.type;
 
                 base.visitAssignExpr(expr);
 
                 int size = SizeOf(type);
                 stack.Modify(type, name, size);
-                expr.offset = stack.stackOffet;
+                expr.offset = stack.stackOffset;
+                return null;
+            }
+
+            public override object? visitNewExpr(Expr.New expr)
+            {
+                expr.internalClass.Accept(this);
+                return null;
+                foreach (Expr blockExpr in expr.internalClass.block.block)
+                {
+                    blockExpr.Accept(this);
+                }
+                foreach (Expr blockExpr in expr.internalFunction.block.block)
+                {
+                    blockExpr.Accept(this);
+                }
+
+                return null;
+            }
+
+            public override object? visitGetExpr(Expr.Get expr)
+            {
+                if (!stack.SwitchContext("DOWN", expr.variable.lexeme))
+                {
+                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The variable '{expr.variable.lexeme}' does not exist in the current context", callStack);
+                }
+                expr.get.Accept(this);
+                expr.type = expr.get.type;
+                stack.SwitchContext("BACK");
                 return null;
             }
         }

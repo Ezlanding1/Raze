@@ -138,7 +138,9 @@ namespace Espionage.Tools
 
         public object? visitGetExpr(Expr.Get expr)
         {
-            throw new NotImplementedException();
+            PrintAST(expr.variable);
+            PrintAST(expr.get);
+            return null;
         }
 
         public object? visitGroupingExpr(Expr.Grouping expr)
@@ -151,11 +153,6 @@ namespace Espionage.Tools
         {
             PrintAST(expr.literal);
             return null;
-        }
-
-        public object? visitSetExpr(Expr.Set expr)
-        {
-            throw new NotImplementedException();
         }
 
         public object? visitSuperExpr(Expr.Super expr)
@@ -225,6 +222,12 @@ namespace Espionage.Tools
         public object? visitPrimitiveExpr(Expr.Primitive expr)
         {
             PrintAST(expr.literal.value);
+            return null;
+        }
+
+        public object? visitNewExpr(Expr.New expr)
+        {
+            PrintAST(expr._className);
             return null;
         }
     }

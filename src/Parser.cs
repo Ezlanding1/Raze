@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Espionage.Expr;
 
 namespace Espionage
 {
@@ -209,7 +211,7 @@ namespace Espionage
         {
             if (!isAtEnd())
             {
-                if (TypeMatch("NUMBER"))
+                if (TypeMatch("NUMBER", "STRING"))
                 {
                     return new Expr.Literal(previous());
                 }
@@ -224,9 +226,22 @@ namespace Espionage
                 if (TypeMatch("IDENTIFIER"))
                 {
                     Expr expr;
-
-                    Token variable = previous();
-                    if (TypeMatch("IDENTIFIER"))
+                    var variable = previous();
+                    if (TypeMatch("DOT"))
+                    {
+                        var getter = GetGetter(variable);
+                        expr = GetSetter(getter);
+                        if (expr == null)
+                        {
+                            expr = getter;
+                        }
+                    }
+                    else if (TypeMatch("EQUALS", "PLUSEQUALS", "MINUSEQUALS"))
+                    {
+                        Expr right = Logical();
+                        expr = new Expr.Assign(new Expr.Variable(variable), right);
+                    }
+                    else if (TypeMatch("IDENTIFIER"))
                     {
                         Token name = previous();
                         Expect("EQUALS", "Expected '=' when declaring variable");
@@ -234,15 +249,15 @@ namespace Espionage
                         if (value is Expr.Literal)
                         {
                             expr = new Expr.Primitive(Primitives.ToPrimitive(variable, name, (Expr.Literal)value));
-                    }
+                        }
                         else
-                    {
-                        Expr right = Logical();
-                        expr = new Expr.Assign(variable, right);
+                        {
+                            expr = new Expr.Declare(variable, name, value);
+                        }
                     }
                     else if (TypeMatch("LPAREN"))
                     {
-                        expr = Call(variable);
+                        expr = Call(new Expr.Variable(variable));
                     }
                     else
                     {
@@ -261,15 +276,65 @@ namespace Espionage
                 {
                     return new Expr.Keyword(previous());
                 }
+
+                if (TypeMatch("new"))
+                {
+                    Expect("IDENTIFIER", "Expected class name after 'new' keyword");
+                    var _className = previous();
+                    Expect("LPAREN", "Expected '(' starting constructor parameters");
+
+                    return new Expr.New(_className, GetArgs());
+                }
             }
             throw End();
+        }
+
+        private Expr.Get GetGetter(Token getter)
+        {
+            Expr.Var get;
+            if (TypeMatch("DOT"))
+            {
+                if (TypeMatch("IDENTIFIER"))
+                {
+                    get = GetGetter(previous());
+                }
+                else
+                {
+                    throw new Errors.ParseError(ErrorType.ParserException, "Trailing Dot", "Trailing '.' character");
+                }
+            }
+            else
+            {
+                Expect("IDENTIFIER", "Expected variable name after '.'");
+                get = new Expr.Variable(previous());
+            }
+
+            return new Expr.Get(getter, get);
+        }
+
+        private Expr.Assign GetSetter(Expr.Var variable)
+        {
+            if (TypeMatch("EQUALS", "PLUSEQUALS", "MINUSEQUALS"))
+            {
+                Expr right = Logical();
+                return new Expr.Assign(variable, right);
+            }
+            else
+            {
+                return null;
+            }
         }
 
         private Exception End()
         {
             return new Errors.ParseError(ErrorType.ParserException, "Expression Reached Unexpected End", $"Expression '{((previous() != null)? previous().lexeme : "")}' reached an unexpected end");
         }
-        private Expr.Call Call(Token name)
+        private Expr.Call Call(Expr.Var name)
+        {
+            return new Expr.Call(name, GetArgs());
+        }
+
+        private List<Expr> GetArgs()
         {
             List<Expr> arguments = new();
             while (!TypeMatch("RPAREN"))
@@ -281,7 +346,7 @@ namespace Espionage
                 }
                 Expect("COMMA", "Expected ',' between parameters");
             }
-            return new Expr.Call(name, arguments);
+            return arguments;
         }
 
         private Expr.Block GetBlock(string bodytype)
