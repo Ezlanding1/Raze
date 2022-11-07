@@ -28,7 +28,7 @@ namespace Espionage.tools
         {
             Syntaxes.SyntaxFactory.ISyntaxFactory Syntax;
             #if Intel_x86_64_NASM
-            Syntax = Syntaxes.SyntaxFactory.SyntaxTypeCreator.FactoryMethod("Intel_x86_64");
+            Syntax = Syntaxes.SyntaxFactory.SyntaxTypeCreator.FactoryMethod("Intel_x86_64_NASM");
             #endif
 
             if (Syntax == null)

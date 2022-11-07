@@ -175,7 +175,14 @@ namespace Espionage
             private void ResolveFunction(Expr.Function expr)
             {
                 List<Expr.Call> resolvedCalls = undefCalls.FindAll(x => x.callee.variable.lexeme == expr.name.lexeme);
-
+                if (functions.ContainsKey(expr.name.lexeme))
+                {
+                    if (expr.name.lexeme == "Main")
+                    {
+                        throw new Errors.BackendError(ErrorType.BackendException, "Main Declared Twice", "A Program may have only one 'Main' method");
+                    }
+                    throw new Errors.BackendError(ErrorType.BackendException, "Function Declared Twice", $"Function '{expr.name.lexeme}' was declared twice");
+                }
                 functions.Add(expr.name.lexeme, expr);
 
                 if (resolvedCalls != null && resolvedCalls.Count != 0)
@@ -232,21 +239,11 @@ namespace Espionage
             private void ValidCallCheck(Expr.Function function, List<Expr.Call> resolvedCalls)
             {
                 string name = function.name.lexeme;
-                int arity = function.arity;
                 foreach (var call in resolvedCalls)
                 {
-                    if (arity != call.arguments.Count)
+                    if (function.arity != call.arguments.Count)
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Arity Mismatch", $"Arity of call for {name} ({call.arguments.Count}) does not match the definition's arity ({arity})");
-                    }
-
-                    for (int i = 0; i < arity; i++)
-                    {
-                        var param = function.parameters[i].type.lexeme;
-                        if (param != TypeOf(call.arguments[i]))
-                        {
-                            throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"In call for {name}, type of '{param}' does not match the definition's type '{TypeOf(call.arguments[i])}'");
-                        }
+                        throw new Errors.BackendError(ErrorType.BackendException, "Arity Mismatch", $"Arity of call for {name} ({call.arguments.Count}) does not match the definition's arity ({function.arity})");
                     }
 
                     call.internalFunction = function;

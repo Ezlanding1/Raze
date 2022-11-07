@@ -18,23 +18,22 @@ namespace Espionage
             { "string", BYTES_IN_STRING }
         };
 
-        public static Dictionary<string, PrimitiveType> PrimitiveTypes = new()
+        private static PrimitiveType PrimitiveTypes(Token type, Token name, Expr.Literal value)
         {
-            { "number", new _number(PrimitiveSize["number"]) },
-            { "string", new _string(PrimitiveSize["string"]) }
-        };
+            switch (type.lexeme)
+            {
+                case "number":
+                    return new _number(PrimitiveSize["number"], type, name, value);
+                case "string":
+                    return new _string(PrimitiveSize["string"], type, name, value);
+                default:
+                    throw new Exception($"Espionage Error: '{type}' is not a primitive type (class)");
+            }
+        }
         public static PrimitiveType ToPrimitive(Token type, Token name, Expr.Literal value)
         {
-            if (PrimitiveTypes.ContainsKey(type.lexeme))
-            {
-                var primitiveType = PrimitiveTypes[type.lexeme];
-                primitiveType.Add(type, name, value);
-                return primitiveType;
-            }
-            else
-            {
-                throw new Exception($"Espionage Error: Internal Type Not Implemented (class) for type of '{type}'");
-            }
+            var primitiveType = PrimitiveTypes(type, name, value);
+            return primitiveType;
         }
 
         internal abstract class PrimitiveType
@@ -44,13 +43,9 @@ namespace Espionage
             public Expr.Literal value;
             public int size;
 
-            public PrimitiveType(int size)
+            public PrimitiveType(int size, Token type, Token name, Expr.Literal value)
             {
                 this.size = size;
-            }
-
-            public void Add(Token type, Token name, Expr.Literal value)
-            {
                 this.type = type;
                 this.name = name;
                 this.value = value;
@@ -64,8 +59,8 @@ namespace Espionage
 
         class _number : PrimitiveType
         {
-            public _number(int size)
-                : base(size)
+            public _number(int size, Token type, Token name, Expr.Literal value)
+                : base(size, type, name, value)
             {
 
             }
@@ -73,8 +68,8 @@ namespace Espionage
 
         class _string : PrimitiveType
         {
-            public _string(int size)
-                : base(size)
+            public _string(int size, Token type, Token name, Expr.Literal value)
+                : base(size, type, name, value)
             {
 
             }

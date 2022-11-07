@@ -91,26 +91,18 @@ namespace Espionage
     class TokenDefinition{
         public string type;
         string pattern;
-        public Regex? regex;
+        public Regex regex;
 
         public TokenDefinition(string type, string pattern)
         {
             this.type = type;
             this.pattern = pattern;
-            if (pattern.Length == 1)
-                regex = null;
-            else
-                regex = new Regex(pattern);
+            regex = new Regex(pattern);
         }
 
         public Match Match(string str)
         {
-            if (regex == null)
-                //IMPORTANT NOTE: make the static == comarison for this instead of using normal match/new regex match
-                //IMPORTANT NOTE: make sure this is actually more memory efficient
-                return new Regex(pattern).Match(str);
-            else
-                return regex.Match(str);
+            return regex.Match(str);
         }
     }
     class Token

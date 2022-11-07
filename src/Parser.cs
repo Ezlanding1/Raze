@@ -4,7 +4,6 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Espionage.Expr;
 
 namespace Espionage
 {
@@ -43,18 +42,18 @@ namespace Espionage
             if (!isAtEnd() && TypeMatch("function", "class"))
             {
                 Token definitionType = previous();
-                Expect("IDENTIFIER", "Expected " + definitionType.type + " name");
+                Expect("IDENTIFIER", definitionType.type + " name");
                 Token name = previous();
                 Expr.Block block;
                 if (definitionType.type == "function")
                 {
-                    Expect("LPAREN", "Expected '(' after function name");
+                    Expect("LPAREN", "'(' after function name");
                     List<Expr.Parameter> parameters = new();
                     while (!TypeMatch("RPAREN"))
                     {
-                        Expect("IDENTIFIER", "Expected identifier as function parameter type");
+                        Expect("IDENTIFIER", "identifier as function parameter type");
                         Token type = previous();
-                        Expect("IDENTIFIER", "Expected identifier as function parameter");
+                        Expect("IDENTIFIER", "identifier as function parameter");
                         Token variable = previous();
 
                         parameters.Add(new Expr.Parameter(type, variable));
@@ -62,7 +61,7 @@ namespace Espionage
                         {
                             break;
                         }
-                        Expect("COMMA", "Expected ',' between parameters");
+                        Expect("COMMA", "',' between parameters");
                         if (isAtEnd())
                         {
                             throw new Errors.ParseError(ErrorType.ParserException, "Unexpected End In Function Parameters", $"Function '{name.lexeme}' reached an unexpected end during it's parameters");
@@ -89,10 +88,10 @@ namespace Espionage
                 if (conditionalType.type == "if")
                 {
                     // Important Note: change to conditional ( '==', '>=', etc. ) once they're implmented
-                    Expect("LPAREN", "Expected '(' after conditional");
+                    Expect("LPAREN", "'(' after conditional");
                     Expr condition;
                     condition = Logical();
-                    Expect("RPAREN", "Expected ')' after condition");
+                    Expect("RPAREN", "')' after condition");
                     block = GetBlock(conditionalType.type);
                     return new Expr.If(conditionalType, condition, block);
                 }
@@ -101,10 +100,10 @@ namespace Espionage
                     if (TypeMatch("if"))
                     {
                         // Important Note: change to conditional ( '==', '>=', etc. ) once they're implmented
-                        Expect("LPAREN", "Expected '(' after conditional");
+                        Expect("LPAREN", "'(' after conditional");
                         Expr condition;
                         condition = Logical();
-                        Expect("RPAREN", "Expected ')' after condition");
+                        Expect("RPAREN", "')' after condition");
                         conditionalType.type = "else if";
                         block = GetBlock(conditionalType.type);
                         return new Expr.ElseIf(conditionalType, condition, block);
@@ -123,7 +122,7 @@ namespace Espionage
         private Expr Semicolon()
         {
             Expr expr = NoSemicolon();
-            Expect("SEMICOLON", "Expected ';' after expression");
+            Expect("SEMICOLON", "';' after expression");
             return expr;
         }
 
@@ -219,7 +218,7 @@ namespace Espionage
                 if (TypeMatch("LPAREN", "RPAREN"))
                 {
                     Expr expr = Logical();
-                    Expect("RPAREN", "Expected ')' after expression.");
+                    Expect("RPAREN", "')' after expression.");
                     return new Expr.Grouping(expr);
                 }
 
@@ -231,10 +230,7 @@ namespace Espionage
                     {
                         var getter = GetGetter(variable);
                         expr = GetSetter(getter);
-                        if (expr == null)
-                        {
-                            expr = getter;
-                        }
+                        expr ??= getter;
                     }
                     else if (TypeMatch("EQUALS", "PLUSEQUALS", "MINUSEQUALS"))
                     {
@@ -244,16 +240,11 @@ namespace Espionage
                     else if (TypeMatch("IDENTIFIER"))
                     {
                         Token name = previous();
-                        Expect("EQUALS", "Expected '=' when declaring variable");
+                        Expect("EQUALS", "'=' when declaring variable");
                         Expr value = Logical();
-                        if (value is Expr.Literal)
-                        {
-                            expr = new Expr.Primitive(Primitives.ToPrimitive(variable, name, (Expr.Literal)value));
-                        }
-                        else
-                        {
-                            expr = new Expr.Declare(variable, name, value);
-                        }
+                        expr = (value is Expr.Literal)
+                            ? new Expr.Primitive(Primitives.ToPrimitive(variable, name, (Expr.Literal)value))
+                            : new Expr.Declare(variable, name, value);
                     }
                     else if (TypeMatch("LPAREN"))
                     {
@@ -279,9 +270,9 @@ namespace Espionage
 
                 if (TypeMatch("new"))
                 {
-                    Expect("IDENTIFIER", "Expected class name after 'new' keyword");
+                    Expect("IDENTIFIER", "class name after 'new' keyword");
                     var _className = previous();
-                    Expect("LPAREN", "Expected '(' starting constructor parameters");
+                    Expect("LPAREN", "'(' starting constructor parameters");
 
                     return new Expr.New(_className, GetArgs());
                 }
@@ -305,7 +296,7 @@ namespace Espionage
             }
             else
             {
-                Expect("IDENTIFIER", "Expected variable name after '.'");
+                Expect("IDENTIFIER", "variable name after '.'");
                 get = new Expr.Variable(previous());
             }
 
@@ -344,7 +335,7 @@ namespace Espionage
                 {
                     break;
                 }
-                Expect("COMMA", "Expected ',' between parameters");
+                Expect("COMMA", "',' between parameters");
             }
             return arguments;
         }
@@ -352,13 +343,13 @@ namespace Espionage
         private Expr.Block GetBlock(string bodytype)
         {
             List<Expr> bodyExprs = new();
-            Expect("LBRACE", "Expected '{' before " + bodytype + " body");
+            Expect("LBRACE", "'{' before " + bodytype + " body");
             while (!TypeMatch("RBRACE"))
             {
                 bodyExprs.Add(Start());
                 if (isAtEnd())
                 {
-                    Expect("RBRACE", "Expected '}' after block");
+                    Expect("RBRACE", "'}' after block");
                 }
                 if (TypeMatch("RBRACE"))
                 {
@@ -385,23 +376,6 @@ namespace Espionage
             return false;
         }
 
-        private bool TypeMatch(Dictionary<string, Primitives.PrimitiveType>.KeyCollection types)
-        {
-            if (current == null)
-            {
-                return false;
-            }
-            foreach (var type in types)
-            {
-                if (current.type == type)
-                {
-                    advance();
-                    return true;
-                }
-            }
-            return false;
-        }
-
         private void Expect(string type, string errorMessage)
         {
             if (current != null && current.type == type)
@@ -410,7 +384,7 @@ namespace Espionage
                 return;
             }
 
-            throw new Errors.ParseError(ErrorType.ParserException, $"Expected {type}", errorMessage + $"{((current != null)? "\nGot: '" + current.lexeme + "' Instead" : "")}");
+            throw new Errors.ParseError(ErrorType.ParserException, $"{type}", "Expected " + errorMessage + $"{((current != null)? "\nGot: '" + current.lexeme + "' Instead" : "")}");
         }
 
         private Token previous()

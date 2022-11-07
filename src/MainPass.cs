@@ -6,6 +6,8 @@ using System.Runtime.Remoting;
 using System.Security.AccessControl;
 using System.Text;
 using System.Threading.Tasks;
+using static Espionage.Expr;
+using System.Xml.Linq;
 
 namespace Espionage
 {
@@ -13,7 +15,7 @@ namespace Espionage
     {
         internal class MainPass : Pass
         {
-            KeyValueStack stack;
+            Stack stack;
             CallStack callStack;
             Expr.Function mainFunc;
             public MainPass(List<Expr> expressions, Expr.Function main) : base(expressions)
@@ -46,6 +48,20 @@ namespace Espionage
                     //}
                 }
                 return null;
+            }
+
+            public override object? visitCallExpr(Call expr)
+            {
+                for (int i = 0; i < expr.internalFunction.arity; i++)
+                {
+                    Expr.Parameter paramExpr = expr.internalFunction.parameters[i];
+                    expr.arguments[i].Accept(this);
+                    if (paramExpr.type.lexeme != TypeOf(expr.arguments[i]))
+                    {
+                        throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"In call for {expr.internalFunction.name.lexeme}, type of '{paramExpr.type.lexeme}' does not match the definition's type '{TypeOf(expr.arguments[i])}'");
+                    }
+                }
+                return base.visitCallExpr(expr);    
             }
 
             public override object? visitClassExpr(Expr.Class expr)
@@ -103,20 +119,20 @@ namespace Espionage
             public override object? visitFunctionExpr(Expr.Function expr)
             {
                 stack.AddFunc(expr.name.lexeme, expr._static);
-
-                int paramsCount = expr.parameters.Count;
-                for (int i = 0; i < paramsCount; i++)
+                int arity = expr.arity;
+                for (int i = 0; i < arity; i++)
                 {
                     Expr.Parameter paramExpr = expr.parameters[i];
                     stack.Add(paramExpr.type.lexeme, paramExpr.variable.lexeme, InstructionTypes.paramRegister[i]);
                 }
+
                 callStack.Add(expr);
 
                 expr.block.Accept(this);
 
                 callStack.RemoveLast();
 
-                for (int i = 0; i < paramsCount; i++)
+                for (int i = 0; i < arity; i++)
                 {
                     stack.RemoveLastParam();
                 }
@@ -126,14 +142,11 @@ namespace Espionage
 
             public override object? visitVariableExpr(Expr.Variable expr)
             {
-                string value;
-                string type;
-                string name = expr.variable.lexeme;
-                if (stack.ContainsKey(name, out value, out type))
+                if (stack.ContainsKey(expr.variable.lexeme, out string value, out string type))
                 {
                     if (value == null)
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Null Reference Exception", $"reference to object {name} not set to an instance of an object.", callStack);
+                        throw new Errors.BackendError(ErrorType.BackendException, "Null Reference Exception", $"reference to object {expr.variable.lexeme} not set to an instance of an object.", callStack);
                     }
                     expr.stackPos = value;
                     expr.type = type;
@@ -144,7 +157,7 @@ namespace Espionage
                 }
                 else
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The variable '{name}' does not exist in the current context", callStack);
+                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The variable '{expr.variable.lexeme}' does not exist in the current context", callStack);
                 }
                 return null;
             }
@@ -166,16 +179,6 @@ namespace Espionage
             public override object? visitNewExpr(Expr.New expr)
             {
                 expr.internalClass.Accept(this);
-                return null;
-                foreach (Expr blockExpr in expr.internalClass.block.block)
-                {
-                    blockExpr.Accept(this);
-                }
-                foreach (Expr blockExpr in expr.internalFunction.block.block)
-                {
-                    blockExpr.Accept(this);
-                }
-
                 return null;
             }
 

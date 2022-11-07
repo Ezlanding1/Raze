@@ -42,6 +42,10 @@ namespace Espionage
             {
                 return ((Expr.Function)literal).name.lexeme;
             }
+            if (literal is Expr.Var)
+            {
+                return ((Expr.Var)literal).type;
+            }
             if (literal is Expr.Literal)
             {
                 var l = (Expr.Literal)literal;
@@ -75,7 +79,7 @@ namespace Espionage
         }
     }
 
-    internal class KeyValueStack
+    internal class Stack
     {
         private stackObject.Container head;
         private stackObject.Container current;
@@ -84,7 +88,7 @@ namespace Espionage
         private List<string> history;
         public int stackOffset;
         public int count;
-        public KeyValueStack()
+        public Stack()
         {
             this.history = new();
             InitHead();

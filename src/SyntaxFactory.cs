@@ -26,12 +26,12 @@ namespace Espionage
             {
                 public static ISyntaxFactory FactoryMethod(string type)
                 {
-                    switch (type)
+                    return type switch
                     {
-                        case "Intel_x86_64": return new IntelSyntax();
-                        case "Gas": return new GasSyntax();
-                        default: throw new ArgumentException("Espionage Error: Invalid Type Given", type);
-                    }
+                        "Intel_x86_64_NASM" => new IntelSyntax(),
+                        "Intel_x86_64_GAS" => new GasSyntax(),
+                        _ => throw new ArgumentException("Espionage Error: Invalid Type Given", type),
+                    };
                 }
             }
         }
