@@ -42,11 +42,13 @@ namespace Espionage
             if (!isAtEnd() && TypeMatch("function", "class"))
             {
                 Token definitionType = previous();
-                Expect("IDENTIFIER", definitionType.type + " name");
-                Token name = previous();
                 Expr.Block block;
                 if (definitionType.type == "function")
                 {
+                    Expect("IDENTIFIER", "function return type");
+                    Token _returnType = previous();
+                    Expect("IDENTIFIER", definitionType.type + " name");
+                    Token name = previous();
                     Expect("LPAREN", "'(' after function name");
                     List<Expr.Parameter> parameters = new();
                     while (!TypeMatch("RPAREN"))
@@ -68,10 +70,12 @@ namespace Espionage
                         }
                     }
                     block = GetBlock(definitionType.type);
-                    return new Expr.Function(name, parameters, block);
+                    return new Expr.Function(_returnType.lexeme, name, parameters, block);
                 }
                 else if (definitionType.type == "class")
                 {
+                    Expect("IDENTIFIER", definitionType.type + " name");
+                    Token name = previous();
                     block = GetBlock(definitionType.type);
                     return new Expr.Class(name, block);
                 }
@@ -322,7 +326,7 @@ namespace Espionage
         }
         private Expr.Call Call(Expr.Var name)
         {
-            return new Expr.Call(name, GetArgs());
+            return new Expr.Call(name, GetArgs(), false);
         }
 
         private List<Expr> GetArgs()

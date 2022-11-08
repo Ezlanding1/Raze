@@ -13,7 +13,7 @@ namespace Espionage
 {
     internal partial class Analyzer
     {
-        internal class MainPass : Pass
+        internal class MainPass : Pass<object?>
         {
             Stack stack;
             CallStack callStack;

@@ -84,6 +84,10 @@ namespace Espionage
             string type = expr.type.lexeme;
             string operand1 = expr.name.lexeme;
             Instruction.Register operand2 = expr.value.Accept(this);
+            if (operand1 == null || operand2 == null)
+            {
+                throw new Errors.BackendError(ErrorType.BackendException, "Invalid Expression", "");
+            }
             if (!operand2.simple && operand2.name == "CLASS")
             {
                 return null;
@@ -308,6 +312,10 @@ namespace Espionage
             if (instructions.Count <= index)
             {
                 instructions.Add(new List<Instruction>());
+            }
+            if (index < 0)
+            {
+                throw new Errors.BackendError(ErrorType.BackendException, "Top Level Code", $"Top level code is not allowed");
             }
             instructions[index].Add(instruction);
         }

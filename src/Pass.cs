@@ -9,7 +9,7 @@ namespace Espionage
 {
     internal partial class Analyzer
     {
-        internal abstract class Pass : Expr.IVisitor<object?>
+        internal abstract class Pass<T> : Expr.IVisitor<T>
         {
             internal List<Expr> expressions;
             public Pass(List<Expr> expressions)
@@ -19,23 +19,23 @@ namespace Espionage
 
             internal abstract List<Expr> Run();
 
-            public virtual object? visitBinaryExpr(Expr.Binary expr)
+            public virtual T visitBinaryExpr(Expr.Binary expr)
             {
                 expr.left.Accept(this);
                 expr.right.Accept(this);
-                return null;
+                return default(T);
             }
 
-            public virtual object? visitBlockExpr(Expr.Block expr)
+            public virtual T visitBlockExpr(Expr.Block expr)
             {
                 foreach (var blockExpr in expr.block)
                 {
                     blockExpr.Accept(this);
                 }
-                return null;
+                return default(T);
             }
 
-            public virtual object? visitCallExpr(Expr.Call expr)
+            public virtual T visitCallExpr(Expr.Call expr)
             {
                 foreach (Expr argExpr in expr.arguments)
                 {
@@ -45,105 +45,105 @@ namespace Espionage
                 expr.internalFunction.Accept(this);
                 expr.internalFunction.found = false;
 
-                return null;
+                return default(T);
             }
 
-            public virtual object? visitClassExpr(Expr.Class expr)
+            public virtual T visitClassExpr(Expr.Class expr)
             {
                 expr.block.Accept(this);
-                return null;
+                return default(T);
             }
 
-            public virtual object? visitDeclareExpr(Expr.Declare expr)
+            public virtual T visitDeclareExpr(Expr.Declare expr)
             {
                 expr.value.Accept(this);
-                return null;
+                return default(T);
             }
 
-            public virtual object? visitFunctionExpr(Expr.Function expr)
+            public virtual T visitFunctionExpr(Expr.Function expr)
             {
                 if (!expr.found)
                 {
-                    return null;
+                    return default(T);
                 }
                 foreach (Expr.Parameter paramExpr in expr.parameters)
                 {
                     paramExpr.Accept(this);
                 }
                 expr.block.Accept(this);
-                return null;
+                return default(T);
             }
 
-            public virtual object? visitGetExpr(Expr.Get expr)
+            public virtual T visitGetExpr(Expr.Get expr)
             {
-                return null;
+                return default(T);
             }
 
-            public virtual object? visitGroupingExpr(Expr.Grouping expr)
+            public virtual T visitGroupingExpr(Expr.Grouping expr)
             {
                 expr.expression.Accept(this);
-                return null;
+                return default(T);
             }
 
-            public virtual object? visitConditionalExpr(Expr.Conditional expr)
+            public virtual T visitConditionalExpr(Expr.Conditional expr)
             {
                 if (expr.condition != null)
                     expr.condition.Accept(this);
 
                 expr.block.Accept(this);
-                return null;
+                return default(T);
             }
 
-            public virtual object? visitLiteralExpr(Expr.Literal expr)
+            public virtual T visitLiteralExpr(Expr.Literal expr)
             {
-                return null;
+                return default(T);
             }
 
-            public virtual object? visitSuperExpr(Expr.Super expr)
+            public virtual T visitSuperExpr(Expr.Super expr)
             {
-                return null;
+                return default(T);
             }
 
-            public virtual object? visitThisExpr(Expr.This expr)
+            public virtual T visitThisExpr(Expr.This expr)
             {
-                return null;
+                return default(T);
             }
 
-            public virtual object? visitUnaryExpr(Expr.Unary expr)
+            public virtual T visitUnaryExpr(Expr.Unary expr)
             {
                 expr.operand.Accept(this);
-                return null;
+                return default(T);
             }
 
-            public virtual object? visitVariableExpr(Expr.Variable expr)
+            public virtual T visitVariableExpr(Expr.Variable expr)
             {
-                return null;
+                return default(T);
             }
 
-            public virtual object? visitReturnExpr(Expr.Return expr)
-            {
-                expr.value.Accept(this);
-                return null;
-            }
-
-            public virtual object? visitAssignExpr(Expr.Assign expr)
+            public virtual T visitReturnExpr(Expr.Return expr)
             {
                 expr.value.Accept(this);
-                return null;
+                return default(T);
             }
 
-            public virtual object? visitKeywordExpr(Expr.Keyword expr)
+            public virtual T visitAssignExpr(Expr.Assign expr)
             {
-                return null;
+                expr.value.Accept(this);
+                return default(T);
             }
 
-            public virtual object? visitPrimitiveExpr(Expr.Primitive expr)
+            public virtual T visitKeywordExpr(Expr.Keyword expr)
+            {
+                return default(T);
+            }
+
+            public virtual T visitPrimitiveExpr(Expr.Primitive expr)
             {
                 expr.literal.value.Accept(this);
-                return null;
+                return default(T);
             }
 
-            public virtual object? visitNewExpr(Expr.New expr)
+            public virtual T visitNewExpr(Expr.New expr)
             {
 
                 expr.internalClass.Accept(this);
@@ -157,7 +157,7 @@ namespace Espionage
                 expr.internalFunction.Accept(this);
                 expr.internalFunction.found = false;
 
-                return null;
+                return default(T);
             }
         }
     }

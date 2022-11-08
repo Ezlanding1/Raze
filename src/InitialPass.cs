@@ -9,7 +9,7 @@ namespace Espionage
 {
     internal partial class Analyzer
     {
-        internal partial class InitialPass : Pass
+        internal partial class InitialPass : Pass<object?>
         {
             Dictionary<string, Expr.Class> classes;
             List<Expr.New> undefClass;
@@ -39,18 +39,18 @@ namespace Espionage
                 {
                     expr.Accept(this);
                 }
+                if (undefClass.Count > 0)
+                {
+                    for (int i = 0, stackCount = undefClass.Count; i < stackCount; i++)
+                    {
+                        throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The class '{undefClass[i]._className.lexeme}' does not exist in the current context");
+                    }
+                }
                 if (undefCalls.Count > 0)
                 {
                     for (int i = 0, stackCount = undefCalls.Count; i < stackCount; i++)
                     {
                         throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The function '{undefCalls[i].callee.variable.lexeme}' does not exist in the current context");
-                    }
-                }
-                if (undefClass.Count > 0)
-                {
-                    for (int i = 0, stackCount = undefClass.Count; i < stackCount; i++)
-                    {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The function '{undefClass[i]._className.lexeme}' does not exist in the current context");
                     }
                 }
                 if (main == null)
@@ -163,12 +163,18 @@ namespace Espionage
             {
                 var _class = ResolveClassRef(expr);
                 expr.internalClass = _class;
-                expr.internalClass.dName = declClassName;
-                expr.internalClass.block._classBlock = true;
+                if (_class != null)
+                {
+                    expr.internalClass.dName = declClassName;
+                    expr.internalClass.block._classBlock = true;
+                }
 
-                var function = ResolveCall(new Expr.Call(new Expr.Variable(expr._className), expr.arguments));
-                function.constructor = true;
+                var function = ResolveCall(new Expr.Call(new Expr.Variable(expr._className), expr.arguments, true));
                 expr.internalFunction = function;
+                if (function != null)
+                {
+                    function.constructor = true;
+                }
                 return null;
             }
 
@@ -245,7 +251,7 @@ namespace Espionage
                     {
                         throw new Errors.BackendError(ErrorType.BackendException, "Arity Mismatch", $"Arity of call for {name} ({call.arguments.Count}) does not match the definition's arity ({function.arity})");
                     }
-
+                    function.constructor = call.constructor;
                     call.internalFunction = function;
                 }
             }
@@ -256,6 +262,8 @@ namespace Espionage
                 foreach (var c in resolvedRefs)
                 {
                     c.internalClass = _class;
+                    c.internalClass.dName = declClassName;
+                    c.internalClass.block._classBlock = true;
                 }
             }
         }

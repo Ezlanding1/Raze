@@ -18,7 +18,7 @@ namespace Espionage
         }
 
         internal List<Expr> Analyze(){
-            Pass initialPass = new InitialPass(expressions);
+            Pass<object?> initialPass = new InitialPass(expressions);
             expressions = initialPass.Run();
             Expr.Function main = ((InitialPass)initialPass).getMain();
 
@@ -26,8 +26,11 @@ namespace Espionage
             {
                 throw new Errors.BackendError(ErrorType.BackendException, "Main Not Found", "No Main method for entrypoint found");
             }
-            Pass mainPass = new MainPass(expressions, main);
+            Pass<object?> mainPass = new MainPass(expressions, main);
             expressions = mainPass.Run();
+
+            Pass<string> TypeChackPass = new TypeCheckPass(expressions);
+            expressions = TypeChackPass.Run();
 
             return expressions;
         }
@@ -49,17 +52,17 @@ namespace Espionage
             if (literal is Expr.Literal)
             {
                 var l = (Expr.Literal)literal;
-                if (Regex.IsMatch(l.literal.lexeme, TokenList.Tokens["NUMBERDOT"]))
+                if (l.literal.type == "NUMBERDOT")
                 {
                     return "number";
                 }
 
-                if (Regex.IsMatch(l.literal.lexeme, TokenList.Tokens["STRING"]))
+                if (l.literal.type == "STRING")
                 {
                     return "string";
                 }
 
-                if (Regex.IsMatch(l.literal.lexeme, TokenList.Tokens["NUMBER"]))
+                if (l.literal.type == "NUMBER")
                 {
                     return "number";
                 }

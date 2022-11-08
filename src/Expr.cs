@@ -36,7 +36,6 @@ namespace Espionage
 
         public class Binary : Expr
         {
-
             public Expr left;
             public Token op;
             public Expr right;
@@ -185,12 +184,14 @@ namespace Espionage
         public class Call : Expr
         {
             public Var callee;
+            public bool constructor;
             public Function internalFunction;
             public List<Expr> arguments;
-            public Call(Var callee, List<Expr> arguments)
+            public Call(Var callee, List<Expr> arguments, bool constructor)
             {
                 this.callee = callee;
                 this.arguments = arguments;
+                this.constructor = constructor;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -361,6 +362,7 @@ namespace Espionage
 
         public class Function : Definition {
             public List<Parameter> parameters;
+            public string _returnType;
             public int arity
             {
                 get { return parameters.Count; }
@@ -368,9 +370,10 @@ namespace Espionage
             public bool _static;
             public bool constructor;
             public bool found;
-            public Function(Token name, List<Parameter> parameters, Block block)
+            public Function(string _returnType, Token name, List<Parameter> parameters, Block block)
                 : base(name, block)
             {
+                this._returnType = _returnType;
                 this.parameters = parameters;
             }
 
