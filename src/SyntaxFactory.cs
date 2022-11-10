@@ -19,7 +19,7 @@ namespace Espionage
                 public StringBuilder Output = new();
 
                 public Instruction.Comment header;
-                public List<List<Instruction>> headerInstructions;
+                public abstract List<List<Instruction>> GenerateHeaderInstructions(Expr.Function main);
             }
 
             public class SyntaxTypeCreator

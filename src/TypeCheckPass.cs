@@ -22,7 +22,7 @@ namespace Espionage
                 foreach (Expr expr in expressions)
                 {
                     string result = expr.Accept(this);
-                    if (result != "null")
+                    if (result != "void")
                     {
                         throw new Errors.BackendError(ErrorType.BackendException, "Expression With Non-Null Return", $"Expression returned with type '{result}'");
                     }
@@ -60,12 +60,12 @@ namespace Espionage
                         throw new Errors.BackendError(ErrorType.BackendException, "Invalid Return", $"A class may not have a 'return'");
                     }
 
-                    if (result != "null")
+                    if (result != "void")
                     {
                         throw new Errors.BackendError(ErrorType.BackendException, "Expression With Non-Null Return", $"Expression returned with type '{result}'");
                     }
                 }
-                return "null";
+                return "void";
             }
 
             public override string visitCallExpr(Expr.Call expr)
@@ -76,7 +76,7 @@ namespace Espionage
             public override string visitClassExpr(Expr.Class expr)
             {
                 expr.block.Accept(this);
-                return "null";
+                return "void";
             }
 
             public override string visitDeclareExpr(Expr.Declare expr)
@@ -86,7 +86,7 @@ namespace Espionage
                 {
                     throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.type.lexeme}'");
                 }
-                return "null";
+                return "void";
             }
 
             public override string visitFunctionExpr(Expr.Function expr)
@@ -118,7 +118,7 @@ namespace Espionage
                         throw new Errors.BackendError(ErrorType.BackendException, "Invalid Return", $"A constructor cannot have a 'return' expression");
                     }
                 }
-                return "null";
+                return "void";
             }
 
             public override string visitGetExpr(Expr.Get expr)
@@ -137,7 +137,7 @@ namespace Espionage
                     expr.condition.Accept(this);
 
                 expr.block.Accept(this);
-                return "null";
+                return "void";
             }
 
             public override string visitLiteralExpr(Expr.Literal expr)
@@ -178,18 +178,18 @@ namespace Espionage
             public override string visitReturnExpr(Expr.Return expr)
             {
                 _return.Add(expr.value.Accept(this));
-                return "null";
+                return "void";
             }
 
             public override string visitAssignExpr(Expr.Assign expr)
             {
                 expr.value.Accept(this);
-                return "null";
+                return "void";
             }
 
             public override string visitKeywordExpr(Expr.Keyword expr)
             {
-                return (expr.keyword.lexeme == "null")? "keyword_null" : expr.keyword.lexeme; 
+                return expr.keyword; 
             }
 
             public override string visitPrimitiveExpr(Expr.Primitive expr)
@@ -199,7 +199,7 @@ namespace Espionage
                 {
                     throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.literal.type.lexeme}'");
                 }
-                return "null";
+                return "void";
             }
 
             public override string visitNewExpr(Expr.New expr)

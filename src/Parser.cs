@@ -45,8 +45,16 @@ namespace Espionage
                 Expr.Block block;
                 if (definitionType.type == "function")
                 {
-                    Expect("IDENTIFIER", "function return type");
-                    Token _returnType = previous();
+                    string _returnType;
+                    if (peek().type == "IDENTIFIER")
+                    {
+                        Expect("IDENTIFIER", "function return type");
+                        _returnType = previous().lexeme;
+                    }
+                    else
+                    {
+                        _returnType = "void";
+                    }
                     Expect("IDENTIFIER", definitionType.type + " name");
                     Token name = previous();
                     Expect("LPAREN", "'(' after function name");
@@ -70,7 +78,7 @@ namespace Espionage
                         }
                     }
                     block = GetBlock(definitionType.type);
-                    return new Expr.Function(_returnType.lexeme, name, parameters, block);
+                    return new Expr.Function(_returnType, name, parameters, block);
                 }
                 else if (definitionType.type == "class")
                 {
@@ -263,13 +271,17 @@ namespace Espionage
 
                 if (TypeMatch("return"))
                 {
+                    if (current.type == "SEMICOLON")
+                    {
+                        return new Expr.Return(new Expr.Keyword("void"), true);
+                    }
                     Expr value = Additive();
                     return new Expr.Return(value);
                 }
 
                 if (TypeMatch("null"))
                 {
-                    return new Expr.Keyword(previous());
+                    return new Expr.Keyword(previous().lexeme);
                 }
 
                 if (TypeMatch("new"))

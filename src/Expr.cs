@@ -298,9 +298,9 @@ namespace Espionage
 
         public class Keyword : Expr
         {
-            public Token keyword;
+            public string keyword;
 
-            public Keyword(Token keyword)
+            public Keyword(string keyword)
             {
                 this.keyword = keyword;
             }
@@ -397,11 +397,16 @@ namespace Espionage
         public class Return : Expr
         {
             public Expr value;
+            public bool _void;
             public Return(Expr value)
             {
                 this.value = value;
             }
-
+            public Return(Expr value, bool _void)
+            {
+                this.value = value;
+                this._void = _void;
+            }
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.visitReturnExpr(this);

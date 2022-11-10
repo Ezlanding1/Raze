@@ -55,7 +55,7 @@ namespace Espionage
 
                 // Run Analysis on the Code 
                 Analyzer analyzer = new Analyzer(expressions);
-                expressions = analyzer.Analyze();
+                (expressions, Expr.Function main) = analyzer.Analyze();
 
                 // Lower AST to ASM
                 Assembler assembler = new(expressions);
@@ -65,7 +65,7 @@ namespace Espionage
 
 
                 #if DEBUG
-                Espionage.tools.AssemblyPrinter.PrintAssembly(instructions, data);
+                Espionage.tools.AssemblyPrinter.PrintAssembly(instructions, data, main);
                 #endif
                 // Output Result
                 //string path = Environment.GetFolderPath(System.Environment.SpecialFolder.DesktopDirectory) + "\\out.asm";

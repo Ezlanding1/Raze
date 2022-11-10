@@ -17,7 +17,7 @@ namespace Espionage
             this.expressions = expressions;
         }
 
-        internal List<Expr> Analyze(){
+        internal (List<Expr>, Expr.Function) Analyze(){
             Pass<object?> initialPass = new InitialPass(expressions);
             expressions = initialPass.Run();
             Expr.Function main = ((InitialPass)initialPass).getMain();
@@ -26,13 +26,17 @@ namespace Espionage
             {
                 throw new Errors.BackendError(ErrorType.BackendException, "Main Not Found", "No Main method for entrypoint found");
             }
+            if (main._returnType != "void" && main._returnType != "number")
+            {
+                throw new Errors.BackendError(ErrorType.BackendException, "Main Invalid Return Type", $"Main can only return types 'number', and 'void'. Got {main._returnType}");
+            }
             Pass<object?> mainPass = new MainPass(expressions, main);
             expressions = mainPass.Run();
 
             Pass<string> TypeChackPass = new TypeCheckPass(expressions);
             expressions = TypeChackPass.Run();
 
-            return expressions;
+            return (expressions, main);
         }
 
         internal static string TypeOf(Expr literal)

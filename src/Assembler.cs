@@ -242,11 +242,14 @@ namespace Espionage
 
         public Instruction.Register? visitReturnExpr(Expr.Return expr)
         {
-            Instruction.Register register = expr.value.Accept(this);
-            MovToRegister("RAX", register);
+            if (!expr._void)
+            {
+                Instruction.Register register = expr.value.Accept(this);
+                MovToRegister("RAX", register);
+            }
             emit(new Instruction.Unary("POP", "RBP"));
             emit(new Instruction.Zero("RET"));
-            return register;
+            return null;
         }
 
         public Instruction.Register? visitAssignExpr(Expr.Assign expr)

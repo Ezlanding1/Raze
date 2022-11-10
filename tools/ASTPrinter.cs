@@ -215,7 +215,7 @@ namespace Espionage.Tools
 
         public object? visitKeywordExpr(Expr.Keyword expr)
         {
-            PrintAST(expr.keyword);
+            Console.WriteLine(expr.keyword);
             return null;
         }
 

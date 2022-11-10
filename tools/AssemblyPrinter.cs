@@ -18,13 +18,13 @@ namespace Espionage.tools
             this.data = data;
         }
 
-        public static void PrintAssembly(List<List<Instruction>> instructions, List<Instruction> data)
+        public static void PrintAssembly(List<List<Instruction>> instructions, List<Instruction> data, Expr.Function main)
         {
             AssemblyPrinter printer = new(instructions, data);
-            printer.PrintAssembly();
+            printer.PrintAssembly(main);
         }
 
-        public void PrintAssembly()
+        public void PrintAssembly(Expr.Function main)
         {
             Syntaxes.SyntaxFactory.ISyntaxFactory Syntax;
             #if Intel_x86_64_NASM
@@ -37,7 +37,7 @@ namespace Espionage.tools
             }
             
             Syntax.Run(Syntax.header);
-            Syntax.Run(Syntax.headerInstructions);
+            Syntax.Run(Syntax.GenerateHeaderInstructions(main));
             Syntax.Run(instructions);
             Syntax.Run(data);
             Console.WriteLine(Syntax.Output);

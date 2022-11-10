@@ -18,7 +18,10 @@ namespace Espionage
                 public IntelSyntax()
                 {
                     header = new Instruction.Comment("Espionage Compiler Version BETA 0.0.0 Intel_x86-64 NASM");
-                    headerInstructions = new List<List<Instruction>>()
+                }
+                public override List<List<Instruction>> GenerateHeaderInstructions(Expr.Function main)
+                {
+                    return new List<List<Instruction>>()
                     {
                         {
                             new List<Instruction>()
@@ -27,7 +30,7 @@ namespace Espionage
                                 { new Instruction.Section("text") },
                                 { new Instruction.Function("_start") },
                                 { new Instruction.Unary("CALL", "Main") },
-                                { new Instruction.Binary("MOV", "RDI", "RAX") },
+                                { new Instruction.Binary("MOV", "RDI", (main._returnType == "number")? "RAX" : "0") },
                                 { new Instruction.Binary("MOV", "RAX", "60") },
                                 { new Instruction.Zero("SYSCALL") }
                             }
@@ -118,7 +121,9 @@ namespace Espionage
                 public GasSyntax()
                 {
                     header = new Instruction.Comment("Espionage Compiler Version BETA 0.0.0 Intel_x86-64 GAS");
-                    headerInstructions = new List<List<Instruction>>()
+                }
+                public override List<List<Instruction>> GenerateHeaderInstructions(Expr.Function main){
+                    return new List<List<Instruction>>()
                     {
                         {
                             new List<Instruction>()
@@ -127,7 +132,7 @@ namespace Espionage
                                 { new Instruction.Global("main") },
                                 { new Instruction.Function("main") },
                                 { new Instruction.Unary("CALL", "Main") },
-                                { new Instruction.Binary("MOV", "RDI", "RAX") },
+                                { new Instruction.Binary("MOV", "RDI", (main._returnType == "number")? "RAX" : "0") },
                                 { new Instruction.Binary("MOV", "RAX", "60") },
                                 { new Instruction.Zero("SYSCALL") }
                             }
