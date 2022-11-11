@@ -11,6 +11,7 @@ namespace Espionage
     internal partial class Analyzer
     {
         List<Expr> expressions;
+        Expr.Assign.Function main;
 
         public Analyzer(List<Expr> expressions)
         {
@@ -20,16 +21,13 @@ namespace Espionage
         internal (List<Expr>, Expr.Function) Analyze(){
             Pass<object?> initialPass = new InitialPass(expressions);
             expressions = initialPass.Run();
-            Expr.Function main = ((InitialPass)initialPass).getMain();
+            main = ((InitialPass)initialPass).getMain();
 
             if (main == null)
             {
                 throw new Errors.BackendError(ErrorType.BackendException, "Main Not Found", "No Main method for entrypoint found");
             }
-            if (main._returnType != "void" && main._returnType != "number")
-            {
-                throw new Errors.BackendError(ErrorType.BackendException, "Main Invalid Return Type", $"Main can only return types 'number', and 'void'. Got {main._returnType}");
-            }
+            CheckMain();
             Pass<object?> mainPass = new MainPass(expressions, main);
             expressions = mainPass.Run();
 
@@ -37,6 +35,14 @@ namespace Espionage
             expressions = TypeChackPass.Run();
 
             return (expressions, main);
+        }
+
+        private void CheckMain()
+        {
+            if (main._returnType != "void" && main._returnType != "number")
+            {
+                throw new Errors.BackendError(ErrorType.BackendException, "Main Invalid Return Type", $"Main can only return types 'number', and 'void'. Got {main._returnType}");
+            }
         }
 
         internal static string TypeOf(Expr literal)

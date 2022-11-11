@@ -12,6 +12,7 @@ namespace Espionage
         internal partial class TypeCheckPass : Pass<string>
         {
             List<string> _return;
+            bool callReturn;
             public TypeCheckPass(List<Expr> expressions) : base(expressions)
             {
                 _return = new();
@@ -22,8 +23,9 @@ namespace Espionage
                 foreach (Expr expr in expressions)
                 {
                     string result = expr.Accept(this);
-                    if (result != "void")
+                    if (result != "void" && !callReturn)
                     {
+                        callReturn = false; 
                         throw new Errors.BackendError(ErrorType.BackendException, "Expression With Non-Null Return", $"Expression returned with type '{result}'");
                     }
                     if (_return.Count != 0)
@@ -60,8 +62,9 @@ namespace Espionage
                         throw new Errors.BackendError(ErrorType.BackendException, "Invalid Return", $"A class may not have a 'return'");
                     }
 
-                    if (result != "void")
+                    if (result != "void" && !callReturn)
                     {
+                        callReturn = false; 
                         throw new Errors.BackendError(ErrorType.BackendException, "Expression With Non-Null Return", $"Expression returned with type '{result}'");
                     }
                 }
@@ -70,6 +73,7 @@ namespace Espionage
 
             public override string visitCallExpr(Expr.Call expr)
             {
+                callReturn = true;
                 return expr.internalFunction._returnType;
             }
 
