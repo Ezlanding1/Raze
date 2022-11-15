@@ -22,6 +22,7 @@ namespace Espionage
             public T visitCallExpr(Call expr);
             public T visitGetExpr(Get expr);
             public T visitBlockExpr(Block expr);
+            public T visitAssemblyExpr(Assembly expr);
             public T visitSuperExpr(Super expr);
             public T visitThisExpr(This expr);
             public T visitVariableExpr(Variable expr);
@@ -232,6 +233,21 @@ namespace Espionage
             }
         }
 
+        public class Assembly : Expr
+        {
+            public List<string> block;
+
+            public Assembly(List<string> block)
+            {
+                this.block = block;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.visitAssemblyExpr(this);
+            }
+        }
+
         public class Super : Expr
         {
             public Token keyword;
@@ -370,9 +386,23 @@ namespace Espionage
             public bool _static;
             public bool constructor;
             public bool found;
-            public Function(string _returnType, Token name, List<Parameter> parameters, Block block)
-                : base(name, block)
+
+            public Dictionary<string, bool> modifiers;
+
+            public Function()
+                : base(null, null)
             {
+                this.modifiers = new(){
+                    { "static", false },
+                    { "constructor", false },
+                    { "unsafe", false }
+                };
+            }
+
+            public void Add(string _returnType, Token name, List<Parameter> parameters, Block block)
+            {
+                base.name = name;
+                base.block = block;
                 this._returnType = _returnType;
                 this.parameters = parameters;
             }

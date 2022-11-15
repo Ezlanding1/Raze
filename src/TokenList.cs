@@ -66,10 +66,13 @@ namespace Espionage
             { "RPAREN", "[)]" },
             { "LBRACE", "[{]" },
             { "RBRACE", "[}]" },
+            { "LBRACKET", "[[]" },
+            { "RBRACKET", "[]]" },
 
             // Others
             { "COMMA", "[,]" },
             { "DOT", "[.]" },
+            { "COLON", "[:]" },
             { "SEMICOLON", "[;]" },
             { "COMMENT", /*lang=regex*/"(?m)[#].*$" },
         };
@@ -86,7 +89,8 @@ namespace Espionage
             "for",
             "while",
             "function",
-            "new"
+            "new",
+            "asm",
         };
     }
 }

@@ -28,7 +28,7 @@ namespace Espionage
         public class ParseError : Exception
         {
             public ParseError(ErrorType e, string name, string details)
-                : base($"{e}, {name}: {details}")
+                : base($"{e}\n{name}: {details}")
             {
 
             }

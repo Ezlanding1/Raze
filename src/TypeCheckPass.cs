@@ -95,6 +95,10 @@ namespace Espionage
 
             public override string visitFunctionExpr(Expr.Function expr)
             {
+                if (expr.modifiers["unsafe"])
+                {
+                    return "void";
+                }
                 foreach (Expr.Parameter paramExpr in expr.parameters)
                 {
                     paramExpr.Accept(this);

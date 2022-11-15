@@ -275,6 +275,15 @@ namespace Espionage
             return new Instruction.Register(false, "null");
         }
 
+        public Instruction.Register? visitAssemblyExpr(Expr.Assembly expr)
+        {
+            foreach (string instruction in expr.block)
+            {
+                emit(new Instruction.AsmInstruction(instruction));
+            }
+            return null;
+        }
+
         private void Declare(string type, int stackOffset, string name, object value)
         {
             int size = Analyzer.SizeOf(type);
@@ -294,7 +303,7 @@ namespace Espionage
             string value = operand2.name;
             if (type == "string")
             {
-                emitData(name, new Instruction.Data(name, InstructionTypes.dataSize[1], value));
+                emitData(name, new Instruction.Data(name, InstructionTypes.dataSize[1], value + ", 0"));
             }
             else if (type == "number")
             {
@@ -342,6 +351,7 @@ namespace Espionage
             }
             return new Instruction.Register(false, "CLASS");
         }
+
     }
     internal abstract class Instruction
     {
@@ -360,8 +370,21 @@ namespace Espionage
             public string visitUnary(Unary instruction);
             public string visitZero(Zero instruction);
             public string visitComment(Comment instruction);
+            public string visitAsmInstruction(AsmInstruction instruction);
         }
+        internal class AsmInstruction : Instruction
+        {
+            public string instruction;
+            public AsmInstruction(string instruction)
+            {
+                this.instruction = instruction;
+            }
 
+            public override string Accept(IVisitor visitor)
+            {
+                return visitor.visitAsmInstruction(this);
+            }
+        }
         internal class Global : Instruction
         {
             public string name;

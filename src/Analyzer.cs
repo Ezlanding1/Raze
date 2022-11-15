@@ -41,8 +41,15 @@ namespace Espionage
         {
             if (main._returnType != "void" && main._returnType != "number")
             {
-                throw new Errors.BackendError(ErrorType.BackendException, "Main Invalid Return Type", $"Main can only return types 'number', and 'void'. Got {main._returnType}");
+                throw new Errors.BackendError(ErrorType.BackendException, "Main Invalid Return Type", $"Main can only return types 'number', and 'void'. Got '{main._returnType}'");
             }
+            foreach (var item in main.modifiers)
+            {
+                if (item.Key != "static" && item.Value)
+                {
+                    throw new Errors.BackendError(ErrorType.BackendException, "Main Invalid Modifier", $"Main cannot have the '{item.Key}' modifier");
+                }
+            } 
         }
 
         internal static string TypeOf(Expr literal)
@@ -101,6 +108,9 @@ namespace Espionage
         private List<string> history;
         public int stackOffset;
         public int count;
+
+        public CallStack callStack;
+
         public Stack()
         {
             this.history = new();
@@ -108,6 +118,7 @@ namespace Espionage
             current = head;
             this.stackOffset = 0;
             this.tempCurrent = null;
+            this.callStack = new();
         }
 
         private void InitHead()
@@ -198,6 +209,7 @@ namespace Espionage
         public void AddFunc(string name, bool _static)
         {
             AddHistory("Container_F");
+            callStack.AddFunc(name, _static);
 
             stackObject.Function func = new stackObject.Function(name, _static);
             func.enclosing = current;
@@ -208,6 +220,7 @@ namespace Espionage
         public void AddClass(string type, string name)
         {
             AddHistory("Container_C");
+            callStack.AddClass(name);
 
             stackObject.Class _class = new stackObject.Class(type, name);
             _class.enclosing = current;
@@ -237,40 +250,16 @@ namespace Espionage
 
         public void Modify(string type, string key, int? value)
         {
-            //dictStack[key].offset = stackOffset.ToString();
-            //stackObject.Container pointer = current;
-            //for (; pointer != null; pointer = pointer.enclosing)
-            //{
-            //    foreach (stackObject.Var var in pointer.vars)
-            //    {
-            //        if (var.name == key)
-            //        {
-            //            var.
-            //        }
-            //    }
-            //}
-            //var newVal = new Tuple<string, string>(key, type);
-            //for (int i = 0; i < listStack.Count; i++)
-            //{
-            //    if (listStack[i].Item1 == key)
-            //    {
-            //        listStack[i] = newVal;
-            //        break;
-            //    }
-            //}
+            
         }
 
         public bool ContainsKey(string key)
         {
-            stackObject.Container pointer = current;
-            for (; pointer != null; pointer = pointer.enclosing)
+            foreach (stackObject.Var var in current.vars)
             {
-                foreach (stackObject.Var var in pointer.vars)
+                if (var.name == key)
                 {
-                    if (var.name == key)
-                    {
-                        return true;
-                    }
+                    return true;
                 }
             }
             return false;
@@ -391,35 +380,30 @@ namespace Espionage
 
     internal class CallStack
     {
-        List<Expr> stack;
         // True = class, False = fucntion
-        List<Tuple<string, bool>> stackString;
+        List<Tuple<string, bool>> stack;
         public CallStack()
         {
             this.stack = new();
-            this.stackString = new();
         }
 
-        public void Add(Expr.Class c)
+        public void AddClass(string name)
         {
-            stack.Add(c);
-            stackString.Add(new Tuple<string, bool>(c.name.lexeme, true));
+            stack.Add(new Tuple<string, bool>(name, true));
         }
 
-        public void Add(Expr.Function f)
+        public void AddFunc(string name, bool _static)
         {
-            if (stack.Count == 0 && !(f._static))
+            if (stack.Count == 0 && !_static)
             {
-                throw new Errors.BackendError(ErrorType.BackendException, "Top-Level Function", $"function {f.name.lexeme} must have an enclosing class");
+                throw new Errors.BackendError(ErrorType.BackendException, "Top-Level Function", $"function {name} must have an enclosing class");
             }
-            stack.Add(f);
-            stackString.Add(new Tuple<string, bool>(f.name.lexeme, false));
+            stack.Add(new Tuple<string, bool>(name, false));
         }
 
         public void RemoveLast()
         {
             stack.RemoveAt(stack.Count - 1);
-            stackString.RemoveAt(stackString.Count - 1);
         }
 
         public override string ToString()
@@ -427,7 +411,7 @@ namespace Espionage
             string str = "at:\n";
             string _classPath = "";
             List<string> _strings = new();
-            foreach (var call in stackString)
+            foreach (var call in stack)
             {
                 if (call.Item2)
                 {
@@ -450,7 +434,7 @@ namespace Espionage
         {
             string str = "";
             string _classPath = "";
-            foreach (var call in stackString)
+            foreach (var call in stack)
             {
                 if (call.Item2)
                 {

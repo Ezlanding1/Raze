@@ -60,6 +60,11 @@ namespace Espionage
                     Output.AppendLine(instruction.Accept(this));
                 }
 
+                public string visitAsmInstruction(Instruction.AsmInstruction instruction)
+                {
+                    return $"{instruction.instruction}";
+                }
+
                 public string visitBinary(Instruction.Binary instruction)
                 {
                     return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, {instruction.operand2.Accept(this)}";
@@ -161,6 +166,11 @@ namespace Espionage
                 public override void Run(Instruction instruction)
                 {
                     instruction.Accept(this);
+                }
+
+                public string visitAsmInstruction(Instruction.AsmInstruction instruction)
+                {
+                    throw new NotImplementedException();
                 }
 
                 public string visitBinary(Instruction.Binary instruction)

@@ -102,7 +102,21 @@ namespace Espionage.Tools
             Console.Write(offset);
             Console.WriteLine("├─'" + token.lexeme + "'");
         }
-
+        public void PrintAST(List<string> exprs, bool first=true)
+        {
+            foreach (string expr in exprs)
+            {
+                if (first)
+                {
+                    offset = "";
+                }
+                Console.WriteLine(expr);
+                if (first)
+                {
+                    Console.WriteLine(" ");
+                }
+            }
+        }
         public object? visitBinaryExpr(Expr.Binary expr)
         {
             PrintAST(expr.left);
@@ -228,6 +242,12 @@ namespace Espionage.Tools
         public object? visitNewExpr(Expr.New expr)
         {
             PrintAST(expr._className);
+            return null;
+        }
+
+        public object? visitAssemblyExpr(Expr.Assembly expr)
+        {
+            PrintAST(expr.block, false);
             return null;
         }
     }

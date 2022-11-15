@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Runtime;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -39,21 +40,41 @@ namespace Espionage
 
         private Expr Definition()
         {
-            if (!isAtEnd() && TypeMatch("function", "class"))
+            if (!isAtEnd() && TypeMatch("function", "class", "asm"))
             {
                 Token definitionType = previous();
-                Expr.Block block;
                 if (definitionType.type == "function")
                 {
+                    var function = new Expr.Function();
                     string _returnType;
                     if (peek().type == "IDENTIFIER")
                     {
-                        Expect("IDENTIFIER", "function return type");
-                        _returnType = previous().lexeme;
+                        if (!function.modifiers.ContainsKey(current.lexeme))
+                        {
+                            Expect("IDENTIFIER", "function return type");
+                            _returnType = previous().lexeme;
+                        }
+                        else
+                        {
+                            _returnType = "void";
+                        }
                     }
                     else
                     {
                         _returnType = "void";
+                    }
+                    while (peek().type != "LPAREN")
+                    {
+                        Expect("IDENTIFIER", "an identifier as a function modifier");
+                        var modifier = previous();
+                        if (function.modifiers.ContainsKey(previous().lexeme))
+                        {
+                            function.modifiers[modifier.lexeme] = true;
+                        }
+                        else
+                        {
+                            throw new Errors.ParseError(ErrorType.ParserException, "Invalid Modifier", $"The modifier '{modifier.lexeme}' does not exist");
+                        }
                     }
                     Expect("IDENTIFIER", definitionType.type + " name");
                     Token name = previous();
@@ -77,15 +98,18 @@ namespace Espionage
                             throw new Errors.ParseError(ErrorType.ParserException, "Unexpected End In Function Parameters", $"Function '{name.lexeme}' reached an unexpected end during it's parameters");
                         }
                     }
-                    block = GetBlock(definitionType.type);
-                    return new Expr.Function(_returnType, name, parameters, block);
+                    function.Add(_returnType, name, parameters, GetBlock(definitionType.type));
+                    return function;
                 }
                 else if (definitionType.type == "class")
                 {
                     Expect("IDENTIFIER", definitionType.type + " name");
                     Token name = previous();
-                    block = GetBlock(definitionType.type);
-                    return new Expr.Class(name, block);
+                    return new Expr.Class(name, GetBlock(definitionType.type));
+                }
+                else if (definitionType.type == "asm")
+                {
+                    return new Expr.Assembly(GetAsmInstructions());
                 }
             }
             return Conditional();
@@ -118,10 +142,10 @@ namespace Espionage
                         Expect("RPAREN", "')' after condition");
                         conditionalType.type = "else if";
                         block = GetBlock(conditionalType.type);
-                        return new Expr.ElseIf(conditionalType, condition, block);
+                       return new Expr.ElseIf(conditionalType, condition, block);
                     }
                     block = GetBlock(conditionalType.type);
-                    return new Expr.Else(conditionalType, null, block);
+                  return new Expr.Else(conditionalType, null, block);
                 }
                 else if (conditionalType.type == "while")
                 {
@@ -358,6 +382,12 @@ namespace Espionage
 
         private Expr.Block GetBlock(string bodytype)
         {
+            
+            return new Expr.Block(GetBlockItems(bodytype));
+        }
+
+        private List<Expr> GetBlockItems(string bodytype)
+        {
             List<Expr> bodyExprs = new();
             Expect("LBRACE", "'{' before " + bodytype + " body");
             while (!TypeMatch("RBRACE"))
@@ -372,7 +402,87 @@ namespace Espionage
                     break;
                 }
             }
-            return new Expr.Block(bodyExprs);
+            return bodyExprs;
+        }
+        
+        private List<string> GetAsmInstructions()
+        {
+            List<string> asmExprs = new();
+            Expect("LBRACE", "'{' before Assembly Block body");
+            while (!TypeMatch("RBRACE"))
+            {
+                asmExprs.Add(GetInstruction());
+
+                if (isAtEnd())
+                {
+                    Expect("RBRACE", "'}' after Assembly Block");
+                }
+                if (TypeMatch("RBRACE"))
+                {
+                    break;
+                }
+            }
+            return asmExprs;
+        }
+
+        private string GetInstruction()
+        {
+            string instruction = "";
+            Expect("LBRACE", "'{' before Assembly Block body");
+            int step = 0;
+            while (!TypeMatch("RBRACE"))
+            {
+                if (TypeMatch("IDENTIFIER")) 
+                {
+                    switch (step)
+                    {
+                        case 0:
+                            instruction += previous().lexeme;
+                            break;
+                        case 1:
+                            instruction += ("\t" + previous().lexeme);
+                            break;
+                        default:
+                            instruction += (" " + previous().lexeme);
+                            break;
+                    }
+                    step++;
+                }
+                else if (TypeMatch("DOT", "LBRACKET"))
+                {
+                    switch (step)
+                    {
+                        case 0:
+                            instruction += previous().lexeme;
+                            instruction += current.lexeme;
+                            break;
+                        case 1:
+                            instruction += ("\t" + previous().lexeme);
+                            instruction += current.lexeme;
+                            break;
+                        default:
+                            instruction += (" " + previous().lexeme);
+                            instruction += current.lexeme;
+                            break;
+                    }
+                    step++;
+                    advance();
+                }
+                else
+                {
+                    instruction += current.lexeme;
+                    advance();
+                }
+                if (isAtEnd())
+                {
+                    Expect("RBRACE", "'}', '{}' must surround Assembly instruction");
+                }
+                if (TypeMatch("RBRACE"))
+                {
+                    break;
+                }
+            }
+            return instruction;
         }
 
         private bool TypeMatch(params string[] types)

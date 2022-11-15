@@ -16,12 +16,10 @@ namespace Espionage
         internal class MainPass : Pass<object?>
         {
             Stack stack;
-            CallStack callStack;
             Expr.Function mainFunc;
             public MainPass(List<Expr> expressions, Expr.Function main) : base(expressions)
             {
                 this.stack = new();
-                this.callStack = new();
                 this.mainFunc = main;
             }
 
@@ -67,11 +65,9 @@ namespace Espionage
             public override object? visitClassExpr(Expr.Class expr)
             {
                 stack.AddClass(expr.name.lexeme, expr.dName);
-                callStack.Add(expr);
                 base.visitClassExpr(expr);
                 stack.CurrentUp();
                 //stack.RemoveLast();
-                callStack.RemoveLast();
                 return null;
             }
 
@@ -88,7 +84,7 @@ namespace Espionage
                 int size = SizeOf(type);
                 if (stack.ContainsKey(name))
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Double Declaration", $"A variable named '{name}' is already defined in this scope", callStack);
+                    throw new Errors.BackendError(ErrorType.BackendException, "Double Declaration", $"A variable named '{name}' is already defined in this scope", stack.callStack);
                 }
 
                 stack.Add(type, name, size);
@@ -109,7 +105,7 @@ namespace Espionage
                 int size = expr.literal.size;
                 if (stack.ContainsKey(name))
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Double Declaration", $"A variable named '{name}' is already defined in this scope", callStack);
+                    throw new Errors.BackendError(ErrorType.BackendException, "Double Declaration", $"A variable named '{name}' is already defined in this scope", stack.callStack);
                 }
                 stack.AddPrim(type, name, expr.literal.Location(size), size);
                 expr.stackOffset = stack.stackOffset;
@@ -126,16 +122,14 @@ namespace Espionage
                     stack.Add(paramExpr.type.lexeme, paramExpr.variable.lexeme, InstructionTypes.paramRegister[i]);
                 }
 
-                callStack.Add(expr);
-
                 expr.block.Accept(this);
 
-                callStack.RemoveLast();
 
                 for (int i = 0; i < arity; i++)
                 {
                     stack.RemoveLastParam();
                 }
+                stack.callStack.RemoveLast();
                 stack.RemoveLast();
                 return null;
             }
@@ -146,7 +140,7 @@ namespace Espionage
                 {
                     if (value == null)
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Null Reference Exception", $"reference to object {expr.variable.lexeme} not set to an instance of an object.", callStack);
+                        throw new Errors.BackendError(ErrorType.BackendException, "Null Reference Exception", $"reference to object {expr.variable.lexeme} not set to an instance of an object.", stack.callStack);
                     }
                     expr.stackPos = value;
                     expr.type = type;
@@ -157,7 +151,7 @@ namespace Espionage
                 }
                 else
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The variable '{expr.variable.lexeme}' does not exist in the current context", callStack);
+                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The variable '{expr.variable.lexeme}' does not exist in the current context", stack.callStack);
                 }
                 return null;
             }
@@ -186,7 +180,7 @@ namespace Espionage
             {
                 if (!stack.SwitchContext("DOWN", expr.variable.lexeme))
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The variable '{expr.variable.lexeme}' does not exist in the current context", callStack);
+                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The variable '{expr.variable.lexeme}' does not exist in the current context", stack.callStack);
                 }
                 expr.get.Accept(this);
                 expr.type = expr.get.type;

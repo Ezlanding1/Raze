@@ -143,6 +143,11 @@ namespace Espionage
                 return default(T);
             }
 
+            public T visitAssemblyExpr(Expr.Assembly expr)
+            {
+                return default(T);
+            }
+
             public virtual T visitNewExpr(Expr.New expr)
             {
 
@@ -159,6 +164,7 @@ namespace Espionage
 
                 return default(T);
             }
+
         }
     }
 }
