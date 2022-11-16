@@ -20,6 +20,8 @@ namespace Espionage
 
             Tuple<bool, int, Expr.If> waitingIf;
 
+            Expr.Function last;
+
             int index;
             Expr.Function main;
             public InitialPass(List<Expr> expressions) : base(expressions)
@@ -80,7 +82,7 @@ namespace Espionage
                 // Function Todo Notice:
                 // Note: since classes aren't implemented yet, functions are in a very early stage.
                 // The flaws with storing functions on the stack, function defitions, function calls, sizeof, and typeof will be resolved in later commits.
-
+                last = expr;
                 ResolveFunction(expr);
                 if (expr.name.lexeme == "Main")
                 {
@@ -97,6 +99,7 @@ namespace Espionage
                     throw new Errors.BackendError(ErrorType.BackendException, "Too Many Parameters", "A function cannot have more than 6 parameters");
                 }
                 expr.block.Accept(this);
+                last = null;
                 return null;
             }
 
@@ -127,7 +130,7 @@ namespace Espionage
                 }
                 else if (expr.type.type == "else if")
                 {
-                    if (waitingIf.Item1 == true && waitingIf.Item2 == (index - 1))
+                    if (waitingIf != null && (waitingIf.Item1 == true && waitingIf.Item2 == (index - 1)))
                     {
                         Expr.ElseIf elif = (Expr.ElseIf)expr;
                         elif.top = waitingIf.Item3;
@@ -141,7 +144,7 @@ namespace Espionage
                 }
                 else if (expr.type.type == "else")
                 {
-                    if (waitingIf.Item1 == true && waitingIf.Item2 == (index - 1))
+                    if (waitingIf != null && (waitingIf.Item1 == true && waitingIf.Item2 == (index - 1)))
                     {
                         Expr.Else _else = (Expr.Else)expr;
                         _else.top = waitingIf.Item3;
@@ -178,6 +181,17 @@ namespace Espionage
                 return null;
             }
 
+            public override object visitAssemblyExpr(Expr.Assembly expr)
+            {
+                if (last == null){
+                    throw new Errors.BackendError(ErrorType.BackendException, "Top Level Assembly Block", "Assembly Blocks must be placed in an unsafe function");
+                }
+                if (!last.modifiers["unsafe"])
+                {
+                    throw new Errors.BackendError(ErrorType.BackendException, "Unsafe Code in Safe Function", "Mark a function with 'unsafe' to include unsafe code");
+                }
+                return base.visitAssemblyExpr(expr);
+            }
             private void ResolveFunction(Expr.Function expr)
             {
                 List<Expr.Call> resolvedCalls = undefCalls.FindAll(x => x.callee.variable.lexeme == expr.name.lexeme);

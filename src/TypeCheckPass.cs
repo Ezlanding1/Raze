@@ -11,7 +11,7 @@ namespace Espionage
     {
         internal partial class TypeCheckPass : Pass<string>
         {
-            List<string> _return;
+            List<(string, bool)> _return;
             bool callReturn;
             public TypeCheckPass(List<Expr> expressions) : base(expressions)
             {
@@ -106,17 +106,29 @@ namespace Espionage
                 expr.block.Accept(this);
                 if (!expr.constructor)
                 {
-                    if (_return.Count == 0 && expr._returnType != "null")
+                    int _returnCount = 0;
+                    foreach (var ret in _return)
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "No Return", $"A function must have a 'return' expression");
-                    }
-                    _return.ForEach(x =>
-                    {
-                        if (x != expr._returnType)
+                        if (ret.Item1 != expr._returnType)
                         {
-                            throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot return type '{x}' from type '{expr._returnType}'");
+                            throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot return type '{ret.Item1}' from type '{expr._returnType}'");
                         }
-                    });
+                        if (!ret.Item2)
+                        {
+                            _returnCount++;
+                        }
+                    }
+                    if (_returnCount == 0 && expr._returnType != "void")
+                    {
+                        if (_return.Count == 0)
+                        {
+                            throw new Errors.BackendError(ErrorType.BackendException, "No Return", "A Function must have a 'return' expression");
+                        }
+                        else
+                        {
+                            throw new Errors.BackendError(ErrorType.BackendException, "No Return", "A Function must have a 'return' expression from all code paths");
+                        }
+                    }
                     _return.Clear();
                 }
                 else
@@ -141,10 +153,22 @@ namespace Espionage
 
             public override string visitConditionalExpr(Expr.Conditional expr)
             {
+                int _returnCount = _return.Count;
                 if (expr.condition != null)
-                    expr.condition.Accept(this);
-
+                {
+                    if (expr.condition.Accept(this) != "bool")
+                    {
+                        throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"'{expr.type.type}' expects condition to return 'bool'. Got '{expr.condition.Accept(this)}'");
+                    }
+                }
                 expr.block.Accept(this);
+                if (expr.type.type != "else")
+                {
+                    for (int i = _returnCount; i < _return.Count; i++)
+                    {
+                        _return[i] = (_return[i].Item1, true);
+                    }
+                }
                 return "void";
             }
 
@@ -185,7 +209,7 @@ namespace Espionage
 
             public override string visitReturnExpr(Expr.Return expr)
             {
-                _return.Add(expr.value.Accept(this));
+                _return.Add((expr.value.Accept(this), false));
                 return "void";
             }
 

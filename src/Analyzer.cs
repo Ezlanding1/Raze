@@ -266,17 +266,13 @@ namespace Espionage
         }
         public bool ContainsKey(string key, out string value, out string type)
         {
-            stackObject.Container pointer = current;
-            for (; pointer != null; pointer = pointer.enclosing)
+            foreach (stackObject.Var var in current.vars)
             {
-                foreach (stackObject.Var var in pointer.vars)
+                if (var.name == key)
                 {
-                    if (var.name == key)
-                    {
-                        value = var.offset;
-                        type = var.type;
-                        return true;
-                    }
+                    value = var.offset;
+                    type = var.type;
+                    return true;
                 }
             }
             value = "";

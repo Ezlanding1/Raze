@@ -84,9 +84,11 @@ namespace Espionage
                     "number",
                     "number",
                     "number",
-                    "number"
+                    "number",
+                    "bool"
                 }, 
                 new(){ // Operand 1
+                    "number",
                     "number",
                     "number",
                     "number",
@@ -98,9 +100,11 @@ namespace Espionage
                     "- BIN",
                     "* BIN",
                     "/ BIN",
-                    "% BIN"
+                    "% BIN",
+                    "== BIN"
                 },
                 new(){ // Operand 2
+                    "number",
                     "number",
                     "number",
                     "number",

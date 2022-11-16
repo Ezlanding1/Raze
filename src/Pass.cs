@@ -143,7 +143,7 @@ namespace Espionage
                 return default(T);
             }
 
-            public T visitAssemblyExpr(Expr.Assembly expr)
+            public virtual T visitAssemblyExpr(Expr.Assembly expr)
             {
                 return default(T);
             }

@@ -77,6 +77,15 @@ namespace Espionage
                     {
                         return null;
                     }
+                    if (pattern.type == "STRING")
+                    {
+                        string str = match.ToString();
+                        str = str
+                            .Replace("\\n", "\", 0xa, \"")
+                            .Replace("\\t", "\", 0x9, \"");
+                        Console.WriteLine(str);
+                        return new Token(pattern.type, str);
+                    }
                     return new Token(pattern.type, match.ToString());
                 }
             }

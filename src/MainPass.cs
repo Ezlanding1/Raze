@@ -6,7 +6,6 @@ using System.Runtime.Remoting;
 using System.Security.AccessControl;
 using System.Text;
 using System.Threading.Tasks;
-using static Espionage.Expr;
 using System.Xml.Linq;
 
 namespace Espionage
@@ -48,7 +47,7 @@ namespace Espionage
                 return null;
             }
 
-            public override object? visitCallExpr(Call expr)
+            public override object? visitCallExpr(Expr.Call expr)
             {
                 for (int i = 0; i < expr.internalFunction.arity; i++)
                 {
