@@ -40,7 +40,6 @@ namespace Espionage
             {
                 string operator1 = expr.left.Accept(this);
                 string operator2 = expr.right.Accept(this);
-
                 if ((Primitives.PrimitiveOps(operator1))
                         ._operators.TryGetValue((expr.op.lexeme + " BIN", operator1, operator2), out string value))
                 {
@@ -73,6 +72,15 @@ namespace Espionage
 
             public override string visitCallExpr(Expr.Call expr)
             {
+                for (int i = 0; i < expr.internalFunction.arity; i++)
+                {
+                    Expr.Parameter paramExpr = expr.internalFunction.parameters[i];
+                    expr.arguments[i].Accept(this);
+                    if (paramExpr.type.lexeme != expr.arguments[i].Accept(this))
+                    {
+                        throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"In call for {expr.internalFunction.name.lexeme}, type of '{paramExpr.type.lexeme}' does not match the definition's type '{expr.arguments[i].Accept(this)}'");
+                    }
+                }
                 callReturn = true;
                 return expr.internalFunction._returnType;
             }
@@ -86,7 +94,7 @@ namespace Espionage
             public override string visitDeclareExpr(Expr.Declare expr)
             {
                 string assignType = expr.value.Accept(this);
-                if (expr.type.lexeme != assignType && assignType != "keyword_null")
+                if (expr.type.lexeme != assignType && assignType != "null")
                 {
                     throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.type.lexeme}'");
                 }
@@ -95,6 +103,10 @@ namespace Espionage
 
             public override string visitFunctionExpr(Expr.Function expr)
             {
+                if (expr.dead)
+                {
+                    return "void";
+                }
                 if (expr.modifiers["unsafe"])
                 {
                     return "void";
@@ -198,7 +210,7 @@ namespace Espionage
                 }
                 else
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on types '{operator1}'");
+                    throw new Errors.BackendError(ErrorType.BackendException, "Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on type '{operator1}'");
                 }
             }
 

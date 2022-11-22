@@ -175,7 +175,16 @@ namespace Espionage
         public class Else : IfThenElse
         {
             public If top;
-            public Else(Token type, Expr condition, Block block)
+            public Else(Token type, Block block)
+                : base(type, null, block)
+            {
+
+            }
+        }
+
+        public class While : Conditional
+        {
+            public While(Token type, Expr condition, Block block)
                 : base(type, condition, block)
             {
 
@@ -188,6 +197,7 @@ namespace Espionage
             public bool constructor;
             public Function internalFunction;
             public List<Expr> arguments;
+            public bool found;
             public Call(Var callee, List<Expr> arguments, bool constructor)
             {
                 this.callee = callee;
@@ -281,8 +291,7 @@ namespace Espionage
 
         public class Variable : Var
         {
-            public string stackPos;
-            public bool register;
+            public int size;
             public Variable(Token variable)
                 :base(variable)
             {
@@ -299,7 +308,6 @@ namespace Espionage
         {
             public Primitives.PrimitiveType literal;
             public int stackOffset;
-
             public Primitive(Primitives.PrimitiveType literal)
             {
                 this.literal = literal;
@@ -383,20 +391,20 @@ namespace Espionage
             {
                 get { return parameters.Count; }
             }
-            public bool _static;
-            public bool constructor;
-            public bool found;
-
+            public bool keepStack;
+            public int size;
             public Dictionary<string, bool> modifiers;
-
+            public bool constructor;
+            public bool dead;
             public Function()
                 : base(null, null)
             {
                 this.modifiers = new(){
                     { "static", false },
-                    { "constructor", false },
                     { "unsafe", false }
                 };
+                this.size = 8;
+                this.dead = true;
             }
 
             public void Add(string _returnType, Token name, List<Parameter> parameters, Block block)
@@ -447,7 +455,6 @@ namespace Espionage
         {
             public Var variable;
             public Expr value;
-            public int offset;
 
             public Assign(Var variable, Expr value)
             {
@@ -465,6 +472,7 @@ namespace Espionage
         {
             public Token variable;
             public string type;
+            public int offset;
             public Var(Token variable)
             {
                 this.variable = variable;

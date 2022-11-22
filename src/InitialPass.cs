@@ -90,7 +90,7 @@ namespace Espionage
                     {
                         throw new Errors.BackendError(ErrorType.BackendException, "Main Declared Twice", "A Program may have only one 'Main' method");
                     }
-                    expr._static = true;
+                    expr.modifiers["static"] = true;
                     main = expr;
                 }
                 int paramsCount = expr.parameters.Count;
@@ -105,6 +105,7 @@ namespace Espionage
 
             public override object? visitCallExpr(Expr.Call expr)
             {
+                last.keepStack = true;
                 var function = ResolveCall(expr);
                 expr.internalFunction = function;
                 return null;

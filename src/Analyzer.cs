@@ -197,21 +197,21 @@ namespace Espionage
             throw new NotImplementedException();
         }
 
-        public void Add(string type, string key, int? value)
+        public void Add(string type, string name, int? size)
         {
             AddHistory("Var");
 
-            stackOffset += (int)value;
-            stackObject.Var var = new stackObject.Var(type, key, stackOffset.ToString());
+            stackOffset += (int)size;
+            stackObject.Var var = new stackObject.Var(type, name, stackOffset);
             current.vars.Add(var);
         }
 
-        public void AddFunc(string name, bool _static)
+        public void AddFunc(string name, Dictionary<string, bool> modifiers)
         {
             AddHistory("Container_F");
-            callStack.AddFunc(name, _static);
+            callStack.AddFunc(name, modifiers);
 
-            stackObject.Function func = new stackObject.Function(name, _static);
+            stackObject.Function func = new stackObject.Function(name, modifiers);
             func.enclosing = current;
             current.containers.Add(func);
             current = func;
@@ -233,18 +233,11 @@ namespace Espionage
             current = current.enclosing;
         }
 
-        public void Add(string type, string key, string value)
+        public void Add(string type, string key, int value)
         {
             AddHistory("Var");
-            stackObject.Var var = new stackObject.Var(type, key, value);
-            current.vars.Add(var);
-        }
-
-        public void AddPrim(string type, string key, string value, int offset)
-        {
-            AddHistory("Var");
-            stackOffset += offset;
-            stackObject.Var var = new stackObject.Var(type, key, value);
+            stackOffset += value;
+            stackObject.Var var = new stackObject.Var(type, key, stackOffset);
             current.vars.Add(var);
         }
 
@@ -264,7 +257,7 @@ namespace Espionage
             }
             return false;
         }
-        public bool ContainsKey(string key, out string value, out string type)
+        public bool ContainsKey(string key, out int? value, out string type)
         {
             foreach (stackObject.Var var in current.vars)
             {
@@ -275,7 +268,7 @@ namespace Espionage
                     return true;
                 }
             }
-            value = "";
+            value = null;
             type = "";
             return false;
         }
@@ -341,11 +334,11 @@ namespace Espionage
 
             internal class Function : Container
             {
-                internal bool _static;
-                public Function(string name, bool _static)
+                internal Dictionary<string, bool> modifiers;
+                public Function(string name, Dictionary<string, bool> modifiers)
                     : base("F", name)
                 {
-                    this._static = _static;
+                    this.modifiers = modifiers;
                 }
             }
 
@@ -363,8 +356,8 @@ namespace Espionage
             {
                 internal string type;
                 internal string name;
-                internal string offset;
-                public Var(string type, string name, string offset)
+                internal int offset;
+                public Var(string type, string name, int offset)
                 {
                     this.type = type;
                     this.name = name;
@@ -388,9 +381,9 @@ namespace Espionage
             stack.Add(new Tuple<string, bool>(name, true));
         }
 
-        public void AddFunc(string name, bool _static)
+        public void AddFunc(string name, Dictionary<string, bool> modifiers)
         {
-            if (stack.Count == 0 && !_static)
+            if (stack.Count == 0 && !modifiers["static"])
             {
                 throw new Errors.BackendError(ErrorType.BackendException, "Top-Level Function", $"function {name} must have an enclosing class");
             }

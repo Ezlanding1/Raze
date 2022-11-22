@@ -41,9 +41,6 @@ namespace Espionage
                 {
                     argExpr.Accept(this);
                 }
-                expr.internalFunction.found = true;
-                expr.internalFunction.Accept(this);
-                expr.internalFunction.found = false;
 
                 return default(T);
             }
@@ -62,10 +59,6 @@ namespace Espionage
 
             public virtual T visitFunctionExpr(Expr.Function expr)
             {
-                if (!expr.found)
-                {
-                    return default(T);
-                }
                 foreach (Expr.Parameter paramExpr in expr.parameters)
                 {
                     paramExpr.Accept(this);
@@ -150,17 +143,10 @@ namespace Espionage
 
             public virtual T visitNewExpr(Expr.New expr)
             {
-
-                expr.internalClass.Accept(this);
-
-
                 foreach (Expr argExpr in expr.arguments)
                 {
                     argExpr.Accept(this);
                 }
-                expr.internalFunction.found = true;
-                expr.internalFunction.Accept(this);
-                expr.internalFunction.found = false;
 
                 return default(T);
             }

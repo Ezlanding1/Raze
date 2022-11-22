@@ -85,7 +85,12 @@ namespace Espionage
                     "number",
                     "number",
                     "number",
-                    "bool"
+                    "bool",
+                    "bool",
+                    "bool",
+                    "number",
+                    "number",
+                    "number",
                 }, 
                 new(){ // Operand 1
                     "number",
@@ -93,7 +98,12 @@ namespace Espionage
                     "number",
                     "number",
                     "number",
-                    "number"
+                    "number",
+                    "number",
+                    "number",
+                    "number",
+                    "number",
+                    "number",
                 }, 
                 new(){ // Operator + " BIN/UN" (unary or binary);
                     "+ BIN",
@@ -101,7 +111,12 @@ namespace Espionage
                     "* BIN",
                     "/ BIN",
                     "% BIN",
-                    "== BIN"
+                    "== BIN",
+                    "> BIN",
+                    "< BIN",
+                    "++ UN",
+                    "-- UN",
+                    "- UN",
                 },
                 new(){ // Operand 2
                     "number",
@@ -109,7 +124,12 @@ namespace Espionage
                     "number",
                     "number",
                     "number",
-                    "number"
+                    "number",
+                    "number",
+                    "number",
+                    "",
+                    "",
+                    ""
                 }
             );
             internal override Operators GetOps()

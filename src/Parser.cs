@@ -30,9 +30,7 @@ namespace Espionage
             }
             return expressions;
         }
-        //IMPORTANT NOTE: not everything can be in parenthesis. Make a canGoInParen function and make grouping call it
-        //IMPORTANT NOTE: not everything can be in parameters. Make a canBeParam function and make "call" call it
-        //IMPORTANT NOTE: make a getParams function
+
         private Expr Start()
         {
             return Definition();
@@ -117,39 +115,42 @@ namespace Espionage
 
         private Expr Conditional()
         {
-            if (!isAtEnd() && TypeMatch("if", "else if", "else", "while"))
+            if (!isAtEnd() && TypeMatch("if", "else", "while", "for"))
             {
                 Token conditionalType = previous();
                 Expr.Block block;
-                if (conditionalType.type == "if")
+
+                conditionalType.type = (TypeMatch("if"))?  "else if" : conditionalType.type;
+
+                switch (conditionalType.type)
                 {
-                    // Important Note: change to conditional ( '==', '>=', etc. ) once they're implmented
-                    Expect("LPAREN", "'(' after conditional");
-                    Expr condition;
-                    condition = Logical();
-                    Expect("RPAREN", "')' after condition");
-                    block = GetBlock(conditionalType.type);
-                    return new Expr.If(conditionalType, condition, block);
-                }
-                else if (conditionalType.type == "else")
-                {
-                    if (TypeMatch("if"))
+                    case "if":
                     {
-                        // Important Note: change to conditional ( '==', '>=', etc. ) once they're implmented
-                        Expect("LPAREN", "'(' after conditional");
-                        Expr condition;
-                        condition = Logical();
-                        Expect("RPAREN", "')' after condition");
-                        conditionalType.type = "else if";
+                        Expr condition = GetCondition();
                         block = GetBlock(conditionalType.type);
-                       return new Expr.ElseIf(conditionalType, condition, block);
+                        return new Expr.If(conditionalType, condition, block);
                     }
-                    block = GetBlock(conditionalType.type);
-                  return new Expr.Else(conditionalType, null, block);
-                }
-                else if (conditionalType.type == "while")
-                {
-                    throw new NotImplementedException();
+                    case "else if":
+                    {
+                        Expr condition = GetCondition();
+                        block = GetBlock(conditionalType.type);
+                        return new Expr.ElseIf(conditionalType, condition, block);
+                    }
+                    case "else":
+                    {
+                        block = GetBlock(conditionalType.type);
+                        return new Expr.Else(conditionalType, block);
+                    }
+                    case "while":
+                    {
+                        Expr condition = GetCondition();
+                        block = GetBlock(conditionalType.type);
+                        return new Expr.While(conditionalType, condition, block);
+                    }
+                    case "for":
+                    {
+                        throw new NotImplementedException();
+                    }
                 }
             }
             return Semicolon();
@@ -230,17 +231,26 @@ namespace Espionage
 
         private Expr Multiplicative()
         {
-            Expr expr = Primary();
+            Expr expr = Unary();
             while (!isAtEnd() && TypeMatch("MULTIPLY", "DIVIDE", "MODULO"))
             {
                 Token op = previous();
-                Expr right = Primary();
+                Expr right = Unary();
                 expr = new Expr.Binary(expr, op, right);
             }
             return expr;
         }
 
-        
+        private Expr Unary()
+        {
+            while (!isAtEnd() && TypeMatch("NOT", "MINUS"))
+            {
+                Token op = previous();
+                Expr right = Unary();
+                return new Expr.Unary(op, right);
+            }
+            return Primary();
+        }
 
         private Expr Primary()
         {
@@ -273,6 +283,10 @@ namespace Espionage
                         Expr right = Logical();
                         expr = new Expr.Assign(new Expr.Variable(variable), right);
                     }
+                    else if (TypeMatch("PLUSPLUS", "MINUSMINUS"))
+                    {
+                        expr = new Expr.Unary(previous(), new Expr.Variable(variable));
+                    }
                     else if (TypeMatch("IDENTIFIER"))
                     {
                         Token name = previous();
@@ -292,6 +306,7 @@ namespace Espionage
                     }
                     return expr;
                 }
+
 
                 if (TypeMatch("return"))
                 {
@@ -350,10 +365,7 @@ namespace Espionage
                 Expr right = Logical();
                 return new Expr.Assign(variable, right);
             }
-            else
-            {
-                return null;
-            }
+            return null;
         }
 
         private Exception End()
@@ -380,9 +392,16 @@ namespace Espionage
             return arguments;
         }
 
+        private Expr GetCondition()
+        {
+            Expect("LPAREN", "'(' after conditional");
+            var condition = Logical();
+            Expect("RPAREN", "')' after condition");
+            return condition;
+        }
+
         private Expr.Block GetBlock(string bodytype)
         {
-            
             return new Expr.Block(GetBlockItems(bodytype));
         }
 

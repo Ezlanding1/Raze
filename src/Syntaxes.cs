@@ -95,6 +95,11 @@ namespace Espionage
                     return $"global {instruction.name}\n";
                 }
 
+                public string visitPointer(Instruction.Pointer instruction)
+                {
+                    return $"{InstructionInfo.wordSize[(int)instruction.size]} [{instruction.name}-{instruction.offset}]";
+                }
+
                 public string visitReference(Instruction.FunctionRef instruction)
                 {
                     return $"{instruction.name}";
@@ -199,6 +204,11 @@ namespace Espionage
                 }
 
                 public string visitGlobal(Instruction.Global instruction)
+                {
+                    throw new NotImplementedException();
+                }
+
+                public string visitPointer(Instruction.Pointer instruction)
                 {
                     throw new NotImplementedException();
                 }
