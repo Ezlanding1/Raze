@@ -317,6 +317,7 @@ namespace Espionage
 
         public Instruction.Register? visitReturnExpr(Expr.Return expr)
         {
+            macros.SwitchMacro(expr);
             if (!expr._void)
             {
                 Instruction.Register register = expr.value.Accept(this);
@@ -346,7 +347,17 @@ namespace Espionage
 
         public Instruction.Register? visitKeywordExpr(Expr.Keyword expr)
         {
-            return new Instruction.Register("null");
+            switch (expr.keyword)
+            {
+                case "null":
+                    return new Instruction.Register(expr.keyword);
+                case "true":
+                    return new Instruction.Literal("1");
+                case "false":
+                    return new Instruction.Literal("0");
+                default:
+                    throw new Exception($"Espionage Error: '{expr.keyword}' is not a primitive type (function)");
+            }
         }
 
         public Instruction.Register? visitAssemblyExpr(Expr.Assembly expr)

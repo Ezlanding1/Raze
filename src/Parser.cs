@@ -280,7 +280,7 @@ namespace Espionage
                     }
                     else if (TypeMatch("EQUALS", "PLUSEQUALS", "MINUSEQUALS"))
                     {
-                        Expr right = Logical();
+                        Expr right = NoSemicolon();
                         expr = new Expr.Assign(new Expr.Variable(variable), right);
                     }
                     else if (TypeMatch("PLUSPLUS", "MINUSMINUS"))
@@ -291,7 +291,7 @@ namespace Espionage
                     {
                         Token name = previous();
                         Expect("EQUALS", "'=' when declaring variable");
-                        Expr value = Logical();
+                        Expr value = NoSemicolon();
                         expr = (value is Expr.Literal)
                             ? new Expr.Primitive(Primitives.ToPrimitive(variable, name, (Expr.Literal)value))
                             : new Expr.Declare(variable, name, value);
@@ -318,7 +318,7 @@ namespace Espionage
                     return new Expr.Return(value);
                 }
 
-                if (TypeMatch("null"))
+                if (TypeMatch("null", "true", "false"))
                 {
                     return new Expr.Keyword(previous().lexeme);
                 }

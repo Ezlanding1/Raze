@@ -290,6 +290,10 @@ internal class InstructionInfo
                 footer = MacroType.FunctionFooter;
             }
         }
+        public void SwitchMacro(Expr.Return r)
+        {
+            footer = MacroType.FunctionFooter;
+        }
         public void SwitchMacro(Expr.Conditional c)
         {
             header = MacroType.EmptyHeader;

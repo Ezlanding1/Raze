@@ -233,13 +233,13 @@ namespace Espionage
 
             public override string visitKeywordExpr(Expr.Keyword expr)
             {
-                return expr.keyword; 
+                return TypeOf(expr); 
             }
 
             public override string visitPrimitiveExpr(Expr.Primitive expr)
             {
                 string assignType = expr.literal.value.Accept(this);
-                if (expr.literal.type.lexeme != assignType && assignType == "keyword_null")
+                if (expr.literal.type.lexeme != assignType && assignType != "null")
                 {
                     throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.literal.type.lexeme}'");
                 }

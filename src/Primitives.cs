@@ -12,11 +12,13 @@ namespace Espionage
     {
         private const int BYTES_IN_NUMBER = 8;
         private const int BYTES_IN_STRING = 0;
+        private const int BYTES_IN_BOOLEAN = 1;
 
         public static Dictionary<string, int> PrimitiveSize = new()
         {
             { "number", BYTES_IN_NUMBER },
-            { "string", BYTES_IN_STRING }
+            { "string", BYTES_IN_STRING },
+            { "bool", BYTES_IN_BOOLEAN },
         };
 
         private static PrimitiveType PrimitiveTypes(Token type, Token name, Expr.Literal value)
@@ -27,6 +29,8 @@ namespace Espionage
                     return new _number(PrimitiveSize["number"], type, name, value);
                 case "string":
                     return new _string(PrimitiveSize["string"], type, name, value);
+                case "bool":
+                    return new _string(PrimitiveSize["bool"], type, name, value);
                 default:
                     throw new Exception($"Espionage Error: '{type}' is not a primitive type (class)");
             }
@@ -34,15 +38,7 @@ namespace Espionage
 
         public static Operators PrimitiveOps(string type)
         {
-            switch (type)
-            {
-                case "number":
-                    return _number.Operators;
-                case "string":
-                    return _string.Operators;
-                default:
-                    throw new Exception($"Espionage Error: '{type}' is not a primitive type (class)");
-            }
+            return PrimitiveType.GetOperators(type);
         }
 
         public static PrimitiveType ToPrimitive(Token type, Token name, Expr.Literal value)
@@ -53,10 +49,20 @@ namespace Espionage
 
         internal abstract class PrimitiveType
         {
-            public static Operators Operators {
-                get { return new _number(0,null,null,null).GetOps(); }
+            public static Operators GetOperators(string type)
+            {
+                switch (type)
+                {
+                    case "number":
+                        return _number.GetOps();
+                    case "string":
+                        return _string.GetOps();
+                    case "bool":
+                        return _bool.GetOps();
+                    default:
+                        throw new Exception($"Espionage Error: '{type}' is not a primitive type (class)");
+                }
             }
-            internal abstract Operators GetOps();
             public Token type;
             public Token name;
             public Expr.Literal value;
@@ -132,7 +138,7 @@ namespace Espionage
                     ""
                 }
             );
-            internal override Operators GetOps()
+            internal static Operators GetOps()
             {
                 return Ops;
             }
@@ -155,11 +161,47 @@ namespace Espionage
                 new(){ // Operand 2
                 }
             );
-            internal override Operators GetOps()
+            internal static Operators GetOps()
             {
                 return Ops;
             }
             public _string(int size, Token type, Token name, Expr.Literal value)
+                : base(size, type, name, value)
+            {
+
+            }
+
+            public override string Location(int size)
+            {
+                return name.lexeme;
+            }
+        }
+
+        class _bool : PrimitiveType
+        {
+            public static readonly Operators Ops = new(
+                new()
+                { // Return Type
+                    "bool"
+                },
+                new()
+                { // Operand 1
+                    "bool"
+                },
+                new()
+                { // Operator
+                    "== BIN"
+                },
+                new()
+                { // Operand 2
+                    "bool"
+                }
+            );
+            internal static Operators GetOps()
+            {
+                return Ops;
+            }
+            public _bool(int size, Token type, Token name, Expr.Literal value)
                 : base(size, type, name, value)
             {
 

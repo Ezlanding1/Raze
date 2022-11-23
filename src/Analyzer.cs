@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -82,6 +83,18 @@ namespace Espionage
                 if (l.literal.type == "NUMBER")
                 {
                     return "number";
+                }
+            }
+            if (literal is Expr.Keyword)
+            {
+                var l = (Expr.Keyword)literal;
+                if (l.keyword == "null")
+                {
+                    return "null";
+                }
+                if (l.keyword == "true" || l.keyword == "false")
+                {
+                    return "bool";
                 }
             }
             throw new Exception("Invalid TypeOf");
