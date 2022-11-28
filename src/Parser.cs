@@ -563,11 +563,11 @@ namespace Espionage
 
         private bool isAtEnd()
         {
-            return (index >= tokens.Count);
+            return (index >= tokens.Count || index < 0);
         }
         private bool isAtEnd(int idx)
         {
-            return (idx >= tokens.Count);
+            return (idx >= tokens.Count || idx < 0);
         }
     }
 }

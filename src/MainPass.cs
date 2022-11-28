@@ -37,7 +37,18 @@ namespace Espionage
                 int frameStart = stack.count;
                 foreach (Expr blockExpr in expr.block)
                 {
+                    if (blockExpr is Expr.Function)
+                    {
+                        var b = (Expr.Function)blockExpr;
+                        if (b.constructor)
+                        {
                     blockExpr.Accept(this);
+                }
+                    }
+                    else
+                    {
+                        blockExpr.Accept(this);
+                    } 
                 }
                 current = tmpCurrent;
                 current.size += (stack.stackOffset - countStart);
@@ -89,13 +100,21 @@ namespace Espionage
 
                 base.visitDeclareExpr(expr);
 
-                int size = SizeOf(type);
+                int? size = SizeOf(type, expr.value);
                 if (stack.ContainsKey(name))
                 {
                     throw new Errors.BackendError(ErrorType.BackendException, "Double Declaration", $"A variable named '{name}' is already defined in this scope", stack.callStack);
                 }
 
+                if (expr.value is Expr.New)
+                {
+                    stack.AddClass(type, name);
+                }
+                else
+                {
                 stack.Add(type, name, size);
+                }
+                base.visitDeclareExpr(expr);
                 expr.offset = stack.stackOffset;
                 return null;
             }
@@ -148,14 +167,14 @@ namespace Espionage
 
             public override object? visitVariableExpr(Expr.Variable expr)
             {
-                if (stack.ContainsKey(expr.variable.lexeme, out int? value, out string type))
+                if (stack.ContainsKey(expr.variable.lexeme, out int? varVal, out string type, current.constructor))
                 {
                     if (value == null)
                     {
                         throw new Errors.BackendError(ErrorType.BackendException, "Null Reference Exception", $"reference to object {expr.variable.lexeme} not set to an instance of an object.", stack.callStack);
                     }
                     expr.size = SizeOf(type);
-                    expr.offset = (int)value;
+                    expr.offset = varVal;
                     expr.type = type;
                 }
                 else
@@ -173,7 +192,7 @@ namespace Espionage
 
                 base.visitAssignExpr(expr);
 
-                int size = SizeOf(type);
+                int? size = SizeOf(type);
                 stack.Modify(type, name, size);
                 return null;
             }

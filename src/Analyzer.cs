@@ -88,9 +88,9 @@ namespace Espionage
             if (literal is Expr.Keyword)
             {
                 var l = (Expr.Keyword)literal;
-                if (l.keyword == "null")
+                if (l.keyword == "null" || l.keyword == "void")
                 {
-                    return "null";
+                    return l.keyword;
                 }
                 if (l.keyword == "true" || l.keyword == "false")
                 {
@@ -100,8 +100,15 @@ namespace Espionage
             throw new Exception("Invalid TypeOf");
         }
 
-        internal static int SizeOf(string type)
+        internal static int SizeOf(string type, Expr value=null)
         {
+            if (value != null)
+            {
+                if (value is Expr.New)
+                {
+                    return 8;
+                }
+            }
             if (Primitives.PrimitiveSize.ContainsKey(type))
             {
                 return Primitives.PrimitiveSize[type];
@@ -214,8 +221,8 @@ namespace Espionage
         {
             AddHistory("Var");
 
-            stackOffset += (int)size;
-            stackObject.Var var = new stackObject.Var(type, name, stackOffset);
+            stackOffset += size??0;
+            stackObject.Var var = new stackObject.Var(type, name, (size != null)? stackOffset : null);
             current.vars.Add(var);
         }
 
@@ -279,6 +286,18 @@ namespace Espionage
                     value = var.offset;
                     type = var.type;
                     return true;
+                }
+            }
+            if (ctor)
+            {
+                foreach (stackObject.Var var in current.enclosing.vars)
+                {
+                    if (var.name == key)
+                    {
+                        value = var.offset;
+                        type = var.type;
+                        return true;
+                    }
                 }
             }
             value = null;
@@ -369,8 +388,9 @@ namespace Espionage
             {
                 internal string type;
                 internal string name;
-                internal int offset;
-                public Var(string type, string name, int offset)
+                internal int? offset;
+
+                public Var(string type, string name, int? offset)
                 {
                     this.type = type;
                     this.name = name;

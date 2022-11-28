@@ -17,7 +17,7 @@ namespace Espionage
             // Non Finite Tokens
             { "NUMBERDOT", /*lang=regex*/@"[-]?[0-9]+[.][0-9]+" },
             { "NUMBER", /*lang=regex*/@"[-]?[0-9]+" },
-            { "IDENTIFIER", /*lang=regex*/@"[a-zA-Z]+" },
+            { "IDENTIFIER", /*lang=regex*/@"[a-zA-Z_][a-zA-Z1-9_]*" },
             { "STRING", /*lang=regex*/@"[""].*[""]" },
             { "WHITESPACE", /*lang=regex*/@"[\s]" },
 

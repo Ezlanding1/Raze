@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -40,6 +41,11 @@ namespace Espionage
             {
                 string operator1 = expr.left.Accept(this);
                 string operator2 = expr.right.Accept(this);
+                if (operator1 == "null" || operator2 == "null")
+                {
+                    throw new Errors.BackendError(ErrorType.BackendException, "Null Reference Exception", $"Reference is not set to an instance of an object.");
+                }
+
                 if ((Primitives.PrimitiveOps(operator1))
                         ._operators.TryGetValue((expr.op.lexeme + " BIN", operator1, operator2), out string value))
                 {
@@ -121,7 +127,7 @@ namespace Espionage
                     int _returnCount = 0;
                     foreach (var ret in _return)
                     {
-                        if (ret.Item1 != expr._returnType)
+                        if (ret.Item1 != expr._returnType && ret.Item1 != "null")
                         {
                             throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot return type '{ret.Item1}' from type '{expr._returnType}'");
                         }

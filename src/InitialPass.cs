@@ -182,7 +182,7 @@ namespace Espionage
                 return null;
             }
 
-            public override object visitAssemblyExpr(Expr.Assembly expr)
+            public override object? visitAssemblyExpr(Expr.Assembly expr)
             {
                 if (last == null){
                     throw new Errors.BackendError(ErrorType.BackendException, "Top Level Assembly Block", "Assembly Blocks must be placed in an unsafe function");

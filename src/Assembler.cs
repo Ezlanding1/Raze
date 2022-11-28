@@ -14,6 +14,8 @@ namespace Espionage
         List<Expr> expressions;
         List<Instruction> data;
         List<List<Instruction>> instructions;
+
+        List<bool> footerType;
         int index;
         int conditionalCount;
         string ConditionalLabel
@@ -28,8 +30,6 @@ namespace Espionage
         }
         Dictionary<string, List<string>> dataHashMap;
         string lastJump;
-
-        InstructionInfo.Macros macros;
         public Assembler(List<Expr> expressions)
         {
             this.expressions = expressions;
@@ -41,7 +41,7 @@ namespace Espionage
             this.dataCount = 0;
             this.index = -1;
             this.lastJump = "";
-            this.macros = new();
+            this.footerType = new();
         }
         
         internal (List<List<Instruction>>, List<Instruction>) Assemble()
@@ -93,7 +93,7 @@ namespace Espionage
 
             string operand1 = expr.callee.variable.lexeme;
             emit(new Instruction.Unary("CALL", operand1));
-            return new Instruction.Literal("RAX");
+            return new Instruction.Register("RAX");
         }
 
         public Instruction.Register? visitClassExpr(Expr.Class expr)
@@ -138,21 +138,43 @@ namespace Espionage
 
                 return new Instruction.Register("RAX");
             }
+
             index++;
+            expr.keepStack = (expr.keepStack == true && expr.size != 0)? true : false;
             emit(new Instruction.Function(expr.name.lexeme));
-            macros.SwitchMacro(expr);
-            macros.DoMacroHeader(instructions[index]);
+            Instruction.Binary sub = null;
+            if (expr.keepStack)
+            {
+                emit(new Instruction.Unary("PUSH", "RBP"));
+                emit(new Instruction.Binary("MOV", "RBP", "RSP"));
+                sub = new Instruction.Binary("SUB", "RSP", "TMP");
+                emit(sub);
+            }
+            else
+            {
+                emit(new Instruction.Unary("PUSH", "RBP"));
+                emit(new Instruction.Binary("MOV", "RBP", "RSP"));
+            }
+
+            footerType.Add(expr.keepStack);
+
             for (int i = 0; i < expr.arity; i++)
             {
                 var paramExpr = expr.parameters[i];
-                if (!HandleParamEmit(paramExpr.type.lexeme, paramExpr.offset, paramExpr.size, paramExpr.variable.lexeme, InstructionInfo.paramRegister[i].ToString()))
+                if (!HandleParamEmit(paramExpr.type.lexeme, (int)paramExpr.offset, paramExpr.size, paramExpr.variable.lexeme, InstructionInfo.paramRegister[i].ToString()))
                 {
-                    emit(new Instruction.Binary("MOV", new Instruction.Pointer(paramExpr.offset, paramExpr.size), new Instruction.Register(InstructionInfo.paramRegister[i].ToString())));
+                    emit(new Instruction.Binary("MOV", new Instruction.Pointer((int)paramExpr.offset, (int)paramExpr.size), new Instruction.Register(InstructionInfo.paramRegister[i].ToString())));
                 }
             }
-            macros.SwitchMacro(InstructionInfo.Macros.MacroType.EmptyHeader, (InstructionInfo.Macros.MacroType)macros.footer);
-            expr.block.Accept(this);
 
+            expr.block.Accept(this);
+            if (expr.keepStack)
+            {
+                sub.operand2 = new Instruction.Register(expr.size.ToString());
+            }
+            DoFooter();
+
+            footerType.RemoveAt(footerType.Count - 1);
             index--;
             return new Instruction.Register("RAX");
         }
@@ -170,6 +192,11 @@ namespace Espionage
 
         public Instruction.Register? visitLiteralExpr(Expr.Literal expr)
         {
+            if (Analyzer.TypeOf(expr) == "string")
+            {
+                emitData("LITERAL", new Instruction.Data("LITERAL", InstructionInfo.dataSize[1], expr.literal.lexeme + ", 0"));
+                return new Instruction.Register(dataHashMap["LITERAL"][dataHashMap["LITERAL"].Count - 1]);
+            }
             return new Instruction.Literal(expr.literal.lexeme);
         }
 
@@ -185,7 +212,7 @@ namespace Espionage
 
         public Instruction.Register? visitUnaryExpr(Expr.Unary expr)
         {
-            string instruction = InstructionInfo.ToType(expr.op.type);
+            string instruction = InstructionInfo.ToType(expr.op.type, true);
             Instruction.Register operand1 = expr.operand.Accept(this);
             if (instruction == "RET")
             {
@@ -213,7 +240,11 @@ namespace Espionage
             {
                 return new Instruction.Register(dataHashMap[expr.variable.lexeme][dataHashMap[expr.variable.lexeme].Count - 1]);
             }
-            return new Instruction.Pointer(expr.offset, expr.size);
+            if (expr.offset == null)
+            {
+                return null;
+        }
+            return new Instruction.Pointer((int)expr.offset, (int)expr.size);
         }
 
         public Instruction.Register? visitConditionalExpr(Expr.Conditional expr)
@@ -282,7 +313,6 @@ namespace Espionage
                 conditionalCount++;
                 emit(new Instruction.Function(ConditionalLabel));
 
-                macros.SwitchMacro(expr);
                 expr.block.Accept(this);
 
                 conditionalCount--;
@@ -301,29 +331,22 @@ namespace Espionage
 
         public Instruction.Register? visitBlockExpr(Expr.Block expr)
         {
-            // Emit Block Header
-            macros.DoMacroHeader(instructions[index]);
-            var footer = macros.footer;
             foreach (Expr blockExpr in expr.block)
             {
                 blockExpr.Accept(this);
             }
-
-            // Emit Block Footer
-            macros.DoMacro(instructions[index], footer);
-
             return null;
         }
 
         public Instruction.Register? visitReturnExpr(Expr.Return expr)
         {
-            macros.SwitchMacro(expr);
             if (!expr._void)
             {
                 Instruction.Register register = expr.value.Accept(this);
+                if (register != null)
                 MovToRegister("RAX", register);
             }
-            macros.DoMacroFooter(instructions[index]);
+            DoFooter();
             return null;
         }
 
@@ -334,7 +357,7 @@ namespace Espionage
             Instruction.Register operand2 = expr.value.Accept(this);
             if (operand2.name != "null")
             {
-                Declare(type, expr.variable.offset, operand1, operand2.name);
+                Declare(type, (int)expr.variable.offset, operand1, operand2.name);
             }
             return null;
         }
@@ -369,12 +392,33 @@ namespace Espionage
             return null;
         }
 
+        public Instruction.Register? visitNewExpr(Expr.New expr)
+        {
+            // Todo: fix
+            for (int i = 0; i < expr.arguments.Count; i++)
+            {
+                Instruction.Register arg = expr.arguments[i].Accept(this);
+                MovToRegister(InstructionInfo.paramRegister[i], arg);
+            }
+
+            foreach (var blockExpr in expr.internalClass.block.block)
+            {
+                blockExpr.Accept(this);
+            }
+            return new Instruction.Register("CLASS");
+        }
+
         private void Declare(string type, int stackOffset, string name, object value)
         {
-            int size = Analyzer.SizeOf(type);
+            int? size = Analyzer.SizeOf(type);
+            if (size == null)
+            {
+                return;
+            }
+
             if (!HandleEmit(type, stackOffset, size, name, value))
             {
-                emit(new Instruction.Binary("MOV", new Instruction.Pointer(stackOffset, size), new Instruction.Register(value.ToString())));
+                emit(new Instruction.Binary("MOV", new Instruction.Pointer(stackOffset, (int)size), new Instruction.Register(value.ToString())));
             }
         }
         private void Declare(Expr.Primitive primitive)
@@ -390,7 +434,21 @@ namespace Espionage
             }
         }
 
-        private bool HandleParamEmit(string type, int stackOffset, int size, string name, object value)
+        private void DoFooter()
+        {
+            if (footerType[footerType.Count - 1])
+            {
+                emit(new Instruction.Zero("LEAVE"));
+                emit(new Instruction.Zero("RET"));
+            }
+            else
+            {
+                emit(new Instruction.Unary("POP", "RBP"));
+                emit(new Instruction.Zero("RET"));
+            }
+        }
+
+        private bool HandleParamEmit(string type, int stackOffset, int? size, string name, object value)
         {
             if (type == "string")
             {
@@ -399,7 +457,9 @@ namespace Espionage
             return HandleEmit(type, stackOffset, size, name, value);
             return false;
         }
-        private bool HandleEmit(string type, int stackOffset, int size, string name, object value)
+
+
+        private bool HandleEmit(string type, int stackOffset, int? size, string name, object value)
         {
             if (type == "string")
             {
@@ -408,11 +468,13 @@ namespace Espionage
             }
             else if (type == "number")
             {
-                emit(new Instruction.Binary("MOV", new Instruction.Pointer(stackOffset, size), new Instruction.Register(value.ToString())));
+                emit(new Instruction.Binary("MOV", new Instruction.Pointer(stackOffset, (int)size), new Instruction.Register(value.ToString())));
                 return true;
             }
             return false;
         }
+
+
         private void MovToRegister(string register, Instruction.Register literal)
         {
             emit(new Instruction.Binary("MOV", new Instruction.Register(register), literal));
