@@ -33,6 +33,7 @@ namespace Espionage
             public T visitPrimitiveExpr(Primitive expr);
             public T visitKeywordExpr(Keyword expr);
             public T visitNewExpr(New expr);
+            public T visitDefineExpr(Define expr);
         }
 
         public class Binary : Expr
@@ -291,7 +292,9 @@ namespace Espionage
 
         public class Variable : Var
         {
-            public int size;
+            public (bool, Expr.Literal) define;
+
+            public int? size;
             public Variable(Token variable)
                 :base(variable)
             {
@@ -403,7 +406,6 @@ namespace Espionage
                     { "static", false },
                     { "unsafe", false }
                 };
-                this.size = 8;
                 this.dead = true;
             }
 
@@ -468,11 +470,28 @@ namespace Espionage
             }
         }
 
+        public class Define : Expr
+        {
+            public string name;
+            public Literal value;
+
+            public Define(string name, Literal value)
+            {
+                this.name = name;
+                this.value = value;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.visitDefineExpr(this);
+            }
+        }
+
         public abstract class Var : Expr
         {
             public Token variable;
             public string type;
-            public int offset;
+            public int? offset;
             public Var(Token variable)
             {
                 this.variable = variable;

@@ -97,25 +97,25 @@ namespace Espionage.Tools
             
         }
 
+        public void PrintAST(List<string> exprs)
+        {
+            foreach (string s in exprs)
+            {
+                Console.Write(offset);
+                Console.WriteLine("├─'" + s+ "'");
+            }
+        }
+
         private void PrintAST(Token token)
         {
             Console.Write(offset);
             Console.WriteLine("├─'" + token.lexeme + "'");
         }
-        public void PrintAST(List<string> exprs, bool first=true)
+
+        private void PrintAST(string s)
         {
-            foreach (string expr in exprs)
-            {
-                if (first)
-                {
-                    offset = "";
-                }
-                Console.WriteLine(expr);
-                if (first)
-                {
-                    Console.WriteLine(" ");
-                }
-            }
+            Console.Write(offset);
+            Console.WriteLine("├─'" + s + "'");
         }
         public object? visitBinaryExpr(Expr.Binary expr)
         {
@@ -229,7 +229,7 @@ namespace Espionage.Tools
 
         public object? visitKeywordExpr(Expr.Keyword expr)
         {
-            Console.WriteLine(expr.keyword);
+            PrintAST(expr.keyword);
             return null;
         }
 
@@ -247,7 +247,14 @@ namespace Espionage.Tools
 
         public object? visitAssemblyExpr(Expr.Assembly expr)
         {
-            PrintAST(expr.block, false);
+            PrintAST(expr.block);
+            return null;
+        }
+
+        public object? visitDefineExpr(Expr.Define expr)
+        {
+            PrintAST(expr.name);
+            PrintAST(expr.value);
             return null;
         }
     }

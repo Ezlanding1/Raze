@@ -133,9 +133,7 @@ namespace Espionage
             }
             if (expr.constructor)
             {
-                macros.SwitchMacro(expr);
                 expr.block.Accept(this);
-
                 return new Instruction.Register("RAX");
             }
 
@@ -236,6 +234,12 @@ namespace Espionage
 
         public Instruction.Register? visitVariableExpr(Expr.Variable expr)
         {
+            if (expr.define.Item1)
+            {
+                return expr.define.Item2.Accept(this);
+            }
+
+
             if (expr.type == "string")
             {
                 return new Instruction.Register(dataHashMap[expr.variable.lexeme][dataHashMap[expr.variable.lexeme].Count - 1]);
@@ -243,7 +247,7 @@ namespace Espionage
             if (expr.offset == null)
             {
                 return null;
-        }
+            }
             return new Instruction.Pointer((int)expr.offset, (int)expr.size);
         }
 
@@ -257,7 +261,6 @@ namespace Espionage
                 var fJump = new Instruction.Unary(InstructionInfo.ConditionalJump[lastJump], "TMP");
                 emit(fJump);
 
-                macros.SwitchMacro(expr);
                 expr.block.Accept(this);
 
 
@@ -344,7 +347,7 @@ namespace Espionage
             {
                 Instruction.Register register = expr.value.Accept(this);
                 if (register != null)
-                MovToRegister("RAX", register);
+                    MovToRegister("RAX", register);
             }
             DoFooter();
             return null;
@@ -508,21 +511,10 @@ namespace Espionage
             }
         }
 
-        public Instruction.Register? visitNewExpr(Expr.New expr)
+        public Instruction.Register? visitDefineExpr(Expr.Define expr)
         {
-            for (int i = 0; i < expr.arguments.Count; i++)
-            {
-                Instruction.Register arg = expr.arguments[i].Accept(this);
-                MovToRegister(InstructionInfo.paramRegister[i], arg);
-            }
-
-            foreach (var blockExpr in expr.internalClass.block.block)
-            {
-                blockExpr.Accept(this);
-            }
-            return new Instruction.Register("CLASS");
+            return null;
         }
-
     }
     
 }

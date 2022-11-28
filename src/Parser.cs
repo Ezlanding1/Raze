@@ -38,7 +38,7 @@ namespace Espionage
 
         private Expr Definition()
         {
-            if (!isAtEnd() && TypeMatch("function", "class", "asm"))
+            if (!isAtEnd() && TypeMatch("function", "class", "asm", "define"))
             {
                 Token definitionType = previous();
                 if (definitionType.type == "function")
@@ -108,6 +108,13 @@ namespace Espionage
                 else if (definitionType.type == "asm")
                 {
                     return new Expr.Assembly(GetAsmInstructions());
+                }
+                else if (definitionType.type == "define")
+                {
+                    Expect("IDENTIFIER", "name of 'Define'");
+                    string name = previous().lexeme;
+
+                    return new Expr.Define(name, Literal() ?? throw new Errors.ParseError(ErrorType.ParserException, "Incorrect Define", "The value of 'Define' should be a literal"));
                 }
             }
             return Conditional();
@@ -256,9 +263,10 @@ namespace Espionage
         {
             if (!isAtEnd())
             {
-                if (TypeMatch("NUMBER", "STRING"))
+                Expr? x = null;
+                if ((x = Literal()) != null)
                 {
-                    return new Expr.Literal(previous());
+                    return x;
                 }
 
                 if (TypeMatch("LPAREN", "RPAREN"))
@@ -333,6 +341,15 @@ namespace Espionage
                 }
             }
             throw End();
+        }
+
+        private Expr.Literal? Literal()
+        {
+            if (TypeMatch("NUMBER", "STRING"))
+            {
+                return new Expr.Literal(previous());
+            }
+            return null;
         }
 
         private Expr.Get GetGetter(Token getter)

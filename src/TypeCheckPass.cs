@@ -222,7 +222,8 @@ namespace Espionage
 
             public override string visitVariableExpr(Expr.Variable expr)
             {
-                return expr.type;
+                return (expr.define.Item1)? expr.define.Item2.Accept(this)
+                       : (expr.offset != null)? expr.type : "null";
             }
 
             public override string visitReturnExpr(Expr.Return expr)
@@ -260,6 +261,11 @@ namespace Espionage
                 }
 
                 return expr._className.lexeme;
+            }
+
+            public override string visitDefineExpr(Expr.Define expr)
+            {
+                return "void";
             }
         }
     }

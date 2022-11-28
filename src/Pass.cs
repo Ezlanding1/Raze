@@ -151,6 +151,10 @@ namespace Espionage
                 return default(T);
             }
 
+            public virtual T visitDefineExpr(Expr.Define expr)
+            {
+                return default(T);
+            }
         }
     }
 }

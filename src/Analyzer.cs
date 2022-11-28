@@ -13,6 +13,7 @@ namespace Espionage
     {
         List<Expr> expressions;
         Expr.Assign.Function main;
+        List<Expr.Define> globalDefines;
 
         public Analyzer(List<Expr> expressions)
         {
@@ -22,14 +23,14 @@ namespace Espionage
         internal (List<Expr>, Expr.Function) Analyze(){
             Pass<object?> initialPass = new InitialPass(expressions);
             expressions = initialPass.Run();
-            main = ((InitialPass)initialPass).getMain();
+            (main, globalDefines) = ((InitialPass)initialPass).GetOutput();
 
             if (main == null)
             {
                 throw new Errors.BackendError(ErrorType.BackendException, "Main Not Found", "No Main method for entrypoint found");
             }
             CheckMain();
-            Pass<object?> mainPass = new MainPass(expressions, main);
+            Pass<object?> mainPass = new MainPass(expressions, main, globalDefines);
             expressions = mainPass.Run();
 
             Pass<string> TypeChackPass = new TypeCheckPass(expressions);
@@ -113,9 +114,7 @@ namespace Espionage
             {
                 return Primitives.PrimitiveSize[type];
             }
-            return 8;
             throw new Exception("Invalid sizeOf");
-
         }
     }
 
@@ -226,6 +225,14 @@ namespace Espionage
             current.vars.Add(var);
         }
 
+        public void AddDefine(string name, Expr.Literal value)
+        {
+            AddHistory("Define");
+
+            stackObject.Define define = new stackObject.Define(name, value);
+            current.defines.Add(define);
+        }
+
         public void AddFunc(string name, Dictionary<string, bool> modifiers)
         {
             AddHistory("Container_F");
@@ -277,7 +284,7 @@ namespace Espionage
             }
             return false;
         }
-        public bool ContainsKey(string key, out int? value, out string type)
+        public bool ContainsKey(string key, out int? value, out string type, bool ctor=false)
         {
             foreach (stackObject.Var var in current.vars)
             {
@@ -305,30 +312,46 @@ namespace Espionage
             return false;
         }
 
+        public bool ContainsDefine(string key, out Expr.Literal value)
+        {
+            return _ContainsDefine(current, key, out value);
+        }
+        private bool _ContainsDefine(stackObject.Container container, string key, out Expr.Literal value)
+        {
+            foreach (stackObject.Define def in container.defines)
+            {
+                if (def.name == key)
+                {
+                    value = def.value;
+                    return true;
+                }
+            }
+            if (container.enclosing != null)
+            {
+                return _ContainsDefine(container.enclosing, key, out value);
+            }
+            value = null;
+            return false;
+        }
+
         public void RemoveLast()
         {
             if (history[history.Count - 1] == "Var")
             {
-                RemoveLastVar();
-                count--;
-                history.RemoveAt(history.Count - 1);
+                current.vars.RemoveAt(current.vars.Count - 1);
+            }
+            else if (history[history.Count - 1] == "Define")
+            {
+                current.defines.RemoveAt(current.defines.Count - 1);
             }
             else if (history[history.Count - 1][..9] == "Container")
             {
-                RemoveLastContainer();
-                count--;
-                history.RemoveAt(history.Count - 1);
+                var enc = current.enclosing;
+                enc.containers.RemoveAt(enc.containers.Count - 1);
+                current = enc;
             }
-        }
-        public void RemoveLastContainer()
-        {
-            var enc = current.enclosing;
-            enc.containers.RemoveAt(enc.containers.Count - 1);
-            current = enc;
-        }
-        public void RemoveLastVar()
-        {
-            current.vars.RemoveAt(current.vars.Count - 1);
+            count--;
+            history.RemoveAt(history.Count - 1);
         }
 
         public void RemoveUnderCurrent(int frameEnd)
@@ -339,6 +362,7 @@ namespace Espionage
             }
             current.containers.Clear();
             current.vars.Clear();
+            current.defines.Clear();
             history.RemoveRange(frameEnd, (history.Count) - frameEnd);
             count = frameEnd;
         }
@@ -353,10 +377,12 @@ namespace Espionage
                 internal string type;
                 internal string name;
                 internal List<Var> vars;
+                internal List<Define> defines;
                 internal List<Container> containers;
                 public Container(string type, string name)
                 {
                     this.vars = new();
+                    this.defines = new();
                     this.containers = new();
                     this.type = type;
                     this.name = name;
@@ -395,6 +421,18 @@ namespace Espionage
                     this.type = type;
                     this.name = name;
                     this.offset = offset;
+                }
+            }
+
+            internal class Define : stackObject
+            {
+                internal string name;
+                internal Expr.Literal value;
+
+                public Define(string name, Expr.Literal value)
+                {
+                    this.name = name;
+                    this.value = value;
                 }
             }
         }

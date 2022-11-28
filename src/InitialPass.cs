@@ -24,6 +24,8 @@ namespace Espionage
 
             int index;
             Expr.Function main;
+            List<Expr.Define> globalDefines;
+
             public InitialPass(List<Expr> expressions) : base(expressions)
             {
                 this.classes = new();
@@ -31,6 +33,8 @@ namespace Espionage
 
                 this.functions = new();
                 this.undefCalls = new();
+
+                this.globalDefines = new();
 
                 this.index = 0;
             }
@@ -62,9 +66,9 @@ namespace Espionage
                 return expressions;
             }
 
-            internal Expr.Function getMain()
+            internal (Expr.Function, List<Expr.Define>) GetOutput()
             {
-                return main;
+                return (main, globalDefines);
             }
 
             public override object? visitBlockExpr(Expr.Block expr)
@@ -193,6 +197,16 @@ namespace Espionage
                 }
                 return base.visitAssemblyExpr(expr);
             }
+
+            public override object visitDefineExpr(Expr.Define expr)
+            {
+                if (main == null)
+                {
+                    globalDefines.Add(expr);
+                }
+                return null;
+            }
+
             private void ResolveFunction(Expr.Function expr)
             {
                 List<Expr.Call> resolvedCalls = undefCalls.FindAll(x => x.callee.variable.lexeme == expr.name.lexeme);

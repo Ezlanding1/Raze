@@ -91,6 +91,7 @@ namespace Espionage
             "function",
             "new",
             "asm",
+            "define"
         };
     }
 }
