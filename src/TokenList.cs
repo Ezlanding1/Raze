@@ -28,8 +28,6 @@ namespace Espionage
             { "NOTEQUALTO", /*lang=regex*/"[!][=]" },
 
             // Assignment Operators
-            { "PLUSEQUALS", /*lang=regex*/"[+][=]" },
-            { "MINUSEQUALS", /*lang=regex*/"[-][=]" },
             { "PLUSPLUS", /*lang=regex*/"[+][+]" },
             { "MINUSMINUS", /*lang=regex*/"[-][-]" },
             { "EQUALS", "=" },

@@ -63,7 +63,7 @@ namespace Espionage
             {
                 lastJump = expr.op.type;
             }
-            if ((operand1.IsLiteral() && operand2.IsLiteral()) || (operand1.IsPointer() && operand2.IsPointer()))
+            if ((operand1.IsLiteral() && operand2.IsLiteral()) || operand1.IsPointer())
             {
                 MovToRegister("RAX", operand1);
                 emit(new Instruction.Binary(instruction, new Instruction.Register("RAX"), operand2));
@@ -358,7 +358,18 @@ namespace Espionage
             string type = expr.variable.type;
             string operand1 = expr.variable.variable.lexeme;
             Instruction.Register operand2 = expr.value.Accept(this);
-            if (operand2.name != "null")
+
+            if (operand2.name == "null")
+            {
+                return null;
+            }
+            
+            if (expr.op != null)
+            {
+                string instruction = InstructionInfo.ToType(expr.op.type);
+                emit(new Instruction.Binary(instruction, new Instruction.Pointer((int)expr.variable.offset, (int)Analyzer.SizeOf(type)), operand2));
+            }
+            else
             {
                 Declare(type, (int)expr.variable.offset, operand1, operand2.name);
             }

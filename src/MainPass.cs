@@ -216,14 +216,14 @@ namespace Espionage
 
             public override object? visitGetExpr(Expr.Get expr)
             {
-                if (!stack.SwitchContext("DOWN", expr.variable.lexeme))
+                if (!stack.DownContext(expr.variable.lexeme))
                 {
                     throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The variable '{expr.variable.lexeme}' does not exist in the current context", stack.callStack);
                 }
                 expr.get.Accept(this);
                 expr.type = expr.get.type;
                 expr.offset = expr.get.offset;
-                stack.SwitchContext("BACK");
+                stack.UpContext();
                 return null;
             }
         }

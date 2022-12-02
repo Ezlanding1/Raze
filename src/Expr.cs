@@ -456,7 +456,15 @@ namespace Espionage
         public class Assign : Expr
         {
             public Var variable;
+            public Token? op;
             public Expr value;
+
+            public Assign(Var variable, Token op, Expr value)
+            {
+                this.variable = variable;
+                this.op = op;
+                this.value = value;
+            }
 
             public Assign(Var variable, Expr value)
             {

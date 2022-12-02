@@ -110,6 +110,10 @@ namespace Espionage
             public override object? visitCallExpr(Expr.Call expr)
             {
                 last.keepStack = true;
+                foreach (var argExpr in expr.arguments)
+                {
+                    argExpr.Accept(this);
+                }
                 var function = ResolveCall(expr);
                 expr.internalFunction = function;
                 return null;

@@ -279,21 +279,24 @@ namespace Espionage
                 if (TypeMatch("IDENTIFIER"))
                 {
                     Expr expr;
-                    var variable = previous();
+                    Expr.Var variable = new Expr.Variable(previous());
+
                     if (TypeMatch("DOT"))
                     {
-                        var getter = GetGetter(variable);
-                        expr = GetSetter(getter);
-                        expr ??= getter;
+                        variable = GetGetter(variable.variable);
                     }
-                    else if (TypeMatch("EQUALS", "PLUSEQUALS", "MINUSEQUALS"))
+                    if (TypeMatch("EQUALS"))
                     {
-                        Expr right = NoSemicolon();
-                        expr = new Expr.Assign(new Expr.Variable(variable), right);
+                        expr = new Expr.Assign(variable, NoSemicolon());
+                    }
+                    else if (TypeMatch(new string[] { "PLUS", "MINUS", "MULTIPLY", "DIVIDE", "MODULO" }, new string[] { "EQUALS" }))
+                    {
+                        var sign = tokens[index-2];
+                        expr = new Expr.Assign(variable, sign, NoSemicolon());
                     }
                     else if (TypeMatch("PLUSPLUS", "MINUSMINUS"))
                     {
-                        expr = new Expr.Unary(previous(), new Expr.Variable(variable));
+                        expr = new Expr.Unary(previous(), variable);
                     }
                     else if (TypeMatch("IDENTIFIER"))
                     {
@@ -301,16 +304,16 @@ namespace Espionage
                         Expect("EQUALS", "'=' when declaring variable");
                         Expr value = NoSemicolon();
                         expr = (value is Expr.Literal)
-                            ? new Expr.Primitive(Primitives.ToPrimitive(variable, name, (Expr.Literal)value))
-                            : new Expr.Declare(variable, name, value);
+                            ? new Expr.Primitive(Primitives.ToPrimitive(variable.variable, name, (Expr.Literal)value))
+                            : new Expr.Declare(variable.variable, name, value);
                     }
                     else if (TypeMatch("LPAREN"))
                     {
-                        expr = Call(new Expr.Variable(variable));
+                        expr = Call(variable);
                     }
                     else
                     {
-                        expr = new Expr.Variable(variable);
+                        expr = variable;
                     }
                     return expr;
                 }
@@ -352,37 +355,21 @@ namespace Espionage
             return null;
         }
 
-        private Expr.Get GetGetter(Token getter)
+        private Expr.Var GetGetter(Token getter)
         {
-            Expr.Var get;
+            Expect("IDENTIFIER", "variable name after '.'");
+
+            Expr.Var get = new Expr.Variable(previous());
             if (TypeMatch("DOT"))
             {
-                if (TypeMatch("IDENTIFIER"))
-                {
-                    get = GetGetter(previous());
-                }
-                else
-                {
-                    throw new Errors.ParseError(ErrorType.ParserException, "Trailing Dot", "Trailing '.' character");
-                }
+                get = new Expr.Get(get.variable, GetGetter(current));
             }
             else
             {
-                Expect("IDENTIFIER", "variable name after '.'");
-                get = new Expr.Variable(previous());
+                return get;
             }
 
             return new Expr.Get(getter, get);
-        }
-
-        private Expr.Assign GetSetter(Expr.Var variable)
-        {
-            if (TypeMatch("EQUALS", "PLUSEQUALS", "MINUSEQUALS"))
-            {
-                Expr right = Logical();
-                return new Expr.Assign(variable, right);
-            }
-            return null;
         }
 
         private Exception End()
@@ -538,6 +525,36 @@ namespace Espionage
             return false;
         }
 
+        private bool TypeMatch(string[] type1, string[] type2)
+        {
+            if (current == null)
+            {
+                return false;
+            }
+            int t = 0;
+            foreach (var type in type1)
+            {
+                if (current.type == type)
+                {
+                    advance();
+                    t++;
+                    break;
+                }
+            }
+            foreach (var type in type2)
+            {
+                if (current.type == type)
+                {
+                    advance();
+                    t++;
+                    break;
+                }
+            }
+            if (t == 1)
+                back();
+            return (t == 2);
+        }
+
         private void Expect(string type, string errorMessage)
         {
             if (current != null && current.type == type)
@@ -571,6 +588,17 @@ namespace Espionage
         {
             index++;
             if (!isAtEnd())
+            {
+                current = tokens[index];
+                return;
+            }
+            current = null;
+        }
+
+        private void back()
+        {
+            index--;
+            if (!isAtEnd(index - 1))
             {
                 current = tokens[index];
                 return;

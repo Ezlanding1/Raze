@@ -39,21 +39,21 @@ namespace Espionage
 
             public override string visitBinaryExpr(Expr.Binary expr)
             {
-                string operator1 = expr.left.Accept(this);
-                string operator2 = expr.right.Accept(this);
-                if (operator1 == "null" || operator2 == "null")
+                string operand1 = expr.left.Accept(this);
+                string operand2 = expr.right.Accept(this);
+                if (operand1 == "null" || operand2 == "null")
                 {
                     throw new Errors.BackendError(ErrorType.BackendException, "Null Reference Exception", $"Reference is not set to an instance of an object.");
                 }
 
-                if ((Primitives.PrimitiveOps(operator1))
-                        ._operators.TryGetValue((expr.op.lexeme + " BIN", operator1, operator2), out string value))
+                if ((Primitives.PrimitiveOps(operand1))
+                        ._operators.TryGetValue((expr.op.lexeme + " BIN", operand1, operand2), out string value))
                 {
                     return value;
                 }
                 else
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on types '{operator1}' and '{operator2}'");
+                    throw new Errors.BackendError(ErrorType.BackendException, "Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on types '{operand1}' and '{operand2}'");
                 }
             }
 
@@ -234,7 +234,20 @@ namespace Espionage
 
             public override string visitAssignExpr(Expr.Assign expr)
             {
-                expr.value.Accept(this);
+                if (expr.op != null)
+                {
+                    string operand = expr.value.Accept(this);
+
+                    if (!(Primitives.PrimitiveOps(expr.variable.type))
+                            ._operators.ContainsKey((expr.op.lexeme + " BIN", expr.variable.type, operand)))
+                    {
+                        throw new Errors.BackendError(ErrorType.BackendException, "Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on types '{expr.variable.type}' and '{operand}'");
+                    }
+                }
+                else
+                {
+                    expr.value.Accept(this);
+                }
                 return "void";
             }
 

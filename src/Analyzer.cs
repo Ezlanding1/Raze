@@ -122,7 +122,6 @@ namespace Espionage
     {
         private stackObject.Container head;
         private stackObject.Container current;
-        private stackObject.Container tempCurrent;
 
         private List<string> history;
         public int stackOffset;
@@ -136,7 +135,6 @@ namespace Espionage
             InitHead();
             current = head;
             this.stackOffset = 0;
-            this.tempCurrent = null;
             this.callStack = new();
         }
 
@@ -165,55 +163,24 @@ namespace Espionage
             history.RemoveAt(history.Count - 1);
         }
 
-        public bool SwitchContext(string type, string to="")
-        {
-            switch (type)
-            {
-                case "BACK":
-                    return BackContext();
-                case "DOWN":
-                    AddHistory(to);
-                    return DownContext(to, current);
-                case "UP":
-                    AddHistory(to);
-                    return UpContext(to);
-                default:
-                    return false;
-            }
-        }
 
-        private bool BackContext()
+        public bool DownContext(string to)
         {
-            RemoveLastHistory();
-            if (tempCurrent == null)
-            {
-                return false;
-            }
-            current = tempCurrent;
-            return true;
-        }
-
-        private bool DownContext(string to, stackObject.Container currentContainer)
-        {
-            foreach (stackObject.Container container in currentContainer.containers)
+            foreach (stackObject.Container container in current.containers)
             {
                 if (container.type == "C" && ((stackObject.Container.Class)container).dName == to)
                 {
-                    tempCurrent = current;
                     current = container;
-                    return true;
-                }
-                if (DownContext(to, container))
-                {
                     return true;
                 }
             }
             return false;
         }
 
-        private bool UpContext(string to)
+        public bool UpContext()
         {
-            throw new NotImplementedException();
+            current = current.enclosing;
+            return true;
         }
 
         public void Add(string type, string name, int? size)
