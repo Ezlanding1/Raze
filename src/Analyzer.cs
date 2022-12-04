@@ -183,12 +183,12 @@ namespace Espionage
             return true;
         }
 
-        public void Add(string type, string name, int? size)
+        public void Add(string type, string name, int size)
         {
             AddHistory("Var");
 
-            stackOffset += size??0;
-            stackObject.Var var = new stackObject.Var(type, name, (size != null)? stackOffset : null);
+            stackOffset += size;
+            stackObject.Var var = new stackObject.Var(type, name, stackOffset);
             current.vars.Add(var);
         }
 
@@ -227,15 +227,7 @@ namespace Espionage
             current = current.enclosing;
         }
 
-        public void Add(string type, string key, int value)
-        {
-            AddHistory("Var");
-            stackOffset += value;
-            stackObject.Var var = new stackObject.Var(type, key, stackOffset);
-            current.vars.Add(var);
-        }
-
-        public void Modify(string type, string key, int? value)
+        public void Modify(string type, string key, int value)
         {
             
         }
@@ -251,7 +243,7 @@ namespace Espionage
             }
             return false;
         }
-        public bool ContainsKey(string key, out int? value, out string type, bool ctor=false)
+        public bool ContainsKey(string key, out int value, out string type, bool ctor=false)
         {
             foreach (stackObject.Var var in current.vars)
             {
@@ -274,7 +266,7 @@ namespace Espionage
                     }
                 }
             }
-            value = null;
+            value = 0;
             type = "";
             return false;
         }
@@ -381,9 +373,9 @@ namespace Espionage
             {
                 internal string type;
                 internal string name;
-                internal int? offset;
+                internal int offset;
 
-                public Var(string type, string name, int? offset)
+                public Var(string type, string name, int offset)
                 {
                     this.type = type;
                     this.name = name;

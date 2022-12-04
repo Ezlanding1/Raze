@@ -11,7 +11,7 @@ namespace Espionage
     internal class Primitives
     {
         private const int BYTES_IN_NUMBER = 8;
-        private const int BYTES_IN_STRING = 0;
+        private const int BYTES_IN_STRING = 8;
         private const int BYTES_IN_BOOLEAN = 1;
 
         public static Dictionary<string, int> PrimitiveSize = new()
@@ -59,6 +59,8 @@ namespace Espionage
                         return _string.GetOps();
                     case "bool":
                         return _bool.GetOps();
+                    case "null":
+                        return _null.GetOps();
                     default:
                         throw new Exception($"Espionage Error: '{type}' is not a primitive type (class)");
                 }
@@ -94,11 +96,13 @@ namespace Espionage
                     "bool",
                     "bool",
                     "bool",
+                    "bool",
                     "number",
                     "number",
                     "number",
                 }, 
                 new(){ // Operand 1
+                    "number",
                     "number",
                     "number",
                     "number",
@@ -118,6 +122,7 @@ namespace Espionage
                     "/ BIN",
                     "% BIN",
                     "== BIN",
+                    "== BIN",
                     "> BIN",
                     "< BIN",
                     "++ UN",
@@ -131,6 +136,7 @@ namespace Espionage
                     "number",
                     "number",
                     "number",
+                    "null",
                     "number",
                     "number",
                     "",
@@ -202,6 +208,53 @@ namespace Espionage
                 return Ops;
             }
             public _bool(int size, Token type, Token name, Expr.Literal value)
+                : base(size, type, name, value)
+            {
+
+            }
+
+            public override string Location(int size)
+            {
+                return name.lexeme;
+            }
+        }
+
+        class _null : PrimitiveType
+        {
+            public static readonly Operators Ops = new(
+                new()
+                { // Return Type
+                    "bool",
+                    "bool",
+                    "bool",
+                    "bool",
+                },
+                new()
+                { // Operand 1
+                    "null",
+                    "null",
+                    "null",
+                    "null",
+                },
+                new()
+                { // Operator
+                    "== BIN",
+                    "== BIN",
+                    "== BIN",
+                },
+                new()
+                { // Operand 2
+                    "null",
+                    "number",
+                    "string",
+                    "bool",
+                }
+            );
+            internal static Operators GetOps()
+            {
+                return Ops;
+            }
+            public _null(int size, Token type, Token name, Expr.Literal value)
                 : base(size, type, name, value)
             {
 

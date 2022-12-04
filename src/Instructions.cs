@@ -113,6 +113,7 @@ internal abstract class Instruction
     {
         public Literal(string name) : base(2, name)
         {
+
         }
     }
 

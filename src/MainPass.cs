@@ -104,7 +104,7 @@ namespace Espionage
                 string name = expr.name.lexeme;
 
 
-                int? size = SizeOf(type, expr.value);
+                int size = SizeOf(type, expr.value);
                 if (stack.ContainsKey(name))
                 {
                     throw new Errors.BackendError(ErrorType.BackendException, "Double Declaration", $"A variable named '{name}' is already defined in this scope", stack.callStack);
@@ -171,7 +171,7 @@ namespace Espionage
 
             public override object? visitVariableExpr(Expr.Variable expr)
             {
-                if (stack.ContainsKey(expr.variable.lexeme, out int? varVal, out string type, current.constructor))
+                if (stack.ContainsKey(expr.variable.lexeme, out int varVal, out string type, current.constructor))
                 {
                     expr.size = SizeOf(type);
                     expr.offset = varVal;
@@ -203,7 +203,7 @@ namespace Espionage
 
                 base.visitAssignExpr(expr);
 
-                int? size = SizeOf(type);
+                int size = SizeOf(type);
                 stack.Modify(type, name, size);
                 return null;
             }

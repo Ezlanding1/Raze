@@ -41,10 +41,6 @@ namespace Espionage
             {
                 string operand1 = expr.left.Accept(this);
                 string operand2 = expr.right.Accept(this);
-                if (operand1 == "null" || operand2 == "null")
-                {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Null Reference Exception", $"Reference is not set to an instance of an object.");
-                }
 
                 if ((Primitives.PrimitiveOps(operand1))
                         ._operators.TryGetValue((expr.op.lexeme + " BIN", operand1, operand2), out string value))
@@ -53,6 +49,11 @@ namespace Espionage
                 }
                 else
                 {
+                    if (operand1 == "null" || operand2 == "null")
+                    {
+                        throw new Errors.BackendError(ErrorType.BackendException, "Null Reference Exception", $"Reference is not set to an instance of an object.");
+                    }
+
                     throw new Errors.BackendError(ErrorType.BackendException, "Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on types '{operand1}' and '{operand2}'");
                 }
             }
@@ -207,16 +208,19 @@ namespace Espionage
 
             public override string visitUnaryExpr(Expr.Unary expr)
             {
-                string operator1 = expr.operand.Accept(this);
-
-                if ((Primitives.PrimitiveOps(operator1))
-                        ._operators.TryGetValue((expr.op.lexeme + " UN", operator1, ""), out string value))
+                string operand1 = expr.operand.Accept(this);
+                if ((Primitives.PrimitiveOps(operand1))
+                        ._operators.TryGetValue((expr.op.lexeme + " UN", operand1, ""), out string value))
                 {
                     return value;
                 }
                 else
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on type '{operator1}'");
+                    if (operand1 == "null")
+                    {
+                        throw new Errors.BackendError(ErrorType.BackendException, "Null Reference Exception", $"Reference is not set to an instance of an object.");
+                    }
+                    throw new Errors.BackendError(ErrorType.BackendException, "Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on type '{operand1}'");
                 }
             }
 

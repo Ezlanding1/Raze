@@ -28,14 +28,12 @@ namespace Espionage
         { 
             get { return "LC" + dataCount; } 
         }
-        Dictionary<string, List<string>> dataHashMap;
         string lastJump;
         public Assembler(List<Expr> expressions)
         {
             this.expressions = expressions;
             this.data = new();
             data.Add(new Instruction.Section("data"));
-            dataHashMap = new();
             this.instructions = new();
             this.conditionalCount = 0;
             this.dataCount = 0;
@@ -118,10 +116,7 @@ namespace Espionage
             {
                 return null;
             }
-            if (operand2.name != "null")
-            {
-                Declare(type, expr.offset, operand1, operand2.name);
-            }
+            Declare(type, expr.offset, operand1, operand2.name);
             return null;
         }
 
@@ -192,8 +187,10 @@ namespace Espionage
         {
             if (Analyzer.TypeOf(expr) == "string")
             {
-                emitData("LITERAL", new Instruction.Data("LITERAL", InstructionInfo.dataSize[1], expr.literal.lexeme + ", 0"));
-                return new Instruction.Register(dataHashMap["LITERAL"][dataHashMap["LITERAL"].Count - 1]);
+                string name = DataLabel;
+                emitData(new Instruction.Data(name, InstructionInfo.dataSize[1], expr.literal.lexeme + ", 0"));
+                dataCount++;
+                return new Instruction.Literal(name);
             }
             return new Instruction.Literal(expr.literal.lexeme);
         }
@@ -239,14 +236,9 @@ namespace Espionage
                 return expr.define.Item2.Accept(this);
             }
 
-
-            if (expr.type == "string")
-            {
-                return new Instruction.Register(dataHashMap[expr.variable.lexeme][dataHashMap[expr.variable.lexeme].Count - 1]);
-            }
             if (expr.offset == null)
             {
-                return null;
+                return new Instruction.Literal("0");
             }
             return new Instruction.Pointer((int)expr.offset, (int)expr.size);
         }
@@ -358,11 +350,6 @@ namespace Espionage
             string type = expr.variable.type;
             string operand1 = expr.variable.variable.lexeme;
             Instruction.Register operand2 = expr.value.Accept(this);
-
-            if (operand2.name == "null")
-            {
-                return null;
-            }
             
             if (expr.op != null)
             {
@@ -387,7 +374,7 @@ namespace Espionage
             switch (expr.keyword)
             {
                 case "null":
-                    return new Instruction.Register(expr.keyword);
+                    return new Instruction.Literal("0");
                 case "true":
                     return new Instruction.Literal("1");
                 case "false":
@@ -408,7 +395,6 @@ namespace Espionage
 
         public Instruction.Register? visitNewExpr(Expr.New expr)
         {
-            // Todo: fix
             for (int i = 0; i < expr.arguments.Count; i++)
             {
                 Instruction.Register arg = expr.arguments[i].Accept(this);
@@ -422,27 +408,26 @@ namespace Espionage
             return new Instruction.Register("CLASS");
         }
 
-        private void Declare(string type, int stackOffset, string name, object value)
+        private void Declare(string type, int stackOffset, string name, string value)
         {
-            int? size = Analyzer.SizeOf(type);
+            int size = Analyzer.SizeOf(type);
             if (size == null)
             {
                 return;
             }
 
-            if (!HandleEmit(type, stackOffset, size, name, value))
+            if (!HandleEmit(type, stackOffset, size, value))
             {
-                emit(new Instruction.Binary("MOV", new Instruction.Pointer(stackOffset, (int)size), new Instruction.Register(value.ToString())));
+                emit(new Instruction.Binary("MOV", new Instruction.Pointer(stackOffset, (int)size), new Instruction.Register(value)));
             }
         }
         private void Declare(Expr.Primitive primitive)
         {
-            string name = primitive.literal.name.lexeme;
             string type = primitive.literal.type.lexeme;
             int size = primitive.literal.size;
             Instruction.Register operand2 = primitive.literal.value.Accept(this);
             string value = operand2.name;
-            if (!HandleEmit(type, primitive.stackOffset, size, name, value))
+            if (!HandleEmit(type, primitive.stackOffset, size, value))
             {
                 throw new Exception("Espionage Error: Internal Type Not Implemented (declare)");
             }
@@ -462,27 +447,27 @@ namespace Espionage
             }
         }
 
-        private bool HandleParamEmit(string type, int stackOffset, int? size, string name, object value)
+        private bool HandleParamEmit(string type, int stackOffset, int size, string name, string value)
         {
             if (type == "string")
             {
                 return true;
             }
-            return HandleEmit(type, stackOffset, size, name, value);
+            return HandleEmit(type, stackOffset, size, value);
             return false;
         }
 
 
-        private bool HandleEmit(string type, int stackOffset, int? size, string name, object value)
+        private bool HandleEmit(string type, int stackOffset, int size, string value)
         {
             if (type == "string")
             {
-                emitData(name, new Instruction.Data(name, InstructionInfo.dataSize[1], value + ", 0"));
+                emit(new Instruction.Binary("MOV", new Instruction.Pointer(stackOffset, (int)size), new Instruction.Register(value)));
                 return true;
             }
             else if (type == "number")
             {
-                emit(new Instruction.Binary("MOV", new Instruction.Pointer(stackOffset, (int)size), new Instruction.Register(value.ToString())));
+                emit(new Instruction.Binary("MOV", new Instruction.Pointer(stackOffset, (int)size), new Instruction.Register(value)));
                 return true;
             }
             return false;
@@ -505,21 +490,9 @@ namespace Espionage
             }
             instructions[index].Add(instruction);
         }
-        private void emitData(string name, Instruction.Data instruction)
+        private void emitData(Instruction.Data instruction)
         {
-            if (dataHashMap.TryGetValue(name, out List<string> dataUnderVar))
-            {
-                dataUnderVar.Add(DataLabel);
-                data.Add(new Instruction.Data(DataLabel, instruction.size, instruction.value));
-                dataCount++;
-            }
-            else
-            {
-                dataUnderVar = new List<string>() { DataLabel };
-                dataHashMap.Add(name, dataUnderVar);
-                data.Add(new Instruction.Data(DataLabel, instruction.size, instruction.value));
-                dataCount++;
-            }
+            data.Add(instruction);
         }
 
         public Instruction.Register? visitDefineExpr(Expr.Define expr)

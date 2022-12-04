@@ -294,7 +294,7 @@ namespace Espionage
         {
             public (bool, Expr.Literal) define;
 
-            public int? size;
+            public int size;
             public Variable(Token variable)
                 :base(variable)
             {
@@ -499,7 +499,7 @@ namespace Espionage
         {
             public Token variable;
             public string type;
-            public int? offset;
+            public int offset;
             public Var(Token variable)
             {
                 this.variable = variable;
