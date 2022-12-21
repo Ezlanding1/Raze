@@ -8,7 +8,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace Espionage
+namespace Raze
 {
     internal partial class Analyzer
     {

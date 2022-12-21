@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Espionage.Expr;
+using static Raze.Expr;
 
-namespace Espionage
+namespace Raze
 {
     public enum ErrorType
     {

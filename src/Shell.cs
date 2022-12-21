@@ -8,20 +8,21 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-
-namespace Espionage
+namespace Raze
 {
     internal class Shell
     {
+        const string fileExtension = ".rz";
+
         static void Main(string[] args)
         {
-            if (args.Length == 1 && args[0].EndsWith(".es"))
+            if (args.Length == 1 && args[0].EndsWith(fileExtension))
             {
                 Run(File.ReadAllText(args[0]));
             }
             else
             {
-                Console.WriteLine("Usage: Espionage [script].es");
+                Console.WriteLine("Usage: Raze [script]" + fileExtension);
                 Environment.Exit(64);
             }
         }
@@ -34,14 +35,14 @@ namespace Espionage
             try
             {
                 #if DEBUG
-                Espionage.tools.InputPrinter.PrintInput(text);
+                Raze.tools.InputPrinter.PrintInput(text);
                 #endif
                 // Pass Input Into Lexer
                 Lexer lexer = new Lexer(text);
                 var tokens = lexer.Tokenize();
 
                 #if DEBUG
-                Espionage.tools.TokenPrinter.PrintTokens(tokens);
+                Raze.tools.TokenPrinter.PrintTokens(tokens);
                 #endif
 
                 // Parse Tokens
@@ -65,7 +66,7 @@ namespace Espionage
 
 
                 #if DEBUG
-                Espionage.tools.AssemblyPrinter.PrintAssembly(instructions, data, main);
+                Raze.tools.AssemblyPrinter.PrintAssembly(instructions, data, main);
                 #endif
                 // Output Result
                 //string path = Environment.GetFolderPath(System.Environment.SpecialFolder.DesktopDirectory) + "\\out.asm";

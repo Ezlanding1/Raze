@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Espionage.tools
+namespace Raze.tools
 {
     internal class AssemblyPrinter
     {
@@ -33,7 +33,7 @@ namespace Espionage.tools
 
             if (Syntax == null)
             {
-                throw new Exception("Espionage Error: No Syntax Type Defined");
+                throw new Exception("Raze Error: No Syntax Type Defined");
             }
             
             Syntax.Run(Syntax.header);

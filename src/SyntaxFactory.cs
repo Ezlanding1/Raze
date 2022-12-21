@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Espionage
+namespace Raze
 {
     partial class Syntaxes
     {
@@ -30,7 +30,7 @@ namespace Espionage
                     {
                         "Intel_x86_64_NASM" => new IntelSyntax(),
                         "Intel_x86_64_GAS" => new GasSyntax(),
-                        _ => throw new ArgumentException("Espionage Error: Invalid Type Given", type),
+                        _ => throw new ArgumentException("Raze Error: Invalid Type Given", type),
                     };
                 }
             }

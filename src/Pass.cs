@@ -1,11 +1,11 @@
-﻿using Espionage.Tools;
+﻿using Raze.Tools;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Espionage
+namespace Raze
 {
     internal partial class Analyzer
     {

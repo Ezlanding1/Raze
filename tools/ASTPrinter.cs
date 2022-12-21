@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Espionage.Tools
+namespace Raze.Tools
 {
     internal class bASTPrinter
     {

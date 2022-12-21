@@ -6,7 +6,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Espionage
+namespace Raze
 {
     partial class Syntaxes
     {
@@ -17,7 +17,7 @@ namespace Espionage
             {
                 public IntelSyntax()
                 {
-                    header = new Instruction.Comment("Espionage Compiler Version BETA 0.0.0 Intel_x86-64 NASM");
+                    header = new Instruction.Comment("Raze Compiler Version BETA 0.0.0 Intel_x86-64 NASM");
                 }
                 public override List<List<Instruction>> GenerateHeaderInstructions(Expr.Function main)
                 {
@@ -130,7 +130,7 @@ namespace Espionage
             {
                 public GasSyntax()
                 {
-                    header = new Instruction.Comment("Espionage Compiler Version BETA 0.0.0 Intel_x86-64 GAS");
+                    header = new Instruction.Comment("Raze Compiler Version BETA 0.0.0 Intel_x86-64 GAS");
                 }
                 public override List<List<Instruction>> GenerateHeaderInstructions(Expr.Function main){
                     return new List<List<Instruction>>()

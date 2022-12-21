@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Espionage.tools
+namespace Raze.tools
 {
     internal class InputPrinter
     {

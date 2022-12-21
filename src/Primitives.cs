@@ -6,7 +6,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Espionage
+namespace Raze
 {
     internal class Primitives
     {
@@ -32,7 +32,7 @@ namespace Espionage
                 case "bool":
                     return new _string(PrimitiveSize["bool"], type, name, value);
                 default:
-                    throw new Exception($"Espionage Error: '{type}' is not a primitive type (class)");
+                    throw new Exception($"Raze Error: '{type}' is not a primitive type (class)");
             }
         }
 
@@ -62,7 +62,7 @@ namespace Espionage
                     case "null":
                         return _null.GetOps();
                     default:
-                        throw new Exception($"Espionage Error: '{type}' is not a primitive type (class)");
+                        throw new Exception($"Raze Error: '{type}' is not a primitive type (class)");
                 }
             }
             public Token type;

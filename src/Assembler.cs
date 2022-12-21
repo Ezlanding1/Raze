@@ -7,7 +7,7 @@ using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Espionage
+namespace Raze
 {
     internal class Assembler : Expr.IVisitor<Instruction.Register?>
     {
@@ -380,7 +380,7 @@ namespace Espionage
                 case "false":
                     return new Instruction.Literal("0");
                 default:
-                    throw new Exception($"Espionage Error: '{expr.keyword}' is not a primitive type (function)");
+                    throw new Exception($"Raze Error: '{expr.keyword}' is not a primitive type (function)");
             }
         }
 
@@ -423,7 +423,7 @@ namespace Espionage
             string value = operand2.name;
             if (!HandleEmit(type, primitive.stackOffset, size, value))
             {
-                throw new Exception("Espionage Error: Internal Type Not Implemented (declare)");
+                throw new Exception("Raze Error: Internal Type Not Implemented (declare)");
             }
         }
 
