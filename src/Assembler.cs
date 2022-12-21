@@ -89,7 +89,7 @@ namespace Espionage
                 MovToRegister(InstructionInfo.paramRegister[i], arg);
             }
 
-            string operand1 = expr.callee.variable.lexeme;
+            string operand1 = expr.callee.name.lexeme;
             emit(new Instruction.Unary("CALL", operand1));
             return new Instruction.Register("RAX");
         }
@@ -116,7 +116,7 @@ namespace Espionage
             {
                 return null;
             }
-            Declare(type, expr.offset, operand1, operand2.name);
+            Declare(type, expr.size, expr.stackOffset, operand1, operand2.name);
             return null;
         }
 
@@ -154,9 +154,9 @@ namespace Espionage
             for (int i = 0; i < expr.arity; i++)
             {
                 var paramExpr = expr.parameters[i];
-                if (!HandleParamEmit(paramExpr.type.lexeme, (int)paramExpr.offset, paramExpr.size, paramExpr.variable.lexeme, InstructionInfo.paramRegister[i].ToString()))
+                if (!HandleParamEmit(paramExpr.type.lexeme, (int)paramExpr.stackOffset, paramExpr.size, paramExpr.name.lexeme, InstructionInfo.paramRegister[i].ToString()))
                 {
-                    emit(new Instruction.Binary("MOV", new Instruction.Pointer((int)paramExpr.offset, (int)paramExpr.size), new Instruction.Register(InstructionInfo.paramRegister[i].ToString())));
+                    emit(new Instruction.Binary("MOV", new Instruction.Pointer((int)paramExpr.stackOffset, (int)paramExpr.size), new Instruction.Register(InstructionInfo.paramRegister[i].ToString())));
                 }
             }
 
@@ -236,11 +236,11 @@ namespace Espionage
                 return expr.define.Item2.Accept(this);
             }
 
-            if (expr.offset == null)
+            if (expr.stackOffset == null)
             {
                 return new Instruction.Literal("0");
             }
-            return new Instruction.Pointer((int)expr.offset, (int)expr.size);
+            return new Instruction.Pointer((int)expr.stackOffset, (int)expr.size);
         }
 
         public Instruction.Register? visitConditionalExpr(Expr.Conditional expr)
@@ -347,18 +347,18 @@ namespace Espionage
 
         public Instruction.Register? visitAssignExpr(Expr.Assign expr)
         {
-            string type = expr.variable.type;
-            string operand1 = expr.variable.variable.lexeme;
+            string type = expr.variable.type.lexeme;
+            string operand1 = expr.variable.name.lexeme;
             Instruction.Register operand2 = expr.value.Accept(this);
             
             if (expr.op != null)
             {
                 string instruction = InstructionInfo.ToType(expr.op.type);
-                emit(new Instruction.Binary(instruction, new Instruction.Pointer((int)expr.variable.offset, (int)Analyzer.SizeOf(type)), operand2));
+                emit(new Instruction.Binary(instruction, new Instruction.Pointer((int)expr.variable.stackOffset, (int)Analyzer.SizeOf(type)), operand2));
             }
             else
             {
-                Declare(type, (int)expr.variable.offset, operand1, operand2.name);
+                Declare(type, expr.variable.size,(int)expr.variable.stackOffset, operand1, operand2.name);
             }
             return null;
         }
@@ -408,14 +408,8 @@ namespace Espionage
             return new Instruction.Register("CLASS");
         }
 
-        private void Declare(string type, int stackOffset, string name, string value)
+        private void Declare(string type, int size, int stackOffset, string name, string value)
         {
-            int size = Analyzer.SizeOf(type);
-            if (size == null)
-            {
-                return;
-            }
-
             if (!HandleEmit(type, stackOffset, size, value))
             {
                 emit(new Instruction.Binary("MOV", new Instruction.Pointer(stackOffset, (int)size), new Instruction.Register(value)));

@@ -85,7 +85,7 @@ namespace Espionage
                         Expect("IDENTIFIER", "identifier as function parameter");
                         Token variable = previous();
 
-                        parameters.Add(new Expr.Parameter(type, variable));
+                        parameters.Add(new Expr.Parameter(variable, type));
                         if (TypeMatch("RPAREN"))
                         {
                             break;
@@ -279,11 +279,11 @@ namespace Espionage
                 if (TypeMatch("IDENTIFIER"))
                 {
                     Expr expr;
-                    Expr.Var variable = new Expr.Variable(previous());
+                    Expr.Variable variable = new Expr.Variable(previous());
 
                     if (TypeMatch("DOT"))
                     {
-                        variable = GetGetter(variable.variable);
+                        variable = GetGetter(variable);
                     }
                     if (TypeMatch("EQUALS"))
                     {
@@ -300,12 +300,13 @@ namespace Espionage
                     }
                     else if (TypeMatch("IDENTIFIER"))
                     {
-                        Token name = previous();
+                        variable.type = variable.name;
+                        variable.name = previous();
                         Expect("EQUALS", "'=' when declaring variable");
                         Expr value = NoSemicolon();
                         expr = (value is Expr.Literal)
-                            ? new Expr.Primitive(Primitives.ToPrimitive(variable.variable, name, (Expr.Literal)value))
-                            : new Expr.Declare(variable.variable, name, value);
+                            ? new Expr.Primitive(Primitives.ToPrimitive(variable.type, variable.name, (Expr.Literal)value))
+                            : new Expr.Declare(variable, value);
                     }
                     else if (TypeMatch("LPAREN"))
                     {
@@ -355,18 +356,14 @@ namespace Espionage
             return null;
         }
 
-        private Expr.Var GetGetter(Token getter)
+        private Expr.Variable GetGetter(Expr.Variable getter)
         {
             Expect("IDENTIFIER", "variable name after '.'");
-
-            Expr.Var get = new Expr.Variable(previous());
+            
+            Expr.Variable get = new Expr.Variable(previous());
             if (TypeMatch("DOT"))
             {
-                get = new Expr.Get(get.variable, GetGetter(current));
-            }
-            else
-            {
-                return get;
+                get = new Expr.Get(get, GetGetter(new Expr.Variable(current)));
             }
 
             return new Expr.Get(getter, get);
@@ -376,7 +373,7 @@ namespace Espionage
         {
             return new Errors.ParseError(ErrorType.ParserException, "Expression Reached Unexpected End", $"Expression '{((previous() != null)? previous().lexeme : "")}' reached an unexpected end");
         }
-        private Expr.Call Call(Expr.Var name)
+        private Expr.Call Call(Expr.Variable name)
         {
             return new Expr.Call(name, GetArgs(), false);
         }

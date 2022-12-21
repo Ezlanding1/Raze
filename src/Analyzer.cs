@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Security;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -64,9 +65,9 @@ namespace Espionage
             {
                 return ((Expr.Function)literal).name.lexeme;
             }
-            if (literal is Expr.Var)
+            if (literal is Expr.Variable)
             {
-                return ((Expr.Var)literal).type;
+                return ((Expr.Variable)literal).type.lexeme;
             }
             if (literal is Expr.Literal)
             {
@@ -118,57 +119,71 @@ namespace Espionage
         }
     }
 
-    internal class Stack
+    internal class SymbolTable
     {
-        private stackObject.Container head;
-        private stackObject.Container current;
-
-        private List<string> history;
-        public int stackOffset;
+        
+        public Symbol.Class head;
+        private Symbol.Container Current;
+        public Symbol.Container current { get { return this.Current; } set { this.Current = value; if (value.IsFunc()) { currentFunction = (Symbol.Function)value; } } }
+        private Symbol.Function currentFunction;
         public int count;
 
         public CallStack callStack;
 
-        public Stack()
+        public SymbolTable()
         {
-            this.history = new();
-            InitHead();
-            current = head;
-            this.stackOffset = 0;
+            this.head = new Symbol.Class(null);
+            this.current = this.head;
+            this.count = 0;
+
             this.callStack = new();
         }
 
-        private void InitHead()
-        {
-            count = 0;
-            AddHistory("Container_C");
-            head = new stackObject.Class("GLOBAL", "");
-        }
-
-        private void AddHistory(string action)
+        public void Add(Expr.Variable v)
         {
             count++;
-            history.Add(action);
+            current.vars.Add(new Symbol.PrimitiveClass(v));
+            ((Expr.Function)currentFunction.self).size += v.size;
+            v.stackOffset = ((Expr.Function)currentFunction.self).size;
         }
 
-        private void RemoveLastHistory()
+        public void Add(Expr.Class c)
         {
-            count--;
-            history.RemoveAt(history.Count - 1);
+            callStack.Add(c);
+
+            count++;
+            var _ = new Symbol.Class(c);
+            current.containers.Add(_);
+            _.enclosing = current;
+            current = _;
         }
 
-        public void RemoveLastParam()
+        public void Add(Expr.Function f)
         {
-            count--;
-            history.RemoveAt(history.Count - 1);
+            callStack.Add(f);
+            if (f.constructor)
+            {
+                f.size = ((Expr.Function)currentFunction.self).size;
+            }
+            count++;
+            var _ = new Symbol.Function(f);
+            current.containers.Add(_);
+            _.enclosing = current;
+            current = _;
         }
 
+        public void Add(Expr.Define d)
+        {
+            count++;
+            var _ = new Symbol.Define(d);
+            current.defines.Add(_);
+        }
 
         public bool DownContext(string to)
         {
-            foreach (stackObject.Container container in current.containers)
+            foreach (var container in current.containers)
             {
-                if (container.type == "C" && ((stackObject.Container.Class)container).dName == to)
+                if (container.IsClass() && ((Expr.Class)container.self).dName == to)
                 {
                     current = container;
                     return true;
@@ -179,95 +194,51 @@ namespace Espionage
 
         public bool UpContext()
         {
+            if (current.enclosing == null)
+            {
+                return false;
+            }
             current = current.enclosing;
             return true;
         }
 
-        public void Add(string type, string name, int size)
+        public bool ContainsKey(string key, out int value, out Token type, bool ctor = false)
         {
-            AddHistory("Var");
-
-            stackOffset += size;
-            stackObject.Var var = new stackObject.Var(type, name, stackOffset);
-            current.vars.Add(var);
-        }
-
-        public void AddDefine(string name, Expr.Literal value)
-        {
-            AddHistory("Define");
-
-            stackObject.Define define = new stackObject.Define(name, value);
-            current.defines.Add(define);
-        }
-
-        public void AddFunc(string name, Dictionary<string, bool> modifiers)
-        {
-            AddHistory("Container_F");
-            callStack.AddFunc(name, modifiers);
-
-            stackObject.Function func = new stackObject.Function(name, modifiers);
-            func.enclosing = current;
-            current.containers.Add(func);
-            current = func;
-        }
-
-        public void AddClass(string type, string name)
-        {
-            AddHistory("Container_C");
-            callStack.AddClass(name);
-
-            stackObject.Class _class = new stackObject.Class(type, name);
-            _class.enclosing = current;
-            current.containers.Add(_class);
-            current = _class;
-        }
-
-        public void CurrentUp()
-        {
-            current = current.enclosing;
-        }
-
-        public void Modify(string type, string key, int value)
-        {
-            
-        }
-
-        public bool ContainsKey(string key)
-        {
-            foreach (stackObject.Var var in current.vars)
+            foreach (var var in current.vars)
             {
-                if (var.name == key)
+                if (var.self.name.lexeme == key)
                 {
-                    return true;
-                }
-            }
-            return false;
-        }
-        public bool ContainsKey(string key, out int value, out string type, bool ctor=false)
-        {
-            foreach (stackObject.Var var in current.vars)
-            {
-                if (var.name == key)
-                {
-                    value = var.offset;
-                    type = var.type;
+                    value = var.self.stackOffset;
+                    type = var.self.type;
                     return true;
                 }
             }
             if (ctor)
             {
-                foreach (stackObject.Var var in current.enclosing.vars)
+                foreach (var var in current.enclosing.vars)
                 {
-                    if (var.name == key)
+                    if (var.self.name.lexeme == key)
                     {
-                        value = var.offset;
-                        type = var.type;
+                        value = var.self.stackOffset;
+                        type = var.self.type;
                         return true;
                     }
                 }
             }
             value = 0;
-            type = "";
+            type = null;
+            return false;
+        }
+
+        public bool ContainsKey(string key)
+        {
+            foreach (var var in current.vars)
+            {
+                if (var.self.name.lexeme == key)
+                {
+                    return true;
+                }
+            }
             return false;
         }
 
@@ -275,13 +246,13 @@ namespace Espionage
         {
             return _ContainsDefine(current, key, out value);
         }
-        private bool _ContainsDefine(stackObject.Container container, string key, out Expr.Literal value)
+        private bool _ContainsDefine(Symbol.Container container, string key, out Expr.Literal value)
         {
-            foreach (stackObject.Define def in container.defines)
+            foreach (var def in container.defines)
             {
-                if (def.name == key)
+                if (def.self.name == key)
                 {
-                    value = def.value;
+                    value = def.self.value;
                     return true;
                 }
             }
@@ -293,105 +264,80 @@ namespace Espionage
             return false;
         }
 
-        public void RemoveLast()
+        public void RemoveUnderCurrent()
         {
-            if (history[history.Count - 1] == "Var")
-            {
-                current.vars.RemoveAt(current.vars.Count - 1);
-            }
-            else if (history[history.Count - 1] == "Define")
-            {
-                current.defines.RemoveAt(current.defines.Count - 1);
-            }
-            else if (history[history.Count - 1][..9] == "Container")
-            {
-                var enc = current.enclosing;
-                enc.containers.RemoveAt(enc.containers.Count - 1);
-                current = enc;
-            }
-            count--;
-            history.RemoveAt(history.Count - 1);
-        }
+            var x = (current.containers.Count + current.vars.Count + current.defines.Count);
 
-        public void RemoveUnderCurrent(int frameEnd)
-        {
-            if (frameEnd - count == 0)
-            {
-                return;
-            }
+            callStack.RemoveRange(current.containers.Count);
+
             current.containers.Clear();
             current.vars.Clear();
             current.defines.Clear();
-            history.RemoveRange(frameEnd, (history.Count) - frameEnd);
-            count = frameEnd;
+            count -= x;
         }
 
-
-
-        class stackObject
+        internal class Symbol
         {
-            internal class Container : stackObject
+            internal class Container : Symbol
             {
                 internal Container enclosing;
-                internal string type;
-                internal string name;
-                internal List<Var> vars;
+
+                internal List<PrimitiveClass> vars;
                 internal List<Define> defines;
                 internal List<Container> containers;
-                public Container(string type, string name)
+                
+                internal Expr.Definition self;
+
+                private int type;
+
+                public bool IsClass() => type == 0;
+                public bool IsFunc() => type == 1;
+
+                public Container(int type, Expr.Definition self)
                 {
+                    this.type = type;
+                    this.self = self;
                     this.vars = new();
                     this.defines = new();
                     this.containers = new();
-                    this.type = type;
-                    this.name = name;
                     this.enclosing = null;
+                }
+
+                
+            }
+
+            internal class Class : Container
+            {
+                public Class(Expr.Class self) : base(0, self)
+                {
                 }
             }
 
             internal class Function : Container
             {
-                internal Dictionary<string, bool> modifiers;
-                public Function(string name, Dictionary<string, bool> modifiers)
-                    : base("F", name)
+                public Function(Expr.Function self) : base(1, self)
                 {
-                    this.modifiers = modifiers;
                 }
             }
 
-            internal class Class : Container
+
+            internal class PrimitiveClass : Symbol 
             {
-                internal string dName;
-                public Class(string type, string name)
-                    : base("C", type)
+                internal Expr.Variable self;
+
+                public PrimitiveClass(Expr.Variable self)
                 {
-                    this.dName = name;
+                    this.self = self;
                 }
             }
 
-            internal class Var : stackObject
+            internal class Define : Symbol
             {
-                internal string type;
-                internal string name;
-                internal int offset;
+                internal Expr.Define self;
 
-                public Var(string type, string name, int offset)
+                public Define(Expr.Define self)
                 {
-                    this.type = type;
-                    this.name = name;
-                    this.offset = offset;
-                }
-            }
-
-            internal class Define : stackObject
-            {
-                internal string name;
-                internal Expr.Literal value;
-
-                public Define(string name, Expr.Literal value)
-                {
-                    this.name = name;
-                    this.value = value;
+                    this.self = self;
                 }
             }
         }
@@ -400,24 +346,29 @@ namespace Espionage
     internal class CallStack
     {
         // True = class, False = fucntion
-        List<Tuple<string, bool>> stack;
+        private List<Tuple<string, bool>> stack;
         public CallStack()
         {
             this.stack = new();
         }
 
-        public void AddClass(string name)
+        public void Add(Expr.Class c)
         {
-            stack.Add(new Tuple<string, bool>(name, true));
+            stack.Add(new Tuple<string, bool>(c.name.lexeme, true));
         }
 
-        public void AddFunc(string name, Dictionary<string, bool> modifiers)
+        public void Add(Expr.Function f)
         {
-            if (stack.Count == 0 && !modifiers["static"])
+            if (stack.Count == 0 && !f.modifiers["static"])
             {
-                throw new Errors.BackendError(ErrorType.BackendException, "Top-Level Function", $"function {name} must have an enclosing class");
+                throw new Errors.BackendError(ErrorType.BackendException, "Top-Level Function", $"function {f.name.lexeme} must have an enclosing class");
             }
-            stack.Add(new Tuple<string, bool>(name, false));
+            stack.Add(new Tuple<string, bool>(f.name.lexeme, false));
+        }
+
+        public void RemoveRange(int x)
+        {
+            stack.RemoveRange(stack.Count - x, x);
         }
 
         public void RemoveLast()

@@ -38,7 +38,8 @@ namespace Espionage.Tools
             }
             else if (expr is Expr.Variable)
             {
-                PrintAST(((Expr.Variable)expr).variable);
+                PrintAST(((Expr.Variable)expr).type);
+                PrintAST(((Expr.Variable)expr).name);
             }
             else if (expr is Expr.Unary)
             {
@@ -108,8 +109,11 @@ namespace Espionage.Tools
 
         private void PrintAST(Token token)
         {
-            Console.Write(offset);
-            Console.WriteLine("├─'" + token.lexeme + "'");
+            if (token != null)
+            {
+                Console.Write(offset);
+                Console.WriteLine("├─'" + token.lexeme + "'");
+            }
         }
 
         private void PrintAST(string s)
@@ -152,7 +156,8 @@ namespace Espionage.Tools
 
         public object? visitGetExpr(Expr.Get expr)
         {
-            PrintAST(expr.variable);
+            PrintAST(expr.type);
+            PrintAST(expr.name);
             PrintAST(expr.get);
             return null;
         }
@@ -188,7 +193,8 @@ namespace Espionage.Tools
 
         public object? visitVariableExpr(Expr.Variable expr)
         {
-            PrintAST(expr.variable);
+            PrintAST(expr.type);
+            PrintAST(expr.name);
             return null;
         }
 

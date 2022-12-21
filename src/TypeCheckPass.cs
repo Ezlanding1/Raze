@@ -227,7 +227,7 @@ namespace Espionage
             public override string visitVariableExpr(Expr.Variable expr)
             {
                 return (expr.define.Item1)? expr.define.Item2.Accept(this)
-                       : (expr.offset != null)? expr.type : "null";
+                       : (expr.stackOffset != null)? expr.type.lexeme : "null";
             }
 
             public override string visitReturnExpr(Expr.Return expr)
@@ -242,8 +242,8 @@ namespace Espionage
                 {
                     string operand = expr.value.Accept(this);
 
-                    if (!(Primitives.PrimitiveOps(expr.variable.type))
-                            ._operators.ContainsKey((expr.op.lexeme + " BIN", expr.variable.type, operand)))
+                    if (!(Primitives.PrimitiveOps(expr.variable.type.lexeme))
+                            ._operators.ContainsKey((expr.op.lexeme + " BIN", expr.variable.type.lexeme, operand)))
                     {
                         throw new Errors.BackendError(ErrorType.BackendException, "Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on types '{expr.variable.type}' and '{operand}'");
                     }

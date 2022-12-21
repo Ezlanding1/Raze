@@ -106,17 +106,14 @@ namespace Espionage
 
         }
 
-        public class Declare : Expr
+        public class Declare : Variable
         {
-            public Token type;
-            public Token name;
             public Expr value;
-            public int offset;
-            public Declare(Token type, Token left, Expr right)
+
+            public Declare(Variable var, Expr value)
+                : base(var)
             {
-                this.type = type;
-                this.name = left;
-                this.value = right;
+                this.value = value;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -194,12 +191,12 @@ namespace Espionage
 
         public class Call : Expr
         {
-            public Var callee;
+            public Variable callee;
             public bool constructor;
             public Function internalFunction;
             public List<Expr> arguments;
             public bool found;
-            public Call(Var callee, List<Expr> arguments, bool constructor)
+            public Call(Variable callee, List<Expr> arguments, bool constructor)
             {
                 this.callee = callee;
                 this.arguments = arguments;
@@ -213,14 +210,21 @@ namespace Espionage
 
         }
 
-        public class Get : Var
+        public class Get : Variable
         {
-            public Var get;
-            public Get(Token getter, Var get)
+            public Variable get;
+
+            public Get(Variable getter, Variable get)
                 : base(getter)
             {
                 this.get = get;
             }
+            public Get(Token getter, Variable get)
+                : base(getter)
+            {
+                this.get = get;
+            }
+
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.visitGetExpr(this);
@@ -290,15 +294,37 @@ namespace Espionage
 
         }
 
-        public class Variable : Var
+        public class Variable : Expr
         {
             public (bool, Expr.Literal) define;
 
+            public Token name;
+            public Token type;
             public int size;
-            public Variable(Token variable)
-                :base(variable)
-            {
+            public int stackOffset;
 
+            public Variable(Token name, Token type, int size)
+            {
+                this.name = name;
+                this.type = type;
+                this.size = size;
+            }
+
+            public Variable(Token name, Token type)
+            {
+                this.name = name;
+                this.type = type;
+            }
+
+            public Variable(Token name)
+            {
+                this.name = name;
+            }
+
+            public Variable(Variable @this)
+            {
+                this.name = @this.name;
+                this.type = @this.type;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -340,6 +366,8 @@ namespace Espionage
 
         public class New : Expr
         {
+            public string declName;
+
             public Token _className;
             public List<Expr> arguments;
 
@@ -360,9 +388,8 @@ namespace Espionage
 
         public class Parameter : Variable
         {
-            public Token type;
-            public Parameter(Token type, Token variable)
-                : base(variable)
+            public Parameter(Token name, Token type)
+                : base(name, type)
             {
                 this.type = type;
             }
@@ -395,10 +422,11 @@ namespace Espionage
                 get { return parameters.Count; }
             }
             public bool keepStack;
-            public int size;
             public Dictionary<string, bool> modifiers;
             public bool constructor;
             public bool dead;
+            public int size;
+
             public Function()
                 : base(null, null)
             {
@@ -455,18 +483,18 @@ namespace Espionage
 
         public class Assign : Expr
         {
-            public Var variable;
+            public Variable variable;
             public Token? op;
             public Expr value;
 
-            public Assign(Var variable, Token op, Expr value)
+            public Assign(Variable variable, Token op, Expr value)
             {
                 this.variable = variable;
                 this.op = op;
                 this.value = value;
             }
 
-            public Assign(Var variable, Expr value)
+            public Assign(Variable variable, Expr value)
             {
                 this.variable = variable;
                 this.value = value;
@@ -493,19 +521,6 @@ namespace Espionage
             {
                 return visitor.visitDefineExpr(this);
             }
-        }
-
-        public abstract class Var : Expr
-        {
-            public Token variable;
-            public string type;
-            public int offset;
-            public Var(Token variable)
-            {
-                this.variable = variable;
-            }
-
-            public abstract override T Accept<T>(IVisitor<T> visitor);
         }
     }
 }

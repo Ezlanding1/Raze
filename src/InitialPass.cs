@@ -56,7 +56,7 @@ namespace Espionage
                 {
                     for (int i = 0, stackCount = undefCalls.Count; i < stackCount; i++)
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The function '{undefCalls[i].callee.variable.lexeme}' does not exist in the current context");
+                        throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The function '{undefCalls[i].callee.name.lexeme}' does not exist in the current context");
                     }
                 }
                 if (main == null)
@@ -173,6 +173,7 @@ namespace Espionage
 
             public override object? visitNewExpr(Expr.New expr)
             {
+                expr.declName = declClassName;
                 var _class = ResolveClassRef(expr);
                 expr.internalClass = _class;
                 if (_class != null)
@@ -213,7 +214,7 @@ namespace Espionage
 
             private void ResolveFunction(Expr.Function expr)
             {
-                List<Expr.Call> resolvedCalls = undefCalls.FindAll(x => x.callee.variable.lexeme == expr.name.lexeme);
+                List<Expr.Call> resolvedCalls = undefCalls.FindAll(x => x.callee.name.lexeme == expr.name.lexeme);
                 if (functions.ContainsKey(expr.name.lexeme))
                 {
                     if (expr.name.lexeme == "Main")
@@ -248,7 +249,7 @@ namespace Espionage
             private Expr.Function ResolveCall(Expr.Call expr)
             {
                 Expr.Function value;
-                string name = expr.callee.variable.lexeme;
+                string name = expr.callee.name.lexeme;
                 if (functions.TryGetValue(name, out value))
                 {
                     ValidCallCheck(value, new List<Expr.Call>() { expr });
@@ -295,7 +296,7 @@ namespace Espionage
                 foreach (var c in resolvedRefs)
                 {
                     c.internalClass = _class;
-                    c.internalClass.dName = declClassName;
+                    c.internalClass.dName = c.declName;
                     c.internalClass.block._classBlock = true;
                 }
             }

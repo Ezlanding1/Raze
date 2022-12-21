@@ -14,14 +14,16 @@ namespace Espionage
     {
         internal class MainPass : Pass<object?>
         {
-            Stack stack;
+            SymbolTable symbolTable;
+
             Expr.Function mainFunc;
             Expr.Function current;
             List<Expr.Define> globalDefines;
 
             public MainPass(List<Expr> expressions, Expr.Function main, List<Expr.Define> globalDefines) : base(expressions)
             {
-                this.stack = new();
+                this.symbolTable = new();
+
                 this.mainFunc = main;
                 this.current = main;
                 this.globalDefines = globalDefines;
@@ -39,9 +41,6 @@ namespace Espionage
 
             public override object? visitBlockExpr(Expr.Block expr)
             {
-                var tmpCurrent = current;
-                int countStart = stack.stackOffset;
-                int frameStart = stack.count;
                 foreach (Expr blockExpr in expr.block)
                 {
                     if (blockExpr is Expr.Function)
@@ -57,16 +56,10 @@ namespace Espionage
                         blockExpr.Accept(this);
                     } 
                 }
-                current = tmpCurrent;
-                current.size += (stack.stackOffset - countStart);
                 // De-alloc variables
                 if (!expr._classBlock)
                 {
-                    stack.RemoveUnderCurrent(frameStart);
-                    //for (int i = frameStart, frameEnd = stack.count; i < frameEnd; i++)
-                    //{
-                    //    stack.RemoveLast();
-                    //}
+                    symbolTable.RemoveUnderCurrent();
                 }
                 return null;
             }
@@ -80,10 +73,7 @@ namespace Espionage
                 if (!expr.found)
                 {
                     expr.found = true;
-                    var temp = stack.stackOffset;
-                    stack.stackOffset = 0;
                     expr.internalFunction.Accept(this);
-                    stack.stackOffset = temp;
                 }
                 return null;
             }
@@ -91,7 +81,10 @@ namespace Espionage
             public override object? visitClassExpr(Expr.Class expr)
             {
                 base.visitClassExpr(expr);
-                stack.CurrentUp();
+                if (!symbolTable.UpContext())
+                {
+                    throw new Exception("Up Context Called On 'GLOBAL' context (no enclosing)");
+                }
                 return null;
             }
 
@@ -104,22 +97,22 @@ namespace Espionage
                 string name = expr.name.lexeme;
 
 
-                int size = SizeOf(type, expr.value);
-                if (stack.ContainsKey(name))
+                expr.size = SizeOf(type, expr.value);
+
+                if (symbolTable.ContainsKey(name))
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Double Declaration", $"A variable named '{name}' is already defined in this scope", stack.callStack);
+                    throw new Errors.BackendError(ErrorType.BackendException, "Double Declaration", $"A variable named '{name}' is already defined in this scope", symbolTable.callStack);
                 }
 
                 if (expr.value is Expr.New)
                 {
-                    stack.AddClass(type, name);
+                    symbolTable.Add(((Expr.New)expr.value).internalClass);
                 }
                 else
                 {
-                    stack.Add(type, name, size);
+                    symbolTable.Add(expr);
                 }
                 base.visitDeclareExpr(expr);
-                expr.offset = stack.stackOffset;
                 return null;
             }
 
@@ -128,18 +121,19 @@ namespace Espionage
                 // Function Todo Notice:
                 // Note: since classes aren't implemented yet, functions are in a very early stage.
                 // The flaws with storing functions on the stack, function defitions, function calls, sizeof, and typeof will be resolved in later commits.
-                string type = expr.literal.type.lexeme;
-                string name = expr.literal.name.lexeme;
+                Token type = expr.literal.type;
+                Token name = expr.literal.name;
 
                 base.visitPrimitiveExpr(expr);
 
                 int size = expr.literal.size;
-                if (stack.ContainsKey(name))
+                if (symbolTable.ContainsKey(name.lexeme))
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Double Declaration", $"A variable named '{name}' is already defined in this scope", stack.callStack);
+                    throw new Errors.BackendError(ErrorType.BackendException, "Double Declaration", $"A variable named '{name}' is already defined in this scope", symbolTable.callStack);
                 }
-                stack.Add(type, name, size);
-                expr.stackOffset = stack.stackOffset;
+                var v = new Expr.Variable(type, name, size);
+                symbolTable.Add(v);
+                expr.stackOffset = v.stackOffset;
                 return null;
             }
 
@@ -147,64 +141,57 @@ namespace Espionage
             {
                 expr.dead = false;
                 current = expr;
-                stack.AddFunc(expr.name.lexeme, expr.modifiers);
+                symbolTable.Add(expr);
                 int arity = expr.arity;
                 for (int i = 0; i < arity; i++)
                 {
                     Expr.Parameter paramExpr = expr.parameters[i];
-                    stack.Add(paramExpr.type.lexeme, paramExpr.variable.lexeme, SizeOf(paramExpr.type.lexeme));
-                    paramExpr.offset = stack.stackOffset;
                     paramExpr.size = SizeOf(paramExpr.type.lexeme);
+                    symbolTable.Add(paramExpr);
                 }
 
                 expr.block.Accept(this);
 
 
-                for (int i = 0; i < arity; i++)
-                {
-                    stack.RemoveLastParam();
-                }
-                stack.callStack.RemoveLast();
-                stack.RemoveLast();
+                symbolTable.RemoveUnderCurrent();
+                symbolTable.UpContext();
                 return null;
             }
 
             public override object? visitVariableExpr(Expr.Variable expr)
             {
-                if (stack.ContainsKey(expr.variable.lexeme, out int varVal, out string type, current.constructor))
+                if (symbolTable.ContainsKey(expr.name.lexeme, out int varVal, out Token type, current.constructor))
                 {
-                    expr.size = SizeOf(type);
-                    expr.offset = varVal;
+                    expr.size = SizeOf(type.lexeme);
+                    expr.stackOffset = varVal;
                     expr.type = type;
                 }
-                else if (stack.ContainsDefine(expr.variable.lexeme, out Expr.Literal defVal))
+                else if (symbolTable.ContainsDefine(expr.name.lexeme, out Expr.Literal defVal))
                 {
                     expr.define.Item1 = true;
                     expr.define.Item2 = defVal;
                 }
                 else
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The variable '{expr.variable.lexeme}' does not exist in the current context", stack.callStack);
+                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The variable '{expr.name.lexeme}' does not exist in the current context", symbolTable.callStack);
                 }
                 return null;
             }
 
             public override object? visitDefineExpr(Expr.Define expr)
             {
-                stack.AddDefine(expr.name, expr.value);
+                symbolTable.Add(expr);
                 return null;
             }
 
             public override object? visitAssignExpr(Expr.Assign expr)
             {
-                string name = "";
+
                 expr.variable.Accept(this);
-                string type = expr.variable.type;
 
                 base.visitAssignExpr(expr);
 
-                int size = SizeOf(type);
-                stack.Modify(type, name, size);
+                expr.variable.size = SizeOf(expr.variable.type.lexeme);
                 return null;
             }
 
@@ -216,14 +203,14 @@ namespace Espionage
 
             public override object? visitGetExpr(Expr.Get expr)
             {
-                if (!stack.DownContext(expr.variable.lexeme))
+                if (!symbolTable.DownContext(expr.name.lexeme))
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The variable '{expr.variable.lexeme}' does not exist in the current context", stack.callStack);
+                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The variable '{expr.name.lexeme}' does not exist in the current context", symbolTable.callStack);
                 }
                 expr.get.Accept(this);
                 expr.type = expr.get.type;
-                expr.offset = expr.get.offset;
-                stack.UpContext();
+                expr.stackOffset = expr.get.stackOffset;
+                symbolTable.UpContext();
                 return null;
             }
         }
