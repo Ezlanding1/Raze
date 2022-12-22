@@ -96,11 +96,8 @@ namespace Raze
 
         public Instruction.Register? visitClassExpr(Expr.Class expr)
         {
+            expr.block.Accept(this);
             return null;
-            //throw new NotImplementedException();
-            //emit(new Instruction.Class(expr.name.lexeme));
-            //expr.block.Accept(this);
-            //return null;
         }
 
         public Instruction.Register? visitDeclareExpr(Expr.Declare expr)

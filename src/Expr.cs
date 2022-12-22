@@ -303,17 +303,17 @@ namespace Raze
             public int size;
             public int stackOffset;
 
-            public Variable(Token name, Token type, int size)
+            public Variable(Token type, Token name, int size)
             {
-                this.name = name;
                 this.type = type;
+                this.name = name;
                 this.size = size;
             }
 
-            public Variable(Token name, Token type)
+            public Variable(Token type, Token name)
             {
-                this.name = name;
                 this.type = type;
+                this.name = name;
             }
 
             public Variable(Token name)
@@ -388,8 +388,8 @@ namespace Raze
 
         public class Parameter : Variable
         {
-            public Parameter(Token name, Token type)
-                : base(name, type)
+            public Parameter(Token type, Token name)
+                : base(type, name)
             {
                 this.type = type;
             }

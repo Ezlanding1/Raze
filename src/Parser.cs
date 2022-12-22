@@ -85,7 +85,7 @@ namespace Raze
                         Expect("IDENTIFIER", "identifier as function parameter");
                         Token variable = previous();
 
-                        parameters.Add(new Expr.Parameter(variable, type));
+                        parameters.Add(new Expr.Parameter(type, variable));
                         if (TypeMatch("RPAREN"))
                         {
                             break;

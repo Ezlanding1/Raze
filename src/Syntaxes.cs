@@ -17,7 +17,7 @@ namespace Raze
             {
                 public IntelSyntax()
                 {
-                    header = new Instruction.Comment("Raze Compiler Version BETA 0.0.0 Intel_x86-64 NASM");
+                    header = new Instruction.Comment("Raze Compiler Version ALPHA 0.0.0 Intel_x86-64 NASM");
                 }
                 public override List<List<Instruction>> GenerateHeaderInstructions(Expr.Function main)
                 {
@@ -130,7 +130,7 @@ namespace Raze
             {
                 public GasSyntax()
                 {
-                    header = new Instruction.Comment("Raze Compiler Version BETA 0.0.0 Intel_x86-64 GAS");
+                    header = new Instruction.Comment("Raze Compiler Version ALPHA 0.0.0 Intel_x86-64 GAS");
                 }
                 public override List<List<Instruction>> GenerateHeaderInstructions(Expr.Function main){
                     return new List<List<Instruction>>()
