@@ -96,7 +96,6 @@ namespace Raze
 
         public Instruction.Register? visitClassExpr(Expr.Class expr)
         {
-            expr.block.Accept(this);
             return null;
         }
 
@@ -119,10 +118,6 @@ namespace Raze
 
         public Instruction.Register? visitFunctionExpr(Expr.Function expr)
         {
-            if (expr.dead)
-            {
-                return null;
-            }
             if (expr.constructor)
             {
                 expr.block.Accept(this);

@@ -36,7 +36,7 @@ namespace Raze
 
         public class BackendError : Exception
         {
-            public BackendError(ErrorType e, string name, string details, CallStack? callStack)
+            public BackendError(ErrorType e, string name, string details, Analyzer.CallStack? callStack)
                 : base(CreateBackend(e, name, details, callStack))
             {
 
@@ -48,7 +48,7 @@ namespace Raze
             }
         }
 
-        private static string CreateBackend(ErrorType e, string name, string details, CallStack? callStack)
+        private static string CreateBackend(ErrorType e, string name, string details, Analyzer.CallStack? callStack)
         {
             string str = $"{e}\n{name}: {details}";
             if (callStack == null)

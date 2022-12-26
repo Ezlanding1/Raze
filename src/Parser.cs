@@ -112,7 +112,7 @@ namespace Raze
                 else if (definitionType.type == "define")
                 {
                     Expect("IDENTIFIER", "name of 'Define'");
-                    string name = previous().lexeme;
+                    var name = previous();
 
                     return new Expr.Define(name, Literal() ?? throw new Errors.ParseError(ErrorType.ParserException, "Incorrect Define", "The value of 'Define' should be a literal"));
                 }

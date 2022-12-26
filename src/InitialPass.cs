@@ -24,7 +24,6 @@ namespace Raze
 
             int index;
             Expr.Function main;
-            List<Expr.Define> globalDefines;
 
             public InitialPass(List<Expr> expressions) : base(expressions)
             {
@@ -33,8 +32,6 @@ namespace Raze
 
                 this.functions = new();
                 this.undefCalls = new();
-
-                this.globalDefines = new();
 
                 this.index = 0;
             }
@@ -66,9 +63,9 @@ namespace Raze
                 return expressions;
             }
 
-            internal (Expr.Function, List<Expr.Define>) GetOutput()
+            internal Expr.Function GetOutput()
             {
-                return (main, globalDefines);
+                return main;
             }
 
             public override object? visitBlockExpr(Expr.Block expr)
@@ -201,15 +198,6 @@ namespace Raze
                     throw new Errors.BackendError(ErrorType.BackendException, "Unsafe Code in Safe Function", "Mark a function with 'unsafe' to include unsafe code");
                 }
                 return base.visitAssemblyExpr(expr);
-            }
-
-            public override object visitDefineExpr(Expr.Define expr)
-            {
-                if (main == null)
-                {
-                    globalDefines.Add(expr);
-                }
-                return null;
             }
 
             private void ResolveFunction(Expr.Function expr)

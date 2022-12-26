@@ -110,10 +110,6 @@ namespace Raze
 
             public override string visitFunctionExpr(Expr.Function expr)
             {
-                if (expr.dead)
-                {
-                    return "void";
-                }
                 if (expr.modifiers["unsafe"])
                 {
                     return "void";

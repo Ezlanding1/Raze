@@ -16,75 +16,51 @@ namespace Raze
         {
             SymbolTable symbolTable;
 
-            Expr.Function mainFunc;
-            Expr.Function current;
-            List<Expr.Define> globalDefines;
-
-            public MainPass(List<Expr> expressions, Expr.Function main, List<Expr.Define> globalDefines) : base(expressions)
+            public MainPass(List<Expr> expressions) : base(expressions)
             {
                 this.symbolTable = new();
-
-                this.mainFunc = main;
-                this.current = main;
-                this.globalDefines = globalDefines;
             }
 
             internal override List<Expr> Run()
             {
-                foreach (var define in globalDefines)
+                foreach (var expr in expressions)
                 {
-                    define.Accept(this);
+                    expr.Accept(this);
                 }
-                mainFunc.Accept(this);
                 return expressions;
             }
 
             public override object? visitBlockExpr(Expr.Block expr)
             {
+                int startFrame = symbolTable.count;
+
                 foreach (Expr blockExpr in expr.block)
                 {
-                    if (blockExpr is Expr.Function)
-                    {
-                        var b = (Expr.Function)blockExpr;
-                        if (b.constructor)
-                        {
-                            blockExpr.Accept(this);
-                        }
-                    }
-                    else
-                    {
-                        blockExpr.Accept(this);
-                    } 
+                    blockExpr.Accept(this);
                 }
+
                 // De-alloc variables
                 if (!expr._classBlock)
                 {
-                    symbolTable.RemoveUnderCurrent();
+                    symbolTable.RemoveUnderCurrent(startFrame);
                 }
+
                 return null;
             }
 
             public override object? visitCallExpr(Expr.Call expr)
             {
-                for (int i = 0; i < expr.internalFunction.arity; i++)
+                for (int i = 0; i < expr.arguments.Count; i++)
                 {
                     expr.arguments[i].Accept(this);
                 }
-                if (!expr.found)
-                {
-                    expr.found = true;
-                    expr.internalFunction.Accept(this);
-                }
+                symbolTable.CurrentCalls();
                 return null;
             }
 
             public override object? visitClassExpr(Expr.Class expr)
             {
                 base.visitClassExpr(expr);
-                if (!symbolTable.UpContext())
-                {
-                    throw new Exception("Up Context Called On 'GLOBAL' context (no enclosing)");
-                }
                 return null;
             }
 
@@ -99,14 +75,14 @@ namespace Raze
 
                 expr.size = SizeOf(type, expr.value);
 
-                if (symbolTable.ContainsKey(name))
+                if (symbolTable.ContainsVariableKey(name))
                 {
                     throw new Errors.BackendError(ErrorType.BackendException, "Double Declaration", $"A variable named '{name}' is already defined in this scope", symbolTable.callStack);
                 }
 
                 if (expr.value is Expr.New)
                 {
-                    symbolTable.Add(((Expr.New)expr.value).internalClass);
+                    symbolTable.Add(((Expr.New)expr.value));
                 }
                 else
                 {
@@ -127,9 +103,9 @@ namespace Raze
                 base.visitPrimitiveExpr(expr);
 
                 int size = expr.literal.size;
-                if (symbolTable.ContainsKey(name.lexeme))
+                if (symbolTable.ContainsVariableKey(name.lexeme))
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Double Declaration", $"A variable named '{name}' is already defined in this scope", symbolTable.callStack);
+                    throw new Errors.BackendError(ErrorType.BackendException, "Double Declaration", $"A variable named '{name.lexeme}' is already defined in this scope", symbolTable.callStack);
                 }
                 var v = new Expr.Variable(type, name, size);
                 symbolTable.Add(v);
@@ -139,10 +115,9 @@ namespace Raze
 
             public override object? visitFunctionExpr(Expr.Function expr)
             {
-                expr.dead = false;
-                current = expr;
                 symbolTable.Add(expr);
                 int arity = expr.arity;
+                int frameStart = symbolTable.count;
                 for (int i = 0; i < arity; i++)
                 {
                     Expr.Parameter paramExpr = expr.parameters[i];
@@ -153,23 +128,36 @@ namespace Raze
                 expr.block.Accept(this);
 
 
-                symbolTable.RemoveUnderCurrent();
+                symbolTable.RemoveUnderCurrent(frameStart);
                 symbolTable.UpContext();
                 return null;
             }
 
             public override object? visitVariableExpr(Expr.Variable expr)
             {
-                if (symbolTable.ContainsKey(expr.name.lexeme, out int varVal, out Token type, current.constructor))
+                if (symbolTable.ContainsVariableKey(expr.name.lexeme, out SymbolTable.Symbol symbol))
                 {
-                    expr.size = SizeOf(type.lexeme);
-                    expr.stackOffset = varVal;
-                    expr.type = type;
-                }
-                else if (symbolTable.ContainsDefine(expr.name.lexeme, out Expr.Literal defVal))
-                {
-                    expr.define.Item1 = true;
-                    expr.define.Item2 = defVal;
+                    if (symbol.IsPrimitiveClass())
+                    {
+                        var s = ((SymbolTable.Symbol.PrimitiveClass)symbol).self;
+                        expr.size = s.size;
+                        expr.stackOffset = s.stackOffset;
+                        expr.type = s.type;
+                    }
+                    else if (symbol.IsDefine())
+                    {
+                        var s = ((SymbolTable.Symbol.Define)symbol).self;
+                        expr.define.Item1 = true;
+                        expr.define.Item2 = s.value;
+                    }
+                    else if (symbol.IsClass())
+                    {
+                        throw new Exception("'Classes as variables' is not implemented in this version of the Raze Compiler");
+                    }
+                    else
+                    {
+                        throw new Exception();
+                    }
                 }
                 else
                 {
@@ -198,6 +186,10 @@ namespace Raze
             public override object? visitNewExpr(Expr.New expr)
             {
                 expr.internalClass.Accept(this);
+                if (!symbolTable.UpContext())
+                {
+                    throw new Exception("Up Context Called On 'GLOBAL' context (no enclosing)");
+                }
                 return null;
             }
 

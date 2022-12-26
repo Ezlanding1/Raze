@@ -424,7 +424,6 @@ namespace Raze
             public bool keepStack;
             public Dictionary<string, bool> modifiers;
             public bool constructor;
-            public bool dead;
             public int size;
 
             public Function()
@@ -434,7 +433,6 @@ namespace Raze
                     { "static", false },
                     { "unsafe", false }
                 };
-                this.dead = true;
             }
 
             public void Add(string _returnType, Token name, List<Parameter> parameters, Block block)
@@ -508,10 +506,10 @@ namespace Raze
 
         public class Define : Expr
         {
-            public string name;
+            public Token name;
             public Literal value;
 
-            public Define(string name, Literal value)
+            public Define(Token name, Literal value)
             {
                 this.name = name;
                 this.value = value;
