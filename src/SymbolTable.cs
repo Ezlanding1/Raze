@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Raze.Analyzer.SymbolTable;
 
 namespace Raze
 {
@@ -11,7 +12,7 @@ namespace Raze
         internal class SymbolTable
         {
 
-            public Symbol.Function head;
+            private Symbol.Function head;
             private Symbol.Container current;
             public Symbol.Container Current
             {
@@ -108,6 +109,19 @@ namespace Raze
                 return false;
             }
 
+            public bool DownContainerContext(string to)
+            {
+                foreach (var container in Current.containers)
+                {
+                    if (container.IsClass() && ((Symbol.Class)container).Name.lexeme == to)
+                    {
+                        Current = (Symbol.Class)container;
+                        return true;
+                    }
+                }
+                return false;
+            }
+
             public bool UpContext()
             {
                 if (Current.enclosing == null)
@@ -126,11 +140,6 @@ namespace Raze
                 {
                     foreach (var var in x.variables)
                     {
-                        if (var.Name.lexeme == key)
-                        {
-                            symbol = var;
-                            return true;
-                        }
                         if (var.IsClass())
                         {
                             if (((Symbol.Class)var).self.dName == key)
@@ -138,6 +147,11 @@ namespace Raze
                                 symbol = var;
                                 return true;
                             }
+                        }
+                        if (var.Name.lexeme == key)
+                        {
+                            symbol = var;
+                            return true;
                         }
                     }
                     x = x.enclosing;
@@ -153,12 +167,91 @@ namespace Raze
                 {
                     foreach (var var in x.variables)
                     {
+                        if (var.IsClass())
+                        {
+                            if (((Symbol.Class)var).self.dName == key)
+                            {
+                                return true;
+                            }
+                        }
                         if (var.Name.lexeme == key)
                         {
                             return true;
                         }
                     }
                     x = x.enclosing;
+                }
+                return false;
+            }
+
+            public bool ContainsContainerKey(string key, out Symbol.Container symbol, int constraint)
+            {
+                foreach (var var in Current.containers)
+                {
+                    if (constraint == 0 && !var.IsFunc())
+                    {
+                        continue;
+                    }
+                    if (constraint == 1 && !var.IsClass())
+                    {
+                        continue;
+                    }
+
+                    if (var.IsClass())
+                    {
+                        if (((Symbol.Class)var).self.dName == key)
+                        {
+                            symbol = var;
+                            return true;
+                        }
+                    }
+                    if (var.Name.lexeme == key)
+                    {
+                        symbol = var;
+                        return true;
+                    }
+                }
+                symbol = null;
+                return false;
+            }
+
+            public bool ContainsContainerKey(string key, out Symbol.Container symbol)
+            {
+                foreach (var var in Current.containers)
+                {
+                    if (var.IsClass())
+                    {
+                        if (((Symbol.Class)var).self.dName == key)
+                        {
+                            symbol = var;
+                            return true;
+                        }
+                    }
+                    if (var.Name.lexeme == key)
+                    {
+                        symbol = var;
+                        return true;
+                    }
+                }
+                symbol = null;
+                return false;
+            }
+
+            public bool ContainsContainerKey(string key)
+            {
+                foreach (var var in Current.containers)
+                {
+                    if (var.IsClass())
+                    {
+                        if (((Symbol.Class)var).self.dName == key)
+                        {
+                            return true;
+                        }
+                    }
+                    if (var.Name.lexeme == key)
+                    {
+                        return true;
+                    }
                 }
                 return false;
             }
@@ -174,6 +267,10 @@ namespace Raze
                 Current.variables.RemoveRange(startFrame, x);
                 count -= x;
             }
+
+            public void TopContext() => Current = head;
+
+            public bool CurrentIsTop() => Current == head;
 
             public void CurrentCalls() => currentFunction.self.keepStack = true;
 

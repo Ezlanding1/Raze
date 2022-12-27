@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,26 +12,28 @@ namespace Raze
     {
         internal partial class InitialPass : Pass<object?>
         {
-            Dictionary<string, Expr.Class> classes;
+            SymbolTable symbolTable;
+
             List<Expr.New> undefClass;
+            List<Expr.Call> undefCalls;
             
             string declClassName;
-            Dictionary<string, Expr.Function> functions;
-            List<Expr.Call> undefCalls;
 
             Tuple<bool, int, Expr.If> waitingIf;
-
-            Expr.Function last;
 
             int index;
             Expr.Function main;
 
+            bool checkFuncs;
+            int checkType;
+
+            SymbolTable.Symbol.Container? resolvedContainer;
+
             public InitialPass(List<Expr> expressions) : base(expressions)
             {
-                this.classes = new();
-                this.undefClass = new();
+                this.symbolTable = new();
 
-                this.functions = new();
+                this.undefClass = new();
                 this.undefCalls = new();
 
                 this.index = 0;
@@ -42,20 +45,8 @@ namespace Raze
                 {
                     expr.Accept(this);
                 }
-                if (undefClass.Count > 0)
-                {
-                    for (int i = 0, stackCount = undefClass.Count; i < stackCount; i++)
-                    {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The class '{undefClass[i]._className.lexeme}' does not exist in the current context");
-                    }
-                }
-                if (undefCalls.Count > 0)
-                {
-                    for (int i = 0, stackCount = undefCalls.Count; i < stackCount; i++)
-                    {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The function '{undefCalls[i].callee.name.lexeme}' does not exist in the current context");
-                    }
-                }
+                checkFuncs = true;
+                ResolveReferences();
                 if (main == null)
                 {
                     throw new Errors.BackendError(ErrorType.BackendException, "Entrypoint Not Found", "Program does not contain a Main method");
@@ -83,8 +74,17 @@ namespace Raze
                 // Function Todo Notice:
                 // Note: since classes aren't implemented yet, functions are in a very early stage.
                 // The flaws with storing functions on the stack, function defitions, function calls, sizeof, and typeof will be resolved in later commits.
-                last = expr;
-                ResolveFunction(expr);
+                symbolTable.Add(expr);
+
+                if (symbolTable.ContainsContainerKey(expr.name.lexeme))
+                {
+                    if (expr.name.lexeme == "Main")
+                    {
+                        throw new Errors.BackendError(ErrorType.BackendException, "Main Declared Twice", "A Program may have only one 'Main' method");
+                    }
+                    throw new Errors.BackendError(ErrorType.BackendException, "Function Declared Twice", $"Function '{expr.name.lexeme}' was declared twice");
+                }
+
                 if (expr.name.lexeme == "Main")
                 {
                     if (main != null)
@@ -100,19 +100,18 @@ namespace Raze
                     throw new Errors.BackendError(ErrorType.BackendException, "Too Many Parameters", "A function cannot have more than 6 parameters");
                 }
                 expr.block.Accept(this);
-                last = null;
+
+                symbolTable.UpContext();
                 return null;
             }
 
             public override object? visitCallExpr(Expr.Call expr)
             {
-                last.keepStack = true;
+                undefCalls.Add(expr);
                 foreach (var argExpr in expr.arguments)
                 {
                     argExpr.Accept(this);
                 }
-                var function = ResolveCall(expr);
-                expr.internalFunction = function;
                 return null;
             }
 
@@ -124,8 +123,11 @@ namespace Raze
 
             public override object? visitClassExpr(Expr.Class expr)
             {
-                ResolveClass(expr);
+                symbolTable.Add(expr);
+
                 expr.block.Accept(this);
+
+                symbolTable.UpContext();
                 return null;
             }
             public override object? visitConditionalExpr(Expr.Conditional expr)
@@ -171,122 +173,112 @@ namespace Raze
             public override object? visitNewExpr(Expr.New expr)
             {
                 expr.declName = declClassName;
-                var _class = ResolveClassRef(expr);
-                expr.internalClass = _class;
-                if (_class != null)
-                {
-                    expr.internalClass.dName = declClassName;
-                    expr.internalClass.block._classBlock = true;
-                }
 
-                var function = ResolveCall(new Expr.Call(new Expr.Variable(expr._className), expr.arguments, true));
-                expr.internalFunction = function;
-                if (function != null)
-                {
-                    function.constructor = true;
-                }
+                undefClass.Add(expr);
+
                 return null;
             }
 
             public override object? visitAssemblyExpr(Expr.Assembly expr)
             {
-                if (last == null){
+                if (symbolTable.CurrentIsTop())
+                {
                     throw new Errors.BackendError(ErrorType.BackendException, "Top Level Assembly Block", "Assembly Blocks must be placed in an unsafe function");
                 }
-                if (!last.modifiers["unsafe"])
+                if (!symbolTable.Current.IsFunc())
+                {
+                    throw new Errors.BackendError(ErrorType.BackendException, "ASM Block Not In Function", "Assembly Blocks must be placed in functions");
+                }
+                if (!((SymbolTable.Symbol.Function)symbolTable.Current).self.modifiers["unsafe"])
                 {
                     throw new Errors.BackendError(ErrorType.BackendException, "Unsafe Code in Safe Function", "Mark a function with 'unsafe' to include unsafe code");
                 }
                 return base.visitAssemblyExpr(expr);
             }
 
-            private void ResolveFunction(Expr.Function expr)
+            public override object? visitGetExpr(Expr.Get expr)
             {
-                List<Expr.Call> resolvedCalls = undefCalls.FindAll(x => x.callee.name.lexeme == expr.name.lexeme);
-                if (functions.ContainsKey(expr.name.lexeme))
+                if (!checkFuncs)
                 {
-                    if (expr.name.lexeme == "Main")
-                    {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Main Declared Twice", "A Program may have only one 'Main' method");
-                    }
-                    throw new Errors.BackendError(ErrorType.BackendException, "Function Declared Twice", $"Function '{expr.name.lexeme}' was declared twice");
+                    return null;
                 }
-                functions.Add(expr.name.lexeme, expr);
 
-                if (resolvedCalls != null && resolvedCalls.Count != 0)
+                if (!symbolTable.DownContainerContext(expr.name.lexeme))
                 {
-                    ValidCallCheck(expr, resolvedCalls);
-                    undefCalls.RemoveAll(x => resolvedCalls.Contains(x));
+                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The variable '{expr.name.lexeme}' does not exist in the current context");
+                }
+                expr.get.Accept(this);
+                return null;
+            }
+
+            public override object visitVariableExpr(Expr.Variable expr)
+            {
+                if (!checkFuncs)
+                {
+                    return null;
+                }
+
+                if (checkType == 0)
+                    symbolTable.ContainsContainerKey(expr.name.lexeme, out resolvedContainer, checkType);
+                else if (checkType == 1)
+                {
+                    symbolTable.ContainsContainerKey(expr.name.lexeme, out resolvedContainer, checkType);
+                    symbolTable.Current = resolvedContainer;
+                    symbolTable.ContainsContainerKey(expr.name.lexeme, out var constructor, 0);
+                    ((SymbolTable.Symbol.Function)constructor).self.constructor = true;
+                    ((SymbolTable.Symbol.Class)resolvedContainer).self.constructor = ((SymbolTable.Symbol.Function)constructor).self;
+                }
+
+                return null;
+            }
+
+
+            private void ResolveReferences()
+            {
+                checkType = 0;
+                foreach (var call in undefCalls)
+                {
+                    call.callee.Accept(this);
+
+                    if (resolvedContainer == null)
+                        throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The function '{call.callee.ToString()}' does not exist in the current context");
+                    else
+                        call.internalFunction = ((SymbolTable.Symbol.Function)resolvedContainer).self;
+
+                    symbolTable.TopContext();
+
+                    ValidCallCheck(call.internalFunction, call);
+                }
+                checkType = 1;
+                foreach (var @ref in undefClass)
+                {
+                    @ref._className.Accept(this);
+
+                    if (resolvedContainer == null)
+                        throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The class '{@ref._className.ToString()}' does not exist in the current context");
+                    else
+                        @ref.internalClass = ((SymbolTable.Symbol.Class)resolvedContainer).self;
+
+                    symbolTable.TopContext();
+
+                    ValidClassCheck(@ref.internalClass, @ref);
                 }
             }
 
-            private void ResolveClass(Expr.Class expr)
-            {
-                List<Expr.New> resolvedClass = undefClass.FindAll(x => x._className.lexeme == expr.name.lexeme);
-
-                classes.Add(expr.name.lexeme, expr);
-
-                if (resolvedClass != null && resolvedClass.Count != 0)
-                {
-                    ValidClassCheck(expr, resolvedClass);
-                    undefClass.RemoveAll(x => resolvedClass.Contains(x));
-                }
-            }
-
-
-            private Expr.Function ResolveCall(Expr.Call expr)
-            {
-                Expr.Function value;
-                string name = expr.callee.name.lexeme;
-                if (functions.TryGetValue(name, out value))
-                {
-                    ValidCallCheck(value, new List<Expr.Call>() { expr });
-                }
-                else
-                {
-                    undefCalls.Add(expr);
-                }
-                return value;
-            }
-
-            private Expr.Class ResolveClassRef(Expr.New expr)
-            {
-                Expr.Class value;
-                string name = expr._className.lexeme;
-                if (classes.TryGetValue(name, out value))
-                {
-                    ValidClassCheck(value, new List<Expr.New>() { expr });
-                }
-                else
-                {
-                    undefClass.Add(expr);
-                }
-                return value;
-            }
-
-            private void ValidCallCheck(Expr.Function function, List<Expr.Call> resolvedCalls)
+            private void ValidCallCheck(Expr.Function function, Expr.Call call)
             {
                 string name = function.name.lexeme;
-                foreach (var call in resolvedCalls)
+                if (function.arity != call.arguments.Count)
                 {
-                    if (function.arity != call.arguments.Count)
-                    {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Arity Mismatch", $"Arity of call for {name} ({call.arguments.Count}) does not match the definition's arity ({function.arity})");
-                    }
-                    function.constructor = call.constructor;
-                    call.internalFunction = function;
+                    throw new Errors.BackendError(ErrorType.BackendException, "Arity Mismatch", $"Arity of call for {name} ({call.arguments.Count}) does not match the definition's arity ({function.arity})");
                 }
             }
 
-            private void ValidClassCheck(Expr.Class _class, List<Expr.New> resolvedRefs)
+            private void ValidClassCheck(Expr.Class _class, Expr.New c)
             {
-                //string name = _class.name.lexeme;
-                foreach (var c in resolvedRefs)
-                {
-                    c.internalClass = _class;
-                    c.internalClass.dName = c.declName;
-                    c.internalClass.block._classBlock = true;
-                }
+                c.internalClass = _class;
+                c.internalClass.dName = c.declName;
+                c.internalClass.block._classBlock = true;
             }
         }
     }

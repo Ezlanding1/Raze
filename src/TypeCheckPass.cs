@@ -273,7 +273,7 @@ namespace Raze
                     argExpr.Accept(this);
                 }
 
-                return expr._className.lexeme;
+                return expr._className.name.lexeme;
             }
 
             public override string visitDefineExpr(Expr.Define expr)

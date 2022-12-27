@@ -338,10 +338,15 @@ namespace Raze
                 if (TypeMatch("new"))
                 {
                     Expect("IDENTIFIER", "class name after 'new' keyword");
-                    var _className = previous();
+                    Expr.Variable variable = new Expr.Variable(previous());
+
+                    if (TypeMatch("DOT"))
+                    {
+                        variable = GetGetter(variable);
+                    }
                     Expect("LPAREN", "'(' starting constructor parameters");
 
-                    return new Expr.New(_className, GetArgs());
+                    return new Expr.New(variable, GetArgs());
                 }
             }
             throw End();

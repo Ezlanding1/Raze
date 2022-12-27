@@ -208,6 +208,11 @@ namespace Raze
                 return visitor.visitCallExpr(this);
             }
 
+            public override string ToString()
+            {
+                return callee.name.ToString() + "." + callee.ToString();
+            }
+
         }
 
         public class Get : Variable
@@ -368,13 +373,12 @@ namespace Raze
         {
             public string declName;
 
-            public Token _className;
+            public Variable _className;
             public List<Expr> arguments;
 
-            public Function internalFunction;
             public Class internalClass;
 
-            public New(Token _className, List<Expr> arguments)
+            public New(Variable _className, List<Expr> arguments)
             {
                 this._className = _className;
                 this.arguments = arguments;
@@ -452,6 +456,9 @@ namespace Raze
         public class Class : Definition
         {
             public string dName;
+
+            public Expr.Function constructor;
+
             public Class(Token name, Block block) : base(name, block) { }
 
             public override T Accept<T>(IVisitor<T> visitor)
