@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -67,6 +68,9 @@ namespace Raze
 
                 public string visitBinary(Instruction.Binary instruction)
                 {
+                    if (instruction.instruction == "LEA" && instruction.operand2 is Instruction.Pointer)
+                        return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, { PointerToString( (Instruction.Pointer)instruction.operand2 ) }";
+
                     return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, {instruction.operand2.Accept(this)}";
                 }
 
@@ -123,6 +127,11 @@ namespace Raze
                 public string visitZero(Instruction.Zero instruction)
                 {
                     return $"{instruction.instruction}";
+                }
+
+                private string PointerToString(Instruction.Pointer instruction)
+                {
+                    return $"[{instruction.name}-{instruction.offset}]";
                 }
             }
 
