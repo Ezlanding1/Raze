@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -205,8 +206,9 @@ namespace Raze
 
                 if (!symbolTable.DownContainerContext(expr.name.lexeme))
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The variable '{expr.name.lexeme}' does not exist in the current context");
+                    return null;
                 }
+
                 expr.get.Accept(this);
                 return null;
             }
@@ -218,16 +220,7 @@ namespace Raze
                     return null;
                 }
 
-                if (checkType == 0)
-                    symbolTable.ContainsContainerKey(expr.name.lexeme, out resolvedContainer, checkType);
-                else if (checkType == 1)
-                {
-                    symbolTable.ContainsContainerKey(expr.name.lexeme, out resolvedContainer, checkType);
-                    symbolTable.Current = resolvedContainer;
-                    symbolTable.ContainsContainerKey(expr.name.lexeme, out var constructor, 0);
-                    ((SymbolTable.Symbol.Function)constructor).self.constructor = true;
-                    ((SymbolTable.Symbol.Class)resolvedContainer).self.constructor = ((SymbolTable.Symbol.Function)constructor).self;
-                }
+                symbolTable.ContainsContainerKey(expr.name.lexeme, out resolvedContainer, checkType);
 
                 return null;
             }
@@ -241,27 +234,35 @@ namespace Raze
                     call.callee.Accept(this);
 
                     if (resolvedContainer == null)
-                        throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The function '{call.callee.ToString()}' does not exist in the current context");
-                    else
-                        call.internalFunction = ((SymbolTable.Symbol.Function)resolvedContainer).self;
+                        continue;
+
+                    call.internalFunction = ((SymbolTable.Symbol.Function)resolvedContainer).self;
+                    call.internalFunction.path = symbolTable.GetPath();
+
+                    if (!call.internalFunction.modifiers["static"])
+                    {
+                        throw new Errors.BackendError(ErrorType.BackendException, "Static Call of Non-Static Method", $"The method '{call.callee.ToString()}' must be marked 'static' to call it from a static context");
+                    }
 
                     symbolTable.TopContext();
 
                     ValidCallCheck(call.internalFunction, call);
+                    resolvedContainer = null;
                 }
                 checkType = 1;
                 foreach (var @ref in undefClass)
                 {
                     @ref._className.Accept(this);
-
                     if (resolvedContainer == null)
                         throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The class '{@ref._className.ToString()}' does not exist in the current context");
                     else
-                        @ref.internalClass = ((SymbolTable.Symbol.Class)resolvedContainer).self;
+                        // ToDo: Clean Up This Code
+                        @ref.internalClass = ((SymbolTable.Symbol.Class)resolvedContainer).self.CloneVars();
 
                     symbolTable.TopContext();
 
                     ValidClassCheck(@ref.internalClass, @ref);
+                    resolvedContainer = null;
                 }
             }
 
@@ -276,8 +277,8 @@ namespace Raze
 
             private void ValidClassCheck(Expr.Class _class, Expr.New c)
             {
-                c.internalClass = _class;
-                c.internalClass.dName = c.declName;
+                c.internalClass = new(_class.name, _class.block);
+                c.internalClass.dName = new(c.declName);
                 c.internalClass.block._classBlock = true;
             }
         }

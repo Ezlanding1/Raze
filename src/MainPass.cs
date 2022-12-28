@@ -54,13 +54,48 @@ namespace Raze
                 {
                     expr.arguments[i].Accept(this);
                 }
+
                 symbolTable.CurrentCalls();
+
+                if (expr.internalFunction != null && expr.internalFunction.modifiers["static"])
+                {
+                    return null;
+                }
+
+                var context = symbolTable.Current;
+                var x = expr.callee;
+                while (x is Expr.Get)
+                {
+                    if (!symbolTable.DownContext(x.name.lexeme))
+                    {
+                        throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The variable '{x.name.lexeme}' does not exist in the current context", symbolTable.callStack);
+                    }
+                    x = ((Expr.Get)x).get;
+                }
+
+                if (symbolTable.ContainsContainerKey(x.name.lexeme, out SymbolTable.Symbol.Container symbol, 0))
+                {
+                    var s = ((SymbolTable.Symbol.Function)symbol).self;
+                    if (s.modifiers["static"])
+                    {
+                        throw new Errors.BackendError(ErrorType.BackendException, "Static Mathod Called From Instance", "You cannot call a static method from an instance");
+                    }
+                    expr.internalFunction = s;
+                    expr.internalFunction.path = symbolTable.GetPathInstance();
+                    expr.stackOffset = symbolTable.currentFunction.self.size;
+                }
+                else
+                {
+                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The method '{expr.callee}' does not exist in the current context", symbolTable.callStack);
+                }
+                symbolTable.Current = context;
+
                 return null;
             }
 
             public override object? visitClassExpr(Expr.Class expr)
             {
-                base.visitClassExpr(expr);
+                //base.visitClassExpr(expr);
                 return null;
             }
 
@@ -115,6 +150,10 @@ namespace Raze
 
             public override object? visitFunctionExpr(Expr.Function expr)
             {
+                if (expr.constructor && expr.path == null)
+                {
+                    expr.path = symbolTable.GetPathInstance();
+                }
                 symbolTable.Add(expr);
                 int arity = expr.arity;
                 int frameStart = symbolTable.count;
@@ -141,7 +180,13 @@ namespace Raze
                     {
                         var s = ((SymbolTable.Symbol.PrimitiveClass)symbol).self;
                         expr.size = s.size;
-                        expr.stackOffset = s.stackOffset;
+
+                        // ToDo: Clean Up This Code
+                        if (symbolTable.currentFunction.self.modifiers["static"])
+                            expr.stackOffset = s.stackOffset;
+                        else
+                            expr.stackOffset = ((SymbolTable.Symbol.PrimitiveClass)symbol)._classOffset;
+
                         expr.type = s.type;
                     }
                     else if (symbol.IsDefine())
@@ -185,7 +230,8 @@ namespace Raze
 
             public override object? visitNewExpr(Expr.New expr)
             {
-                expr.internalClass.Accept(this);
+                expr.stackOffset = symbolTable.currentFunction.self.size;
+                expr.internalClass.block.Accept(this);
                 if (!symbolTable.UpContext())
                 {
                     throw new Exception("Up Context Called On 'GLOBAL' context (no enclosing)");

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Reflection;
-using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -29,6 +28,10 @@ namespace Raze
             get { return "LC" + dataCount; } 
         }
         string lastJump;
+
+        bool _newLast;
+        int globalFuncOffset;
+
         public Assembler(List<Expr> expressions)
         {
             this.expressions = expressions;
@@ -83,19 +86,38 @@ namespace Raze
 
         public Instruction.Register? visitCallExpr(Expr.Call expr)
         {
+
             for (int i = 0; i < expr.arguments.Count; i++)
             {
                 Instruction.Register arg = expr.arguments[i].Accept(this);
                 MovToRegister(InstructionInfo.paramRegister[i], arg);
             }
 
-            string operand1 = expr.callee.name.lexeme;
+            string operand1 = "";
+            if (!expr.internalFunction.modifiers["static"])
+            {
+                // Note: Is this the proprer register? c++ uses it as the first param (RDI)
+                emit(new Instruction.Binary("LEA", new Instruction.Register("R10"), new Instruction.Pointer((int)expr.stackOffset-8, 8)));
+                operand1 = expr.internalFunction.FullName;
+            }
+            else
+            {
+                operand1 = expr.callee.ToString();
+            }
+
             emit(new Instruction.Unary("CALL", operand1));
             return new Instruction.Register("RAX");
         }
 
         public Instruction.Register? visitClassExpr(Expr.Class expr)
         {
+            index++;
+            foreach (var blockExpr in expr.block.block)
+            {
+                if (blockExpr is Expr.Function)
+                    blockExpr.Accept(this);
+            }
+            index--;
             return null;
         }
 
@@ -104,11 +126,11 @@ namespace Raze
             string type = expr.type.lexeme;
             string operand1 = expr.name.lexeme;
             Instruction.Register operand2 = expr.value.Accept(this);
-            if (operand1 == null || operand2 == null)
+            if (operand2 == null)
             {
-                throw new Errors.BackendError(ErrorType.BackendException, "Invalid Expression", "");
+                return null;
             }
-            if (!operand2.IsLiteral() && operand2.name == "CLASS")
+            if (!operand2.IsLiteral() && operand2.name == null)
             {
                 return null;
             }
@@ -118,15 +140,17 @@ namespace Raze
 
         public Instruction.Register? visitFunctionExpr(Expr.Function expr)
         {
+
             if (expr.constructor)
             {
-                expr.block.Accept(this);
-                return new Instruction.Register("RAX");
+                return null;
             }
 
             index++;
             expr.keepStack = (expr.keepStack == true && expr.size != 0)? true : false;
-            emit(new Instruction.Function(expr.name.lexeme));
+            emit(new Instruction.Function(expr.FullName));
+
+
             Instruction.Binary sub = null;
             if (expr.keepStack)
             {
@@ -139,6 +163,11 @@ namespace Raze
             {
                 emit(new Instruction.Unary("PUSH", "RBP"));
                 emit(new Instruction.Binary("MOV", "RBP", "RSP"));
+            }
+
+            if (!expr.modifiers["static"])
+            {
+                emit(new Instruction.Binary("MOV", "RBP", "R10"));
             }
 
             footerType.Add(expr.keepStack);
@@ -166,8 +195,10 @@ namespace Raze
 
         public Instruction.Register? visitGetExpr(Expr.Get expr)
         {
-            
+            //_newLast = true;
+            //globalFuncOffset = expr.stackOffset;
             return expr.get.Accept(this);
+            //_newLast = false;
         }
 
         public Instruction.Register? visitGroupingExpr(Expr.Grouping expr)
@@ -393,11 +424,21 @@ namespace Raze
                 MovToRegister(InstructionInfo.paramRegister[i], arg);
             }
 
+            string operand1 = "";
+            _newLast = true;
+            globalFuncOffset = expr.stackOffset;
             foreach (var blockExpr in expr.internalClass.block.block)
             {
-                blockExpr.Accept(this);
+                if (!(blockExpr is Expr.Function))
+                    blockExpr.Accept(this);
             }
-            return new Instruction.Register("CLASS");
+
+            foreach (var ctorExpr in expr.internalClass.constructor.block.block)
+            {
+                ctorExpr.Accept(this);
+            }
+            _newLast = false;
+            return null;
         }
 
         private void Declare(string type, int size, int stackOffset, string name, string value)

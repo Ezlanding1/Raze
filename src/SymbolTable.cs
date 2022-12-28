@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Raze.Analyzer;
 using static Raze.Analyzer.SymbolTable;
 
 namespace Raze
@@ -23,6 +24,7 @@ namespace Raze
                     if (value.IsFunc())
                     {
                         currentFunction = (Symbol.Function)value;
+                        newClass = false;
                     }
                     else if (value.IsClass())
                     {
@@ -30,7 +32,7 @@ namespace Raze
                     }
                 }
             }
-            private Symbol.Function currentFunction;
+            public Symbol.Function currentFunction;
             public int count;
             private bool newClass;
 
@@ -47,10 +49,17 @@ namespace Raze
 
             public void Add(Expr.Variable v)
             {
+                var _ = new Symbol.PrimitiveClass(v);
+
                 if (!newClass)
                     count++;
+                else
+                {
+                    Current.self.size += v.size;
+                    _._classOffset = Current.self.size;
+                }
 
-                Current.variables.Add(new Symbol.PrimitiveClass(v));
+                Current.variables.Add(_);
                 currentFunction.self.size += v.size;
                 v.stackOffset = currentFunction.self.size;
             }
@@ -124,6 +133,13 @@ namespace Raze
 
             public bool UpContext()
             {
+                if (Current is Symbol.Class && ((Symbol.Class)Current).self.constructor == null)
+                {
+                    if (!ContainsContainerKey(Current.Name.lexeme, out var constructor, 0))
+                        throw new Errors.BackendError(ErrorType.BackendException, "Class Without Constructor", "A Class must contain a constructor method");
+                    ((Symbol.Function)constructor).self.constructor = true;
+                    ((Symbol.Class)Current).self.constructor = ((Symbol.Function)constructor).self;
+                }
                 if (Current.enclosing == null)
                 {
                     return false;
@@ -135,8 +151,9 @@ namespace Raze
 
             public bool ContainsVariableKey(string key, out Symbol symbol)
             {
+                // ToDo: Clean this up
                 var x = Current;
-                while (x.enclosing != null)
+                if (currentFunction.self.modifiers["static"])
                 {
                     foreach (var var in x.variables)
                     {
@@ -155,6 +172,29 @@ namespace Raze
                         }
                     }
                     x = x.enclosing;
+                }
+                else
+                {
+                    while (x != null)
+                    {
+                        foreach (var var in x.variables)
+                        {
+                            if (var.IsClass())
+                            {
+                                if (((Symbol.Class)var).self.dName == key)
+                                {
+                                    symbol = var;
+                                    return true;
+                                }
+                            }
+                            if (var.Name.lexeme == key)
+                            {
+                                symbol = var;
+                                return true;
+                            }
+                        }
+                        x = x.enclosing;
+                    }
                 }
                 symbol = null;
                 return false;
@@ -268,7 +308,44 @@ namespace Raze
                 count -= x;
             }
 
-            public void TopContext() => Current = head;
+            public string GetPath()
+            {
+                string path = "";
+
+                var x = Current;
+                while (x.enclosing != null)
+                {
+                    path += x.Name.lexeme + ".";
+                    x = x.enclosing;
+                }
+                return path;
+            }
+
+            public string GetPathInstance()
+            {
+                string path = "";
+
+                var x = Current;
+                while (x != null && x != currentFunction)
+                {
+                    path += x.Name.lexeme + ".";
+                    x = x.enclosing;
+                }
+                return path;
+            }
+
+
+            public void TopContext()
+            {
+                if (Current is Symbol.Class && ((Symbol.Class)Current).self.constructor == null)
+                {
+                    if (!ContainsContainerKey(Current.Name.lexeme, out var constructor, 0))
+                        throw new Errors.BackendError(ErrorType.BackendException, "Class Without Constructor", "A Class must contain a constructor method");
+                    ((Symbol.Function)constructor).self.constructor = true;
+                    ((Symbol.Class)Current).self.constructor = ((Symbol.Function)constructor).self;
+                }
+                Current = head;
+            }
 
             public bool CurrentIsTop() => Current == head;
 
@@ -298,7 +375,14 @@ namespace Raze
                     internal List<Container> containers;
                     internal List<Symbol> variables;
 
-                    internal Expr.Definition self;
+                    internal Expr.Definition self {
+                        get
+                        {
+                            if (this.IsClass()) { return ((Class)this).self; }
+                            else if (this.IsFunc()) { return ((Function)this).self; }
+                            else { throw new Exception(); }
+                        }
+                    }
 
                     public Container(int type) : base(type)
                     {
@@ -348,7 +432,7 @@ namespace Raze
                     public override Token Name { get { return self.name; } }
 
                     internal Expr.Variable self;
-
+                    internal int _classOffset;
                     public PrimitiveClass(Expr.Variable self) : base(2)
                     {
                         this.self = self;

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.AccessControl;
 using System.Text;
 using System.Threading.Tasks;
+using static Raze.Expr;
 
 namespace Raze
 {
@@ -196,6 +197,7 @@ namespace Raze
             public Function internalFunction;
             public List<Expr> arguments;
             public bool found;
+            public int? stackOffset;
             public Call(Variable callee, List<Expr> arguments, bool constructor)
             {
                 this.callee = callee;
@@ -206,11 +208,6 @@ namespace Raze
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.visitCallExpr(this);
-            }
-
-            public override string ToString()
-            {
-                return callee.name.ToString() + "." + callee.ToString();
             }
 
         }
@@ -235,6 +232,10 @@ namespace Raze
                 return visitor.visitGetExpr(this);
             }
 
+            public override string ToString()
+            {
+                return name.lexeme.ToString() + "." + get.ToString();
+            }
         }
 
         public class Block : Expr
@@ -336,6 +337,11 @@ namespace Raze
             {
                 return visitor.visitVariableExpr(this);
             }
+
+            public override string ToString()
+            {
+                return name.lexeme.ToString();
+            }
         }
 
         public class Primitive : Expr
@@ -378,6 +384,8 @@ namespace Raze
 
             public Class internalClass;
 
+            public int stackOffset;
+
             public New(Variable _className, List<Expr> arguments)
             {
                 this._className = _className;
@@ -408,6 +416,7 @@ namespace Raze
         {
             public Token name;
             public Block block;
+            public int size;
 
             public Definition(Token name, Block block)
             {
@@ -428,7 +437,11 @@ namespace Raze
             public bool keepStack;
             public Dictionary<string, bool> modifiers;
             public bool constructor;
-            public int size;
+            public string path;
+            public string FullName
+            {
+                get { return this.path + (constructor? "." : "") + this.name.lexeme; }
+            }
 
             public Function()
                 : base(null, null)
@@ -464,6 +477,33 @@ namespace Raze
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.visitClassExpr(this);
+            }
+
+            public Class(Class @this) : base(@this.name, @this.block)
+            {
+                this.constructor = @this.constructor;
+                this.dName = @this.dName;
+                this.size = @this.size;
+            }
+
+            // ToDo: Clean Up This Code
+            public Class CloneVars()
+            {
+                Block nBlock = new(new());
+                foreach (var item in this.block.block)
+                {
+                    if (item is Primitive)
+                    {
+                        var i = (Primitive)item;
+                        var x = Primitives.ToPrimitive(i.literal.type, i.literal.name, i.literal.value);
+                        var n = new Primitive(x);
+                        nBlock.block.Add(n);
+                        continue;
+                    }
+                    nBlock.block.Add(item);
+                }
+                this.block = nBlock;
+                return this;
             }
         }
         
