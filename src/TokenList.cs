@@ -15,8 +15,8 @@ namespace Raze
         public static readonly Dictionary<string, string> Tokens = new Dictionary<string, string>()
         {
             // Non Finite Tokens
-            { "NUMBERDOT", /*lang=regex*/@"[-]?[0-9]+[.][0-9]+" },
-            { "NUMBER", /*lang=regex*/@"[-]?[0-9]+" },
+            { "NUMBERDOT", /*lang=regex*/@"[0-9]+[.][0-9]+" },
+            { "NUMBER", /*lang=regex*/@"[0-9]+" },
             { "IDENTIFIER", /*lang=regex*/@"[a-zA-Z_][a-zA-Z1-9_]*" },
             { "STRING", /*lang=regex*/@"[""].*[""]" },
             { "WHITESPACE", /*lang=regex*/@"[\s]" },

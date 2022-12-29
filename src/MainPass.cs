@@ -80,6 +80,10 @@ namespace Raze
                     {
                         throw new Errors.BackendError(ErrorType.BackendException, "Static Mathod Called From Instance", "You cannot call a static method from an instance");
                     }
+                    if (s.constructor)
+                    {
+                        throw new Errors.BackendError(ErrorType.BackendException, "Constructor Called As Method", "A Constructor may not be called as a method of its class");
+                    }
                     expr.internalFunction = s;
                     expr.internalFunction.path = symbolTable.GetPathInstance();
                     expr.stackOffset = symbolTable.currentFunction.self.size;

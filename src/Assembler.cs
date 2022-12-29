@@ -29,9 +29,6 @@ namespace Raze
         }
         string lastJump;
 
-        bool _newLast;
-        int globalFuncOffset;
-
         public Assembler(List<Expr> expressions)
         {
             this.expressions = expressions;
@@ -97,7 +94,7 @@ namespace Raze
             if (!expr.internalFunction.modifiers["static"])
             {
                 // Note: Is this the proprer register? c++ uses it as the first param (RDI)
-                emit(new Instruction.Binary("LEA", new Instruction.Register("R10"), new Instruction.Pointer((int)expr.stackOffset-8, 8)));
+                emit(new Instruction.Binary("LEA", new Instruction.Register(InstructionInfo.InstanceRegister), new Instruction.Pointer((int)expr.stackOffset-8, 8)));
                 operand1 = expr.internalFunction.FullName;
             }
             else
@@ -167,7 +164,7 @@ namespace Raze
 
             if (!expr.modifiers["static"])
             {
-                emit(new Instruction.Binary("MOV", "RBP", "R10"));
+                emit(new Instruction.Binary("MOV", "RBP", InstructionInfo.InstanceRegister));
             }
 
             footerType.Add(expr.keepStack);
@@ -195,10 +192,7 @@ namespace Raze
 
         public Instruction.Register? visitGetExpr(Expr.Get expr)
         {
-            //_newLast = true;
-            //globalFuncOffset = expr.stackOffset;
             return expr.get.Accept(this);
-            //_newLast = false;
         }
 
         public Instruction.Register? visitGroupingExpr(Expr.Grouping expr)
@@ -425,8 +419,6 @@ namespace Raze
             }
 
             string operand1 = "";
-            _newLast = true;
-            globalFuncOffset = expr.stackOffset;
             foreach (var blockExpr in expr.internalClass.block.block)
             {
                 if (!(blockExpr is Expr.Function))
@@ -437,7 +429,6 @@ namespace Raze
             {
                 ctorExpr.Accept(this);
             }
-            _newLast = false;
             return null;
         }
 

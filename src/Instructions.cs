@@ -254,6 +254,8 @@ internal abstract class Instruction
 
 internal class InstructionInfo
 {
+    public const string InstanceRegister = "R11";
+
     internal static bool IsStack(Instruction.Register input, bool addSize=false)
     {
         return (input.name[0] == '[');
@@ -275,6 +277,7 @@ internal class InstructionInfo
         input = bits ? (input / 8) : input;
         return raxRegister[input];
     }
+
     private readonly static Dictionary<string, string> StringToOperatorTypeBinary = new()
     {
         // Binary
@@ -322,6 +325,15 @@ internal class InstructionInfo
         "RCX",
         "R8",
         "R9"
+    };
+
+    internal readonly static string[] ReturnOverload = new string[]
+    {
+        "r15",
+        "r14",
+        "r13",
+        "r12",
+        "rbx"
     };
 
     internal readonly static Dictionary<int, string> raxRegister = new()

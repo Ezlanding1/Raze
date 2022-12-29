@@ -269,7 +269,7 @@ namespace Raze
                     return x;
                 }
 
-                if (TypeMatch("LPAREN", "RPAREN"))
+                if (TypeMatch("LPAREN"))
                 {
                     Expr expr = Logical();
                     Expect("RPAREN", "')' after expression.");

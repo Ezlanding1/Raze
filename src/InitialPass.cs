@@ -96,9 +96,9 @@ namespace Raze
                     main = expr;
                 }
                 int paramsCount = expr.parameters.Count;
-                if (paramsCount > 6)
+                if (paramsCount > InstructionInfo.paramRegister.Length)
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Too Many Parameters", "A function cannot have more than 6 parameters");
+                    throw new Errors.BackendError(ErrorType.BackendException, "Too Many Parameters", $"A function cannot have more than { InstructionInfo.paramRegister.Length } parameters");
                 }
                 expr.block.Accept(this);
 
