@@ -68,7 +68,7 @@ namespace Raze
 
                 public string visitBinary(Instruction.Binary instruction)
                 {
-                    if (instruction.instruction == "LEA" && instruction.operand2 is Instruction.Pointer)
+                    if (instruction.operand2 is Instruction.Pointer)
                         return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, { PointerToString( (Instruction.Pointer)instruction.operand2 ) }";
 
                     return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, {instruction.operand2.Accept(this)}";

@@ -17,7 +17,8 @@ namespace Raze
 
             List<Expr.New> undefClass;
             List<Expr.Call> undefCalls;
-            
+            List<Expr.Is> undefIs;
+
             string declClassName;
 
             Tuple<bool, int, Expr.If> waitingIf;
@@ -36,6 +37,7 @@ namespace Raze
 
                 this.undefClass = new();
                 this.undefCalls = new();
+                this.undefIs = new();
 
                 this.index = 0;
             }
@@ -225,6 +227,22 @@ namespace Raze
                 return null;
             }
 
+            public override object visitIsExpr(Expr.Is expr)
+            {
+                if (!checkFuncs)
+                {
+                    if (!(expr.left is Expr.Variable))
+                    {
+                        throw new Errors.BackendError(ErrorType.BackendException, "Invalid 'is' Operator", "the first operand of 'is' operator must be a variable");
+                    }
+                    undefIs.Add(expr);
+                    return null;
+                }
+                
+                expr.right.Accept(this);
+                return null;
+            }
+
 
             private void ResolveReferences()
             {
@@ -263,6 +281,18 @@ namespace Raze
 
                     ValidClassCheck(@ref.internalClass, @ref);
                     resolvedContainer = null;
+                }
+                foreach (var @is in undefIs)
+                {
+                    string type = "";
+                    
+                    @is.Accept(this);
+
+                    if (resolvedContainer == null && (!Primitives.PrimitiveSize.ContainsKey(@is.right.ToString())) && @is.right.ToString() != "null")
+                    {
+                        throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The type '{@is.right.ToString()}' does not exist in the current context");
+                    }
+                    symbolTable.TopContext();
                 }
             }
 

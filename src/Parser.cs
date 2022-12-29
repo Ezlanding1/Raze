@@ -256,7 +256,22 @@ namespace Raze
                 Expr right = Unary();
                 return new Expr.Unary(op, right);
             }
-            return Primary();
+            return Is();
+        }
+
+        private Expr Is()
+        {
+            Expr expr = Primary();
+            while (!isAtEnd() && TypeMatch("is"))
+            {
+                Expect("IDENTIFIER", "type after 'is' operator");
+                var variable = new Expr.Variable(previous());
+                 expr = new Expr.Is(expr, TypeMatch("DOT")? 
+                     GetGetter(variable)
+                     : variable
+                     );
+            }
+            return expr;
         }
 
         private Expr Primary()
@@ -564,8 +579,12 @@ namespace Raze
                 advance();
                 return;
             }
+            throw Expected(type, errorMessage);
+        }
 
-            throw new Errors.ParseError(ErrorType.ParserException, $"{type}", "Expected " + errorMessage + $"{((current != null)? "\nGot: '" + current.lexeme + "' Instead" : "")}");
+        private Errors.ParseError Expected(string type, string errorMessage)
+        {
+            return new Errors.ParseError(ErrorType.ParserException, $"{type}", "Expected " + errorMessage + $"{((current != null) ? "\nGot: '" + current.lexeme + "' Instead" : "")}");
         }
 
         private Token previous()

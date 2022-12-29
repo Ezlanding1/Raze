@@ -155,6 +155,13 @@ namespace Raze
             {
                 return default(T);
             }
+
+            public virtual T visitIsExpr(Expr.Is expr)
+            {
+                expr.left.Accept(this);
+                expr.right.Accept(this);
+                return default(T);
+            }
         }
     }
 }

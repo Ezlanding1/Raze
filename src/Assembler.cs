@@ -61,11 +61,18 @@ namespace Raze
             {
                 lastJump = expr.op.type;
             }
-            if ((operand1.IsLiteral() && operand2.IsLiteral()) || operand1.IsPointer())
+            if (operand1.IsLiteral() && operand2.IsLiteral())
             {
                 MovToRegister("RAX", operand1);
                 emit(new Instruction.Binary(instruction, new Instruction.Register("RAX"), operand2));
                 return new Instruction.Register("RAX");
+            }
+            else if (operand1.IsPointer() && operand2.IsLiteral())
+            {
+                var pointer = ((Instruction.Pointer)operand1);
+                MovToRegister("RAX", operand1);
+                emit(new Instruction.Binary(instruction, new Instruction.Register(InstructionInfo.raxRegister[pointer.size]), operand2));
+                return new Instruction.Register(InstructionInfo.raxRegister[pointer.size]);
             }
             else if (operand1.IsRegister() || operand1.IsPointer()) 
             {
@@ -516,6 +523,11 @@ namespace Raze
         public Instruction.Register? visitDefineExpr(Expr.Define expr)
         {
             return null;
+        }
+
+        public Instruction.Register? visitIsExpr(Expr.Is expr)
+        {
+            return new Instruction.Literal(expr.value);
         }
     }
     

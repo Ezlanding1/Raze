@@ -35,6 +35,7 @@ namespace Raze
             public T visitKeywordExpr(Keyword expr);
             public T visitNewExpr(New expr);
             public T visitDefineExpr(Define expr);
+            public T visitIsExpr(Is expr);
         }
 
         public class Binary : Expr
@@ -565,6 +566,25 @@ namespace Raze
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.visitDefineExpr(this);
+            }
+        }
+
+        public class Is : Expr
+        {
+            public Expr left;
+            public Variable right;
+
+            public string value;
+
+            public Is(Expr left, Variable right)
+            {
+                this.left = left;
+                this.right = right;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.visitIsExpr(this);
             }
         }
     }

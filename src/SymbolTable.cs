@@ -336,6 +336,19 @@ namespace Raze
                 return path;
             }
 
+            public string GetPathInstance(Symbol.Container c)
+            {
+                string path = "";
+
+                var x = c;
+                while (x != null && x != currentFunction)
+                {
+                    path += x.Name.lexeme + ((x.enclosing != null && x.enclosing != currentFunction)? "." : "");
+                    x = x.enclosing;
+                }
+                return path;
+            }
+
 
             public void TopContext()
             {

@@ -280,6 +280,11 @@ namespace Raze
             {
                 return "void";
             }
+
+            public override string visitIsExpr(Expr.Is expr)
+            {
+                return "bool";
+            }
         }
     }
 }

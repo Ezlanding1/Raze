@@ -263,5 +263,13 @@ namespace Raze.Tools
             PrintAST(expr.value);
             return null;
         }
+
+        public object? visitIsExpr(Expr.Is expr)
+        {
+            PrintAST(expr.left);
+            PrintAST("is");
+            PrintAST(expr.right);
+            return null;
+        }
     }
 }

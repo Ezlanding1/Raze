@@ -255,6 +255,39 @@ namespace Raze
                 symbolTable.UpContext();
                 return null;
             }
+
+            public override object visitIsExpr(Expr.Is expr)
+            {
+                if (symbolTable.ContainsVariableKey(((Expr.Variable)expr.left).ToString(), out SymbolTable.Symbol symbol))
+                {
+                    if (symbol.IsPrimitiveClass())
+                    {
+                        var s = ((SymbolTable.Symbol.PrimitiveClass)symbol).self;
+
+                        expr.value = ((SymbolTable.Symbol.PrimitiveClass)symbol).self.type.lexeme == expr.right.ToString()? "1" : "0";
+
+                    }
+                    else if (symbol.IsDefine())
+                    {
+                        var s = ((SymbolTable.Symbol.Define)symbol).self;
+                        
+                    }
+                    else if (symbol.IsClass())
+                    {
+                        var s = ((SymbolTable.Symbol.Class)symbol).self;
+                        expr.value = (symbolTable.GetPathInstance((SymbolTable.Symbol.Class)symbol) == expr.right.ToString())? "1" : "0";
+                    }
+                    else
+                    {
+                        throw new Exception();
+                    }
+                }
+                else
+                {
+                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The variable '{((Expr.Variable)expr.left).ToString()}' does not exist in the current context", symbolTable.callStack);
+                }
+                return null;
+            }
         }
     }
 }
