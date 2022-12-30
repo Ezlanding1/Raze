@@ -12,6 +12,7 @@ namespace Raze
     {
         List<Expr> expressions;
         Expr.Assign.Function main;
+        Dictionary<string, Expr.Primitive> primitives;
 
         public Analyzer(List<Expr> expressions)
         {
@@ -22,7 +23,7 @@ namespace Raze
             Pass<object?> initialPass = new InitialPass(expressions);
             expressions = initialPass.Run();
 
-            main = ((InitialPass)initialPass).GetOutput();
+            (main, primitives) = ((InitialPass)initialPass).GetOutput();
             if (main == null)
             {
                 throw new Errors.BackendError(ErrorType.BackendException, "Main Not Found", "No Main method for entrypoint found");
@@ -31,7 +32,7 @@ namespace Raze
             Pass<object?> mainPass = new MainPass(expressions);
             expressions = mainPass.Run();
 
-            Pass<string> TypeChackPass = new TypeCheckPass(expressions);
+            Pass<string> TypeChackPass = new TypeCheckPass(expressions, primitives);
             expressions = TypeChackPass.Run();
 
             return (expressions, main);
@@ -69,20 +70,7 @@ namespace Raze
             if (literal is Expr.Literal)
             {
                 var l = (Expr.Literal)literal;
-                if (l.literal.type == "NUMBERDOT")
-                {
-                    return "number";
-                }
-
-                if (l.literal.type == "STRING")
-                {
-                    return "string";
-                }
-
-                if (l.literal.type == "NUMBER")
-                {
-                    return "number";
-                }
+                return l.literal.type;
             }
             if (literal is Expr.Keyword)
             {

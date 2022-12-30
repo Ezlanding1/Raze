@@ -345,20 +345,19 @@ namespace Raze
             }
         }
 
-        public class Primitive : Expr
+        public class Primitive : Definition
         {
-            public Primitives.PrimitiveType literal;
-            public int stackOffset;
-            public Primitive(Primitives.PrimitiveType literal)
+            public List<string> literals;
+
+            public Primitive(Token name, List<string> literals, int size, Block block) : base (name, block, size)
             {
-                this.literal = literal;
+                this.literals = literals;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.visitPrimitiveExpr(this);
             }
-
         }
 
         public class Keyword : Expr
@@ -423,6 +422,13 @@ namespace Raze
             {
                 this.name = name;
                 this.block = block;
+            }
+
+            public Definition(Token name, Block block, int size)
+            {
+                this.name = name;
+                this.block = block;
+                this.size = size;
             }
 
             public abstract override T Accept<T>(IVisitor<T> visitor);
@@ -496,8 +502,7 @@ namespace Raze
                     if (item is Primitive)
                     {
                         var i = (Primitive)item;
-                        var x = Primitives.ToPrimitive(i.literal.type, i.literal.name, i.literal.value);
-                        var n = new Primitive(x);
+                        var n = new Primitive(i.name, i.literals, i.size, i.block);
                         nBlock.block.Add(n);
                         continue;
                     }

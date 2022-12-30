@@ -90,7 +90,8 @@ namespace Raze
             "new",
             "asm",
             "define",
-            "is"
+            "is",
+            "primitive"
         };
     }
 }

@@ -6,6 +6,9 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
+using static Raze.Analyzer.SymbolTable.Symbol;
+using static Raze.Expr;
 
 namespace Raze
 {
@@ -15,9 +18,11 @@ namespace Raze
         {
             SymbolTable symbolTable;
 
-            List<Expr.New> undefClass;
             List<Expr.Call> undefCalls;
             List<Expr.Is> undefIs;
+            List<(Expr.Variable?, Expr.New?)> undefVariables;
+
+            Dictionary<string, Expr.Primitive> primitives;
 
             string declClassName;
 
@@ -35,9 +40,11 @@ namespace Raze
             {
                 this.symbolTable = new();
 
-                this.undefClass = new();
                 this.undefCalls = new();
                 this.undefIs = new();
+                this.undefVariables = new();
+
+                this.primitives = new();
 
                 this.index = 0;
             }
@@ -57,9 +64,9 @@ namespace Raze
                 return expressions;
             }
 
-            internal Expr.Function GetOutput()
+            internal (Expr.Function, Dictionary<string, Expr.Primitive>) GetOutput()
             {
-                return main;
+                return (main, primitives);
             }
 
             public override object? visitBlockExpr(Expr.Block expr)
@@ -102,6 +109,11 @@ namespace Raze
                 {
                     throw new Errors.BackendError(ErrorType.BackendException, "Too Many Parameters", $"A function cannot have more than { InstructionInfo.paramRegister.Length } parameters");
                 }
+
+                foreach (Expr.Parameter paramExpr in expr.parameters)
+                {
+                    paramExpr.Accept(this);
+                }
                 expr.block.Accept(this);
 
                 symbolTable.UpContext();
@@ -120,6 +132,11 @@ namespace Raze
 
             public override object? visitDeclareExpr(Expr.Declare expr)
             {
+                if (!checkFuncs)
+                {
+                    undefVariables.Add((expr, null));
+                }
+
                 declClassName = expr.name.lexeme;
                 return base.visitDeclareExpr(expr);
             }
@@ -177,7 +194,8 @@ namespace Raze
             {
                 expr.declName = declClassName;
 
-                undefClass.Add(expr);
+                undefVariables.RemoveAt(undefVariables.Count - 1);
+                undefVariables.Add((null, expr));
 
                 return null;
             }
@@ -215,7 +233,7 @@ namespace Raze
                 return null;
             }
 
-            public override object visitVariableExpr(Expr.Variable expr)
+            public override object? visitVariableExpr(Expr.Variable expr)
             {
                 if (!checkFuncs)
                 {
@@ -227,7 +245,26 @@ namespace Raze
                 return null;
             }
 
-            public override object visitIsExpr(Expr.Is expr)
+            public override object visitAssignExpr(Expr.Assign expr)
+            {
+                expr.variable.Accept(this);
+                return base.visitAssignExpr(expr);
+            }
+
+            public override object visitPrimitiveExpr(Expr.Primitive expr)
+            {
+                if (!primitives.ContainsKey(expr.name.lexeme))
+                {
+                    primitives[expr.name.lexeme] = expr;
+                }
+                else
+                {
+                    throw new Errors.BackendError(ErrorType.BackendException, "Double Declaration", $"A primtive named '{expr.name.lexeme}' is already defined");
+                }
+                return null;
+            }
+
+            public override object? visitIsExpr(Expr.Is expr)
             {
                 if (!checkFuncs)
                 {
@@ -267,20 +304,33 @@ namespace Raze
                     ValidCallCheck(call.internalFunction, call);
                     resolvedContainer = null;
                 }
+
                 checkType = 1;
-                foreach (var @ref in undefClass)
+                // ToDo: Clean Up This Code
+                foreach (var (variable, @ref) in undefVariables)
                 {
-                    @ref._className.Accept(this);
-                    if (resolvedContainer == null)
-                        throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The class '{@ref._className.ToString()}' does not exist in the current context");
+                    if (@ref != null)
+                    {
+                        @ref._className.Accept(this);
+
+                        if (resolvedContainer == null)
+                            throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The type '{@ref._className.ToString()}' does not exist in the current context");
+                        else
+                            // ToDo: Clean Up This Code
+                            @ref.internalClass = ((SymbolTable.Symbol.Class)resolvedContainer).self.CloneVars();
+
+                        symbolTable.TopContext();
+
+                        ValidClassCheck(@ref.internalClass, @ref);
+                        resolvedContainer = null;
+                    }
                     else
-                        // ToDo: Clean Up This Code
-                        @ref.internalClass = ((SymbolTable.Symbol.Class)resolvedContainer).self.CloneVars();
-
-                    symbolTable.TopContext();
-
-                    ValidClassCheck(@ref.internalClass, @ref);
-                    resolvedContainer = null;
+                    {
+                        if (primitives.ContainsKey(variable.type.lexeme))
+                        {
+                            variable.size = primitives[variable.type.lexeme].size;
+                        }
+                    }
                 }
                 foreach (var @is in undefIs)
                 {

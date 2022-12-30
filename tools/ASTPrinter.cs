@@ -241,7 +241,10 @@ namespace Raze.Tools
 
         public object? visitPrimitiveExpr(Expr.Primitive expr)
         {
-            PrintAST(expr.literal.value);
+            PrintAST(expr.name);
+            PrintAST(expr.literals);
+            PrintAST(expr.size.ToString());
+            PrintAST(expr.block);
             return null;
         }
 

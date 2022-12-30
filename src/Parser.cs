@@ -38,7 +38,7 @@ namespace Raze
 
         private Expr Definition()
         {
-            if (!isAtEnd() && TypeMatch("function", "class", "asm", "define"))
+            if (!isAtEnd() && TypeMatch("function", "class", "asm", "define", "primitive"))
             {
                 Token definitionType = previous();
                 if (definitionType.type == "function")
@@ -115,6 +115,40 @@ namespace Raze
                     var name = previous();
 
                     return new Expr.Define(name, Literal() ?? throw new Errors.ParseError(ErrorType.ParserException, "Incorrect Define", "The value of 'Define' should be a literal"));
+                }
+                else if (definitionType.type == "primitive")
+                {
+                    Expect("class", "'class' keyword");
+                    Expect("IDENTIFIER", "name of primitive type");
+                    var name = previous();
+                    Expect("is", "'is' keyword");
+                    List<string> literals = new();
+                    if (TypeMatch("LBRACE"))
+                    {
+                        while (!TypeMatch("RBRACE"))
+                        {
+                            Expect("IDENTIFIER", "token literal of primitive type");
+                            literals.Add(previous().lexeme);
+                            if (isAtEnd())
+                            {
+                                Expect("RBRACE", "'}' after token literals of primitive type");
+                            }
+                        }
+                    }
+                    else
+                    {
+                        Expect("IDENTIFIER", "token literal of primitive type");
+                        literals.Add(previous().lexeme);
+                    }
+                    ExpectValue("IDENTIFIER", "sizeof", "'sizeof' keyword");
+                    Expect("NUMBER", "size (in bytes) of primitive");
+                    string size = previous().lexeme;
+                    if ((!size.All(char.IsDigit)) || (!new List<string>(){ "8", "4", "2", "1" }.Contains(size)))
+                    {
+                        throw new Errors.ParseError(ErrorType.ParserException, "Invaid Primitive Size", "The size of primitive classes must be the integers '8', '4', '2', or '1'");
+                    }
+                    var block = GetBlock(definitionType.type);
+                    return new Expr.Primitive(name, literals, int.Parse(size), block);
                 }
             }
             return Conditional();
@@ -319,9 +353,7 @@ namespace Raze
                         variable.name = previous();
                         Expect("EQUALS", "'=' when declaring variable");
                         Expr value = NoSemicolon();
-                        expr = (value is Expr.Literal)
-                            ? new Expr.Primitive(Primitives.ToPrimitive(variable.type, variable.name, (Expr.Literal)value))
-                            : new Expr.Declare(variable, value);
+                        expr = new Expr.Declare(variable, value);
                     }
                     else if (TypeMatch("LPAREN"))
                     {
@@ -580,6 +612,16 @@ namespace Raze
                 return;
             }
             throw Expected(type, errorMessage);
+        }
+
+        private void ExpectValue(string type, string value, string errorMessage)
+        {
+            if (current != null && current.type == type && current.lexeme == value)
+            {
+                advance();
+                return;
+            }
+            throw Expected(type + " : " + value, errorMessage);
         }
 
         private Errors.ParseError Expected(string type, string errorMessage)

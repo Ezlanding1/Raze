@@ -111,9 +111,6 @@ namespace Raze
                 string type = expr.type.lexeme;
                 string name = expr.name.lexeme;
 
-
-                expr.size = SizeOf(type, expr.value);
-
                 if (symbolTable.ContainsVariableKey(name))
                 {
                     throw new Errors.BackendError(ErrorType.BackendException, "Double Declaration", $"A variable named '{name}' is already defined in this scope", symbolTable.callStack);
@@ -133,22 +130,6 @@ namespace Raze
 
             public override object? visitPrimitiveExpr(Expr.Primitive expr)
             {
-                // Function Todo Notice:
-                // Note: since classes aren't implemented yet, functions are in a very early stage.
-                // The flaws with storing functions on the stack, function defitions, function calls, sizeof, and typeof will be resolved in later commits.
-                Token type = expr.literal.type;
-                Token name = expr.literal.name;
-
-                base.visitPrimitiveExpr(expr);
-
-                int size = expr.literal.size;
-                if (symbolTable.ContainsVariableKey(name.lexeme))
-                {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Double Declaration", $"A variable named '{name.lexeme}' is already defined in this scope", symbolTable.callStack);
-                }
-                var v = new Expr.Variable(type, name, size);
-                symbolTable.Add(v);
-                expr.stackOffset = v.stackOffset;
                 return null;
             }
 
@@ -164,7 +145,6 @@ namespace Raze
                 for (int i = 0; i < arity; i++)
                 {
                     Expr.Parameter paramExpr = expr.parameters[i];
-                    paramExpr.size = SizeOf(paramExpr.type.lexeme);
                     symbolTable.Add(paramExpr);
                 }
 
@@ -227,8 +207,6 @@ namespace Raze
                 expr.variable.Accept(this);
 
                 base.visitAssignExpr(expr);
-
-                expr.variable.size = SizeOf(expr.variable.type.lexeme);
                 return null;
             }
 

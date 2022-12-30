@@ -132,7 +132,7 @@ namespace Raze
 
             public virtual T visitPrimitiveExpr(Expr.Primitive expr)
             {
-                expr.literal.value.Accept(this);
+                expr.block.Accept(this);
                 return default(T);
             }
 

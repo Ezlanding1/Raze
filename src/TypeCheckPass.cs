@@ -14,9 +14,12 @@ namespace Raze
         {
             List<(string, bool)> _return;
             bool callReturn;
-            public TypeCheckPass(List<Expr> expressions) : base(expressions)
+            Dictionary<string, Expr.Primitive> primitives;
+
+            public TypeCheckPass(List<Expr> expressions, Dictionary<string, Expr.Primitive> primitives) : base(expressions)
             {
                 _return = new();
+                this.primitives = primitives;
             }
 
             internal override List<Expr> Run()
@@ -101,9 +104,20 @@ namespace Raze
             public override string visitDeclareExpr(Expr.Declare expr)
             {
                 string assignType = expr.value.Accept(this);
-                if (expr.type.lexeme != assignType && assignType != "null")
+
+                if (primitives.ContainsKey(expr.type.lexeme))
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.type.lexeme}'");
+                    if ((!primitives[expr.type.lexeme].literals.Contains(assignType)) && assignType != "null")
+                    {
+                        throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.type.lexeme}'");
+                    }
+                }
+                else
+                {
+                    if (expr.type.lexeme != assignType && assignType != "null")
+                    {
+                        throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.type.lexeme}'");
+                    }
                 }
                 return "void";
             }
@@ -234,6 +248,8 @@ namespace Raze
 
             public override string visitAssignExpr(Expr.Assign expr)
             {
+                string assignType = expr.value.Accept(this);
+
                 if (expr.op != null)
                 {
                     string operand = expr.value.Accept(this);
@@ -246,7 +262,20 @@ namespace Raze
                 }
                 else
                 {
-                    expr.value.Accept(this);
+                    if (primitives.ContainsKey(expr.variable.type.lexeme))
+                    {
+                        if ((!primitives[expr.variable.type.lexeme].literals.Contains(assignType)) && assignType != "null")
+                        {
+                            throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.variable.type.lexeme}'");
+                        }
+                    }
+                    else
+                    {
+                        if (expr.variable.type.lexeme != assignType && assignType != "null")
+                        {
+                            throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.variable.type.lexeme}'");
+                        }
+                    }
                 }
                 return "void";
             }
@@ -258,11 +287,6 @@ namespace Raze
 
             public override string visitPrimitiveExpr(Expr.Primitive expr)
             {
-                string assignType = expr.literal.value.Accept(this);
-                if (expr.literal.type.lexeme != assignType && assignType != "null")
-                {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.literal.type.lexeme}'");
-                }
                 return "void";
             }
 

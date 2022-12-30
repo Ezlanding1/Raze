@@ -389,7 +389,6 @@ namespace Raze
 
         public Instruction.Register? visitPrimitiveExpr(Expr.Primitive expr)
         {
-            Declare(expr);
             return null;
         }
 
@@ -444,17 +443,6 @@ namespace Raze
             if (!HandleEmit(type, stackOffset, size, value))
             {
                 emit(new Instruction.Binary("MOV", new Instruction.Pointer(stackOffset, (int)size), new Instruction.Register(value)));
-            }
-        }
-        private void Declare(Expr.Primitive primitive)
-        {
-            string type = primitive.literal.type.lexeme;
-            int size = primitive.literal.size;
-            Instruction.Register operand2 = primitive.literal.value.Accept(this);
-            string value = operand2.name;
-            if (!HandleEmit(type, primitive.stackOffset, size, value))
-            {
-                throw new Exception("Raze Error: Internal Type Not Implemented (declare)");
             }
         }
 
