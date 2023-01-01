@@ -71,8 +71,8 @@ namespace Raze
             {
                 var pointer = ((Instruction.Pointer)operand1);
                 MovToRegister("RAX", operand1);
-                emit(new Instruction.Binary(instruction, new Instruction.Register(InstructionInfo.raxRegister[pointer.size]), operand2));
-                return new Instruction.Register(InstructionInfo.raxRegister[pointer.size]);
+                emit(new Instruction.Binary(instruction, new Instruction.Register(InstructionInfo.Registers[("RAX", pointer.size)]), operand2));
+                return new Instruction.Register(InstructionInfo.Registers[("RAX", pointer.size)]);
             }
             else if (operand1.IsRegister() || operand1.IsPointer()) 
             {
@@ -94,19 +94,15 @@ namespace Raze
             for (int i = 0; i < expr.arguments.Count; i++)
             {
                 Instruction.Register arg = expr.arguments[i].Accept(this);
-                MovToRegister(InstructionInfo.paramRegister[i], arg);
+                MovToRegister(InstructionInfo.Registers[(InstructionInfo.paramRegister[i], expr.internalFunction.parameters[i].size)], arg);
             }
 
-            string operand1 = "";
+            string operand1 = expr.internalFunction.FullName;
+
             if (!expr.internalFunction.modifiers["static"])
             {
                 // Note: Is this the proprer register? c++ uses it as the first param (RDI)
                 emit(new Instruction.Binary("LEA", new Instruction.Register(InstructionInfo.InstanceRegister), new Instruction.Pointer((int)expr.stackOffset-8, 8)));
-                operand1 = expr.internalFunction.FullName;
-            }
-            else
-            {
-                operand1 = expr.callee.ToString();
             }
 
             emit(new Instruction.Unary("CALL", operand1));
@@ -179,9 +175,9 @@ namespace Raze
             for (int i = 0; i < expr.arity; i++)
             {
                 var paramExpr = expr.parameters[i];
-                if (!HandleParamEmit(paramExpr.type.lexeme, (int)paramExpr.stackOffset, paramExpr.size, paramExpr.name.lexeme, InstructionInfo.paramRegister[i].ToString()))
+                if (!HandleParamEmit(paramExpr.type.lexeme, (int)paramExpr.stackOffset, paramExpr.size, paramExpr.name.lexeme, InstructionInfo.Registers[(InstructionInfo.paramRegister[i], paramExpr.size)]))
                 {
-                    emit(new Instruction.Binary("MOV", new Instruction.Pointer((int)paramExpr.stackOffset, (int)paramExpr.size), new Instruction.Register(InstructionInfo.paramRegister[i].ToString())));
+                    emit(new Instruction.Binary("MOV", new Instruction.Pointer((int)paramExpr.stackOffset, (int)paramExpr.size), new Instruction.Register(InstructionInfo.Registers[(InstructionInfo.paramRegister[i], paramExpr.size)])));
                 }
             }
 
@@ -378,7 +374,7 @@ namespace Raze
             if (expr.op != null)
             {
                 string instruction = InstructionInfo.ToType(expr.op.type);
-                emit(new Instruction.Binary(instruction, new Instruction.Pointer((int)expr.variable.stackOffset, (int)Analyzer.SizeOf(type)), operand2));
+                emit(new Instruction.Binary(instruction, new Instruction.Pointer(expr.variable.stackOffset, expr.variable.size), operand2));
             }
             else
             {

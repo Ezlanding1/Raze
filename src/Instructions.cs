@@ -275,7 +275,7 @@ internal class InstructionInfo
     internal static string ToRegister(int input, bool bits=false, string register="RAX")
     {
         input = bits ? (input / 8) : input;
-        return raxRegister[input];
+        return Registers[(register, input)];
     }
 
     private readonly static Dictionary<string, string> StringToOperatorTypeBinary = new()
@@ -336,13 +336,87 @@ internal class InstructionInfo
         "rbx"
     };
 
-    internal readonly static Dictionary<int, string> raxRegister = new()
+    internal readonly static Dictionary<(string, int), string> Registers = new()
     {
-        { 8, "RAX"}, // 64-Bits
-        { 4, "EAX"}, // Lower 32-Bits
-        { 2, "AX"}, // Lower 16-Bits
-        { 1, "AL"}, // Lower 8-Bits
-        { 0, "AH"} // Upper 8-Bits
+        { ("RAX", 8), "RAX" }, // 64-Bits 
+        { ("RAX", 4), "EAX" }, // Lower 32-Bits
+        { ("RAX", 2), "AX" }, // Lower 16-Bits
+        { ("RAX", 1), "AL" }, // Lower 8-Bits
+
+        { ("RCX", 8), "RCX" },
+        { ("RCX", 4), "ECX" },
+        { ("RCX", 2), "CX" },
+        { ("RCX", 1), "CL" },
+
+        { ("RDX", 8), "RDX" },
+        { ("RDX", 4), "EDX" },
+        { ("RDX", 2), "DX" },
+        { ("RDX", 1), "DL" },
+
+        { ("RBX", 8), "RBX" },
+        { ("RBX", 4), "EBX" },
+        { ("RBX", 2), "BX" },
+        { ("RBX", 1), "BL" },
+
+        { ("RSI", 8), "RSI" },
+        { ("RSI", 4), "ESI" },
+        { ("RSI", 2), "SI" },
+        { ("RSI", 1), "SIL" },
+
+        { ("RDI", 8), "RDI" },
+        { ("RDI", 4), "EDI" },
+        { ("RDI", 2), "DI" },
+        { ("RDI", 1), "DIL" },
+
+        { ("RSP", 8), "RSP" },
+        { ("RSP", 4), "ESP" },
+        { ("RSP", 2), "SP" },
+        { ("RSP", 1), "SPL" },
+
+        { ("RBP", 8), "RBP" },
+        { ("RBP", 4), "EBP" },
+        { ("RBP", 2), "BP" },
+        { ("RBP", 1), "BPL" },
+
+        { ("R8", 8), "R8" },
+        { ("R8", 4), "R8D" },
+        { ("R8", 2), "R8W" },
+        { ("R8", 1), "R8B" },
+
+        { ("R9", 8), "R9" },
+        { ("R9", 4), "R9D" },
+        { ("R9", 2), "R9W" },
+        { ("R9", 1), "R9B" },
+
+        { ("R10", 8), "R10" },
+        { ("R10", 4), "R10D" },
+        { ("R10", 2), "R10W" },
+        { ("R10", 1), "R10B" },
+
+        { ("R11", 8), "R11" },
+        { ("R11", 4), "R11D" },
+        { ("R11", 2), "R11W" },
+        { ("R11", 1), "R11B" },
+
+        { ("R12", 8), "R12" },
+        { ("R12", 4), "R12D" },
+        { ("R12", 2), "R12W" },
+        { ("R12", 1), "R12B" },
+
+        { ("R13", 8), "R13" },
+        { ("R13", 4), "R13D" },
+        { ("R13", 2), "R13W" },
+        { ("R13", 1), "R13B" },
+
+        { ("R14", 8), "R14" },
+        { ("R14", 4), "R14D" },
+        { ("R14", 2), "R14W" },
+        { ("R14", 1), "R14B" },
+
+        { ("R15", 8), "R15" },
+        { ("R15", 4), "R15D" },
+        { ("R15", 2), "R15W" },
+        { ("R15", 1), "R15B" },
     };
 
     internal readonly static Dictionary<int, string> wordSize = new()

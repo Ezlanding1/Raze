@@ -85,7 +85,6 @@ namespace Raze
                         throw new Errors.BackendError(ErrorType.BackendException, "Constructor Called As Method", "A Constructor may not be called as a method of its class");
                     }
                     expr.internalFunction = s;
-                    expr.internalFunction.path = symbolTable.GetPathInstance();
                     expr.stackOffset = symbolTable.currentFunction.self.size;
                 }
                 else
@@ -135,10 +134,6 @@ namespace Raze
 
             public override object? visitFunctionExpr(Expr.Function expr)
             {
-                if (expr.constructor && expr.path == null)
-                {
-                    expr.path = symbolTable.GetPathInstance();
-                }
                 symbolTable.Add(expr);
                 int arity = expr.arity;
                 int frameStart = symbolTable.count;
@@ -253,7 +248,7 @@ namespace Raze
                     else if (symbol.IsClass())
                     {
                         var s = ((SymbolTable.Symbol.Class)symbol).self;
-                        expr.value = (symbolTable.GetPathInstance((SymbolTable.Symbol.Class)symbol) == expr.right.ToString())? "1" : "0";
+                        expr.value = (s.FullName == expr.right.ToString())? "1" : "0";
                     }
                     else
                     {

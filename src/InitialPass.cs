@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using static Raze.Analyzer.SymbolTable;
 
 namespace Raze
 {
@@ -93,6 +92,8 @@ namespace Raze
                     throw new Errors.BackendError(ErrorType.BackendException, "Function Declared Twice", $"Function '{expr.name.lexeme}()' was declared twice");
                 }
 
+                SetPath(expr);
+
                 symbolTable.Add(expr);
 
                 if (expr.name.lexeme == "Main")
@@ -112,6 +113,7 @@ namespace Raze
 
                 foreach (Expr.Parameter paramExpr in expr.parameters)
                 {
+                    undefVariables.Add((paramExpr, null));
                     paramExpr.Accept(this);
                 }
                 expr.block.Accept(this);
@@ -143,6 +145,8 @@ namespace Raze
 
             public override object? visitClassExpr(Expr.Class expr)
             {
+                SetPath(expr);
+
                 symbolTable.Add(expr);
 
                 expr.block.Accept(this);
@@ -294,7 +298,6 @@ namespace Raze
                         continue;
 
                     call.internalFunction = ((SymbolTable.Symbol.Function)resolvedContainer).self;
-                    call.internalFunction.path = symbolTable.GetPath();
 
                     if (!call.internalFunction.modifiers["static"])
                     {
@@ -332,6 +335,10 @@ namespace Raze
                         {
                             variable.size = primitives[variable.type.lexeme].size;
                         }
+                        else
+                        {
+                            throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The type '{variable.type.lexeme}' does not exist in the current context");
+                        }
                     }
                 }
                 foreach (var @is in undefIs)
@@ -360,6 +367,7 @@ namespace Raze
             private void ValidClassCheck(Expr.Class _class, Expr.New c)
             {
                 c.internalClass = new(_class.name, _class.block);
+                c.internalClass.constructor = _class.constructor;
                 c.internalClass.dName = new(c.declName);
                 c.internalClass.block._classBlock = true;
             }
@@ -371,7 +379,7 @@ namespace Raze
                     throw new Errors.BackendError(ErrorType.BackendException, "Class Without Constructor", "A Class must contain a constructor method");
                 }
 
-                var constructor = ((Symbol.Function)symbol).self;
+                var constructor = ((SymbolTable.Symbol.Function)symbol).self;
 
                 constructor.constructor = true;
 
@@ -379,7 +387,15 @@ namespace Raze
                 {
                     throw new Errors.BackendError(ErrorType.BackendException, "Constructor Marked 'static'", "A constructor cannot have the 'static' modifier");
                 }
-                ((Symbol.Class)symbolTable.Current).self.constructor = constructor;
+                ((SymbolTable.Symbol.Class)symbolTable.Current).self.constructor = constructor;
+            }
+
+            private void SetPath(Expr.Definition definition)
+            {
+                if (symbolTable.Current.self.FullName != "")
+                {
+                    definition.path = symbolTable.Current.self.FullName + ".";
+                }
             }
         }
     }

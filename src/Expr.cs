@@ -349,10 +349,13 @@ namespace Raze
         {
             public List<string> literals;
 
+            public override string FullName { get => name.lexeme; }
+
             public Primitive(Token name, List<string> literals, int size, Block block) : base (name, block, size)
             {
                 this.literals = literals;
             }
+
 
             public override T Accept<T>(IVisitor<T> visitor)
             {
@@ -418,6 +421,9 @@ namespace Raze
             public Block block;
             public int size;
 
+            public string path;
+            public abstract string FullName { get; }
+
             public Definition(Token name, Block block)
             {
                 this.name = name;
@@ -425,9 +431,8 @@ namespace Raze
             }
 
             public Definition(Token name, Block block, int size)
+                : this (name, block)
             {
-                this.name = name;
-                this.block = block;
                 this.size = size;
             }
 
@@ -444,10 +449,10 @@ namespace Raze
             public bool keepStack;
             public Dictionary<string, bool> modifiers;
             public bool constructor;
-            public string path;
-            public string FullName
+
+            public override string FullName
             {
-                get { return this.path + (constructor? "." : "") + this.name.lexeme; }
+                get { return (this.path ?? "") + (constructor ? "." : "") + ((this.name == null) ? "" : this.name.lexeme); }
             }
 
             public Function()
@@ -478,6 +483,11 @@ namespace Raze
             public string dName;
 
             public Expr.Function constructor;
+
+            public override string FullName
+            {
+                get { return this.path + this.name.lexeme; }
+            }
 
             public Class(Token name, Block block) : base(name, block) { }
 

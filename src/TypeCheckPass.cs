@@ -3,8 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
+using static Raze.Expr;
 
 namespace Raze
 {
@@ -85,10 +87,11 @@ namespace Raze
                 for (int i = 0; i < expr.internalFunction.arity; i++)
                 {
                     Expr.Parameter paramExpr = expr.internalFunction.parameters[i];
-                    expr.arguments[i].Accept(this);
-                    if (paramExpr.type.lexeme != expr.arguments[i].Accept(this))
+
+                    var assignType = expr.arguments[i].Accept(this);
+                    if (!MatchesType(paramExpr.type.lexeme, assignType))
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"In call for {expr.internalFunction.name.lexeme}, type of '{paramExpr.type.lexeme}' does not match the definition's type '{expr.arguments[i].Accept(this)}'");
+                        throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot assign type '{assignType}' to type '{paramExpr.type.lexeme}'");
                     }
                 }
                 callReturn = true;
@@ -104,21 +107,11 @@ namespace Raze
             public override string visitDeclareExpr(Expr.Declare expr)
             {
                 string assignType = expr.value.Accept(this);
+                if (!MatchesType(expr.type.lexeme, assignType))
+                {
+                    throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.type.lexeme}'");
+                }
 
-                if (primitives.ContainsKey(expr.type.lexeme))
-                {
-                    if ((!primitives[expr.type.lexeme].literals.Contains(assignType)) && assignType != "null")
-                    {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.type.lexeme}'");
-                    }
-                }
-                else
-                {
-                    if (expr.type.lexeme != assignType && assignType != "null")
-                    {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.type.lexeme}'");
-                    }
-                }
                 return "void";
             }
 
@@ -138,10 +131,11 @@ namespace Raze
                     int _returnCount = 0;
                     foreach (var ret in _return)
                     {
-                        if (ret.Item1 != expr._returnType && ret.Item1 != "null")
+                        if (!MatchesType(expr._returnType, ret.Item1))
                         {
                             throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot return type '{ret.Item1}' from type '{expr._returnType}'");
                         }
+
                         if (!ret.Item2)
                         {
                             _returnCount++;
@@ -262,19 +256,9 @@ namespace Raze
                 }
                 else
                 {
-                    if (primitives.ContainsKey(expr.variable.type.lexeme))
+                    if (!MatchesType(expr.variable.type.lexeme, assignType))
                     {
-                        if ((!primitives[expr.variable.type.lexeme].literals.Contains(assignType)) && assignType != "null")
-                        {
-                            throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.variable.type.lexeme}'");
-                        }
-                    }
-                    else
-                    {
-                        if (expr.variable.type.lexeme != assignType && assignType != "null")
-                        {
-                            throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.variable.type.lexeme}'");
-                        }
+                        throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.variable.type.lexeme}'");
                     }
                 }
                 return "void";
@@ -308,6 +292,25 @@ namespace Raze
             public override string visitIsExpr(Expr.Is expr)
             {
                 return "bool";
+            }
+
+            private bool MatchesType(string type1, string type2)
+            {
+                if (primitives.ContainsKey(type1))
+                {
+                    if ((!primitives[type1].literals.Contains(type2)) && type1 != type2 && type2 != "null")
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    if (type1 != type2 && type2 != "null")
+                    {
+                        return false;
+                    }
+                }
+                return true;
             }
         }
     }

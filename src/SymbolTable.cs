@@ -301,57 +301,7 @@ namespace Raze
                 count -= x;
             }
 
-            public string GetPath()
-            {
-                string path = "";
-
-                var x = Current;
-                while (x.enclosing != null)
-                {
-                    path += x.Name.lexeme + ".";
-                    x = x.enclosing;
-                }
-                return path;
-            }
-
-            public string GetPathInstance()
-            {
-                string path = "";
-
-                var x = Current;
-                while (x != null && x != currentFunction)
-                {
-                    path += x.Name.lexeme + ".";
-                    x = x.enclosing;
-                }
-                return path;
-            }
-
-            public string GetPathInstance(Symbol.Container c)
-            {
-                string path = "";
-
-                var x = c;
-                while (x != null && x != currentFunction)
-                {
-                    path += x.Name.lexeme + ((x.enclosing != null && x.enclosing != currentFunction)? "." : "");
-                    x = x.enclosing;
-                }
-                return path;
-            }
-
-
-            public void TopContext()
-            {
-                if (Current is Symbol.Class && ((Symbol.Class)Current).self.constructor == null)
-                {
-                    if (!ContainsContainerKey(Current.Name.lexeme, out var constructor, 0))
-                        throw new Errors.BackendError(ErrorType.BackendException, "Class Without Constructor", "A Class must contain a constructor method");
-                    ((Symbol.Function)constructor).self.constructor = true;
-                    ((Symbol.Class)Current).self.constructor = ((Symbol.Function)constructor).self;
-                }
-                Current = head;
-            }
+            public void TopContext() => Current = head;
 
             public bool CurrentIsTop() => Current == head;
 
