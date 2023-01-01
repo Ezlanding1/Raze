@@ -133,15 +133,6 @@ namespace Raze
 
             public bool UpContext()
             {
-                if (Current is Symbol.Class && ((Symbol.Class)Current).self.constructor == null)
-                {
-                    if (!ContainsContainerKey(Current.Name.lexeme, out var constructor, 0))
-                        throw new Errors.BackendError(ErrorType.BackendException, "Class Without Constructor", "A Class must contain a constructor method");
-                    ((Symbol.Function)constructor).self.constructor = true;
-                    if (((Symbol.Function)constructor).self.modifiers["static"])
-                        throw new Errors.BackendError(ErrorType.BackendException, "Constructor Marked 'static'", "A constructor cannot have the 'static' modifier");
-                    ((Symbol.Class)Current).self.constructor = ((Symbol.Function)constructor).self;
-                }
                 if (Current.enclosing == null)
                 {
                     return false;

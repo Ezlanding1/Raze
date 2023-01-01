@@ -7,8 +7,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using static Raze.Analyzer.SymbolTable.Symbol;
-using static Raze.Expr;
+using static Raze.Analyzer.SymbolTable;
 
 namespace Raze
 {
@@ -84,7 +83,6 @@ namespace Raze
                 // Function Todo Notice:
                 // Note: since classes aren't implemented yet, functions are in a very early stage.
                 // The flaws with storing functions on the stack, function defitions, function calls, sizeof, and typeof will be resolved in later commits.
-                symbolTable.Add(expr);
 
                 if (symbolTable.ContainsContainerKey(expr.name.lexeme))
                 {
@@ -92,8 +90,10 @@ namespace Raze
                     {
                         throw new Errors.BackendError(ErrorType.BackendException, "Main Declared Twice", "A Program may have only one 'Main' method");
                     }
-                    throw new Errors.BackendError(ErrorType.BackendException, "Function Declared Twice", $"Function '{expr.name.lexeme}' was declared twice");
+                    throw new Errors.BackendError(ErrorType.BackendException, "Function Declared Twice", $"Function '{expr.name.lexeme}()' was declared twice");
                 }
+
+                symbolTable.Add(expr);
 
                 if (expr.name.lexeme == "Main")
                 {
@@ -146,6 +146,8 @@ namespace Raze
                 symbolTable.Add(expr);
 
                 expr.block.Accept(this);
+
+                GetConstructor();
 
                 symbolTable.UpContext();
                 return null;
@@ -360,6 +362,24 @@ namespace Raze
                 c.internalClass = new(_class.name, _class.block);
                 c.internalClass.dName = new(c.declName);
                 c.internalClass.block._classBlock = true;
+            }
+
+            private void GetConstructor()
+            {
+                if (!symbolTable.ContainsContainerKey(symbolTable.Current.Name.lexeme, out var symbol, 0))
+                {
+                    throw new Errors.BackendError(ErrorType.BackendException, "Class Without Constructor", "A Class must contain a constructor method");
+                }
+
+                var constructor = ((Symbol.Function)symbol).self;
+
+                constructor.constructor = true;
+
+                if (constructor.modifiers["static"])
+                {
+                    throw new Errors.BackendError(ErrorType.BackendException, "Constructor Marked 'static'", "A constructor cannot have the 'static' modifier");
+                }
+                ((Symbol.Class)symbolTable.Current).self.constructor = constructor;
             }
         }
     }
