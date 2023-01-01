@@ -31,13 +31,13 @@ namespace Raze
                     string result = expr.Accept(this);
                     if (result != "void" && !callReturn)
                     {
-                        callReturn = false; 
                         throw new Errors.BackendError(ErrorType.BackendException, "Expression With Non-Null Return", $"Expression returned with type '{result}'");
                     }
                     if (_return.Count != 0)
                     {
                         throw new Errors.BackendError(ErrorType.BackendException, "Top Level Code", $"Top level 'return' is Not allowed");
                     }
+                    callReturn = false;
                 }
                 return expressions;
             }
@@ -75,9 +75,9 @@ namespace Raze
 
                     if (result != "void" && !callReturn)
                     {
-                        callReturn = false; 
                         throw new Errors.BackendError(ErrorType.BackendException, "Expression With Non-Null Return", $"Expression returned with type '{result}'");
                     }
+                    callReturn = false; 
                 }
                 return "void";
             }
@@ -117,15 +117,12 @@ namespace Raze
 
             public override string visitFunctionExpr(Expr.Function expr)
             {
-                if (expr.modifiers["unsafe"])
-                {
-                    return "void";
-                }
                 foreach (Expr.Parameter paramExpr in expr.parameters)
                 {
                     paramExpr.Accept(this);
                 }
                 expr.block.Accept(this);
+
                 if (!expr.constructor)
                 {
                     int _returnCount = 0;
@@ -143,13 +140,16 @@ namespace Raze
                     }
                     if (_returnCount == 0 && expr._returnType != "void")
                     {
-                        if (_return.Count == 0)
+                        if (!expr.modifiers["unsafe"])
                         {
-                            throw new Errors.BackendError(ErrorType.BackendException, "No Return", "A Function must have a 'return' expression");
-                        }
-                        else
-                        {
-                            throw new Errors.BackendError(ErrorType.BackendException, "No Return", "A Function must have a 'return' expression from all code paths");
+                            if (_return.Count == 0)
+                            {
+                                throw new Errors.BackendError(ErrorType.BackendException, "No Return", "A Function must have a 'return' expression");
+                            }
+                            else
+                            {
+                                throw new Errors.BackendError(ErrorType.BackendException, "No Return", "A Function must have a 'return' expression from all code paths");
+                            }
                         }
                     }
                     _return.Clear();
@@ -292,6 +292,11 @@ namespace Raze
             public override string visitIsExpr(Expr.Is expr)
             {
                 return "bool";
+            }
+
+            public override string visitAssemblyExpr(Assembly expr)
+            {
+                return "void";
             }
 
             private bool MatchesType(string type1, string type2)
