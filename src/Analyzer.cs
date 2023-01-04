@@ -81,7 +81,7 @@ namespace Raze
                 }
                 if (l.keyword == "true" || l.keyword == "false")
                 {
-                    return "bool";
+                    return "BOOLEAN";
                 }
             }
             throw new Exception("Invalid TypeOf");

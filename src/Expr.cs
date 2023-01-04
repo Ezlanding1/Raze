@@ -527,6 +527,8 @@ namespace Raze
         {
             public Expr value;
             public bool _void;
+            public int size;
+
             public Return(Expr value)
             {
                 this.value = value;

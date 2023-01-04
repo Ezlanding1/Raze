@@ -98,8 +98,6 @@ namespace Raze
 
             public void Add(Expr.Define d)
             {
-                if (!newClass)
-                    count++;
                 var _ = new Symbol.Define(d);
                 Current.variables.Add(_);
             }
@@ -164,7 +162,23 @@ namespace Raze
                             return true;
                         }
                     }
-                    x = x.enclosing;
+                    x = head;
+                    foreach (var var in x.variables)
+                    {
+                        if (var.IsClass())
+                        {
+                            if (((Symbol.Class)var).self.dName == key)
+                            {
+                                symbol = var;
+                                return true;
+                            }
+                        }
+                        if (var.Name.lexeme == key)
+                        {
+                            symbol = var;
+                            return true;
+                        }
+                    }
                 }
                 else
                 {
@@ -185,6 +199,10 @@ namespace Raze
                                 symbol = var;
                                 return true;
                             }
+                        }
+                        if (x.IsClass())
+                        {
+                            break;
                         }
                         x = x.enclosing;
                     }
@@ -211,6 +229,10 @@ namespace Raze
                         {
                             return true;
                         }
+                    }
+                    if (x.IsClass())
+                    {
+                        break;
                     }
                     x = x.enclosing;
                 }

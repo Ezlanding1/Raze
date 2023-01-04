@@ -12,8 +12,9 @@ internal abstract class Instruction
         public string visitRegister(Register instruction);
         public string visitPointer(Pointer instruction);
         public string visitData(Data instruction);
+        public string visitDataRef(DataRef instruction);
         public string visitFunction(Function instruction);
-        public string visitReference(FunctionRef instruction);
+        public string visitFunctionRef(FunctionRef instruction);
         public string visitClass(Class instruction);
         public string visitBinary(Binary instruction);
         public string visitUnary(Unary instruction);
@@ -135,6 +136,21 @@ internal abstract class Instruction
         }
     }
 
+    internal class DataRef : Instruction
+    {
+        public string dataName;
+
+        public DataRef(string dataName)
+        {
+            this.dataName = dataName;
+        }
+
+        public override string Accept(IVisitor visitor)
+        {
+            return visitor.visitDataRef(this);
+        }
+    }
+
     internal class Function : Instruction
     {
         public string name;
@@ -159,7 +175,7 @@ internal abstract class Instruction
 
         public override string Accept(IVisitor visitor)
         {
-            return visitor.visitReference(this);
+            return visitor.visitFunctionRef(this);
         }
     }
 
@@ -254,6 +270,7 @@ internal abstract class Instruction
 
 internal class InstructionInfo
 {
+    public const int MaxLiteral = 4;
     public const string InstanceRegister = "R11";
 
     internal static bool IsStack(Instruction.Register input, bool addSize=false)
@@ -272,6 +289,19 @@ internal class InstructionInfo
             return StringToOperatorTypeUnary[input];
         }
     }
+
+    internal static string DataSizeOf(int size, string value)
+    {
+        // This check is needed for string literals
+        if (value[0] == '"')
+        {
+            value += ", 0";
+            return dataSize[1];
+        }
+
+        return dataSize[size];
+    }
+
     internal static string ToRegister(int input, bool bits=false, string register="RAX")
     {
         input = bits ? (input / 8) : input;

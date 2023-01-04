@@ -89,6 +89,11 @@ namespace Raze
                     return $"{instruction.name}: {instruction.size} {instruction.value}";
                 }
 
+                public string visitDataRef(Instruction.DataRef instruction)
+                {
+                    return $"{instruction.dataName}";
+                }
+
                 public string visitFunction(Instruction.Function instruction)
                 {
                     return $"{instruction.name}:";
@@ -104,7 +109,7 @@ namespace Raze
                     return $"{InstructionInfo.wordSize[(int)instruction.size]} [{instruction.name}-{instruction.offset}]";
                 }
 
-                public string visitReference(Instruction.FunctionRef instruction)
+                public string visitFunctionRef(Instruction.FunctionRef instruction)
                 {
                     return $"{instruction.name}";
                 }
@@ -197,6 +202,11 @@ namespace Raze
                     throw new NotImplementedException();
                 }
 
+                public string visitDataRef(Instruction.DataRef instruction)
+                {
+                    throw new NotImplementedException();
+                }
+
                 public string visitComment(Instruction.Comment instruction)
                 {
                     throw new NotImplementedException();
@@ -222,7 +232,7 @@ namespace Raze
                     throw new NotImplementedException();
                 }
 
-                public string visitReference(Instruction.FunctionRef instruction)
+                public string visitFunctionRef(Instruction.FunctionRef instruction)
                 {
                     throw new NotImplementedException();
                 }

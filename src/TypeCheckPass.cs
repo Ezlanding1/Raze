@@ -14,7 +14,7 @@ namespace Raze
     {
         internal partial class TypeCheckPass : Pass<string>
         {
-            List<(string, bool)> _return;
+            List<(string, bool, Expr.Return)> _return;
             bool callReturn;
             Dictionary<string, Expr.Primitive> primitives;
 
@@ -133,6 +133,11 @@ namespace Raze
                             throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot return type '{ret.Item1}' from type '{expr._returnType}'");
                         }
 
+                        if (primitives.ContainsKey(expr._returnType))
+                        {
+                            ret.Item3.size = primitives[expr._returnType].size;
+                        }
+
                         if (!ret.Item2)
                         {
                             _returnCount++;
@@ -189,7 +194,7 @@ namespace Raze
                 {
                     for (int i = _returnCount; i < _return.Count; i++)
                     {
-                        _return[i] = (_return[i].Item1, true);
+                        _return[i] = (_return[i].Item1, true, _return[i].Item3);
                     }
                 }
                 return "void";
@@ -236,7 +241,7 @@ namespace Raze
 
             public override string visitReturnExpr(Expr.Return expr)
             {
-                _return.Add((expr.value.Accept(this), false));
+                _return.Add((expr.value.Accept(this), false, expr));
                 return "void";
             }
 

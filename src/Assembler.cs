@@ -123,8 +123,6 @@ namespace Raze
 
         public Instruction.Register? visitDeclareExpr(Expr.Declare expr)
         {
-            string type = expr.type.lexeme;
-            string operand1 = expr.name.lexeme;
             Instruction.Register operand2 = expr.value.Accept(this);
             if (operand2 == null)
             {
@@ -134,7 +132,7 @@ namespace Raze
             {
                 return null;
             }
-            Declare(type, expr.size, expr.stackOffset, operand1, operand2.name);
+            Declare(expr.size, expr.stackOffset, operand2.name);
             return null;
         }
 
@@ -175,10 +173,8 @@ namespace Raze
             for (int i = 0; i < expr.arity; i++)
             {
                 var paramExpr = expr.parameters[i];
-                if (!HandleParamEmit(paramExpr.type.lexeme, (int)paramExpr.stackOffset, paramExpr.size, paramExpr.name.lexeme, InstructionInfo.Registers[(InstructionInfo.paramRegister[i], paramExpr.size)]))
-                {
-                    emit(new Instruction.Binary("MOV", new Instruction.Pointer((int)paramExpr.stackOffset, (int)paramExpr.size), new Instruction.Register(InstructionInfo.Registers[(InstructionInfo.paramRegister[i], paramExpr.size)])));
-                }
+                emit(new Instruction.Binary("MOV", new Instruction.Pointer((int)paramExpr.stackOffset, (int)paramExpr.size), new Instruction.Register(InstructionInfo.Registers[(InstructionInfo.paramRegister[i], paramExpr.size)])));
+                emit(new Instruction.Binary("MOV", new Instruction.Pointer((int)paramExpr.stackOffset, (int)paramExpr.size), new Instruction.Register(InstructionInfo.Registers[(InstructionInfo.paramRegister[i], paramExpr.size)])));
             }
 
             expr.block.Accept(this);
@@ -205,13 +201,6 @@ namespace Raze
 
         public Instruction.Register? visitLiteralExpr(Expr.Literal expr)
         {
-            if (Analyzer.TypeOf(expr) == "string")
-            {
-                string name = DataLabel;
-                emitData(new Instruction.Data(name, InstructionInfo.dataSize[1], expr.literal.lexeme + ", 0"));
-                dataCount++;
-                return new Instruction.Literal(name);
-            }
             return new Instruction.Literal(expr.literal.lexeme);
         }
 
@@ -359,7 +348,7 @@ namespace Raze
             {
                 Instruction.Register register = expr.value.Accept(this);
                 if (register != null)
-                    MovToRegister("RAX", register);
+                    MovToRegister("RAX", register, expr.size);
             }
             DoFooter();
             return null;
@@ -367,8 +356,6 @@ namespace Raze
 
         public Instruction.Register? visitAssignExpr(Expr.Assign expr)
         {
-            string type = expr.variable.type.lexeme;
-            string operand1 = expr.variable.name.lexeme;
             Instruction.Register operand2 = expr.value.Accept(this);
             
             if (expr.op != null)
@@ -378,7 +365,7 @@ namespace Raze
             }
             else
             {
-                Declare(type, expr.variable.size,(int)expr.variable.stackOffset, operand1, operand2.name);
+                Declare(expr.variable.size, expr.variable.stackOffset, operand2.name);
             }
             return null;
         }
@@ -417,7 +404,7 @@ namespace Raze
             for (int i = 0; i < expr.arguments.Count; i++)
             {
                 Instruction.Register arg = expr.arguments[i].Accept(this);
-                MovToRegister(InstructionInfo.paramRegister[i], arg);
+                 MovToRegister(InstructionInfo.paramRegister[i], arg);
             }
 
             string operand1 = "";
@@ -434,11 +421,28 @@ namespace Raze
             return null;
         }
 
-        private void Declare(string type, int size, int stackOffset, string name, string value)
+        public Instruction.Register? visitDefineExpr(Expr.Define expr)
         {
-            if (!HandleEmit(type, stackOffset, size, value))
+            return null;
+        }
+
+        public Instruction.Register? visitIsExpr(Expr.Is expr)
+        {
+            return new Instruction.Literal(expr.value);
+        }
+
+        private void Declare(int size, int stackOffset, string value)
+        {
+            if (size <= InstructionInfo.MaxLiteral)
             {
-                emit(new Instruction.Binary("MOV", new Instruction.Pointer(stackOffset, (int)size), new Instruction.Register(value)));
+                emit(new Instruction.Binary("MOV", new Instruction.Pointer(stackOffset, size), new Instruction.Register(value)));
+            }
+            else
+            {
+                string name = DataLabel;
+                emitData(new Instruction.Data(name, InstructionInfo.DataSizeOf(size, value), value));
+                emit(new Instruction.Binary("MOV", new Instruction.Pointer(stackOffset, size), new Instruction.DataRef(name)));
+                dataCount++;
             }
         }
 
@@ -456,36 +460,20 @@ namespace Raze
             }
         }
 
-        private bool HandleParamEmit(string type, int stackOffset, int size, string name, string value)
+        // size=0 is temporary while primitive ops don't exist
+        private void MovToRegister(string register, Instruction.Register value, int size = 0)
         {
-            if (type == "string")
+            if (size <= InstructionInfo.MaxLiteral)
             {
-                return true;
+                emit(new Instruction.Binary("MOV", new Instruction.Register(register), value));
             }
-            return HandleEmit(type, stackOffset, size, value);
-            return false;
-        }
-
-
-        private bool HandleEmit(string type, int stackOffset, int size, string value)
-        {
-            if (type == "string")
+            else
             {
-                emit(new Instruction.Binary("MOV", new Instruction.Pointer(stackOffset, (int)size), new Instruction.Register(value)));
-                return true;
+                string name = DataLabel;
+                emitData(new Instruction.Data(name, InstructionInfo.DataSizeOf(size, value.name), value.name));
+                emit(new Instruction.Binary("MOV", new Instruction.Register(register), new Instruction.DataRef(name)));
+                dataCount++;
             }
-            else if (type == "number")
-            {
-                emit(new Instruction.Binary("MOV", new Instruction.Pointer(stackOffset, (int)size), new Instruction.Register(value)));
-                return true;
-            }
-            return false;
-        }
-
-
-        private void MovToRegister(string register, Instruction.Register literal)
-        {
-            emit(new Instruction.Binary("MOV", new Instruction.Register(register), literal));
         }
         private void emit(Instruction instruction)
         {
@@ -504,15 +492,6 @@ namespace Raze
             data.Add(instruction);
         }
 
-        public Instruction.Register? visitDefineExpr(Expr.Define expr)
-        {
-            return null;
-        }
-
-        public Instruction.Register? visitIsExpr(Expr.Is expr)
-        {
-            return new Instruction.Literal(expr.value);
-        }
     }
     
 }
