@@ -71,7 +71,7 @@ namespace Raze
                         }
                         else
                         {
-                            throw new Errors.ParseError(ErrorType.ParserException, "Invalid Modifier", $"The modifier '{modifier.lexeme}' does not exist");
+                            throw new Errors.ParseError("Invalid Modifier", $"The modifier '{modifier.lexeme}' does not exist");
                         }
                     }
                     Expect("IDENTIFIER", definitionType.type + " name");
@@ -93,7 +93,7 @@ namespace Raze
                         Expect("COMMA", "',' between parameters");
                         if (isAtEnd())
                         {
-                            throw new Errors.ParseError(ErrorType.ParserException, "Unexpected End In Function Parameters", $"Function '{name.lexeme}' reached an unexpected end during it's parameters");
+                            throw new Errors.ParseError("Unexpected End In Function Parameters", $"Function '{name.lexeme}' reached an unexpected end during it's parameters");
                         }
                     }
                     function.Add(_returnType, name, parameters, GetBlock(definitionType.type));
@@ -114,13 +114,20 @@ namespace Raze
                     Expect("IDENTIFIER", "name of 'Define'");
                     var name = previous();
 
-                    return new Expr.Define(name, Literal() ?? throw new Errors.ParseError(ErrorType.ParserException, "Incorrect Define", "The value of 'Define' should be a literal"));
+                    return new Expr.Define(name, Literal() 
+                        ?? throw new Errors.ParseError("Invalid Define", "The value of 'Define' should be a literal"));
                 }
                 else if (definitionType.type == "primitive")
                 {
                     Expect("class", "'class' keyword");
                     Expect("IDENTIFIER", "name of primitive type");
                     var name = previous();
+
+                    if (Literals.Contains(name.lexeme))
+                    {
+                        throw new Errors.ParseError("Invalid Primitive", $"The name of a primitive may not be a literal ({name.lexeme})");
+                    }
+
                     Expect("is", "'is' keyword");
                     List<string> literals = new();
                     if (TypeMatch("LBRACE"))
@@ -140,12 +147,18 @@ namespace Raze
                         Expect("IDENTIFIER", "token literal of primitive type");
                         literals.Add(previous().lexeme);
                     }
+
+                    if (!literals.All(Literals.Contains))
+                    {
+                        throw new Errors.ParseError("Invalid Primitive", $"The literal of a primitive must be a valid literal ({string.Join(", " , Literals)})");
+                    }
+
                     ExpectValue("IDENTIFIER", "sizeof", "'sizeof' keyword");
                     Expect("NUMBER", "size (in bytes) of primitive");
                     string size = previous().lexeme;
                     if ((!size.All(char.IsDigit)) || (!new List<string>(){ "8", "4", "2", "1" }.Contains(size)))
                     {
-                        throw new Errors.ParseError(ErrorType.ParserException, "Invaid Primitive Size", "The size of primitive classes must be the integers '8', '4', '2', or '1'");
+                        throw new Errors.ParseError("Invalid Primitive", "The size of primitive classes must be the integers '8', '4', '2', or '1'");
                     }
                     var block = GetBlock(definitionType.type);
                     return new Expr.Primitive(name, literals, int.Parse(size), block);

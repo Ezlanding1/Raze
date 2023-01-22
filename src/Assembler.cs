@@ -483,7 +483,7 @@ namespace Raze
             }
             if (index < 0)
             {
-                throw new Errors.BackendError(ErrorType.BackendException, "Top Level Code", $"Top level code is not allowed");
+                throw new Errors.BackendError("Top Level Code", $"Top level code is not allowed");
             }
             instructions[index].Add(instruction);
         }

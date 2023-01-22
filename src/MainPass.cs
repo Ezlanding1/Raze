@@ -68,7 +68,7 @@ namespace Raze
                 {
                     if (!symbolTable.DownContext(x.name.lexeme))
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The variable '{x.name.lexeme}' does not exist in the current context", symbolTable.callStack);
+                        throw new Errors.BackendError("Undefined Reference", $"The class '{x.name.lexeme}' does not exist in the current context", symbolTable.callStack);
                     }
                     x = ((Expr.Get)x).get;
                 }
@@ -78,18 +78,18 @@ namespace Raze
                     var s = ((SymbolTable.Symbol.Function)symbol).self;
                     if (s.modifiers["static"])
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Static Mathod Called From Instance", "You cannot call a static method from an instance");
+                        throw new Errors.BackendError("Static Mathod Called From Instance", "You cannot call a static method from an instance");
                     }
                     if (s.constructor)
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Constructor Called As Method", "A Constructor may not be called as a method of its class");
+                        throw new Errors.BackendError("Constructor Called As Method", "A Constructor may not be called as a method of its class");
                     }
                     expr.internalFunction = s;
                     expr.stackOffset = symbolTable.currentFunction.self.size;
                 }
                 else
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The method '{expr.callee}' does not exist in the current context", symbolTable.callStack);
+                    throw new Errors.BackendError("Undefined Reference", $"The method '{expr.callee}' does not exist in the current context", symbolTable.callStack);
                 }
                 symbolTable.Current = context;
 
@@ -98,7 +98,24 @@ namespace Raze
 
             public override object? visitClassExpr(Expr.Class expr)
             {
-                //base.visitClassExpr(expr);
+                if (handledClasses.Contains(expr))
+                {
+                    return null;
+                }
+
+                handledClasses.Add(expr);
+
+                if (symbolTable.ContainsContainerKey(expr.name.lexeme, out _, 1))
+                {
+                    throw new Errors.BackendError("Double Declaration", $"A class named '{expr.name.lexeme}' is already defined in this scope", symbolTable.callStack);
+                }
+                symbolTable.Add(expr);
+                expr.topLevelBlock.Accept(this);
+                expr.block.Accept(this);
+                if (!symbolTable.UpContext())
+                {
+                    throw new Exception("Up Context Called On 'GLOBAL' context (no enclosing)");
+                }
                 return null;
             }
 
@@ -112,7 +129,7 @@ namespace Raze
 
                 if (symbolTable.ContainsVariableKey(name))
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Double Declaration", $"A variable named '{name}' is already defined in this scope", symbolTable.callStack);
+                    throw new Errors.BackendError("Double Declaration", $"A variable named '{name.lexeme}' is already defined in this scope", symbolTable.callStack);
                 }
 
                 if (expr.value is Expr.New)
@@ -185,7 +202,10 @@ namespace Raze
                 }
                 else
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The variable '{expr.name.lexeme}' does not exist in the current context", symbolTable.callStack);
+                    // Todo: :( fix starting here (6 fine passes). issue is that curr func is main, b/c it looks for that when calling
+                    // getvarkey to let non static func acess class but here Main is asking for s1.id so the curr func is main and it breaks
+                    // note: class var acess is allowed here.
+                    throw new Errors.BackendError("Undefined Reference", $"The variable '{expr.name.lexeme}' does not exist in the current context", symbolTable.callStack);
                 }
                 return null;
             }
@@ -220,7 +240,7 @@ namespace Raze
             {
                 if (!symbolTable.DownContext(expr.name.lexeme))
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The variable '{expr.name.lexeme}' does not exist in the current context", symbolTable.callStack);
+                    throw new Errors.BackendError("Undefined Reference", $"The class '{expr.name.lexeme}' does not exist in the current context", symbolTable.callStack);
                 }
                 expr.get.Accept(this);
                 expr.type = expr.get.type;
@@ -257,7 +277,7 @@ namespace Raze
                 }
                 else
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The variable '{((Expr.Variable)expr.left).ToString()}' does not exist in the current context", symbolTable.callStack);
+                    throw new Errors.BackendError("Undefined Reference", $"The variable '{((Expr.Variable)expr.left).ToString()}' does not exist in the current context", symbolTable.callStack);
                 }
                 return null;
             }

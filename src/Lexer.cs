@@ -90,11 +90,11 @@ namespace Raze
                 }
             }
             if (lexeme[0] == '"')
-                throw new Errors.LexError(ErrorType.LexerException, line, col, "Non Terminated String", $"String: \'{((lexeme.Length <= 40) ? lexeme + "'": lexeme.Substring(0, 40) + "'...")}\nwas not ternimated");
+                throw new Errors.LexError(line, col, "Non Terminated String", $"String: \'{((lexeme.Length <= 40) ? lexeme + "'": lexeme.Substring(0, 40) + "'...")}\nwas not ternimated");
             if (lexeme[0] == '.')
-                throw new Errors.LexError(ErrorType.LexerException, line, col, "Invalid Formatted Number", $"{lexeme.Split()[0]} is incorectly formatted");
+                throw new Errors.LexError(line, col, "Invalid Formatted Number", $"{lexeme.Split()[0]} is incorectly formatted");
 
-            throw new Errors.LexError(ErrorType.LexerException, line, col, "Illegal Char Error", $"Character '{lexeme[0]}' is Illegal");
+            throw new Errors.LexError(line, col, "Illegal Char Error", $"Character '{lexeme[0]}' is Illegal");
         }
     }
     class TokenDefinition{

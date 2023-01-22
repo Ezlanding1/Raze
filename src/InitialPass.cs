@@ -57,7 +57,7 @@ namespace Raze
                 ResolveReferences();
                 if (main == null)
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Entrypoint Not Found", "Program does not contain a Main method");
+                    throw new Errors.BackendError("Entrypoint Not Found", "Program does not contain a Main method");
                 }
                 return expressions;
             }
@@ -87,9 +87,9 @@ namespace Raze
                 {
                     if (expr.name.lexeme == "Main")
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Main Declared Twice", "A Program may have only one 'Main' method");
+                        throw new Errors.BackendError("Double Declaration", "A Program may have only one 'Main' method");
                     }
-                    throw new Errors.BackendError(ErrorType.BackendException, "Function Declared Twice", $"Function '{expr.name.lexeme}()' was declared twice");
+                    throw new Errors.BackendError("Double Declaration", $"Function '{expr.name.lexeme}()' was declared twice");
                 }
 
                 SetPath(expr);
@@ -100,7 +100,7 @@ namespace Raze
                 {
                     if (main != null)
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Main Declared Twice", "A Program may have only one 'Main' method");
+                        throw new Errors.BackendError("Function Declared Twice", "A Program may have only one 'Main' method");
                     }
                     expr.modifiers["static"] = true;
                     main = expr;
@@ -108,7 +108,7 @@ namespace Raze
                 int paramsCount = expr.parameters.Count;
                 if (paramsCount > InstructionInfo.paramRegister.Length)
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Too Many Parameters", $"A function cannot have more than { InstructionInfo.paramRegister.Length } parameters");
+                    throw new Errors.BackendError("Too Many Parameters", $"A function cannot have more than { InstructionInfo.paramRegister.Length } parameters");
                 }
 
                 foreach (Expr.Parameter paramExpr in expr.parameters)
@@ -173,7 +173,7 @@ namespace Raze
                     }
                     else
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Invalid Else If", "'else if' conditional has no matching 'if'");
+                        throw new Errors.BackendError("Invalid Else If", "'else if' conditional has no matching 'if'");
                     }
                 }
                 else if (expr.type.type == "else")
@@ -187,7 +187,7 @@ namespace Raze
                     }
                     else
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Invalid Else", "'else' conditional has no matching 'if'");
+                        throw new Errors.BackendError("Invalid Else", "'else' conditional has no matching 'if'");
                     }
                 }
                 int tmpidx = index;
@@ -210,15 +210,15 @@ namespace Raze
             {
                 if (symbolTable.CurrentIsTop())
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Top Level Assembly Block", "Assembly Blocks must be placed in an unsafe function");
+                    throw new Errors.BackendError("Top Level Assembly Block", "Assembly Blocks must be placed in an unsafe function");
                 }
                 if (!symbolTable.Current.IsFunc())
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "ASM Block Not In Function", "Assembly Blocks must be placed in functions");
+                    throw new Errors.BackendError("ASM Block Not In Function", "Assembly Blocks must be placed in functions");
                 }
                 if (!((SymbolTable.Symbol.Function)symbolTable.Current).self.modifiers["unsafe"])
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Unsafe Code in Safe Function", "Mark a function with 'unsafe' to include unsafe code");
+                    throw new Errors.BackendError("Unsafe Code in Safe Function", "Mark a function with 'unsafe' to include unsafe code");
                 }
                 return base.visitAssemblyExpr(expr);
             }
@@ -265,7 +265,7 @@ namespace Raze
                 }
                 else
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Double Declaration", $"A primtive named '{expr.name.lexeme}' is already defined");
+                    throw new Errors.BackendError("Double Declaration", $"A primtive named '{expr.name.lexeme}' is already defined");
                 }
                 return null;
             }
@@ -276,7 +276,7 @@ namespace Raze
                 {
                     if (!(expr.left is Expr.Variable))
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Invalid 'is' Operator", "the first operand of 'is' operator must be a variable");
+                        throw new Errors.BackendError("Invalid 'is' Operator", "the first operand of 'is' operator must be a variable");
                     }
                     undefIs.Add(expr);
                     return null;
@@ -301,7 +301,7 @@ namespace Raze
 
                     if (!call.internalFunction.modifiers["static"])
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Static Call of Non-Static Method", $"The method '{call.callee.ToString()}' must be marked 'static' to call it from a static context");
+                        throw new Errors.BackendError("Static Call of Non-Static Method", $"The method '{call.callee.ToString()}' must be marked 'static' to call it from a static context");
                     }
 
                     symbolTable.TopContext();
@@ -319,7 +319,7 @@ namespace Raze
                         @ref._className.Accept(this);
 
                         if (resolvedContainer == null)
-                            throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The type '{@ref._className.ToString()}' does not exist in the current context");
+                            throw new Errors.BackendError("Undefined Reference", $"The type '{@ref.call.callee.ToString()}' does not exist in the current context");
                         else
                             // ToDo: Clean Up This Code
                             @ref.internalClass = ((SymbolTable.Symbol.Class)resolvedContainer).self.CloneVars();
@@ -337,7 +337,7 @@ namespace Raze
                         }
                         else
                         {
-                            throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The type '{variable.type.lexeme}' does not exist in the current context");
+                            throw new Errors.BackendError("Undefined Reference", $"The primitive type '{variable.type.lexeme}' does not exist in the current context");
                         }
                     }
                 }
@@ -349,7 +349,7 @@ namespace Raze
 
                     if (resolvedContainer == null && (!Primitives.PrimitiveSize.ContainsKey(@is.right.ToString())) && @is.right.ToString() != "null")
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Undefined Reference", $"The type '{@is.right.ToString()}' does not exist in the current context");
+                        throw new Errors.BackendError("Undefined Reference", $"The type '{@is.right.ToString()}' does not exist in the current context");
                     }
                     symbolTable.TopContext();
                 }
@@ -360,7 +360,7 @@ namespace Raze
                 string name = function.name.lexeme;
                 if (function.arity != call.arguments.Count)
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Arity Mismatch", $"Arity of call for {name} ({call.arguments.Count}) does not match the definition's arity ({function.arity})");
+                    throw new Errors.BackendError("Arity Mismatch", $"Arity of call for {name} ({call.arguments.Count}) does not match the definition's arity ({function.arity})");
                 }
             }
 
@@ -376,7 +376,7 @@ namespace Raze
             {
                 if (!symbolTable.ContainsContainerKey(symbolTable.Current.Name.lexeme, out var symbol, 0))
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Class Without Constructor", "A Class must contain a constructor method");
+                    throw new Errors.BackendError("Class Without Constructor", "A Class must contain a constructor method");
                 }
 
                 var constructor = ((SymbolTable.Symbol.Function)symbol).self;
@@ -385,7 +385,7 @@ namespace Raze
 
                 if (constructor.modifiers["static"])
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Constructor Marked 'static'", "A constructor cannot have the 'static' modifier");
+                    throw new Errors.BackendError("Constructor Marked 'static'", "A constructor cannot have the 'static' modifier");
                 }
                 ((SymbolTable.Symbol.Class)symbolTable.Current).self.constructor = constructor;
             }

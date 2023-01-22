@@ -26,7 +26,7 @@ namespace Raze
             (main, primitives) = ((InitialPass)initialPass).GetOutput();
             if (main == null)
             {
-                throw new Errors.BackendError(ErrorType.BackendException, "Main Not Found", "No Main method for entrypoint found");
+                throw new Errors.BackendError("Main Not Found", "No Main method for entrypoint found");
             }
             CheckMain();
             Pass<object?> mainPass = new MainPass(expressions);
@@ -42,13 +42,13 @@ namespace Raze
         {
             if (main._returnType != "void" && main._returnType != "number")
             {
-                throw new Errors.BackendError(ErrorType.BackendException, "Main Invalid Return Type", $"Main can only return types 'number', and 'void'. Got '{main._returnType}'");
+                throw new Errors.BackendError("Main Invalid Return Type", $"Main can only return types 'number', and 'void'. Got '{main._returnType}'");
             }
             foreach (var item in main.modifiers)
             {
                 if (item.Key != "static" && item.Value)
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Main Invalid Modifier", $"Main cannot have the '{item.Key}' modifier");
+                    throw new Errors.BackendError("Main Invalid Modifier", $"Main cannot have the '{item.Key}' modifier");
                 }
             } 
         }

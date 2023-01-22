@@ -13,9 +13,14 @@ namespace Raze
         BackendException
     }
 
-    internal static class Errors
+    internal abstract class Errors : Exception
     {
-        public class LexError : Exception
+        private Errors(string error) : base(error)
+        {
+
+        }
+
+        public class LexError : Errors
         {
             public LexError(ErrorType e, int line, int col, string name, string details)
                 : base($"{e}\n{name}: {details}\nLine: {line}, COL: {col + 1}")
@@ -24,7 +29,7 @@ namespace Raze
             }
         }
 
-        public class ParseError : Exception
+        public class ParseError : Errors
         {
             public ParseError(ErrorType e, string name, string details)
                 : base($"{e}\n{name}: {details}")
@@ -33,7 +38,7 @@ namespace Raze
             }
         }
 
-        public class BackendError : Exception
+        public class BackendError : Errors
         {
             public BackendError(ErrorType e, string name, string details, Analyzer.CallStack? callStack)
                 : base(CreateBackend(e, name, details, callStack))

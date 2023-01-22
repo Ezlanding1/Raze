@@ -31,11 +31,11 @@ namespace Raze
                     string result = expr.Accept(this);
                     if (result != "void" && !callReturn)
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Expression With Non-Null Return", $"Expression returned with type '{result}'");
+                        throw new Errors.BackendError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
                     }
                     if (_return.Count != 0)
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Top Level Code", $"Top level 'return' is Not allowed");
+                        throw new Errors.BackendError("Top Level Code", $"Top level 'return' is Not allowed");
                     }
                     callReturn = false;
                 }
@@ -56,10 +56,10 @@ namespace Raze
                 {
                     if (operand1 == "null" || operand2 == "null")
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Null Reference Exception", $"Reference is not set to an instance of an object.");
+                        throw new Errors.BackendError("Null Reference Exception", $"Reference is not set to an instance of an object.");
                     }
 
-                    throw new Errors.BackendError(ErrorType.BackendException, "Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on types '{operand1}' and '{operand2}'");
+                    throw new Errors.BackendError("Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on types '{operand1}' and '{operand2}'");
                 }
             }
 
@@ -70,12 +70,12 @@ namespace Raze
                     string result = blockExpr.Accept(this);
                     if (expr._classBlock && _return.Count != 0)
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Invalid Return", $"A class may not have a 'return'");
+                        throw new Errors.BackendError("Invalid Return", $"A class may not have a 'return'");
                     }
 
                     if (result != "void" && !callReturn)
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Expression With Non-Null Return", $"Expression returned with type '{result}'");
+                        throw new Errors.BackendError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
                     }
                     callReturn = false; 
                 }
@@ -91,7 +91,7 @@ namespace Raze
                     var assignType = expr.arguments[i].Accept(this);
                     if (!MatchesType(paramExpr.type.lexeme, assignType))
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot assign type '{assignType}' to type '{paramExpr.type.lexeme}'");
+                        throw new Errors.BackendError("Type Mismatch", $"You cannot assign type '{assignType}' to type '{paramExpr.type.lexeme}'");
                     }
                 }
                 callReturn = true;
@@ -109,7 +109,7 @@ namespace Raze
                 string assignType = expr.value.Accept(this);
                 if (!MatchesType(expr.type.lexeme, assignType))
                 {
-                    throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.type.lexeme}'");
+                    throw new Errors.BackendError("Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.type.lexeme}'");
                 }
 
                 return "void";
@@ -130,7 +130,7 @@ namespace Raze
                     {
                         if (!MatchesType(expr._returnType, ret.Item1))
                         {
-                            throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot return type '{ret.Item1}' from type '{expr._returnType}'");
+                            throw new Errors.BackendError("Type Mismatch", $"You cannot return type '{ret.Item1}' from type '{expr._returnType}'");
                         }
 
                         if (primitives.ContainsKey(expr._returnType))
@@ -149,11 +149,11 @@ namespace Raze
                         {
                             if (_return.Count == 0)
                             {
-                                throw new Errors.BackendError(ErrorType.BackendException, "No Return", "A Function must have a 'return' expression");
+                                throw new Errors.BackendError("No Return", "A Function must have a 'return' expression");
                             }
                             else
                             {
-                                throw new Errors.BackendError(ErrorType.BackendException, "No Return", "A Function must have a 'return' expression from all code paths");
+                                throw new Errors.BackendError("No Return", "A Function must have a 'return' expression from all code paths");
                             }
                         }
                     }
@@ -163,7 +163,7 @@ namespace Raze
                 {
                     if (_return.Count != 0)
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Invalid Return", $"A constructor cannot have a 'return' expression");
+                        throw new Errors.BackendError("Invalid Return", $"A constructor cannot have a 'return' expression");
                     }
                 }
                 return "void";
@@ -186,7 +186,7 @@ namespace Raze
                 {
                     if (expr.condition.Accept(this) != "bool")
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"'{expr.type.type}' expects condition to return 'bool'. Got '{expr.condition.Accept(this)}'");
+                        throw new Errors.BackendError("Type Mismatch", $"'{expr.type.type}' expects condition to return 'BOOLEAN'. Got '{expr.condition.Accept(this)}'");
                     }
                 }
                 expr.block.Accept(this);
@@ -227,9 +227,9 @@ namespace Raze
                 {
                     if (operand1 == "null")
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Null Reference Exception", $"Reference is not set to an instance of an object.");
+                        throw new Errors.BackendError("Null Reference Exception", $"Reference is not set to an instance of an object.");
                     }
-                    throw new Errors.BackendError(ErrorType.BackendException, "Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on type '{operand1}'");
+                    throw new Errors.BackendError("Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on type '{operand1}'");
                 }
             }
 
@@ -256,14 +256,14 @@ namespace Raze
                     if (!(Primitives.PrimitiveOps(expr.variable.type.lexeme))
                             ._operators.ContainsKey((expr.op.lexeme + " BIN", expr.variable.type.lexeme, operand)))
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on types '{expr.variable.type}' and '{operand}'");
+                        throw new Errors.BackendError("Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on types '{expr.variable.type}' and '{operand}'");
                     }
                 }
                 else
                 {
                     if (!MatchesType(expr.variable.type.lexeme, assignType))
                     {
-                        throw new Errors.BackendError(ErrorType.BackendException, "Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.variable.type.lexeme}'");
+                        throw new Errors.BackendError("Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.variable.type.lexeme}'");
                     }
                 }
                 return "void";

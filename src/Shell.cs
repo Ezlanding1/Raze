@@ -2,12 +2,11 @@
 
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+
 namespace Raze
 {
     internal class Shell
@@ -37,6 +36,7 @@ namespace Raze
                 #if DEBUG
                 Raze.tools.InputPrinter.PrintInput(text);
                 #endif
+
                 // Pass Input Into Lexer
                 Lexer lexer = new Lexer(text);
                 var tokens = lexer.Tokenize();
@@ -68,18 +68,17 @@ namespace Raze
                 #if DEBUG
                 Raze.tools.AssemblyPrinter.PrintAssembly(instructions, data, main);
                 #endif
+
                 // Output Result
                 //string path = Environment.GetFolderPath(System.Environment.SpecialFolder.DesktopDirectory) + "\\out.asm";
                 //using (StreamWriter sr = new(path))
                 //{
                 //        sr.Write(output);
                 //}
-                // Open the stream and read it back.    
-
             }
             catch (Exception e)
             {
-                if (e is Errors.LexError || e is Errors.ParseError || e is Errors.BackendError)
+                if (e is Errors)
                 {
                     Console.WriteLine(e.Message);
                 }
@@ -90,12 +89,12 @@ namespace Raze
                 }
                 Environment.Exit(65);
             }
+
             #if DEBUG
             watch.Stop();
             var elapsedMs = watch.ElapsedMilliseconds;
             Console.WriteLine("ELASPED MS: " + elapsedMs);
             #endif
-            
         }
     }
 }
