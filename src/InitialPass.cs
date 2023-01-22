@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Data;
+using System.Diagnostics;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace Raze
 {
@@ -14,15 +11,11 @@ namespace Raze
     {
         internal partial class InitialPass : Pass<object?>
         {
-            SymbolTable symbolTable;
+            SymbolTable symbolTable = SymbolTableSingleton.SymbolTable;
 
             List<Expr.Call> undefCalls;
             List<Expr.Is> undefIs;
             List<(Expr.Variable?, Expr.New?)> undefVariables;
-
-            Dictionary<string, Expr.Primitive> primitives;
-
-            string declClassName;
 
             Tuple<bool, int, Expr.If> waitingIf;
 
@@ -36,13 +29,9 @@ namespace Raze
 
             public InitialPass(List<Expr> expressions) : base(expressions)
             {
-                this.symbolTable = new();
-
                 this.undefCalls = new();
                 this.undefIs = new();
                 this.undefVariables = new();
-
-                this.primitives = new();
 
                 this.index = 0;
             }
@@ -64,7 +53,7 @@ namespace Raze
 
             internal (Expr.Function, Dictionary<string, Expr.Primitive>) GetOutput()
             {
-                return (main, primitives);
+                return (main, SymbolTable.other.primitives);
             }
 
             public override object? visitBlockExpr(Expr.Block expr)
@@ -79,10 +68,6 @@ namespace Raze
 
             public override object? visitFunctionExpr(Expr.Function expr)
             {
-                // Function Todo Notice:
-                // Note: since classes aren't implemented yet, functions are in a very early stage.
-                // The flaws with storing functions on the stack, function defitions, function calls, sizeof, and typeof will be resolved in later commits.
-
                 if (symbolTable.ContainsContainerKey(expr.name.lexeme))
                 {
                     if (expr.name.lexeme == "Main")
@@ -95,6 +80,18 @@ namespace Raze
                 SetPath(expr);
 
                 symbolTable.Add(expr);
+
+                if (expr._returnType != "void")
+                {
+                    if (SymbolTable.other.primitives.ContainsKey(expr._returnType))
+                    {
+                        expr._returnSize = SymbolTable.other.primitives[expr._returnType].size;
+                    }
+                    else
+                    {
+                        throw new Exception();
+                    }
+                }
 
                 if (expr.name.lexeme == "Main")
                 {
@@ -139,7 +136,6 @@ namespace Raze
                     undefVariables.Add((expr, null));
                 }
 
-                declClassName = expr.name.lexeme;
                 return base.visitDeclareExpr(expr);
             }
 
@@ -149,9 +145,8 @@ namespace Raze
 
                 symbolTable.Add(expr);
 
+                expr.topLevelBlock.Accept(this);
                 expr.block.Accept(this);
-
-                GetConstructor();
 
                 symbolTable.UpContext();
                 return null;
@@ -198,8 +193,6 @@ namespace Raze
 
             public override object? visitNewExpr(Expr.New expr)
             {
-                expr.declName = declClassName;
-
                 undefVariables.RemoveAt(undefVariables.Count - 1);
                 undefVariables.Add((null, expr));
 
@@ -259,9 +252,9 @@ namespace Raze
 
             public override object visitPrimitiveExpr(Expr.Primitive expr)
             {
-                if (!primitives.ContainsKey(expr.name.lexeme))
+                if (!SymbolTable.other.primitives.ContainsKey(expr.name.lexeme))
                 {
-                    primitives[expr.name.lexeme] = expr;
+                    SymbolTable.other.primitives[expr.name.lexeme] = expr;
                 }
                 else
                 {
@@ -316,24 +309,28 @@ namespace Raze
                 {
                     if (@ref != null)
                     {
-                        @ref._className.Accept(this);
+                        @ref.call.callee.Accept(this);
 
                         if (resolvedContainer == null)
                             throw new Errors.BackendError("Undefined Reference", $"The type '{@ref.call.callee.ToString()}' does not exist in the current context");
                         else
+                        {
+
                             // ToDo: Clean Up This Code
-                            @ref.internalClass = ((SymbolTable.Symbol.Class)resolvedContainer).self.CloneVars();
+                            var resolvedClass = ((SymbolTable.Symbol.Class)resolvedContainer).self;
+                            @ref.internalClass = resolvedClass;
+                            @ref.internalClass.block._classBlock = true;
+                            @ref.call.internalFunction = GetConstructor(resolvedContainer);
+                        }
 
                         symbolTable.TopContext();
-
-                        ValidClassCheck(@ref.internalClass, @ref);
                         resolvedContainer = null;
                     }
                     else
                     {
-                        if (primitives.ContainsKey(variable.type.lexeme))
+                        if (SymbolTable.other.primitives.ContainsKey(variable.type.lexeme))
                         {
-                            variable.size = primitives[variable.type.lexeme].size;
+                            variable.size = SymbolTable.other.primitives[variable.type.lexeme].size;
                         }
                         else
                         {
@@ -364,16 +361,9 @@ namespace Raze
                 }
             }
 
-            private void ValidClassCheck(Expr.Class _class, Expr.New c)
+            private Expr.Function GetConstructor(SymbolTable.Symbol.Container @class)
             {
-                c.internalClass = new(_class.name, _class.block);
-                c.internalClass.constructor = _class.constructor;
-                c.internalClass.dName = new(c.declName);
-                c.internalClass.block._classBlock = true;
-            }
-
-            private void GetConstructor()
-            {
+                symbolTable.Current = @class;
                 if (!symbolTable.ContainsContainerKey(symbolTable.Current.Name.lexeme, out var symbol, 0))
                 {
                     throw new Errors.BackendError("Class Without Constructor", "A Class must contain a constructor method");
@@ -387,14 +377,14 @@ namespace Raze
                 {
                     throw new Errors.BackendError("Constructor Marked 'static'", "A constructor cannot have the 'static' modifier");
                 }
-                ((SymbolTable.Symbol.Class)symbolTable.Current).self.constructor = constructor;
+                return constructor;
             }
 
             private void SetPath(Expr.Definition definition)
             {
-                if (symbolTable.Current.self.FullName != "")
+                if (symbolTable.Current.self.QualifiedName != "")
                 {
-                    definition.path = symbolTable.Current.self.FullName + ".";
+                    definition.path = symbolTable.Current.self.QualifiedName + ".";
                 }
             }
         }

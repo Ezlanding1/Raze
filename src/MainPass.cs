@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Runtime.Remoting;
-using System.Security.AccessControl;
 using System.Text;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 
 namespace Raze
 {
@@ -14,11 +11,14 @@ namespace Raze
     {
         internal class MainPass : Pass<object?>
         {
-            SymbolTable symbolTable;
+            SymbolTable symbolTable = SymbolTableSingleton.SymbolTable;
+            HashSet<Expr.Class> handledClasses;
+            bool classAccess;
 
             public MainPass(List<Expr> expressions) : base(expressions)
             {
                 this.symbolTable = new();
+                this.handledClasses = new();
             }
 
             internal override List<Expr> Run()
@@ -55,7 +55,7 @@ namespace Raze
                     expr.arguments[i].Accept(this);
                 }
 
-                symbolTable.CurrentCalls();
+                CurrentCalls();
 
                 if (expr.internalFunction != null && expr.internalFunction.modifiers["static"])
                 {
@@ -73,6 +73,15 @@ namespace Raze
                     x = ((Expr.Get)x).get;
                 }
 
+                if (symbolTable.Current is SymbolTable.Symbol.New)
+                {
+                    expr.stackOffset = ((SymbolTable.Symbol.New)symbolTable.Current).newSelf.call.stackOffset;
+                }
+                else
+                {
+                    throw new Exception("BRUH :(");
+                }
+
                 if (symbolTable.ContainsContainerKey(x.name.lexeme, out SymbolTable.Symbol.Container symbol, 0))
                 {
                     var s = ((SymbolTable.Symbol.Function)symbol).self;
@@ -85,7 +94,6 @@ namespace Raze
                         throw new Errors.BackendError("Constructor Called As Method", "A Constructor may not be called as a method of its class");
                     }
                     expr.internalFunction = s;
-                    expr.stackOffset = symbolTable.currentFunction.self.size;
                 }
                 else
                 {
@@ -121,26 +129,25 @@ namespace Raze
 
             public override object? visitDeclareExpr(Expr.Declare expr)
             {
-                // Function Todo Notice:
-                // Note: since classes aren't implemented yet, functions are in a very early stage.
-                // The flaws with storing functions on the stack, function defitions, function calls, sizeof, and typeof will be resolved in later commits.
-                string type = expr.type.lexeme;
-                string name = expr.name.lexeme;
+                var name = expr.name;
 
-                if (symbolTable.ContainsVariableKey(name))
+                if (symbolTable.ContainsVariableKey(name.lexeme))
                 {
                     throw new Errors.BackendError("Double Declaration", $"A variable named '{name.lexeme}' is already defined in this scope", symbolTable.callStack);
                 }
 
                 if (expr.value is Expr.New)
                 {
-                    symbolTable.Add(((Expr.New)expr.value));
+                    CurrentCalls();
+                    symbolTable.Add(((Expr.New)expr.value), name);
+                    base.visitDeclareExpr(expr);
                 }
                 else
                 {
+                    base.visitDeclareExpr(expr);
                     symbolTable.Add(expr);
                 }
-                base.visitDeclareExpr(expr);
+                
                 return null;
             }
 
@@ -152,6 +159,7 @@ namespace Raze
             public override object? visitFunctionExpr(Expr.Function expr)
             {
                 symbolTable.Add(expr);
+                classAccess = !expr.modifiers["static"];
                 int arity = expr.arity;
                 int frameStart = symbolTable.count;
                 for (int i = 0; i < arity; i++)
@@ -170,7 +178,7 @@ namespace Raze
 
             public override object? visitVariableExpr(Expr.Variable expr)
             {
-                if (symbolTable.ContainsVariableKey(expr.name.lexeme, out SymbolTable.Symbol symbol))
+                if (symbolTable.ContainsVariableKey(expr.name.lexeme, classAccess, out SymbolTable.Symbol symbol, out bool isClassScoped))
                 {
                     if (symbol.IsPrimitiveClass())
                     {
@@ -178,12 +186,14 @@ namespace Raze
                         expr.size = s.size;
 
                         // ToDo: Clean Up This Code
-                        if (symbolTable.currentFunction.self.modifiers["static"])
-                            expr.stackOffset = s.stackOffset;
-                        else
-                            expr.stackOffset = ((SymbolTable.Symbol.PrimitiveClass)symbol)._classOffset;
+                        
+                        expr.stackOffset = s.stackOffset + (symbolTable.Current.IsClass() ? ((SymbolTable.Symbol.New)symbolTable.Current).newSelf.call.stackOffset : 0);
 
                         expr.type = s.type;
+
+                        if (isClassScoped || SymbolTable.other.classScopedVars.Contains(s))
+                            SymbolTable.other.classScopedVars.Add(expr);
+
                     }
                     else if (symbol.IsDefine())
                     {
@@ -227,8 +237,21 @@ namespace Raze
 
             public override object? visitNewExpr(Expr.New expr)
             {
-                expr.stackOffset = symbolTable.currentFunction.self.size;
-                expr.internalClass.block.Accept(this);
+                // ToDo: FIX!
+                if (!handledClasses.Contains(expr.internalClass))
+                {
+                    var cFunc = symbolTable.currentFunction;
+                    var c = symbolTable.Current;
+                    symbolTable.TopContext();
+                    expr.internalClass.Accept(this);
+                    symbolTable.Current = c;
+                    symbolTable.currentFunction = cFunc;
+                }
+
+                foreach (Expr classExpr in expr.internalClass.topLevelBlock.block)
+                {
+                    classExpr.Accept(this);
+                }
                 if (!symbolTable.UpContext())
                 {
                     throw new Exception("Up Context Called On 'GLOBAL' context (no enclosing)");
@@ -242,6 +265,7 @@ namespace Raze
                 {
                     throw new Errors.BackendError("Undefined Reference", $"The class '{expr.name.lexeme}' does not exist in the current context", symbolTable.callStack);
                 }
+                classAccess = true;
                 expr.get.Accept(this);
                 expr.type = expr.get.type;
                 expr.stackOffset = expr.get.stackOffset;
@@ -268,7 +292,7 @@ namespace Raze
                     else if (symbol.IsClass())
                     {
                         var s = ((SymbolTable.Symbol.Class)symbol).self;
-                        expr.value = (s.FullName == expr.right.ToString())? "1" : "0";
+                        expr.value = (s.QualifiedName == expr.right.ToString())? "1" : "0";
                     }
                     else
                     {
@@ -281,6 +305,8 @@ namespace Raze
                 }
                 return null;
             }
+
+            public void CurrentCalls() => symbolTable.currentFunction.self.leaf = false;
         }
     }
 }

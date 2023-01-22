@@ -88,22 +88,6 @@ namespace Raze
             }
             throw new Exception("Invalid TypeOf");
         }
-
-        internal static int SizeOf(string type, Expr value=null)
-        {
-            if (value != null)
-            {
-                if (value is Expr.New)
-                {
-                    return 8;
-                }
-            }
-            if (Primitives.PrimitiveSize.ContainsKey(type))
-            {
-                return Primitives.PrimitiveSize[type];
-            }
-            throw new Exception("Invalid sizeOf");
-        }
     }
 
     

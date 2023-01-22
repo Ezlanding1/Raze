@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Security.AccessControl;
 using System.Text;
 using System.Threading.Tasks;
-using static Raze.Expr;
 
 namespace Raze
 {
@@ -24,8 +23,6 @@ namespace Raze
             public T visitGetExpr(Get expr);
             public T visitBlockExpr(Block expr);
             public T visitAssemblyExpr(Assembly expr);
-            public T visitSuperExpr(Super expr);
-            public T visitThisExpr(This expr);
             public T visitVariableExpr(Variable expr);
             public T visitFunctionExpr(Function expr);
             public T visitClassExpr(Class expr);
@@ -197,13 +194,12 @@ namespace Raze
             public bool constructor;
             public Function internalFunction;
             public List<Expr> arguments;
-            public bool found;
-            public int? stackOffset;
-            public Call(Variable callee, List<Expr> arguments, bool constructor)
+            public int stackOffset;
+            
+            public Call(Variable callee, List<Expr> arguments)
             {
                 this.callee = callee;
                 this.arguments = arguments;
-                this.constructor = constructor;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -270,63 +266,32 @@ namespace Raze
             }
         }
 
-        public class Super : Expr
-        {
-            public Token keyword;
-            public Token method;
-            public Super(Token keyword, Token method)
-            {
-                this.keyword = keyword;
-                this.method = method;
-            }
-
-            public override T Accept<T>(IVisitor<T> visitor)
-            {
-                return visitor.visitSuperExpr(this);
-            }
-
-        }
-        public class This : Expr
-        {
-            public Token keyword;
-            public This(Token keyword)
-            {
-                this.keyword = keyword;
-            }
-
-            public override T Accept<T>(IVisitor<T> visitor)
-            {
-                return visitor.visitThisExpr(this);
-            }
-
-        }
-
         public class Variable : Expr
         {
-            public (bool, Expr.Literal) define;
+            public (bool, Literal) define;
 
             public Token name;
             public Token type;
             public int size;
             public int stackOffset;
 
-            public Variable(Token type, Token name, int size)
-            {
-                this.type = type;
-                this.name = name;
-                this.size = size;
-            }
-
-            public Variable(Token type, Token name)
-            {
-                this.type = type;
-                this.name = name;
-            }
-
             public Variable(Token name)
             {
                 this.name = name;
             }
+
+            public Variable(Token type, Token name) : this(name)
+            {
+                this.type = type;
+            }
+
+            public Variable(Token type, Token name, int size) : this(type, name)
+            {
+                this.size = size;
+            }
+
+
+            
 
             public Variable(Variable @this)
             {
@@ -349,7 +314,7 @@ namespace Raze
         {
             public List<string> literals;
 
-            public override string FullName { get => name.lexeme; }
+            public override string QualifiedName { get => name.lexeme; }
 
             public Primitive(Token name, List<string> literals, int size, Block block) : base (name, block, size)
             {
@@ -380,19 +345,12 @@ namespace Raze
 
         public class New : Expr
         {
-            public string declName;
-
-            public Variable _className;
-            public List<Expr> arguments;
-
+            public Call call;
             public Class internalClass;
 
-            public int stackOffset;
-
-            public New(Variable _className, List<Expr> arguments)
+            public New(Call call)
             {
-                this._className = _className;
-                this.arguments = arguments;
+                this.call = call;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -422,7 +380,7 @@ namespace Raze
             public int size;
 
             public string path;
-            public abstract string FullName { get; }
+            public abstract string QualifiedName { get; }
 
             public Definition(Token name, Block block)
             {
@@ -442,15 +400,16 @@ namespace Raze
         public class Function : Definition {
             public List<Parameter> parameters;
             public string _returnType;
+            public int _returnSize;
             public int arity
             {
                 get { return parameters.Count; }
             }
-            public bool keepStack;
+            public bool leaf = true;
             public Dictionary<string, bool> modifiers;
             public bool constructor;
 
-            public override string FullName
+            public override string QualifiedName
             {
                 get { return (this.path ?? "") + (constructor ? "." : "") + ((this.name == null) ? "" : this.name.lexeme); }
             }
@@ -480,16 +439,20 @@ namespace Raze
 
         public class Class : Definition
         {
-            public string dName;
+            public Function constructor;
 
-            public Expr.Function constructor;
+            public Block topLevelBlock;
 
-            public override string FullName
+            public override string QualifiedName
             {
                 get { return this.path + this.name.lexeme; }
             }
 
-            public Class(Token name, Block block) : base(name, block) { }
+            public Class(Token name, Block block) : base(name, new(new())) 
+            {
+                this.topLevelBlock = new(new());
+                FilterTopLevel(block);
+            }
 
             public override T Accept<T>(IVisitor<T> visitor)
             {
@@ -499,27 +462,22 @@ namespace Raze
             public Class(Class @this) : base(@this.name, @this.block)
             {
                 this.constructor = @this.constructor;
-                this.dName = @this.dName;
                 this.size = @this.size;
             }
 
-            // ToDo: Clean Up This Code
-            public Class CloneVars()
+            private void FilterTopLevel(Block block)
             {
-                Block nBlock = new(new());
-                foreach (var item in this.block.block)
+                foreach (var blockExpr in block.block)
                 {
-                    if (item is Primitive)
+                    if (blockExpr is Function || blockExpr is Class)
                     {
-                        var i = (Primitive)item;
-                        var n = new Primitive(i.name, i.literals, i.size, i.block);
-                        nBlock.block.Add(n);
-                        continue;
+                        this.block.block.Add(blockExpr);
                     }
-                    nBlock.block.Add(item);
+                    else
+                    {
+                        this.topLevelBlock.block.Add(blockExpr);
+                    }
                 }
-                this.block = nBlock;
-                return this;
             }
         }
         

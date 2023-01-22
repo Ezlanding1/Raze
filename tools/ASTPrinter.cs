@@ -139,6 +139,7 @@ namespace Raze.Tools
         public object? visitClassExpr(Expr.Class expr)
         {
             PrintAST(expr.name);
+            expr.topLevelBlock.Accept(this);
             expr.block.Accept(this);
             return null;
         }
@@ -172,16 +173,6 @@ namespace Raze.Tools
         {
             PrintAST(expr.literal);
             return null;
-        }
-
-        public object? visitSuperExpr(Expr.Super expr)
-        {
-            throw new NotImplementedException();
-        }
-
-        public object? visitThisExpr(Expr.This expr)
-        {
-            throw new NotImplementedException();
         }
 
         public object? visitUnaryExpr(Expr.Unary expr)
@@ -250,13 +241,13 @@ namespace Raze.Tools
 
         public object? visitNewExpr(Expr.New expr)
         {
-            PrintAST(expr._className);
+            expr.call.Accept(this);
             return null;
         }
 
         public object? visitAssemblyExpr(Expr.Assembly expr)
         {
-            PrintAST(expr.block);
+            PrintAST(expr.block.ToList());
             return null;
         }
 

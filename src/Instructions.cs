@@ -98,11 +98,30 @@ internal abstract class Instruction
     {
         public int offset;
         public int size;
-        public Pointer(int offset, int size)
-            : base(1, "RBP")
+
+        private Pointer(string ptr, int offset, int size, bool checkClassVar) : base(1, ptr)
         {
             this.offset = offset;
             this.size = size;
+
+
+            if (checkClassVar)
+            {
+                if (Analyzer.SymbolTable.other.globalClassVarOffset != null)
+                {
+                    this.offset += (int)Analyzer.SymbolTable.other.globalClassVarOffset;
+                }
+            }
+        }
+
+        public Pointer(int offset, int size, bool checkClassVar=true)
+            : this("RBP", offset, size, checkClassVar)
+        {
+        }
+
+        public Pointer(bool isClassScoped, int offset, int size, bool checkClassVar=true)
+            : this(isClassScoped? InstructionInfo.InstanceRegister : "RBP", offset, size, checkClassVar)
+        {
         }
 
         public override string Accept(IVisitor visitor)
@@ -197,6 +216,7 @@ internal abstract class Instruction
     {
         public string instruction;
         public Instruction operand1, operand2;
+
         public Binary(string instruction, Instruction operand1, Instruction operand2)
         {
             this.instruction = instruction;
@@ -204,11 +224,27 @@ internal abstract class Instruction
             this.operand2 = operand2;
         }
 
-        public Binary(string instruction, string operand1, string operand2)
+        public Binary(string instruction, string operand1, string operand2) 
+            : this (instruction, new Register(operand1), new Register(operand2)) 
+        { 
+        }
+
+        public override string Accept(IVisitor visitor)
         {
-            this.instruction = instruction;
-            this.operand1 = new Register(operand1);
-            this.operand2 = new Register(operand2);
+            return visitor.visitBinary(this);
+        }
+    }
+
+    internal class StackAlloc : Binary
+    {
+        public StackAlloc(string instruction, Instruction operand1, Instruction operand2) 
+            : base (instruction, operand1, operand2)
+        {
+        }
+
+        public StackAlloc(string instruction, string operand1, string operand2)
+            : base(instruction, operand1, operand2)
+        {
         }
 
         public override string Accept(IVisitor visitor)
@@ -290,7 +326,7 @@ internal class InstructionInfo
         }
     }
 
-    internal static string DataSizeOf(int size, string value)
+    internal static string DataSizeOf(int size, ref string value)
     {
         // This check is needed for string literals
         if (value[0] == '"')

@@ -47,6 +47,7 @@ namespace Raze
 
             public virtual T visitClassExpr(Expr.Class expr)
             {
+                expr.topLevelBlock.Accept(this);
                 expr.block.Accept(this);
                 return default(T);
             }
@@ -92,16 +93,6 @@ namespace Raze
                 return default(T);
             }
 
-            public virtual T visitSuperExpr(Expr.Super expr)
-            {
-                return default(T);
-            }
-
-            public virtual T visitThisExpr(Expr.This expr)
-            {
-                return default(T);
-            }
-
             public virtual T visitUnaryExpr(Expr.Unary expr)
             {
                 expr.operand.Accept(this);
@@ -143,7 +134,7 @@ namespace Raze
 
             public virtual T visitNewExpr(Expr.New expr)
             {
-                foreach (Expr argExpr in expr.arguments)
+                foreach (Expr argExpr in expr.call.arguments)
                 {
                     argExpr.Accept(this);
                 }
