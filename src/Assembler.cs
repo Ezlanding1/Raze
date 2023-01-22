@@ -401,18 +401,14 @@ namespace Raze
 
         public Instruction.Register? visitNewExpr(Expr.New expr)
         {
-            for (int i = 0; i < expr.arguments.Count; i++)
+            Analyzer.SymbolTable.other.globalClassVarOffset = expr.call.stackOffset;
+            foreach (var blockExpr in expr.internalClass.topLevelBlock.block)
             {
-                Instruction.Register arg = expr.arguments[i].Accept(this);
-                 MovToRegister(InstructionInfo.paramRegister[i], arg);
+                blockExpr.Accept(this);
             }
+            Analyzer.SymbolTable.other.globalClassVarOffset = null;
 
-            string operand1 = "";
-            foreach (var blockExpr in expr.internalClass.block.block)
-            {
-                if (!(blockExpr is Expr.Function))
-                    blockExpr.Accept(this);
-            }
+            expr.call.Accept(this);
 
             foreach (var ctorExpr in expr.internalClass.constructor.block.block)
             {

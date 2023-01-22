@@ -22,8 +22,8 @@ namespace Raze
 
         public class LexError : Errors
         {
-            public LexError(ErrorType e, int line, int col, string name, string details)
-                : base($"{e}\n{name}: {details}\nLine: {line}, COL: {col + 1}")
+            public LexError(int line, int col, string name, string details)
+                : base($"{ErrorType.LexerException}\n{name}: {details}\nLine: {line}, COL: {col + 1}")
             {
 
             }
@@ -31,8 +31,8 @@ namespace Raze
 
         public class ParseError : Errors
         {
-            public ParseError(ErrorType e, string name, string details)
-                : base($"{e}\n{name}: {details}")
+            public ParseError(string name, string details)
+                : base($"{ErrorType.ParserException}\n{name}: {details}")
             {
 
             }
@@ -40,13 +40,8 @@ namespace Raze
 
         public class BackendError : Errors
         {
-            public BackendError(ErrorType e, string name, string details, Analyzer.CallStack? callStack)
-                : base(CreateBackend(e, name, details, callStack))
-            {
-
-            }
-            public BackendError(ErrorType e, string name, string details)
-                : base(CreateBackend(e, name, details, null))
+            public BackendError(string name, string details, Analyzer.CallStack? callStack=null)
+                : base(CreateBackend(ErrorType.BackendException, name, details, callStack))
             {
 
             }

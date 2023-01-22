@@ -1,18 +1,29 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using static Raze.Analyzer;
-using static Raze.Analyzer.SymbolTable;
 
 namespace Raze
 {
     internal partial class Analyzer
     {
+        internal struct Other
+        {
+            public Dictionary<string, Expr.Primitive> primitives = new();
+            public HashSet<Expr.Variable> classScopedVars = new();
+            public int? globalClassVarOffset = null;
+            public Dictionary<Expr.Class, SymbolTable.Symbol.Class> classToSymbol = new();
+            public Other()
+            {
+            }
+        }
+
         internal class SymbolTable
         {
-
             private Symbol.Function head;
             private Symbol.Container current;
             public Symbol.Container Current
@@ -24,17 +35,19 @@ namespace Raze
                     if (value.IsFunc())
                     {
                         currentFunction = (Symbol.Function)value;
-                        newClass = false;
+                        newClass = null;
                     }
                     else if (value.IsClass())
                     {
-                        newClass = ((Symbol.Class)value).newClass;
+                        newClass = value is Symbol.New;
                     }
                 }
             }
             public Symbol.Function currentFunction;
             public int count;
-            private bool newClass;
+            private bool? newClass;
+
+            public static Other other = new();
 
             public CallStack callStack;
 
@@ -51,17 +64,23 @@ namespace Raze
             {
                 var _ = new Symbol.PrimitiveClass(v);
 
-                if (!newClass)
+                if (newClass == null)
+                {
                     count++;
-                else
+                    currentFunction.self.size += v.size;
+                    v.stackOffset = currentFunction.self.size;
+                }
+                else if (!(bool)newClass)
                 {
                     Current.self.size += v.size;
-                    _._classOffset = Current.self.size;
+                    v.stackOffset = Current.self.size;
+                }
+                else
+                {
+                    currentFunction.self.size += v.size;
                 }
 
                 Current.variables.Add(_);
-                currentFunction.self.size += v.size;
-                v.stackOffset = currentFunction.self.size;
             }
 
             public void Add(Expr.Class c)
@@ -71,13 +90,14 @@ namespace Raze
                 Current.containers.Add(_);
                 _.enclosing = Current;
                 Current = _;
+                other.classToSymbol[c]  = _;
             }
 
-            public void Add(Expr.New n)
+            public void Add(Expr.New n, Token name)
             {
-                count++;
+                //count++;
                 callStack.Add(n.internalClass);
-                var _ = new Symbol.Class(n.internalClass, true);
+                var _ = new Symbol.New(n, currentFunction.self.size, name);
                 Current.variables.Add(_);
                 _.enclosing = Current;
                 Current = _;
@@ -86,10 +106,6 @@ namespace Raze
             public void Add(Expr.Function f)
             {
                 callStack.Add(f);
-                if (f.constructor)
-                {
-                    f.size = currentFunction.self.size;
-                }
                 var _ = new Symbol.Function(f);
                 Current.containers.Add(_);
                 _.enclosing = Current;
@@ -106,7 +122,7 @@ namespace Raze
             {
                 foreach (var container in Current.variables)
                 {
-                    if (container.IsClass() && ((Symbol.Class)container).self.dName == to)
+                    if ((container.IsClass()) && ((Symbol.Class)container).Name.lexeme == to)
                     {
                         Current = (Symbol.Class)container;
                         callStack.Add(((Symbol.Class)Current).self);
@@ -140,65 +156,38 @@ namespace Raze
                 return true;
             }
 
-            public bool ContainsVariableKey(string key, out Symbol symbol)
+            public bool ContainsVariableKey(string key, bool classAccess, out Symbol symbol, out bool isClassScoped)
             {
-                // ToDo: Clean this up
-                var x = Current;
-                if (currentFunction.self.modifiers["static"])
+                if (!classAccess)
                 {
-                    foreach (var var in x.variables)
+                    var res = QueryVariable(key);
+                    if (res.Any())
                     {
-                        if (var.IsClass())
-                        {
-                            if (((Symbol.Class)var).self.dName == key)
-                            {
-                                symbol = var;
-                                return true;
-                            }
-                        }
-                        if (var.Name.lexeme == key)
-                        {
-                            symbol = var;
-                            return true;
-                        }
+                        symbol = res.FirstOrDefault();
+                        isClassScoped = Current.IsClass();
+                        return true;
                     }
-                    x = head;
-                    foreach (var var in x.variables)
+
+                    res = QueryVariable(key, head);
+                    if (res.Any())
                     {
-                        if (var.IsClass())
-                        {
-                            if (((Symbol.Class)var).self.dName == key)
-                            {
-                                symbol = var;
-                                return true;
-                            }
-                        }
-                        if (var.Name.lexeme == key)
-                        {
-                            symbol = var;
-                            return true;
-                        }
+                        symbol = res.FirstOrDefault();
+                        isClassScoped = head.IsClass();
+                        return true;
                     }
                 }
                 else
                 {
+                    // clean up like the rest 
+                    var x = Current;
                     while (x != null)
                     {
-                        foreach (var var in x.variables)
+                        var res = QueryVariable(key, x);
+                        if (res.Any())
                         {
-                            if (var.IsClass())
-                            {
-                                if (((Symbol.Class)var).self.dName == key)
-                                {
-                                    symbol = var;
-                                    return true;
-                                }
-                            }
-                            if (var.Name.lexeme == key)
-                            {
-                                symbol = var;
-                                return true;
-                            }
+                            symbol = res.FirstOrDefault();
+                            isClassScoped = x.IsClass();
+                            return true;
                         }
                         if (x.IsClass())
                         {
@@ -208,107 +197,72 @@ namespace Raze
                     }
                 }
                 symbol = null;
+                isClassScoped = false;
                 return false;
+            }
+
+            public bool ContainsVariableKey(string key, out Symbol symbol, out bool isClassScoped)
+            {
+                return ContainsVariableKey(key, false, out symbol, out isClassScoped);
+            }
+
+            public bool ContainsVariableKey(string key, out Symbol symbol)
+            {
+                return ContainsVariableKey(key, out symbol, out _);
             }
 
             public bool ContainsVariableKey(string key)
             {
-                var x = Current;
-                while (x != null)
-                {
-                    foreach (var var in x.variables)
-                    {
-                        if (var.IsClass())
-                        {
-                            if (((Symbol.Class)var).self.dName == key)
-                            {
-                                return true;
-                            }
-                        }
-                        if (var.Name.lexeme == key)
-                        {
-                            return true;
-                        }
-                    }
-                    if (x.IsClass())
-                    {
-                        break;
-                    }
-                    x = x.enclosing;
-                }
-                return false;
+                return ContainsVariableKey(key, out _, out _);
+            }
+
+            private IEnumerable<Symbol> QueryVariable(string key)
+            {
+                return QueryVariable(key, Current);
+            }
+            private IEnumerable<Symbol> QueryVariable(string key, Symbol.Container x)
+            {
+                return x.variables.Where(x => x.Name.lexeme == key);
             }
 
             public bool ContainsContainerKey(string key, out Symbol.Container symbol, int constraint)
             {
-                foreach (var var in Current.containers)
+                var x = Current;
+                if (Current is Symbol.New)
                 {
-                    if (constraint == 0 && !var.IsFunc())
-                    {
-                        continue;
-                    }
-                    if (constraint == 1 && !var.IsClass())
-                    {
-                        continue;
-                    }
-
-                    if (var.IsClass())
-                    {
-                        if (((Symbol.Class)var).self.dName == key)
-                        {
-                            symbol = var;
-                            return true;
-                        }
-                    }
-                    if (var.Name.lexeme == key)
-                    {
-                        symbol = var;
-                        return true;
-                    }
+                    x = other.classToSymbol[((Symbol.New)Current).self];
                 }
-                symbol = null;
-                return false;
+
+                // ToDo : throw outofbounds constraint if out of bounds?
+                var res = QueryContainer(key).Where(x => (constraint == 0)? x.IsFunc() : (constraint == 1)? x.IsClass() : false);
+                symbol = res.FirstOrDefault();
+                return res.Count() != 0;
             }
 
             public bool ContainsContainerKey(string key, out Symbol.Container symbol)
             {
-                foreach (var var in Current.containers)
+                var res = QueryContainer(key);
+                symbol = res.FirstOrDefault();
+                return res.Count() != 0; 
+            }
+
+            private IEnumerable<Symbol.Container> QueryContainer(string key)
+            {
+                return QueryContainer(key, Current);
+            }
+
+            private IEnumerable<Symbol.Container> QueryContainer(string key, Symbol.Container x)
+            {
+                if (Current is Symbol.New)
                 {
-                    if (var.IsClass())
-                    {
-                        if (((Symbol.Class)var).self.dName == key)
-                        {
-                            symbol = var;
-                            return true;
-                        }
-                    }
-                    if (var.Name.lexeme == key)
-                    {
-                        symbol = var;
-                        return true;
-                    }
+                    x = other.classToSymbol[((Symbol.New)Current).self];
                 }
-                symbol = null;
-                return false;
+                return x.containers.Where(x => x.Name.lexeme == key);
             }
 
             public bool ContainsContainerKey(string key)
             {
-                foreach (var var in Current.containers)
-                {
-                    if (var.IsClass())
-                    {
-                        if (((Symbol.Class)var).self.dName == key)
-                        {
-                            return true;
-                        }
-                    }
-                    if (var.Name.lexeme == key)
-                    {
-                        return true;
-                    }
-                }
-                return false;
+                return ContainsContainerKey(key, out _);
             }
 
             public void RemoveUnderCurrent(int startFrame)
@@ -319,15 +273,13 @@ namespace Raze
                 }
                 int x = count - startFrame;
 
-                Current.variables.RemoveRange(startFrame, x);
+                Current.variables.RemoveRange(Current.variables.Count-x, x);
                 count -= x;
             }
 
             public void TopContext() => Current = head;
 
             public bool CurrentIsTop() => Current == head;
-
-            public void CurrentCalls() => currentFunction.self.keepStack = true;
 
             abstract internal class Symbol
             {
@@ -376,12 +328,24 @@ namespace Raze
 
                     new internal Expr.Class self;
 
-                    public bool newClass;
-
-                    public Class(Expr.Class self, bool newClass = false) : base(0)
+                    public Class(Expr.Class self) : base(0)
                     {
                         this.self = self;
-                        this.newClass = newClass;
+                    }
+                }
+
+                internal class New : Class
+                {
+                    private Token name;
+                    public override Token Name { get { return name; } }
+
+                    public Expr.New newSelf;
+
+                    public New(Expr.New self, int stackOffset, Token name) : base(self.internalClass)
+                    {
+                        this.newSelf = self;
+                        this.newSelf.call.stackOffset = stackOffset;
+                        this.name = name;
                     }
                 }
 
@@ -410,7 +374,7 @@ namespace Raze
                     public override Token Name { get { return self.name; } }
 
                     internal Expr.Variable self;
-                    internal int _classOffset;
+
                     public PrimitiveClass(Expr.Variable self) : base(2)
                     {
                         this.self = self;

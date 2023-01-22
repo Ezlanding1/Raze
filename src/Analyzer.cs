@@ -29,6 +29,8 @@ namespace Raze
                 throw new Errors.BackendError("Main Not Found", "No Main method for entrypoint found");
             }
             CheckMain();
+
+            SymbolTableSingleton.NewInstance();
             Pass<object?> mainPass = new MainPass(expressions);
             expressions = mainPass.Run();
 
