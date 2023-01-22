@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Net;
-using System.Net.Http.Headers;
-using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -68,8 +66,16 @@ namespace Raze
 
                 public string visitBinary(Instruction.Binary instruction)
                 {
+                    if (instruction is Instruction.StackAlloc)
+                        if (instruction.operand2 is Instruction.Register)
+                            return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, { AlignTo16((Instruction.Register)instruction.operand2) }";
+                        else
+                            throw new Exception();
                     if (instruction.operand2 is Instruction.Pointer)
-                        return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, { PointerToString( (Instruction.Pointer)instruction.operand2 ) }";
+                        if (instruction.operand1 is Instruction.Pointer)
+                            return new Instruction.Binary("MOV", new Instruction.Register(RegisterFor(((Instruction.Pointer)instruction.operand2), "RAX")), instruction.operand2).Accept(this) + "\n" + new Instruction.Binary("MOV", instruction.operand1, new Instruction.Register(RegisterFor(((Instruction.Pointer)instruction.operand1), "RAX"))).Accept(this);
+                        else
+                            return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, { PointerToString( (Instruction.Pointer)instruction.operand2 ) }";
 
                     return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, {instruction.operand2.Accept(this)}";
                 }
@@ -106,7 +112,7 @@ namespace Raze
 
                 public string visitPointer(Instruction.Pointer instruction)
                 {
-                    return $"{InstructionInfo.wordSize[(int)instruction.size]} [{instruction.name}-{instruction.offset}]";
+                    return $"{InstructionInfo.wordSize[(int)instruction.size]} [{instruction.name}{( (instruction.offset != 0)? $"-{(instruction.offset)}" : "" )}]";
                 }
 
                 public string visitFunctionRef(Instruction.FunctionRef instruction)
@@ -136,8 +142,24 @@ namespace Raze
 
                 private string PointerToString(Instruction.Pointer instruction)
                 {
-                    return $"[{instruction.name}-{instruction.offset}]";
+                    return $"[{instruction.name}{( (instruction.offset != 0)? $"-{(instruction.offset)}" : "" )}]";
                 }
+
+                private string AlignTo16(Instruction.Register instruction)
+                {
+                    if (int.TryParse(instruction.name, out var value)) 
+                    {
+                        string name = (((int)Math.Ceiling(value / 16f)) * 16).ToString();
+                        return new Instruction.Register(name).Accept(this);
+                    }
+                    else
+                    {
+                        throw new Exception();
+                    }
+                    
+                }
+
+                private string RegisterFor(Instruction.Pointer pointer, string register) => InstructionInfo.Registers[(register, pointer.size)];
             }
 
             partial class GasSyntax : ISyntaxFactory, Instruction.IVisitor
