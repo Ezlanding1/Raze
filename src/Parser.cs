@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+using System.Diagnostics;
 using System.Linq;
-using System.Runtime;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -12,8 +11,19 @@ namespace Raze
     {
         List<Token> tokens;
         List<Expr> expressions;
-        Token current;
+        Token? current;
         int index;
+
+        public static readonly string[] Literals = 
+        { 
+            "INTEGER", 
+            "FLOAT", 
+            "STRING", 
+            "BINARY", 
+            "HEX",
+            "BOOLEAN"
+        };
+
         public Parser(List<Token> tokens)
         {
             this.tokens = tokens;
@@ -129,6 +139,7 @@ namespace Raze
                     }
 
                     Expect("is", "'is' keyword");
+
                     List<string> literals = new();
                     if (TypeMatch("LBRACE"))
                     {
@@ -154,14 +165,16 @@ namespace Raze
                     }
 
                     ExpectValue("IDENTIFIER", "sizeof", "'sizeof' keyword");
-                    Expect("NUMBER", "size (in bytes) of primitive");
-                    string size = previous().lexeme;
-                    if ((!size.All(char.IsDigit)) || (!new List<string>(){ "8", "4", "2", "1" }.Contains(size)))
+                    Expect("INTEGER", "size (in bytes) of primitive");
+                    Token size = previous();
+
+                    if (!new List<string>() { "8", "4", "2", "1" }.Contains(size.lexeme))
                     {
                         throw new Errors.ParseError("Invalid Primitive", "The size of primitive classes must be the integers '8', '4', '2', or '1'");
                     }
+
                     var block = GetBlock(definitionType.type);
-                    return new Expr.Primitive(name, literals, int.Parse(size), block);
+                    return new Expr.Primitive(name, literals, int.Parse(size.lexeme), block);
                 }
             }
             return Conditional();
@@ -362,7 +375,7 @@ namespace Raze
                     }
                     else if (TypeMatch("IDENTIFIER"))
                     {
-                        variable.type = variable.name;
+                        variable.type = new("IDENTIFIER", variable.ToString());
                         variable.name = previous();
                         Expect("EQUALS", "'=' when declaring variable");
                         Expr value = NoSemicolon();
@@ -406,7 +419,7 @@ namespace Raze
                     }
                     Expect("LPAREN", "'(' starting constructor parameters");
 
-                    return new Expr.New(variable, GetArgs());
+                    return new Expr.New(new Expr.Call(variable, GetArgs()));
                 }
             }
             throw End();
@@ -414,7 +427,7 @@ namespace Raze
 
         private Expr.Literal? Literal()
         {
-            if (TypeMatch("NUMBER", "STRING"))
+            if (TypeMatch(Literals))
             {
                 return new Expr.Literal(previous());
             }
@@ -428,7 +441,7 @@ namespace Raze
             Expr.Variable get = new Expr.Variable(previous());
             if (TypeMatch("DOT"))
             {
-                get = new Expr.Get(get, GetGetter(new Expr.Variable(current)));
+                get = GetGetter(get);
             }
 
             return new Expr.Get(getter, get);
@@ -436,11 +449,12 @@ namespace Raze
 
         private Exception End()
         {
-            return new Errors.ParseError(ErrorType.ParserException, "Expression Reached Unexpected End", $"Expression '{((previous() != null)? previous().lexeme : "")}' reached an unexpected end");
+            return new Errors.ParseError("Expression Reached Unexpected End", $"Expression '{((previous() != null)? previous().lexeme : "")}' reached an unexpected end");
         }
+
         private Expr.Call Call(Expr.Variable name)
         {
-            return new Expr.Call(name, GetArgs(), false);
+            return new Expr.Call(name, GetArgs());
         }
 
         private List<Expr> GetArgs()
@@ -639,10 +653,10 @@ namespace Raze
 
         private Errors.ParseError Expected(string type, string errorMessage)
         {
-            return new Errors.ParseError(ErrorType.ParserException, $"{type}", "Expected " + errorMessage + $"{((current != null) ? "\nGot: '" + current.lexeme + "' Instead" : "")}");
+            return new Errors.ParseError($"{type}", "Expected " + errorMessage + $"{((current != null) ? "\nGot: '" + current.lexeme + "' Instead" : "")}");
         }
 
-        private Token previous()
+        private Token? previous()
         {
             if (!isAtEnd(index - 1))
             {
@@ -651,7 +665,7 @@ namespace Raze
             return null;
         }
 
-        private Token peek()
+        private Token? peek()
         {
             if (!isAtEnd(index + 1))
             {

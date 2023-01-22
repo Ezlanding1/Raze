@@ -6,7 +6,6 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
-using static Raze.Expr;
 
 namespace Raze
 {
@@ -100,6 +99,7 @@ namespace Raze
 
             public override string visitClassExpr(Expr.Class expr)
             {
+                expr.topLevelBlock.Accept(this);
                 expr.block.Accept(this);
                 return "void";
             }
@@ -184,7 +184,7 @@ namespace Raze
                 int _returnCount = _return.Count;
                 if (expr.condition != null)
                 {
-                    if (expr.condition.Accept(this) != "bool")
+                    if (expr.condition.Accept(this) != "BOOLEAN")
                     {
                         throw new Errors.BackendError("Type Mismatch", $"'{expr.type.type}' expects condition to return 'BOOLEAN'. Got '{expr.condition.Accept(this)}'");
                     }
@@ -203,16 +203,6 @@ namespace Raze
             public override string visitLiteralExpr(Expr.Literal expr)
             {
                 return TypeOf(expr);
-            }
-
-            public override string visitSuperExpr(Expr.Super expr)
-            {
-                return null;
-            }
-
-            public override string visitThisExpr(Expr.This expr)
-            {
-                return null;
             }
 
             public override string visitUnaryExpr(Expr.Unary expr)
@@ -281,12 +271,12 @@ namespace Raze
 
             public override string visitNewExpr(Expr.New expr)
             {
-                foreach (Expr argExpr in expr.arguments)
+                foreach (Expr argExpr in expr.call.arguments)
                 {
                     argExpr.Accept(this);
                 }
 
-                return expr._className.name.lexeme;
+                return expr.call.callee.ToString();
             }
 
             public override string visitDefineExpr(Expr.Define expr)
@@ -296,10 +286,10 @@ namespace Raze
 
             public override string visitIsExpr(Expr.Is expr)
             {
-                return "bool";
+                return "BOOLEAN";
             }
 
-            public override string visitAssemblyExpr(Assembly expr)
+            public override string visitAssemblyExpr(Expr.Assembly expr)
             {
                 return "void";
             }
@@ -308,9 +298,19 @@ namespace Raze
             {
                 if (primitives.ContainsKey(type1))
                 {
-                    if ((!primitives[type1].literals.Contains(type2)) && type1 != type2 && type2 != "null")
+                    if (Parser.Literals.Contains(type2))
                     {
-                        return false;
+                        if ((!primitives[type1].literals.Contains(type2)) && type2 != "null")
+                        {
+                            return false;
+                        }
+                    }
+                    else
+                    {
+                        if (type1 != type2 && type2 != "null")
+                        {
+                            return false;
+                        }
                     }
                 }
                 else
