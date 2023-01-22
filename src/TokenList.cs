@@ -9,16 +9,16 @@ namespace Raze
 {
     internal class TokenList
     {
-        //IMPORTANT NOTE: CHANGE STRINGS TO enum for better performance/cleaner code?
-        //IMPORTANT NOTE: switch from type : token to token : type?
-        //NOTE: higher tokens have a higher precedence
+        // Higher tokens have a higher precedence
         public static readonly Dictionary<string, string> Tokens = new Dictionary<string, string>()
         {
             // Non Finite Tokens
-            { "NUMBERDOT", /*lang=regex*/@"[0-9]+[.][0-9]+" },
-            { "NUMBER", /*lang=regex*/@"[0-9]+" },
+            { "BINARY", /*lang=regex*/@"[0-1]+[b]" },
+            { "HEX", /*lang=regex*/@"0[xX][0-9a-fA-F]+" },
+            { "FLOAT", /*lang=regex*/@"[0-9]+[.][0-9]+" },
+            { "INTEGER", /*lang=regex*/@"[0-9]+" },
             { "IDENTIFIER", /*lang=regex*/@"[a-zA-Z_][a-zA-Z1-9_]*" },
-            { "STRING", /*lang=regex*/@"[""].*[""]" },
+            { "STRING", /*lang=regex*/"[\"][^\"]*[\"]" },
             { "WHITESPACE", /*lang=regex*/@"[\s]" },
 
             // Comparison Operators
@@ -75,7 +75,7 @@ namespace Raze
             { "COMMENT", /*lang=regex*/"(?m)[#].*$" },
         };
 
-        public static readonly HashSet<string> reserved = new HashSet<string>()
+        public static readonly HashSet<string> Reserved = new HashSet<string>()
         {
             "if",
             "else",
@@ -93,5 +93,11 @@ namespace Raze
             "is",
             "primitive"
         };
+
+        /*
+         * Contextual Keywords:
+         * 
+         *      sizeof
+         */
     }
 }
