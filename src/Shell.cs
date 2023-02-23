@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Raze.Analyzer;
 
 namespace Raze
 {
@@ -56,7 +57,7 @@ namespace Raze
 
                 // Run Analysis on the Code 
                 Analyzer analyzer = new Analyzer(expressions);
-                (expressions, Expr.Function main) = analyzer.Analyze();
+                expressions = analyzer.Analyze();
 
                 // Lower AST to ASM
                 Assembler assembler = new(expressions);
@@ -66,7 +67,7 @@ namespace Raze
 
 
                 #if DEBUG
-                Raze.tools.AssemblyPrinter.PrintAssembly(instructions, data, main);
+                Raze.tools.AssemblyPrinter.PrintAssembly(instructions, data, SymbolTableSingleton.SymbolTable.other.main);
                 #endif
 
                 // Output Result

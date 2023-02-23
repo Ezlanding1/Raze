@@ -40,21 +40,17 @@ namespace Raze
 
         public class BackendError : Errors
         {
-            public BackendError(string name, string details, Analyzer.CallStack? callStack=null)
-                : base(CreateBackend(ErrorType.BackendException, name, details, callStack))
+            public BackendError(string name, string details)
+                : base(CreateBackend(ErrorType.BackendException, name, details))
             {
 
             }
         }
 
-        private static string CreateBackend(ErrorType e, string name, string details, Analyzer.CallStack? callStack)
+        private static string CreateBackend(ErrorType e, string name, string details)
         {
             string str = $"{e}\n{name}: {details}";
-            if (callStack == null)
-            {
-                return str;
-            }
-            return (str + "\n" + callStack.ToString());
+            return (str + "\n" + ((SymbolTableSingleton.SymbolTable.Current.self.QualifiedName != "")? ("at:\n\t" + SymbolTableSingleton.SymbolTable.Current.self.QualifiedName) : ""));
         }
     }
 }

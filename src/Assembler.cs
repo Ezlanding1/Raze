@@ -134,36 +134,31 @@ namespace Raze
             {
                 return null;
             }
-            Declare(expr.size, expr.stackOffset, operand2, Analyzer.SymbolTable.other.classScopedVars.Contains(expr));
+            Declare(expr.size, expr.stackOffset, operand2, SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(expr));
             return null;
         }
 
         public Instruction.Register? visitFunctionExpr(Expr.Function expr)
         {
             index++;
-            expr.leaf = (expr.leaf == false && expr.size != 0)? false : true;
+            bool leafFunc = ((expr.leaf || expr.size == 0) && expr.size <= 128);
             emit(new Instruction.Function(expr.QualifiedName));
 
 
             Instruction.Binary? sub = null;
-            if (expr.leaf)
+            if (!leafFunc)
             {
                 emit(new Instruction.Unary("PUSH", "RBP"));
                 emit(new Instruction.Binary("MOV", "RBP", "RSP"));
-                if (expr.size > 128)
-                {
                     sub = new Instruction.Binary("SUB", "RSP", "TMP");
                     emit(sub);
                 }
-            }
             else
             {
                 emit(new Instruction.Unary("PUSH", "RBP"));
                 emit(new Instruction.Binary("MOV", "RBP", "RSP"));
-                sub = new Instruction.StackAlloc("SUB", "RSP", "TMP");
-                emit(sub);
             }
-            footerType.Add((expr.leaf && expr.size <= 128));
+            footerType.Add(leafFunc);
 
             for (int i = 0; i < expr.arity; i++)
             {
@@ -173,13 +168,17 @@ namespace Raze
 
             expr.block.Accept(this);
 
-            if (!expr.leaf)
+            if (!leafFunc)
             {
-                sub.operand2 = new Instruction.Register(expr.size.ToString());
-            }
-            else if (expr.size > 128)
+                if (expr.size > 128)
             {
+
                 sub.operand2 = new Instruction.Register((expr.size - 128).ToString());
+            }
+                else
+                {
+                    sub.operand2 = new Instruction.Register(expr.size.ToString());
+                }
             }
             
 
@@ -210,7 +209,7 @@ namespace Raze
 
         public Instruction.Register? visitLiteralExpr(Expr.Literal expr)
         {
-            return new Instruction.Literal(expr.literal.lexeme);
+            return new Instruction.Literal(expr.literal.lexeme, expr.literal.type);
         }
 
         public Instruction.Register? visitUnaryExpr(Expr.Unary expr)
@@ -220,7 +219,7 @@ namespace Raze
             if (instruction == "RET")
             {
                 MovToRegister("RAX", operand1);
-                return new Instruction.Literal("RET");
+                return new Instruction.Register("RAX");
             }
             if (operand1.IsRegister() || operand1.IsPointer())
             {
@@ -246,9 +245,9 @@ namespace Raze
 
             if (expr.stackOffset == null)
             {
-                return new Instruction.Literal("0");
+                return new Instruction.Literal("0", Parser.Literals[0]);
             }
-            return new Instruction.Pointer((int)expr.stackOffset, (int)expr.size);
+            return new Instruction.Pointer(SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(expr), (int)expr.stackOffset, (int)expr.size);
         }
 
         public Instruction.Register? visitConditionalExpr(Expr.Conditional expr)
@@ -360,11 +359,11 @@ namespace Raze
             if (expr.op != null)
             {
                 string instruction = InstructionInfo.ToType(expr.op.type);
-                emit(new Instruction.Binary(instruction, new Instruction.Pointer(Analyzer.SymbolTable.other.classScopedVars.Contains(expr.variable), expr.variable.stackOffset, expr.variable.size), operand2));
+                emit(new Instruction.Binary(instruction, new Instruction.Pointer(SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(expr.variable), expr.variable.stackOffset, expr.variable.size), operand2));
             }
             else
             {
-                Declare(expr.variable.size, expr.variable.stackOffset, operand2, Analyzer.SymbolTable.other.classScopedVars.Contains(expr.variable));
+                Declare(expr.variable.size, expr.variable.stackOffset, operand2, SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(expr.variable));
             }
             return null;
         }
@@ -379,11 +378,11 @@ namespace Raze
             switch (expr.keyword)
             {
                 case "null":
-                    return new Instruction.Literal("0");
+                    return new Instruction.Literal("0", Parser.Literals[0]);
                 case "true":
-                    return new Instruction.Literal("1");
+                    return new Instruction.Literal("1", Parser.Literals[0]);
                 case "false":
-                    return new Instruction.Literal("0");
+                    return new Instruction.Literal("0", Parser.Literals[0]);
                 default:
                     throw new Exception($"Raze Error: '{expr.keyword}' is not a primitive type (function)");
             }
@@ -400,12 +399,12 @@ namespace Raze
 
         public Instruction.Register? visitNewExpr(Expr.New expr)
         {
-            Analyzer.SymbolTable.other.globalClassVarOffset = expr.call.stackOffset;
+            SymbolTableSingleton.SymbolTable.other.globalClassVarOffset = expr.call.stackOffset;
             foreach (var blockExpr in expr.internalClass.topLevelBlock.block)
             {
                 blockExpr.Accept(this);
             }
-            Analyzer.SymbolTable.other.globalClassVarOffset = null;
+            SymbolTableSingleton.SymbolTable.other.globalClassVarOffset = null;
 
             expr.call.Accept(this);
 
@@ -419,13 +418,15 @@ namespace Raze
 
         public Instruction.Register? visitIsExpr(Expr.Is expr)
         {
-            return new Instruction.Literal(expr.value);
+            return new Instruction.Literal(expr.value, Parser.Literals[5]);
         }
 
         private void Declare(int size, int stackOffset, Instruction.Register value, bool isClassScoped)
         {
             if (value.IsLiteral())
             {
+                // make sure type is always the type in the correct format (INTEGER, BOOLEAN, etc.)
+                int literalSize = SizeOfLiteral(value.name, ((Instruction.Literal)value).type);
                 if (size <= InstructionInfo.MaxLiteral)
                 {
                     emit(new Instruction.Binary("MOV", new Instruction.Pointer(isClassScoped, stackOffset, size), new Instruction.Register(value.name)));

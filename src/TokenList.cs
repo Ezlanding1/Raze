@@ -17,7 +17,7 @@ namespace Raze
             { "HEX", /*lang=regex*/@"0[xX][0-9a-fA-F]+" },
             { "FLOAT", /*lang=regex*/@"[0-9]+[.][0-9]+" },
             { "INTEGER", /*lang=regex*/@"[0-9]+" },
-            { "IDENTIFIER", /*lang=regex*/@"[a-zA-Z_][a-zA-Z1-9_]*" },
+            { "IDENTIFIER", /*lang=regex*/@"[a-zA-Z_][a-zA-Z0-9_]*" },
             { "STRING", /*lang=regex*/"[\"][^\"]*[\"]" },
             { "WHITESPACE", /*lang=regex*/@"[\s]" },
 

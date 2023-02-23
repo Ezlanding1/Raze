@@ -107,9 +107,9 @@ internal abstract class Instruction
 
             if (checkClassVar)
             {
-                if (Analyzer.SymbolTable.other.globalClassVarOffset != null)
+                if (SymbolTableSingleton.SymbolTable.other.globalClassVarOffset != null)
                 {
-                    this.offset += (int)Analyzer.SymbolTable.other.globalClassVarOffset;
+                    this.offset += (int)SymbolTableSingleton.SymbolTable.other.globalClassVarOffset;
                 }
             }
         }
@@ -131,9 +131,10 @@ internal abstract class Instruction
     }
     internal class Literal : Register
     {
-        public Literal(string name) : base(2, name)
+        public string type;
+        public Literal(string name, string type) : base(2, name)
         {
-
+            this.type = type;
         }
     }
 
@@ -307,7 +308,7 @@ internal abstract class Instruction
 internal class InstructionInfo
 {
     public const int MaxLiteral = 4;
-    public const string InstanceRegister = "R11";
+    public const string InstanceRegister = "R12";
 
     internal static bool IsStack(Instruction.Register input, bool addSize=false)
     {

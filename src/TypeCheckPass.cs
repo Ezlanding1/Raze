@@ -17,10 +17,10 @@ namespace Raze
             bool callReturn;
             Dictionary<string, Expr.Primitive> primitives;
 
-            public TypeCheckPass(List<Expr> expressions, Dictionary<string, Expr.Primitive> primitives) : base(expressions)
+            public TypeCheckPass(List<Expr> expressions) : base(expressions)
             {
                 _return = new();
-                this.primitives = primitives;
+                this.primitives = SymbolTableSingleton.SymbolTable.other.primitives;
             }
 
             internal override List<Expr> Run()

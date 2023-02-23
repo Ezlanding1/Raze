@@ -11,7 +11,6 @@ namespace Raze
     internal partial class Analyzer
     {
         List<Expr> expressions;
-        Expr.Assign.Function main;
         Dictionary<string, Expr.Primitive> primitives;
 
         public Analyzer(List<Expr> expressions)
@@ -19,28 +18,28 @@ namespace Raze
             this.expressions = expressions;
         }
 
-        internal (List<Expr>, Expr.Function) Analyze(){
+        internal List<Expr> Analyze(){
             Pass<object?> initialPass = new InitialPass(expressions);
             expressions = initialPass.Run();
 
-            (main, primitives) = ((InitialPass)initialPass).GetOutput();
-            if (main == null)
+            SymbolTableSingleton.SymbolTable.TopContext();
+
+            if (SymbolTableSingleton.SymbolTable.other.main == null)
             {
                 throw new Errors.BackendError("Main Not Found", "No Main method for entrypoint found");
             }
-            CheckMain();
+            CheckMain(SymbolTableSingleton.SymbolTable.other.main);
 
-            SymbolTableSingleton.NewInstance();
             Pass<object?> mainPass = new MainPass(expressions);
             expressions = mainPass.Run();
 
-            Pass<string> TypeChackPass = new TypeCheckPass(expressions, primitives);
+            Pass<string> TypeChackPass = new TypeCheckPass(expressions);
             expressions = TypeChackPass.Run();
 
-            return (expressions, main);
+            return expressions;
         }
 
-        private void CheckMain()
+        private void CheckMain(Expr.Function main)
         {
             if (main._returnType != "void" && main._returnType != "number")
             {

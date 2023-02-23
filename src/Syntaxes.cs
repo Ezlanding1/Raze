@@ -28,7 +28,7 @@ namespace Raze
                                 { new Instruction.Global("_start") },
                                 { new Instruction.Section("text") },
                                 { new Instruction.Function("_start") },
-                                { new Instruction.Unary("CALL", "Main") },
+                                { new Instruction.Unary("CALL", main.QualifiedName) },
                                 { new Instruction.Binary("MOV", "RDI", (main._returnType == "number")? "RAX" : "0") },
                                 { new Instruction.Binary("MOV", "RAX", "60") },
                                 { new Instruction.Zero("SYSCALL") }
@@ -177,7 +177,7 @@ namespace Raze
                                 { new Instruction.Section("text") },
                                 { new Instruction.Global("main") },
                                 { new Instruction.Function("main") },
-                                { new Instruction.Unary("CALL", "Main") },
+                                { new Instruction.Unary("CALL", main.QualifiedName) },
                                 { new Instruction.Binary("MOV", "RDI", (main._returnType == "number")? "RAX" : "0") },
                                 { new Instruction.Binary("MOV", "RAX", "60") },
                                 { new Instruction.Zero("SYSCALL") }

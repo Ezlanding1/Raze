@@ -20,10 +20,5 @@ namespace Raze
                 return symbolTable;
             }
         }
-
-        public static void NewInstance()
-        {
-            symbolTable = new();
-        }
     }
 }
