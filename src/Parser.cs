@@ -81,7 +81,10 @@ namespace Raze
                         }
                         else
                         {
-                            throw new Errors.ParseError("Invalid Modifier", $"The modifier '{modifier.lexeme}' does not exist");
+                            
+                            
+                            
+                            new Errors.ParseError("Invalid Modifier", $"The modifier '{modifier.lexeme}' does not exist");
                         }
                     }
                     Expect("IDENTIFIER", definitionType.type + " name");

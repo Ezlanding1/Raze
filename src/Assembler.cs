@@ -384,7 +384,7 @@ namespace Raze
                 case "false":
                     return new Instruction.Literal("0", Parser.Literals[0]);
                 default:
-                    throw new Exception($"Raze Error: '{expr.keyword}' is not a primitive type (function)");
+                    throw new Errors.ImpossibleError($"'{expr.keyword}' is not a keyword");
             }
         }
 

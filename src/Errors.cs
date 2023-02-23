@@ -8,9 +8,12 @@ namespace Raze
 {
     public enum ErrorType
     {
+        ImpossibleException,
         LexerException,
         ParserException,
-        BackendException
+        AnalyzerException,
+        BackendException,
+        CodeGenException
     }
 
     internal abstract class Errors : Exception
@@ -19,7 +22,20 @@ namespace Raze
         {
 
         }
+        // ToDo: clean all these up, fill in qualifiedname of classes for each error (in parenthesis),
+        // make sure all in the specified class throw the right kind, and fix any exceptions thrown any outside off all err classes
 
+        // An error raised that is impossible to reach, undefined behavior, or otherwise unexpected
+        public class ImpossibleError : Errors
+        {
+            public ImpossibleError(string details)
+                : base($"{ErrorType.ImpossibleException}\n{details}")
+            {
+
+            }
+        }
+
+        // An error raised durning Lexing ( Raze.Lexer )
         public class LexError : Errors
         {
             public LexError(int line, int col, string name, string details)
@@ -29,6 +45,7 @@ namespace Raze
             }
         }
 
+        // An error raised during Parsing ( Raze.Parser )
         public class ParseError : Errors
         {
             public ParseError(string name, string details)
@@ -38,19 +55,34 @@ namespace Raze
             }
         }
 
-        public class BackendError : Errors
+        // An error raised during Analysis ( Raze.Analyzer )
+        public class AnalyzerError : Errors
         {
-            public BackendError(string name, string details)
-                : base(CreateBackend(ErrorType.BackendException, name, details))
+            public AnalyzerError(string name, string details)
+                : base($"{ErrorType.AnalyzerException}\n{name}: {details}" + ((SymbolTableSingleton.SymbolTable.Current.self.QualifiedName != "") ? ("\nat:\n\t" + SymbolTableSingleton.SymbolTable.Current.self.QualifiedName) : ""))
             {
 
             }
         }
 
-        private static string CreateBackend(ErrorType e, string name, string details)
+        // An error raised during backend ( Raze.Assembler )
+        public class BackendError : Errors
         {
-            string str = $"{e}\n{name}: {details}";
-            return (str + "\n" + ((SymbolTableSingleton.SymbolTable.Current.self.QualifiedName != "")? ("at:\n\t" + SymbolTableSingleton.SymbolTable.Current.self.QualifiedName) : ""));
+            public BackendError(string name, string details)
+                : base($"{ErrorType.BackendException}\n{name}: {details}")
+            {
+
+            }
+        }
+
+        // An error raised during codegen ( Raze.Syntaxes )
+        public class CodeGenError : Errors
+        {
+            public CodeGenError(string name, string details)
+                : base($"{ErrorType.CodeGenException}\n{name}: {details}")
+            {
+
+            }
         }
     }
 }

@@ -30,7 +30,7 @@ namespace Raze
 
                 if (SymbolTableSingleton.SymbolTable.other.main == null)
                 {
-                    throw new Errors.BackendError("Entrypoint Not Found", "Program does not contain a Main method");
+                    throw new Errors.AnalyzerError("Entrypoint Not Found", "Program does not contain a Main method");
                 }
                 return expressions;
             }
@@ -51,9 +51,9 @@ namespace Raze
                 {
                     if (expr.name.lexeme == "Main")
                     {
-                        throw new Errors.BackendError("Double Declaration", "A Program may have only one 'Main' method");
+                        throw new Errors.AnalyzerError("Double Declaration", "A Program may have only one 'Main' method");
                     }
-                    throw new Errors.BackendError("Double Declaration", $"Function '{expr.name.lexeme}()' was declared twice");
+                    throw new Errors.AnalyzerError("Double Declaration", $"Function '{expr.name.lexeme}()' was declared twice");
                 }
 
                 SetPath(expr);
@@ -77,7 +77,7 @@ namespace Raze
                 {
                     if (SymbolTableSingleton.SymbolTable.other.main != null)
                     {
-                        throw new Errors.BackendError("Function Declared Twice", "A Program may have only one 'Main' method");
+                        throw new Errors.AnalyzerError("Function Declared Twice", "A Program may have only one 'Main' method");
                     }
                     expr.modifiers["static"] = true;
                     SymbolTableSingleton.SymbolTable.other.main = expr;
@@ -85,7 +85,7 @@ namespace Raze
                 int paramsCount = expr.parameters.Count;
                 if (paramsCount > InstructionInfo.paramRegister.Length)
                 {
-                    throw new Errors.BackendError("Too Many Parameters", $"A function cannot have more than { InstructionInfo.paramRegister.Length } parameters");
+                    throw new Errors.AnalyzerError("Too Many Parameters", $"A function cannot have more than { InstructionInfo.paramRegister.Length } parameters");
                 }
 
                 foreach (Expr.Parameter paramExpr in expr.parameters)
@@ -116,7 +116,7 @@ namespace Raze
             {
                 if (symbolTable.ContainsContainerKey(expr.name.lexeme, out _, 1))
                 {
-                    throw new Errors.BackendError("Double Declaration", $"A class named '{expr.name.lexeme}' is already defined in this scope");
+                    throw new Errors.AnalyzerError("Double Declaration", $"A class named '{expr.name.lexeme}' is already defined in this scope");
                 }
 
                 SetPath(expr);
@@ -148,7 +148,7 @@ namespace Raze
                     }
                     else
                     {
-                        throw new Errors.BackendError("Invalid Else If", "'else if' conditional has no matching 'if'");
+                        throw new Errors.AnalyzerError("Invalid Else If", "'else if' conditional has no matching 'if'");
                     }
                 }
                 else if (expr.type.type == "else")
@@ -162,7 +162,7 @@ namespace Raze
                     }
                     else
                     {
-                        throw new Errors.BackendError("Invalid Else", "'else' conditional has no matching 'if'");
+                        throw new Errors.AnalyzerError("Invalid Else", "'else' conditional has no matching 'if'");
                     }
                 }
                 int tmpidx = index;
@@ -180,15 +180,15 @@ namespace Raze
             {
                 if (symbolTable.CurrentIsTop())
                 {
-                    throw new Errors.BackendError("Top Level Assembly Block", "Assembly Blocks must be placed in an unsafe function");
+                    throw new Errors.AnalyzerError("Top Level Assembly Block", "Assembly Blocks must be placed in an unsafe function");
                 }
                 if (!symbolTable.Current.IsFunc())
                 {
-                    throw new Errors.BackendError("ASM Block Not In Function", "Assembly Blocks must be placed in functions");
+                    throw new Errors.AnalyzerError("ASM Block Not In Function", "Assembly Blocks must be placed in functions");
                 }
                 if (!((SymbolTable.Symbol.Function)symbolTable.Current).self.modifiers["unsafe"])
                 {
-                    throw new Errors.BackendError("Unsafe Code in Safe Function", "Mark a function with 'unsafe' to include unsafe code");
+                    throw new Errors.AnalyzerError("Unsafe Code in Safe Function", "Mark a function with 'unsafe' to include unsafe code");
                 }
                 return base.visitAssemblyExpr(expr);
             }
@@ -218,7 +218,7 @@ namespace Raze
                 }
                 else
                 {
-                    throw new Errors.BackendError("Double Declaration", $"A primtive named '{expr.name.lexeme}' is already defined");
+                    throw new Errors.AnalyzerError("Double Declaration", $"A primtive named '{expr.name.lexeme}' is already defined");
                 }
                 return null;
             }
@@ -227,7 +227,7 @@ namespace Raze
             {
                 if (!(expr.left is Expr.Variable))
                 {
-                    throw new Errors.BackendError("Invalid 'is' Operator", "the first operand of 'is' operator must be a variable");
+                    throw new Errors.AnalyzerError("Invalid 'is' Operator", "the first operand of 'is' operator must be a variable");
                 }
                 return null;
                 
@@ -239,7 +239,7 @@ namespace Raze
             {
                 if (!symbolTable.ContainsContainerKey(symbolTable.Current.Name.lexeme, out var symbol, 0))
                 {
-                    throw new Errors.BackendError("Class Without Constructor", "A Class must contain a constructor method");
+                    throw new Errors.AnalyzerError("Class Without Constructor", "A Class must contain a constructor method");
                 }
 
                 var constructor = ((SymbolTable.Symbol.Function)symbol).self;
@@ -248,7 +248,7 @@ namespace Raze
 
                 if (constructor.modifiers["static"])
                 {
-                    throw new Errors.BackendError("Constructor Marked 'static'", "A constructor cannot have the 'static' modifier");
+                    throw new Errors.AnalyzerError("Constructor Marked 'static'", "A constructor cannot have the 'static' modifier");
                 }
                 return constructor;
             }

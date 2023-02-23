@@ -26,7 +26,7 @@ namespace Raze
 
             if (SymbolTableSingleton.SymbolTable.other.main == null)
             {
-                throw new Errors.BackendError("Main Not Found", "No Main method for entrypoint found");
+                throw new Errors.AnalyzerError("Main Not Found", "No Main method for entrypoint found");
             }
             CheckMain(SymbolTableSingleton.SymbolTable.other.main);
 
@@ -43,13 +43,13 @@ namespace Raze
         {
             if (main._returnType != "void" && main._returnType != "number")
             {
-                throw new Errors.BackendError("Main Invalid Return Type", $"Main can only return types 'number', and 'void'. Got '{main._returnType}'");
+                throw new Errors.AnalyzerError("Main Invalid Return Type", $"Main can only return types 'number', and 'void'. Got '{main._returnType}'");
             }
             foreach (var item in main.modifiers)
             {
                 if (item.Key != "static" && item.Value)
                 {
-                    throw new Errors.BackendError("Main Invalid Modifier", $"Main cannot have the '{item.Key}' modifier");
+                    throw new Errors.AnalyzerError("Main Invalid Modifier", $"Main cannot have the '{item.Key}' modifier");
                 }
             } 
         }
@@ -85,7 +85,7 @@ namespace Raze
                     return "BOOLEAN";
                 }
             }
-            throw new Exception("Invalid TypeOf");
+            throw new Errors.ImpossibleError("Invalid TypeOf");
         }
     }
 

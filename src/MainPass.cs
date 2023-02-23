@@ -60,7 +60,7 @@ namespace Raze
                 var x = expr.callee;
 
                 bool instanceCall = false;
-
+                // Todo: fix the errors and naming and clean up here
                 SymbolTable.Symbol.New? @new = null;
                 if (x is Expr.Get)
                 {
@@ -86,7 +86,7 @@ namespace Raze
                         }
                         else
                         {
-                            throw new Errors.BackendError("Undefined Reference", $"The class '{x.name.lexeme}' does not exist in the current context");
+                            throw new Errors.AnalyzerError("Undefined Reference", $"The class '{x.name.lexeme}' does not exist in the current context");
                         }
                     }
                     x = ((Expr.Get)x).get;
@@ -97,14 +97,14 @@ namespace Raze
                     {
                         if (!symbolTable.DownContainerContext(x.name.lexeme))
                         {
-                            throw new Errors.BackendError("Undefined Reference", $"The class '{x.name.lexeme}' does not exist in the current context");
+                            throw new Errors.AnalyzerError("Undefined Reference", $"The class '{x.name.lexeme}' does not exist in the current context");
                         }
                     }
                     else
                     {
                         if (!symbolTable.DownNewContext(x.name.lexeme, out _))
                         {
-                            throw new Errors.BackendError("Undefined Reference", $"The class '{x.name.lexeme}' does not exist in the current context");
+                            throw new Errors.AnalyzerError("Undefined Reference", $"The class '{x.name.lexeme}' does not exist in the current context");
                         }
                     }
                     x = ((Expr.Get)x).get;
@@ -122,25 +122,25 @@ namespace Raze
                     {
                         if (s.modifiers["static"])
                         {
-                            throw new Errors.BackendError("Static Mathod Called From Instance", "You cannot call a static method from an instance");
+                            throw new Errors.AnalyzerError("Static Mathod Called From Instance", "You cannot call a static method from an instance");
                         }
                     }
                     else
                     {
                         if (!s.modifiers["static"])
                         {
-                            throw new Errors.BackendError("Mathod Called From Static Context", "You cannot call an instance method from an static context");
+                            throw new Errors.AnalyzerError("Mathod Called From Static Context", "You cannot call an instance method from an static context");
                         }
                     }
                     if (s.constructor)
                     {
-                        throw new Errors.BackendError("Constructor Called As Method", "A Constructor may not be called as a method of its class");
+                        throw new Errors.AnalyzerError("Constructor Called As Method", "A Constructor may not be called as a method of its class");
                     }
                     expr.internalFunction = s;
                 }
                 else
                 {
-                    throw new Errors.BackendError("Undefined Reference", $"The method '{expr.callee}' does not exist in the current context");
+                    throw new Errors.AnalyzerError("Undefined Reference", $"The method '{expr.callee}' does not exist in the current context");
                 }
                 symbolTable.Current = context;
 
@@ -158,7 +158,7 @@ namespace Raze
 
                 if (!symbolTable.DownContainerContext(expr.name.lexeme))
                 {
-                    throw new Errors.BackendError("Undefined Reference", $"The class '{expr.name.lexeme}' does not exist in the current context");
+                    throw new Errors.AnalyzerError("Undefined Reference", $"The class '{expr.name.lexeme}' does not exist in the current context");
                 }
 
                 expr.topLevelBlock.Accept(this);
@@ -167,7 +167,7 @@ namespace Raze
 
                 if (!symbolTable.UpContext())
                 {
-                    throw new Exception("Up Context Called On 'GLOBAL' context (no enclosing)");
+                    throw new Errors.ImpossibleError("Up Context Called On 'GLOBAL' context (no enclosing)");
                 }
                 return null;
             }
@@ -178,7 +178,7 @@ namespace Raze
 
                 if (symbolTable.ContainsVariableKey(name.lexeme))
                 {
-                    throw new Errors.BackendError("Double Declaration", $"A variable named '{name.lexeme}' is already defined in this scope");
+                    throw new Errors.AnalyzerError("Double Declaration", $"A variable named '{name.lexeme}' is already defined in this scope");
                 }
 
                 if (expr.value is Expr.New)
@@ -205,7 +205,7 @@ namespace Raze
             {
                 if (!symbolTable.DownContainerContext(expr.name.lexeme))
                 {
-                    throw new Errors.BackendError("Undefined Reference", $"The function '{expr.name.lexeme}' does not exist in the current context");
+                    throw new Errors.AnalyzerError("Undefined Reference", $"The function '{expr.name.lexeme}' does not exist in the current context");
                 }
 
                 classAccess = !expr.modifiers["static"];
@@ -256,12 +256,12 @@ namespace Raze
                     }
                     else
                     {
-                        throw new Exception();
+                        throw new Errors.ImpossibleError($"Type of symbol '{symbol.Name}' not recognized");
                     }
                 }
                 else
                 {
-                    throw new Errors.BackendError("Undefined Reference", $"The variable '{expr.name.lexeme}' does not exist in the current context");
+                    throw new Errors.AnalyzerError("Undefined Reference", $"The variable '{expr.name.lexeme}' does not exist in the current context");
                 }
                 return null;
             }
@@ -308,7 +308,7 @@ namespace Raze
             {
                 if (!symbolTable.DownContext(expr.name.lexeme))
                 {
-                    throw new Errors.BackendError("Undefined Reference", $"The class '{expr.name.lexeme}' does not exist in the current context");
+                    throw new Errors.AnalyzerError("Undefined Reference", $"The class '{expr.name.lexeme}' does not exist in the current context");
                 }
                 classAccess = true;
                 expr.get.Accept(this);
@@ -325,15 +325,11 @@ namespace Raze
                 {
                     if (symbol.IsVariable())
                     {
-                        var s = ((SymbolTable.Symbol.Variable)symbol).self;
-
                         expr.value = ((SymbolTable.Symbol.Variable)symbol).self.type.lexeme == expr.right.ToString()? "1" : "0";
 
                     }
                     else if (symbol.IsDefine())
                     {
-                        var s = ((SymbolTable.Symbol.Define)symbol).self;
-                        
                     }
                     else if (symbol.IsClass())
                     {
@@ -342,23 +338,14 @@ namespace Raze
                     }
                     else
                     {
-                        throw new Exception();
+                        throw new Errors.ImpossibleError($"Type of symbol '{symbol.Name}' not recognized");
                     }
                 }
                 else
                 {
-                    throw new Errors.BackendError("Undefined Reference", $"The variable '{((Expr.Variable)expr.left).ToString()}' does not exist in the current context");
+                    throw new Errors.AnalyzerError("Undefined Reference", $"The variable '{((Expr.Variable)expr.left).ToString()}' does not exist in the current context");
                 }
                 return null;
-            }
-
-            private void ValidCallCheck(Expr.Function function, Expr.Call call)
-            {
-                string name = function.name.lexeme;
-                if (function.arity != call.arguments.Count)
-                {
-                    throw new Errors.BackendError("Arity Mismatch", $"Arity of call for {name} ({call.arguments.Count}) does not match the definition's arity ({function.arity})");
-                }
             }
 
             private void CurrentCalls()
@@ -389,13 +376,13 @@ namespace Raze
                     case true:
                         if (!symbolTable.DownContainerContextFullScope(get.name.lexeme))
                         {
-                            throw new Errors.BackendError("Undefined Reference", $"The class '{get.name.lexeme}' does not exist in the current context");
+                            throw new Errors.AnalyzerError("Undefined Reference", $"The class '{get.name.lexeme}' does not exist in the current context");
                         }
                         break;
                     case false:
                         if (!symbolTable.DownContainerContext(get.name.lexeme))
                         {
-                            throw new Errors.BackendError("Undefined Reference", $"The class '{get.name.lexeme}' does not exist in the current context");
+                            throw new Errors.AnalyzerError("Undefined Reference", $"The class '{get.name.lexeme}' does not exist in the current context");
                         }
                         break;
                 }
@@ -409,7 +396,7 @@ namespace Raze
                 }
                 else
                 {
-                    throw new Errors.BackendError("Undefined Reference", $"The primitive class '{type}' does not exist in the current context");
+                    throw new Errors.AnalyzerError("Undefined Reference", $"The primitive class '{type}' does not exist in the current context");
                 }
             }
         }

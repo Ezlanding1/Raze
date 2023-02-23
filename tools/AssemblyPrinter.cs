@@ -33,7 +33,7 @@ namespace Raze.tools
 
             if (Syntax == null)
             {
-                throw new Exception("Raze Error: No Syntax Type Defined");
+                throw new Errors.ImpossibleError("No Syntax Type Defined");
             }
             
             Syntax.Run(Syntax.header);

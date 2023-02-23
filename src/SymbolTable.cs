@@ -321,7 +321,7 @@ namespace Raze
                         {
                             if (this.IsClass()) { return ((Class)this).self; }
                             else if (this.IsFunc()) { return ((Function)this).self; }
-                            else { throw new Exception(); }
+                            else { throw new Errors.ImpossibleError("Type of symbol not recognized"); }
                         }
                     }
 

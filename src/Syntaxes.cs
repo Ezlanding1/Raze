@@ -154,7 +154,7 @@ namespace Raze
                     }
                     else
                     {
-                        throw new Exception();
+                        throw new Errors.ImpossibleError("Size of aligned literal is not numeric");
                     }
                     
                 }
