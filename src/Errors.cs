@@ -22,8 +22,6 @@ namespace Raze
         {
 
         }
-        // ToDo: clean all these up, fill in qualifiedname of classes for each error (in parenthesis),
-        // make sure all in the specified class throw the right kind, and fix any exceptions thrown any outside off all err classes
 
         // An error raised that is impossible to reach, undefined behavior, or otherwise unexpected
         public class ImpossibleError : Errors

@@ -291,6 +291,11 @@ namespace Raze
 
             public override string visitAssemblyExpr(Expr.Assembly expr)
             {
+                foreach (var variable in expr.variables.Keys)
+                {
+                    variable.Accept(this);
+                }
+
                 return "void";
             }
 

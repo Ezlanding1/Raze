@@ -253,11 +253,13 @@ namespace Raze
 
         public class Assembly : Expr
         {
-            public List<string> block;
+            public List<Instruction> block;
+            public Dictionary<Variable, Instruction.Pointer> variables;
 
-            public Assembly(List<string> block)
+            public Assembly(List<Instruction> block,  Dictionary<Variable, Instruction.Pointer> variables)
             {
                 this.block = block;
+                this.variables = variables;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)

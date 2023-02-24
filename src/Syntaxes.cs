@@ -59,11 +59,6 @@ namespace Raze
                     Output.AppendLine(instruction.Accept(this));
                 }
 
-                public string visitAsmInstruction(Instruction.AsmInstruction instruction)
-                {
-                    return $"{instruction.instruction}";
-                }
-
                 public string visitBinary(Instruction.Binary instruction)
                 {
                     if (instruction is Instruction.StackAlloc)
@@ -156,7 +151,6 @@ namespace Raze
                     {
                         throw new Errors.ImpossibleError("Size of aligned literal is not numeric");
                     }
-                    
                 }
 
                 private string RegisterFor(Instruction.Pointer pointer, string register) => InstructionInfo.Registers[(register, pointer.size)];
@@ -207,11 +201,6 @@ namespace Raze
                 public override void Run(Instruction instruction)
                 {
                     instruction.Accept(this);
-                }
-
-                public string visitAsmInstruction(Instruction.AsmInstruction instruction)
-                {
-                    throw new NotImplementedException();
                 }
 
                 public string visitBinary(Instruction.Binary instruction)

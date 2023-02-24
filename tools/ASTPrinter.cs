@@ -247,7 +247,11 @@ namespace Raze.Tools
 
         public object? visitAssemblyExpr(Expr.Assembly expr)
         {
-            PrintAST(expr.block.ToList());
+            foreach (var instruction in expr.block)
+            {
+                PrintAST(instruction.ToString());
+            }
+
             return null;
         }
 

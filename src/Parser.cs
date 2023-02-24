@@ -120,7 +120,8 @@ namespace Raze
                 }
                 else if (definitionType.type == "asm")
                 {
-                    return new Expr.Assembly(GetAsmInstructions());
+                    var instructions = GetAsmInstructions();
+                    return new Expr.Assembly(instructions.Item1, instructions.Item2);
                 }
                 else if (definitionType.type == "define")
                 {
@@ -507,13 +508,73 @@ namespace Raze
             return bodyExprs;
         }
         
-        private List<string> GetAsmInstructions()
+        private (List<Instruction>, Dictionary<Expr.Variable, Instruction.Pointer>) GetAsmInstructions()
         {
-            List<string> asmExprs = new();
+            List<Instruction> instructions = new();
+            Dictionary<Expr.Variable, Instruction.Pointer> variables = new();
+
             Expect("LBRACE", "'{' before Assembly Block body");
             while (!TypeMatch("RBRACE"))
             {
-                asmExprs.Add(GetInstruction());
+                if (TypeMatch("IDENTIFIER"))
+                {
+                    var op = previous();
+                    if (TypeMatch("IDENTIFIER", "DOLLAR"))
+                    {
+                        var operand1 = previous();
+
+                        if (TypeMatch("COMMA"))
+                        {
+                            
+                            if (!TypeMatch("IDENTIFIER", "INTEGER", "FLOATING", "STRING", "HEX", "BINARY", "DOLLAR"))
+                            {
+                                Expected("IDENTIFIER, INTEGER, FLOAT, STRING, HEX, BINARY", "operand after comma ','");
+                            }
+
+                            var operand2 = previous();
+
+                            // Binary
+                            if (operand2.type == "DOLLAR")
+                            {
+                                Expect("IDENTIFIER", "after escape '$'");
+                                var ptr = new Instruction.Pointer(0, 0);
+                                variables[new Expr.Variable(previous())] = ptr;
+                                instructions.Add(new Instruction.Binary(op.lexeme, new Instruction.Register(operand1.lexeme), ptr));
+                            }
+                            else
+                            {
+                                instructions.Add(new Instruction.Binary(op.lexeme, operand1.lexeme, operand2.lexeme));
+                            }
+                        }
+                        else
+                        {
+                            // Unary
+
+                            if (operand1.type == "DOLLAR")
+                            {
+                                Expect("IDENTIFIER", "after escape '$'");
+                                var ptr = new Instruction.Pointer(0, 0);
+                                variables[new Expr.Variable(previous())] = ptr;
+                                instructions.Add(new Instruction.Unary(op.lexeme, ptr));
+                            }
+                            else
+                            {
+                                instructions.Add(new Instruction.Unary(op.lexeme, operand1.lexeme));
+                            }
+                            
+                        }
+                    }
+                    else
+                    {
+                        // Zero
+                        instructions.Add(new Instruction.Zero(op.lexeme));
+                    }
+                    Expect("SEMICOLON", "';' after Assembly statement");
+                }
+                else
+                {
+                    throw new Errors.ParseError("Invalid Assembly Statement", $"'{current.lexeme}' is invalid in an assembly block");
+                }
 
                 if (isAtEnd())
                 {
@@ -524,67 +585,7 @@ namespace Raze
                     break;
                 }
             }
-            return asmExprs;
-        }
-
-        private string GetInstruction()
-        {
-            string instruction = "";
-            Expect("LBRACE", "'{' before Assembly Block body");
-            int step = 0;
-            while (!TypeMatch("RBRACE"))
-            {
-                if (TypeMatch("IDENTIFIER")) 
-                {
-                    switch (step)
-                    {
-                        case 0:
-                            instruction += previous().lexeme;
-                            break;
-                        case 1:
-                            instruction += ("\t" + previous().lexeme);
-                            break;
-                        default:
-                            instruction += (" " + previous().lexeme);
-                            break;
-                    }
-                    step++;
-                }
-                else if (TypeMatch("DOT", "LBRACKET"))
-                {
-                    switch (step)
-                    {
-                        case 0:
-                            instruction += previous().lexeme;
-                            instruction += current.lexeme;
-                            break;
-                        case 1:
-                            instruction += ("\t" + previous().lexeme);
-                            instruction += current.lexeme;
-                            break;
-                        default:
-                            instruction += (" " + previous().lexeme);
-                            instruction += current.lexeme;
-                            break;
-                    }
-                    step++;
-                    advance();
-                }
-                else
-                {
-                    instruction += current.lexeme;
-                    advance();
-                }
-                if (isAtEnd())
-                {
-                    Expect("RBRACE", "'}', '{}' must surround Assembly instruction");
-                }
-                if (TypeMatch("RBRACE"))
-                {
-                    break;
-                }
-            }
-            return instruction;
+            return (instructions, variables);
         }
 
         private bool TypeMatch(params string[] types)

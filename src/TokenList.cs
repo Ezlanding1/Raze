@@ -72,6 +72,7 @@ namespace Raze
             { "DOT", "[.]" },
             { "COLON", "[:]" },
             { "SEMICOLON", "[;]" },
+            { "DOLLAR", "[$]" },
             { "COMMENT", /*lang=regex*/"(?m)[#].*$" },
         };
 

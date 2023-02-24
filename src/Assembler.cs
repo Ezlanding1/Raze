@@ -247,7 +247,7 @@ namespace Raze
             {
                 return new Instruction.Literal("0", Parser.Literals[0]);
             }
-            return new Instruction.Pointer(SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(expr), (int)expr.stackOffset, (int)expr.size);
+            return new Instruction.Pointer(SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(expr), expr.stackOffset, expr.size);
         }
 
         public Instruction.Register? visitConditionalExpr(Expr.Conditional expr)
@@ -390,9 +390,15 @@ namespace Raze
 
         public Instruction.Register? visitAssemblyExpr(Expr.Assembly expr)
         {
-            foreach (string instruction in expr.block)
+            foreach (var variable in expr.variables.Keys)
             {
-                emit(new Instruction.AsmInstruction(instruction));
+                expr.variables[variable].name = SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(variable) ? InstructionInfo.InstanceRegister : "RBP";
+                expr.variables[variable].offset = variable.stackOffset;
+                expr.variables[variable].size = variable.size;
+            }
+            foreach (var instruction in expr.block)
+            {
+                emit(instruction);
             }
             return null;
         }
@@ -426,7 +432,6 @@ namespace Raze
             if (value.IsLiteral())
             {
                 // make sure type is always the type in the correct format (INTEGER, BOOLEAN, etc.)
-                int literalSize = SizeOfLiteral(value.name, ((Instruction.Literal)value).type);
                 if (size <= InstructionInfo.MaxLiteral)
                 {
                     emit(new Instruction.Binary("MOV", new Instruction.Pointer(isClassScoped, stackOffset, size), new Instruction.Register(value.name)));

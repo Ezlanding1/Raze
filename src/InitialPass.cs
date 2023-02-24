@@ -190,6 +190,12 @@ namespace Raze
                 {
                     throw new Errors.AnalyzerError("Unsafe Code in Safe Function", "Mark a function with 'unsafe' to include unsafe code");
                 }
+
+                foreach (var variable in expr.variables.Keys)
+                {
+                    variable.Accept(this);
+                }
+
                 return base.visitAssemblyExpr(expr);
             }
 

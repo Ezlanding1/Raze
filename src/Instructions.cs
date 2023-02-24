@@ -20,21 +20,8 @@ internal abstract class Instruction
         public string visitUnary(Unary instruction);
         public string visitZero(Zero instruction);
         public string visitComment(Comment instruction);
-        public string visitAsmInstruction(AsmInstruction instruction);
     }
-    internal class AsmInstruction : Instruction
-    {
-        public string instruction;
-        public AsmInstruction(string instruction)
-        {
-            this.instruction = instruction;
-        }
 
-        public override string Accept(IVisitor visitor)
-        {
-            return visitor.visitAsmInstruction(this);
-        }
-    }
     internal class Global : Instruction
     {
         public string name;

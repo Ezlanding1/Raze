@@ -280,6 +280,15 @@ namespace Raze
                 return null;
             }
 
+            public override object visitAssemblyExpr(Expr.Assembly expr)
+            {
+                foreach (var variable in expr.variables.Keys)
+                {
+                    variable.Accept(this);
+                }
+                return null;
+            }
+
             public override object? visitNewExpr(Expr.New expr)
             {
                 CurrentCalls();
