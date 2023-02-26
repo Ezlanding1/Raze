@@ -28,7 +28,7 @@ namespace Raze
             public Symbol.Container Current
             {
                 get { return this.current; }
-                set
+                private set
                 {
                     this.current = value;
                 }
@@ -90,63 +90,53 @@ namespace Raze
                 Current.variables.Add(_);
             }
 
-            public bool DownContext(string to)
+            public void DownContext(string to)
             {
                 foreach (var container in Current.variables)
                 {
                     if ((container.IsClass()) && container is Symbol.New && ((Symbol.Class)container).Name.lexeme == to)
                     {
                         Current = ((Symbol.New)container);
-                        return true;
+                        return;
                     }
                 }
-                return false;
+                throw new Errors.AnalyzerError("Undefined Reference", $"The variable '{to}' does not exist in the current context");
             }
 
-            public bool DownContainerContext(string to)
+            public bool _DownContainerContext(string to, Symbol.Container x)
             {
-                foreach (var container in Current.containers)
+                foreach (var container in x.containers)
                 {
-                    if ((container.IsClass() || container.IsFunc()) && ((Symbol.Container)container).Name.lexeme == to)
+                    if ((container.IsClass() || container.IsFunc()) && (container).Name.lexeme == to)
                     {
-                        Current = (Symbol.Container)container;
+                        Current = container;
                         return true;
                     }
                 }
                 return false;
             }
 
-            public bool DownContainerContextFullScope(string to)
+            public void DownContainerContext(string to, bool func=false)
+            {
+                if (!_DownContainerContext(to, Current))
+                {
+                    throw new Errors.AnalyzerError("Undefined Reference", $"The {(func? "function" : "class")} '{to}' does not exist in the current context");
+                }
+            }
+
+
+            public void DownContainerContextFullScope(string to)
             {
                 var x = Current;
                 while (x != null)
                 {
-                    foreach (var container in x.containers)
+                    if (_DownContainerContext(to, x))
                     {
-                        if ((container.IsClass() || container.IsFunc()) && ((Symbol.Container)container).Name.lexeme == to)
-                        {
-                            Current = (Symbol.Container)container;
-                            return true;
-                        }
+                        return;
                     }
                     x = x.enclosing;
                 }
-                return false;
-            }
-
-            public bool DownNewContext(string to, out Symbol.New n)
-            {
-                foreach (var container in Current.variables)
-                {
-                    if ((container is Symbol.New) && ((Symbol.New)container).Name.lexeme == to)
-                    {
-                        Current = other.classToSymbol[((Symbol.New)container).self];
-                        n = (Symbol.New)container;
-                        return true;
-                    }
-                }
-                n = null;
-                return false;
+                throw new Errors.AnalyzerError("Undefined Reference", $"The class '{to}' does not exist in the current context");
             }
 
             public bool UpContext()
@@ -267,11 +257,6 @@ namespace Raze
             private IEnumerable<Symbol.Container> QueryContainer(string key, Symbol.Container x)
             {
                 return x.containers.Where(x => x.Name.lexeme == key);
-            }
-
-            public bool ContainsContainerKey(string key)
-            {
-                return ContainsContainerKey(key, out _);
             }
 
             public void RemoveUnderCurrent(int startFrame)

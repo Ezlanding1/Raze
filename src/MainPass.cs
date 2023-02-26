@@ -57,30 +57,32 @@ namespace Raze
                 CurrentCalls();
 
                 var context = symbolTable.Current;
+
                 var x = expr.callee;
 
                 bool instanceCall = false;
-                // Todo: fix the errors and naming and clean up here
-                SymbolTable.Symbol.New? @new = null;
+
                 if (x is Expr.Get)
                 {
-                    if (symbolTable.ContainsContainerKey(x.name.lexeme, out SymbolTable.Symbol.Container symbolo, 1))
+                    if (symbolTable.ContainsContainerKey(x.name.lexeme, out SymbolTable.Symbol.Container topSymbol, 1))
                     {
-                        symbolTable.SetContext(symbolo);
+                        symbolTable.SetContext(topSymbol);
                         instanceCall = false;
                     }
                     else
                     {
-                        if (symbolTable.ContainsVariableKey(x.name.lexeme, out SymbolTable.Symbol symboloo))
+                        if (symbolTable.ContainsVariableKey(x.name.lexeme, out SymbolTable.Symbol topSymbol_I))
                         {
-                            if (symboloo.IsClass() && symboloo is SymbolTable.Symbol.New)
+                            if (topSymbol_I.IsClass() && topSymbol_I is SymbolTable.Symbol.New)
                             {
-                                symbolTable.SetContext(symbolTable.other.classToSymbol[((SymbolTable.Symbol.New)symboloo).self]);
-                                @new = (SymbolTable.Symbol.New)symboloo;
+                                symbolTable.SetContext((SymbolTable.Symbol.New)topSymbol_I);
+                                expr.stackOffset = ((SymbolTable.Symbol.New)topSymbol_I).newSelf.call.stackOffset;
                                 instanceCall = true;
                             }
                             else
                             {
+                                // This Error is hit when calling a variable like an instance of a type. For Example:
+                                // string i = ""; i.FUNC();
                                 throw new Exception();
                             }
                         }
@@ -91,47 +93,33 @@ namespace Raze
                     }
                     x = ((Expr.Get)x).get;
                 }
+
                 while (x is Expr.Get)
                 {
                     if (!instanceCall)
                     {
-                        if (!symbolTable.DownContainerContext(x.name.lexeme))
-                        {
-                            throw new Errors.AnalyzerError("Undefined Reference", $"The class '{x.name.lexeme}' does not exist in the current context");
-                        }
+                        symbolTable.DownContainerContext(x.name.lexeme);
                     }
                     else
                     {
-                        if (!symbolTable.DownNewContext(x.name.lexeme, out _))
-                        {
-                            throw new Errors.AnalyzerError("Undefined Reference", $"The class '{x.name.lexeme}' does not exist in the current context");
-                        }
+                        symbolTable.DownContext(x.name.lexeme);
                     }
                     x = ((Expr.Get)x).get;
-                }
-
-                if (instanceCall)
-                {
-                    expr.stackOffset = @new.newSelf.call.stackOffset;
                 }
 
                 if (symbolTable.ContainsContainerKey(x.name.lexeme, out SymbolTable.Symbol.Container symbol, 0))
                 {
                     var s = ((SymbolTable.Symbol.Function)symbol).self;
-                    if (instanceCall)
+
+                    if (instanceCall && s.modifiers["static"])
                     {
-                        if (s.modifiers["static"])
-                        {
-                            throw new Errors.AnalyzerError("Static Mathod Called From Instance", "You cannot call a static method from an instance");
-                        }
+                        throw new Errors.AnalyzerError("Static Mathod Called From Instance", "You cannot call a static method from an instance");
                     }
-                    else
+                    if (!instanceCall && !s.modifiers["static"])
                     {
-                        if (!s.modifiers["static"])
-                        {
-                            throw new Errors.AnalyzerError("Mathod Called From Static Context", "You cannot call an instance method from an static context");
-                        }
+                        throw new Errors.AnalyzerError("Mathod Called From Static Context", "You cannot call an instance method from a static context");
                     }
+
                     if (s.constructor)
                     {
                         throw new Errors.AnalyzerError("Constructor Called As Method", "A Constructor may not be called as a method of its class");
@@ -140,9 +128,9 @@ namespace Raze
                 }
                 else
                 {
-                    throw new Errors.AnalyzerError("Undefined Reference", $"The method '{expr.callee}' does not exist in the current context");
+                    throw new Errors.AnalyzerError("Undefined Reference", $"The function '{expr.callee}' does not exist in the current context");
                 }
-                symbolTable.Current = context;
+                symbolTable.SetContext(context);
 
                 return null;
             }
@@ -156,10 +144,7 @@ namespace Raze
 
                 handledClasses.Add(expr);
 
-                if (!symbolTable.DownContainerContext(expr.name.lexeme))
-                {
-                    throw new Errors.AnalyzerError("Undefined Reference", $"The class '{expr.name.lexeme}' does not exist in the current context");
-                }
+                symbolTable.DownContainerContext(expr.name.lexeme);
 
                 expr.topLevelBlock.Accept(this);
                 expr.block.Accept(this);
@@ -203,10 +188,7 @@ namespace Raze
 
             public override object? visitFunctionExpr(Expr.Function expr)
             {
-                if (!symbolTable.DownContainerContext(expr.name.lexeme))
-                {
-                    throw new Errors.AnalyzerError("Undefined Reference", $"The function '{expr.name.lexeme}' does not exist in the current context");
-                }
+                symbolTable.DownContainerContext(expr.name.lexeme, true);
 
                 classAccess = !expr.modifiers["static"];
                 int arity = expr.arity;
@@ -306,19 +288,17 @@ namespace Raze
 
                 expr.call.internalFunction = expr.internalClass.constructor;
 
-                symbolTable.Current = symbolTable.other.classToSymbol[expr.internalClass].enclosing;
+                symbolTable.SetContext(symbolTable.other.classToSymbol[expr.internalClass].enclosing);
                 expr.internalClass.Accept(this);
-                symbolTable.Current = context;
+                symbolTable.SetContext(context);
 
                 return null;
             }
 
             public override object? visitGetExpr(Expr.Get expr)
             {
-                if (!symbolTable.DownContext(expr.name.lexeme))
-                {
-                    throw new Errors.AnalyzerError("Undefined Reference", $"The class '{expr.name.lexeme}' does not exist in the current context");
-                }
+                symbolTable.DownContext(expr.name.lexeme);
+
                 classAccess = true;
                 expr.get.Accept(this);
                 expr.type = expr.get.type;
@@ -383,16 +363,10 @@ namespace Raze
                 switch (first)
                 {
                     case true:
-                        if (!symbolTable.DownContainerContextFullScope(get.name.lexeme))
-                        {
-                            throw new Errors.AnalyzerError("Undefined Reference", $"The class '{get.name.lexeme}' does not exist in the current context");
-                        }
+                        symbolTable.DownContainerContextFullScope(get.name.lexeme);
                         break;
                     case false:
-                        if (!symbolTable.DownContainerContext(get.name.lexeme))
-                        {
-                            throw new Errors.AnalyzerError("Undefined Reference", $"The class '{get.name.lexeme}' does not exist in the current context");
-                        }
+                        symbolTable.DownContainerContext(get.name.lexeme);
                         break;
                 }
             }
