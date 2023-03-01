@@ -47,7 +47,7 @@ namespace Raze
 
             public override object? visitFunctionExpr(Expr.Function expr)
             {
-                if (symbolTable.ContainsLocalContainerKey(expr.name.lexeme))
+                if (symbolTable.TryGetContainer(expr.name.lexeme, out _))
                 {
                     if (expr.name.lexeme == "Main")
                     {
@@ -114,12 +114,15 @@ namespace Raze
 
             public override object? visitClassExpr(Expr.Class expr)
             {
-                if (symbolTable.ContainsContainerKey(expr.name.lexeme, out _, 1))
+                if (symbolTable.TryGetContainer(expr.name.lexeme, out _))
                 {
                     throw new Errors.AnalyzerError("Double Declaration", $"A class named '{expr.name.lexeme}' is already defined in this scope");
                 }
 
                 SetPath(expr);
+
+                expr.block._classBlock = true;
+                expr.topLevelBlock._classBlock = true;
 
                 symbolTable.Add(expr);
 
@@ -243,7 +246,7 @@ namespace Raze
 
             private Expr.Function GetConstructor(Expr.Class @class)
             {
-                if (!symbolTable.ContainsContainerKey(symbolTable.Current.Name.lexeme, out var symbol, 0))
+                if (!symbolTable.TryGetContainer(symbolTable.Current.Name.lexeme, out var symbol))
                 {
                     throw new Errors.AnalyzerError("Class Without Constructor", "A Class must contain a constructor method");
                 }

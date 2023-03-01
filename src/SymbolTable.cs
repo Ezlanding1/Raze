@@ -34,7 +34,7 @@ namespace Raze
                 }
             }
 
-            public int count;
+            private Block block;
 
             public Other other = new();
 
@@ -42,23 +42,26 @@ namespace Raze
             {
                 this.head = new Symbol.Function(new Expr.Function());
                 this.Current = this.head;
-                this.count = 0;
+                //
+                this.block = new(null);
             }
 
             public void Add(Expr.Variable v)
             {
+                block.keys.Add(v.name.lexeme);
+
                 var _ = new Symbol.Variable(v);
 
                 Current.self.size += v.size;
                 v.stackOffset = Current.self.size;
 
-                Current.variables.Add(_);
+                Current.variables.Add(_.Name.lexeme, _);
             }
 
             public void Add(Expr.Class c)
             {
                 var _ = new Symbol.Class(c);
-                Current.containers.Add(_);
+                Current.containers.Add(_.Name.lexeme, _);
                 _.enclosing = Current;
                 Current = _;
                 other.classToSymbol[c]  = _;
@@ -66,9 +69,8 @@ namespace Raze
 
             public void Add(Expr.New n, Token name)
             {
-                count++;
                 var _ = new Symbol.New(n, Current.self.size, name);
-                Current.variables.Add(_);
+                Current.variables.Add(_.Name.lexeme, _);
                 _.enclosing = Current;
                 _.variables = other.classToSymbol[_.self].variables;
                 _.containers = other.classToSymbol[_.self].containers;
@@ -79,7 +81,7 @@ namespace Raze
             public void Add(Expr.Function f)
             {
                 var _ = new Symbol.Function(f);
-                Current.containers.Add(_);
+                Current.containers.Add(_.Name.lexeme, _);
                 _.enclosing = Current;
                 Current = _;
             }
@@ -87,57 +89,98 @@ namespace Raze
             public void Add(Expr.Define d)
             {
                 var _ = new Symbol.Define(d);
-                Current.variables.Add(_);
+                Current.variables.Add(_.Name.lexeme, _);
             }
 
-            public void DownContext(string to)
+            // 'Get' Methods:
+
+            public Symbol GetVariable(string key)
             {
-                foreach (var container in Current.variables)
+                if (Current.variables.TryGetValue(key, out var value))
                 {
-                    if ((container.IsClass()) && container is Symbol.New && ((Symbol.Class)container).Name.lexeme == to)
-                    {
-                        Current = ((Symbol.New)container);
-                        return;
-                    }
+                    return value;
                 }
-                throw new Errors.AnalyzerError("Undefined Reference", $"The variable '{to}' does not exist in the current context");
+                throw new Errors.AnalyzerError("Undefined Reference", $"The variable '{key}' does not exist in the current context");
+            }
+            public Symbol.Container GetContainer(string key, bool func=false)
+            {
+                if (Current.containers.TryGetValue(key, out var value))
+                {
+                    return value;
+                }
+                throw new Errors.AnalyzerError("Undefined Reference", $"The {(func ? "function" : "class")} '{key}' does not exist in the current context");
             }
 
-            public bool _DownContainerContext(string to, Symbol.Container x)
+            // 'TryGet' Methods:
+
+            public bool TryGetVariable(string key, out Symbol symbol, out bool isClassScoped, bool classAccess = false)
             {
-                foreach (var container in x.containers)
+                if (!classAccess)
                 {
-                    if ((container.IsClass() || container.IsFunc()) && (container).Name.lexeme == to)
+                    if (Current.variables.TryGetValue(key, out var value))
                     {
-                        Current = container;
+                        symbol = value;
+                        isClassScoped = Current.IsClass();
                         return true;
                     }
                 }
+                else
+                {
+                    var x = Current;
+
+                    while (x != null)
+                    {
+
+                        if (x.variables.TryGetValue(key, out var value))
+                        {
+                            symbol = value;
+                            isClassScoped = x.IsClass();
+                            return true;
+                        }
+
+                        if (x.IsClass())
+                        {
+                            break;
+                        }
+
+                        x = x.enclosing;
+                    }
+                }
+                symbol = null;
+                isClassScoped = false;
+                return false;
+            }
+            public bool TryGetContainer(string key, out Symbol.Container symbol)
+            {
+                if (Current.containers.TryGetValue(key, out var value))
+                {
+                    symbol = value;
+                    return true;
+                }
+                symbol = null;
                 return false;
             }
 
-            public void DownContainerContext(string to, bool func=false)
-            {
-                if (!_DownContainerContext(to, Current))
-                {
-                    throw new Errors.AnalyzerError("Undefined Reference", $"The {(func? "function" : "class")} '{to}' does not exist in the current context");
-                }
-            }
+            // 'TryGetFullScope' Methods:
 
-
-            public void DownContainerContextFullScope(string to)
+            public bool TryGetContainerFullScope(string key, out Symbol.Container symbol)
             {
                 var x = Current;
+
                 while (x != null)
                 {
-                    if (_DownContainerContext(to, x))
+                    if (x.containers.TryGetValue(key, out var value))
                     {
-                        return;
+                        symbol = value;
+                        return true;
                     }
                     x = x.enclosing;
                 }
-                throw new Errors.AnalyzerError("Undefined Reference", $"The class '{to}' does not exist in the current context");
+
+                symbol = null;
+                return false;
             }
+
 
             public bool UpContext()
             {
@@ -149,133 +192,39 @@ namespace Raze
                 return true;
             }
 
-            public bool ContainsVariableKey(string key, bool classAccess, out Symbol symbol, out bool isClassScoped)
+            public void CreateBlock() 
             {
-                if (!classAccess)
+                Block nBlock = new(block);
+                block = nBlock;
+            }
+
+            public void RemoveUnderCurrent()
+            {
+                foreach (var key in block.keys)
                 {
-                    var res = QueryVariable(key);
-                    if (res.Any())
-                    {
-                        symbol = res.FirstOrDefault();
-                        isClassScoped = Current.IsClass();
-                        return true;
-                    }
+                    Current.variables.Remove(key);
                 }
-                else
-                {
-                    var x = Current;
-                    while (x != null)
-                    {
-                        var res = QueryVariable(key, x);
-                        if (res.Any())
-                        {
-                            symbol = res.FirstOrDefault();
-                            isClassScoped = x.IsClass();
-                            return true;
-                        }
-                        if (x.IsClass())
-                        {
-                            break;
-                        }
-                        x = x.enclosing;
-                    }
-                }
-                var topRes = QueryVariable(key, head);
-                if (topRes.Any())
-                {
-                    symbol = topRes.FirstOrDefault();
-                    isClassScoped = head.IsClass();
-                    return true;
-                }
-                symbol = null;
-                isClassScoped = false;
-                return false;
+                block = block.enclosing;
             }
 
-            public bool ContainsVariableKey(string key, out Symbol symbol, out bool isClassScoped)
-            {
-                return ContainsVariableKey(key, false, out symbol, out isClassScoped);
-            }
-
-            public bool ContainsVariableKey(string key, out Symbol symbol)
-            {
-                return ContainsVariableKey(key, out symbol, out _);
-            }
-
-            public bool ContainsVariableKey(string key)
-            {
-                return ContainsVariableKey(key, out _, out _);
-            }
-
-            private IEnumerable<Symbol> QueryVariable(string key)
-            {
-                return QueryVariable(key, Current);
-            }
-            private IEnumerable<Symbol> QueryVariable(string key, Symbol.Container x)
-            {
-                return x.variables.Where(x => x.Name.lexeme == key);
-            }
-
-            public bool ContainsContainerKey(string key, out Symbol.Container symbol, int constraint)
-            {
-                var x = Current;
-
-                symbol = null;
-                while (symbol == null && x != null)
-                {
-                    var res = QueryContainer(key, x).Where(x => (constraint == 0) ? x.IsFunc() : (constraint == 1) ? x.IsClass() : false);
-                    symbol = res.FirstOrDefault();
-                    x = x.enclosing;
-                }
-                return symbol != null;
-            }
-
-            public bool ContainsContainerKey(string key, out Symbol.Container symbol)
-            {
-                symbol = null;
-                var x = Current;
-                while (symbol == null && x != null)
-                {
-                    var res = QueryContainer(key, x);
-                    symbol = res.FirstOrDefault();
-                    x = x.enclosing;
-                }
-                return symbol != null;
-            }
-
-            public bool ContainsLocalContainerKey(string key)
-            {
-                var res = QueryContainer(key);
-                return res.Count() != 0;
-            }
-
-            private IEnumerable<Symbol.Container> QueryContainer(string key)
-            {
-                return QueryContainer(key, Current);
-            }
-
-            private IEnumerable<Symbol.Container> QueryContainer(string key, Symbol.Container x)
-            {
-                return x.containers.Where(x => x.Name.lexeme == key);
-            }
-
-            public void RemoveUnderCurrent(int startFrame)
-            {
-                if (startFrame - count == 0)
-                {
-                    return;
-                }
-                int x = count - startFrame;
-
-                Current.variables.RemoveRange(Current.variables.Count-x, x);
-                count -= x;
-            }
 
             public void TopContext() => Current = head;
 
             public bool CurrentIsTop() => Current == head;
 
             public void SetContext(Symbol.Container container) => Current = container;
+
+            class Block
+            {
+                public Block enclosing;
+                public List<string> keys;
+
+                public Block(Block enclosing)
+                {
+                    this.enclosing = enclosing;
+                    this.keys = new();
+                }
+            }
 
             abstract internal class Symbol
             {
@@ -298,8 +247,8 @@ namespace Raze
                 {
                     internal Container enclosing;
 
-                    internal List<Container> containers;
-                    internal List<Symbol> variables;
+                    internal Dictionary<string, Container> containers;
+                    internal Dictionary<string, Symbol> variables;
 
                     internal Expr.Definition self {
                         get
