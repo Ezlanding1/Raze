@@ -38,6 +38,11 @@ namespace Raze
                 {
                     blockExpr.Accept(this);
                 }
+
+                if (!expr._classBlock)
+                {
+                    symbolTable.RemoveUnderCurrent();
+                }
                 return null;
             }
 
@@ -199,8 +204,10 @@ namespace Raze
                 symbolTable.SetContext(symbolTable.GetContainer(expr.name.lexeme, true));
 
                 classAccess = !expr.modifiers["static"];
-                int arity = expr.arity;
-                for (int i = 0; i < arity; i++)
+
+                symbolTable.CreateBlock();
+
+                for (int i = 0; i < expr.arity; i++)
                 {
                     Expr.Parameter paramExpr = expr.parameters[i];
                     SetSize(paramExpr.type.lexeme, ref paramExpr.size);
