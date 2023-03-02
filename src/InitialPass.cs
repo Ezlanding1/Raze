@@ -264,7 +264,7 @@ namespace Raze
 
             private void SetPath(Expr.Definition definition)
             {
-                if (symbolTable.Current.self.QualifiedName != "")
+                if (symbolTable.Current.self != null && symbolTable.Current.self.QualifiedName != "")
                 {
                     definition.path = symbolTable.Current.self.QualifiedName + ".";
                 }

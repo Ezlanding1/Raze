@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Raze.Analyzer;
 
 namespace Raze
 {
@@ -14,7 +13,6 @@ namespace Raze
         {
             SymbolTable symbolTable = SymbolTableSingleton.SymbolTable;
             HashSet<Expr.Class> handledClasses;
-            bool classAccess;
 
             public MainPass(List<Expr> expressions) : base(expressions)
             {
@@ -59,74 +57,88 @@ namespace Raze
 
                 var x = expr.callee;
 
-                bool instanceCall;
+                bool instanceCall = false;
+                bool first = true;
 
-                if (symbolTable.TryGetContainerFullScope(x.name.lexeme, out SymbolTable.Symbol.Container topSymbol))
+                int nOff = 0;
+                
+                while (x is Expr.Get)
                 {
-                    symbolTable.SetContext(topSymbol);
-                    instanceCall = false;
-
-                    if (x is Expr.Get)
+                    if (first)
                     {
-                        x = ((Expr.Get)x).get;
-                    }
-                    while (x is Expr.Get)
-                    {
-                        symbolTable.SetContext(symbolTable.GetContainer(x.name.lexeme));
-                        x = ((Expr.Get)x).get;
-                    }
-
-                    if (!topSymbol.IsFunc())
-                    {
-                        symbolTable.SetContext(symbolTable.GetContainer(x.name.lexeme, true));
-                    }
-                }
-                else if (symbolTable.TryGetVariable(x.name.lexeme, out SymbolTable.Symbol topSymbol_I, out _, classAccess))
-                {
-                    if (topSymbol_I.IsClass())
-                    {
-                        symbolTable.SetContext((SymbolTable.Symbol.New)topSymbol_I);
-                        expr.stackOffset = ((SymbolTable.Symbol.New)topSymbol_I).newSelf.call.stackOffset;
-                        instanceCall = true;
-
-                        if (x is Expr.Get)
+                        if (symbolTable.TryGetContainerFullScope(x.name.lexeme, out SymbolTable.Symbol.Container topSymbol, 0))
                         {
-                            x = ((Expr.Get)x).get;
+                            instanceCall = false;
+                            symbolTable.SetContext(topSymbol);
                         }
-                        while (x is Expr.Get)
+                        else if (symbolTable.TryGetVariable(x.name.lexeme, out SymbolTable.Symbol topSymbol_I, out _, ClassAccess()))
                         {
-                            var symbol = symbolTable.GetVariable(x.name.lexeme);
-
-                            if (!symbol.IsClass())
+                            instanceCall = true;
+                            if (!topSymbol_I.IsClass())
                             {
                                 //
                                 throw new Exception();
                             }
-
-                            symbolTable.SetContext((SymbolTable.Symbol.New)symbol);
-                            x = ((Expr.Get)x).get;
+                            nOff = ((SymbolTable.Symbol.New)topSymbol_I).newSelf.call.stackOffset;
+                            symbolTable.SetContext((SymbolTable.Symbol.New)topSymbol_I);
                         }
-                        symbolTable.SetContext(symbolTable.GetContainer(x.name.lexeme, true));
+                        else
+                        {
+                            throw new Errors.AnalyzerError("Undefined Reference", $"The class '{x.name.lexeme}' does not exist in the current context");
+                        }
+                        first = false;
                     }
                     else
                     {
-                        // This Error is hit when calling a variable like an instance of a type. For Example:
-                        // string i = ""; i.FUNC();
-                        throw new Exception();
+                        if (!instanceCall)
+                        {
+                            symbolTable.SetContext(symbolTable.GetContainer(x.name.lexeme));
+                        }
+                        else
+                        {
+                            var symbol_I = symbolTable.GetVariable(x.name.lexeme);
+
+                            if (!symbol_I.IsClass())
+                            {
+                                //
+                                throw new Exception();
+                            }
+                            nOff = ((SymbolTable.Symbol.New)symbol_I).newSelf.call.stackOffset;
+                            symbolTable.SetContext((SymbolTable.Symbol.New)symbol_I);
+                        }
+                    }
+
+                    x = ((Expr.Get)x).get;
+                }
+
+                if (first)
+                {
+                    if (symbolTable.TryGetContainerFullScope(x.name.lexeme, out SymbolTable.Symbol.Container symbol, 1))
+                    {
+                        symbolTable.SetContext(symbol);
+                    }
+                    else
+                    {
+                        throw new Errors.AnalyzerError("Undefined Reference", $"The function '{x.name.lexeme}' does not exist in the current context");
                     }
                 }
                 else
                 {
-                    throw new Errors.AnalyzerError("Undefined Reference", $"The { ( (x is Expr.Get)? "class" : "function" ) } '{x.name.lexeme}' does not exist in the current context");
+                    symbolTable.SetContext(symbolTable.GetContainer(x.name.lexeme, true));
                 }
 
-                if (!symbolTable.Current.IsFunc())
+                if (instanceCall)
                 {
-                    //
-                    throw new Exception();
+                    expr.stackOffset = nOff;
                 }
 
                 var s = ((SymbolTable.Symbol.Function)symbolTable.Current).self;
+
+                if (s.constructor)
+                {
+                    throw new Errors.AnalyzerError("Constructor Called As Method", "A Constructor may not be called as a method of its class");
+                }
+
 
                 if (instanceCall && s.modifiers["static"])
                 {
@@ -137,10 +149,6 @@ namespace Raze
                     throw new Errors.AnalyzerError("Mathod Called From Static Context", "You cannot call an instance method from a static context");
                 }
 
-                if (s.constructor)
-                {
-                    throw new Errors.AnalyzerError("Constructor Called As Method", "A Constructor may not be called as a method of its class");
-                }
                 expr.internalFunction = s;
 
                 symbolTable.SetContext(context);
@@ -203,8 +211,6 @@ namespace Raze
             {
                 symbolTable.SetContext(symbolTable.GetContainer(expr.name.lexeme, true));
 
-                classAccess = !expr.modifiers["static"];
-
                 symbolTable.CreateBlock();
 
                 for (int i = 0; i < expr.arity; i++)
@@ -224,7 +230,7 @@ namespace Raze
 
             public override object? visitVariableExpr(Expr.Variable expr)
             {
-                if (symbolTable.TryGetVariable(expr.name.lexeme, out SymbolTable.Symbol symbol, out bool isClassScoped, classAccess))
+                if (symbolTable.TryGetVariable(expr.name.lexeme, out SymbolTable.Symbol symbol, out bool isClassScoped, ClassAccess()))
                 {
                     if (symbol.IsVariable())
                     {
@@ -234,7 +240,7 @@ namespace Raze
                         expr.stackOffset = s.stackOffset;
                         expr.type = s.type;
 
-                        if (isClassScoped || symbolTable.other.classScopedVars.Contains(s))
+                        if (symbolTable.Current.IsFunc() && (isClassScoped || symbolTable.other.classScopedVars.Contains(s)))
                         {
                             symbolTable.other.classScopedVars.Add(expr);
                         }
@@ -321,7 +327,6 @@ namespace Raze
 
                 symbolTable.SetContext((SymbolTable.Symbol.New)instanceContainer);
 
-                classAccess = true;
                 expr.get.Accept(this);
                 expr.type = expr.get.type;
                 expr.stackOffset = expr.get.stackOffset;
@@ -367,6 +372,11 @@ namespace Raze
                 }
             }
 
+            private bool ClassAccess()
+            {
+                return symbolTable.Current.IsFunc() && !((SymbolTable.Symbol.Function)symbolTable.Current).self.modifiers["static"];
+            }
+
             private void DownGet(Expr.Variable get, bool first=true)
             {
                 DownContainer(get, first);
@@ -387,7 +397,7 @@ namespace Raze
                 {
                     case true:
                         {
-                            if (symbolTable.TryGetContainerFullScope(get.name.lexeme, out var symbol))
+                            if (symbolTable.TryGetContainerFullScope(get.name.lexeme, out var symbol, 0))
                             {
                                 symbolTable.SetContext(symbol);
                             }

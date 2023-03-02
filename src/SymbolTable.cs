@@ -23,7 +23,7 @@ namespace Raze
 
         internal class SymbolTable
         {
-            private Symbol.Function head;
+            private Symbol.Class head;
             private Symbol.Container current;
             public Symbol.Container Current
             {
@@ -40,7 +40,8 @@ namespace Raze
 
             public SymbolTable()
             {
-                this.head = new Symbol.Function(new Expr.Function());
+                //
+                this.head = new Symbol.Class(null);
                 this.Current = this.head;
                 //
                 this.block = new(null);
@@ -163,7 +164,7 @@ namespace Raze
 
             // 'TryGetFullScope' Methods:
 
-            public bool TryGetContainerFullScope(string key, out Symbol.Container symbol)
+            public bool TryGetContainerFullScope(string key, out Symbol.Container symbol, int type)
             {
                 var x = Current;
 
@@ -171,8 +172,11 @@ namespace Raze
                 {
                     if (x.containers.TryGetValue(key, out var value))
                     {
-                        symbol = value;
-                        return true;
+                        if ((type == 0) ? value.IsClass() : (type == 1) ? value.IsFunc() : true)
+                        {
+                            symbol = value;
+                            return true;
+                        }
                     }
                     x = x.enclosing;
                 }
