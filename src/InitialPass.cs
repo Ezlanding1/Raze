@@ -92,9 +92,11 @@ namespace Raze
                 {
                     paramExpr.Accept(this);
                 }
+
                 expr.block.Accept(this);
 
                 symbolTable.UpContext();
+
                 return null;
             }
 
@@ -114,6 +116,11 @@ namespace Raze
 
             public override object? visitClassExpr(Expr.Class expr)
             {
+                if (symbolTable.Current.IsFunc())
+                {
+                    throw new Errors.AnalyzerError("Invalid Class Definition", "A class definition may be only within another class");
+                }
+
                 if (symbolTable.TryGetContainer(expr.name.lexeme, out _))
                 {
                     throw new Errors.AnalyzerError("Double Declaration", $"A class named '{expr.name.lexeme}' is already defined in this scope");

@@ -170,6 +170,12 @@ namespace Raze
 
                 while (x != null)
                 {
+                    if (x.IsFunc())
+                    {
+                        x = x.enclosing;
+                        continue;
+                    }
+
                     if (x.containers.TryGetValue(key, out var value))
                     {
                         if ((type == 0) ? value.IsClass() : (type == 1) ? value.IsFunc() : true)
@@ -186,14 +192,10 @@ namespace Raze
             }
 
 
-            public bool UpContext()
+            public void UpContext()
             {
-                if (Current.enclosing == null)
-                {
-                    return false;
-                }
-                Current = Current.enclosing;
-                return true;
+                Current = Current.enclosing 
+                    ?? throw new Errors.ImpossibleError("Up Context Called On 'GLOBAL' context (no enclosing)");
             }
 
             public void CreateBlock() 
@@ -251,8 +253,9 @@ namespace Raze
                 {
                     internal Container enclosing;
 
-                    internal Dictionary<string, Container> containers;
                     internal Dictionary<string, Symbol> variables;
+
+                    internal abstract Dictionary<string, Symbol.Container> containers { get; set; }
 
                     internal Expr.Definition self {
                         get
@@ -265,7 +268,6 @@ namespace Raze
 
                     public Container(int type) : base(type)
                     {
-                        this.containers = new();
                         this.variables = new();
                         this.enclosing = null;
                     }
@@ -275,10 +277,19 @@ namespace Raze
                 {
                     public override Token Name { get { return self.name; } }
 
+                    internal override Dictionary<string, Container> containers 
+                    { 
+                        get => _containers; 
+                        set => _containers = value; 
+                    }
+
+                    internal Dictionary<string, Container> _containers;
+
                     new internal Expr.Class self;
 
                     public Class(Expr.Class self) : base(0)
                     {
+                        this._containers = new();
                         this.self = self;
                     }
                 }
@@ -301,6 +312,12 @@ namespace Raze
                 internal class Function : Container
                 {
                     public override Token Name { get { return self.name; } }
+
+                    internal override Dictionary<string, Container> containers 
+                    {
+                        get => throw new Errors.ImpossibleError("Requested Access of function's containers (null)");
+                        set => throw new Errors.ImpossibleError("Requested Access of function's containers (null)");
+                    }
 
                     new internal Expr.Function self;
 

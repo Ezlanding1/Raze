@@ -171,10 +171,8 @@ namespace Raze
                 expr.block.Accept(this);
 
 
-                if (!symbolTable.UpContext())
-                {
-                    throw new Errors.ImpossibleError("Up Context Called On 'GLOBAL' context (no enclosing)");
-                }
+                symbolTable.UpContext();
+
                 return null;
             }
 
@@ -328,10 +326,13 @@ namespace Raze
                 symbolTable.SetContext((SymbolTable.Symbol.New)instanceContainer);
 
                 expr.get.Accept(this);
+
                 expr.type = expr.get.type;
                 expr.stackOffset = expr.get.stackOffset;
                 expr.size = expr.get.size;
+
                 symbolTable.UpContext();
+
                 return null;
             }
 
