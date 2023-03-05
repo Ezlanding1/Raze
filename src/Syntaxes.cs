@@ -18,32 +18,18 @@ namespace Raze
                 {
                     header = new Instruction.Comment("Raze Compiler Version ALPHA 0.0.0 Intel_x86-64 NASM");
                 }
-                public override List<List<Instruction>> GenerateHeaderInstructions(Expr.Function main)
+                public override List<Instruction> GenerateHeaderInstructions(Expr.Function main)
                 {
-                    return new List<List<Instruction>>()
+                    return new List<Instruction>()
                     {
-                        {
-                            new List<Instruction>()
-                            {
-                                { new Instruction.Global("_start") },
-                                { new Instruction.Section("text") },
-                                { new Instruction.Function("_start") },
-                                { new Instruction.Unary("CALL", main.QualifiedName) },
-                                { new Instruction.Binary("MOV", "RDI", (main._returnType == "number")? "RAX" : "0") },
-                                { new Instruction.Binary("MOV", "RAX", "60") },
-                                { new Instruction.Zero("SYSCALL") }
-                            }
-                        }
+                        { new Instruction.Global("_start") },
+                        { new Instruction.Section("text") },
+                        { new Instruction.Function("_start") },
+                        { new Instruction.Unary("CALL", main.QualifiedName) },
+                        { new Instruction.Binary("MOV", "RDI", (main._returnType == "number") ? "RAX" : "0") },
+                        { new Instruction.Binary("MOV", "RAX", "60") },
+                        { new Instruction.Zero("SYSCALL") }
                     };
-                }
-
-                public override void Run(List<List<Instruction>> instructions)
-                {
-                    foreach (var instructionsList in instructions)
-                    {
-                        Run(instructionsList);
-                    }
-                    Output.AppendLine();
                 }
 
                 public override void Run(List<Instruction> instructions)
@@ -162,31 +148,17 @@ namespace Raze
                 {
                     header = new Instruction.Comment("Raze Compiler Version ALPHA 0.0.0 Intel_x86-64 GAS");
                 }
-                public override List<List<Instruction>> GenerateHeaderInstructions(Expr.Function main){
-                    return new List<List<Instruction>>()
+                public override List<Instruction> GenerateHeaderInstructions(Expr.Function main){
+                    return new List<Instruction>()
                     {
-                        {
-                            new List<Instruction>()
-                            {
-                                { new Instruction.Section("text") },
-                                { new Instruction.Global("main") },
-                                { new Instruction.Function("main") },
-                                { new Instruction.Unary("CALL", main.QualifiedName) },
-                                { new Instruction.Binary("MOV", "RDI", (main._returnType == "number")? "RAX" : "0") },
-                                { new Instruction.Binary("MOV", "RAX", "60") },
-                                { new Instruction.Zero("SYSCALL") }
-                            }
-                        }
+                        { new Instruction.Section("text") },
+                        { new Instruction.Global("main") },
+                        { new Instruction.Function("main") },
+                        { new Instruction.Unary("CALL", main.QualifiedName) },
+                        { new Instruction.Binary("MOV", "RDI", (main._returnType == "number")? "RAX" : "0") },
+                        { new Instruction.Binary("MOV", "RAX", "60") },
+                        { new Instruction.Zero("SYSCALL") }
                     };
-                }
-
-                public override void Run(List<List<Instruction>> instructions)
-                {
-                    foreach (var instructionsList in instructions)
-                    {
-                        Run(instructionsList);
-                        Console.WriteLine();
-                    }
                 }
 
                 public override void Run(List<Instruction> instructions)

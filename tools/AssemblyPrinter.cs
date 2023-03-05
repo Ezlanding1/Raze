@@ -10,15 +10,15 @@ namespace Raze.tools
 {
     internal class AssemblyPrinter
     {
-        List<List<Instruction>> instructions;
+        List<Instruction> instructions;
         List<Instruction> data;
-        public AssemblyPrinter(List<List<Instruction>> instructions, List<Instruction> data)
+        public AssemblyPrinter(List<Instruction> instructions, List<Instruction> data)
         {
             this.instructions = instructions;
             this.data = data;
         }
 
-        public static void PrintAssembly(List<List<Instruction>> instructions, List<Instruction> data, Expr.Function main)
+        public static void PrintAssembly(List<Instruction> instructions, List<Instruction> data, Expr.Function main)
         {
             AssemblyPrinter printer = new(instructions, data);
             printer.PrintAssembly(main);

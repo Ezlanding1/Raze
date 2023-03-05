@@ -102,6 +102,8 @@ namespace Raze
 
             public override object? visitCallExpr(Expr.Call expr)
             {
+                if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
+
                 foreach (var argExpr in expr.arguments)
                 {
                     argExpr.Accept(this);
@@ -111,6 +113,8 @@ namespace Raze
 
             public override object? visitDeclareExpr(Expr.Declare expr)
             {
+                if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
+
                 return base.visitDeclareExpr(expr);
             }
 
@@ -143,6 +147,8 @@ namespace Raze
             }
             public override object? visitConditionalExpr(Expr.Conditional expr)
             {
+                if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
+
                 if (expr.type.type == "if")
                 {
                     waitingIf = new Tuple<bool, int, Expr.If>(true, index, (Expr.If)expr);
@@ -183,6 +189,8 @@ namespace Raze
 
             public override object? visitNewExpr(Expr.New expr)
             {
+                if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
+
                 return null;
             }
 
@@ -192,6 +200,7 @@ namespace Raze
                 {
                     throw new Errors.AnalyzerError("Top Level Assembly Block", "Assembly Blocks must be placed in an unsafe function");
                 }
+
                 if (!symbolTable.Current.IsFunc())
                 {
                     throw new Errors.AnalyzerError("ASM Block Not In Function", "Assembly Blocks must be placed in functions");
@@ -217,6 +226,8 @@ namespace Raze
 
             public override object? visitVariableExpr(Expr.Variable expr)
             {
+                if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
+
                 return null;
             }
 
@@ -241,13 +252,12 @@ namespace Raze
 
             public override object? visitIsExpr(Expr.Is expr)
             {
+                if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
+
                 if (!(expr.left is Expr.Variable))
                 {
                     throw new Errors.AnalyzerError("Invalid 'is' Operator", "the first operand of 'is' operator must be a variable");
                 }
-                return null;
-                
-                expr.right.Accept(this);
                 return null;
             }
 

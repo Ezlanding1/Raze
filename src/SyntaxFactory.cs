@@ -12,14 +12,13 @@ namespace Raze
         {
             public abstract class  ISyntaxFactory
             {
-                public abstract void Run(List<List<Instruction>> instructions);
                 public abstract void Run(List<Instruction> instructions);
                 public abstract void Run(Instruction instruction);
 
                 public StringBuilder Output = new();
 
                 public Instruction.Comment header;
-                public abstract List<List<Instruction>> GenerateHeaderInstructions(Expr.Function main);
+                public abstract List<Instruction> GenerateHeaderInstructions(Expr.Function main);
             }
 
             public class SyntaxTypeCreator

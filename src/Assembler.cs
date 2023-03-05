@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -10,10 +12,9 @@ namespace Raze
     {
         List<Expr> expressions;
         List<Instruction> data;
-        List<List<Instruction>> instructions;
+        List<Instruction> instructions;
 
         List<bool> footerType;
-        int index;
         int conditionalCount;
         string ConditionalLabel
         {
@@ -35,12 +36,11 @@ namespace Raze
             this.instructions = new();
             this.conditionalCount = 0;
             this.dataCount = 0;
-            this.index = -1;
             this.lastJump = "";
             this.footerType = new();
         }
         
-        internal (List<List<Instruction>>, List<Instruction>) Assemble()
+        internal (List<Instruction>, List<Instruction>) Assemble()
         {
             foreach (Expr expr in expressions)
             {
@@ -114,12 +114,10 @@ namespace Raze
 
         public Instruction.Register? visitClassExpr(Expr.Class expr)
         {
-            index++;
             foreach (var blockExpr in expr.block.block)
             {
                 blockExpr.Accept(this);
             }
-            index--;
             return null;
         }
 
@@ -140,7 +138,6 @@ namespace Raze
 
         public Instruction.Register? visitFunctionExpr(Expr.Function expr)
         {
-            index++;
             bool leafFunc = ((expr.leaf || expr.size == 0) && expr.size <= 128);
             emit(new Instruction.Function(expr.QualifiedName));
 
@@ -150,9 +147,9 @@ namespace Raze
             {
                 emit(new Instruction.Unary("PUSH", "RBP"));
                 emit(new Instruction.Binary("MOV", "RBP", "RSP"));
-                    sub = new Instruction.Binary("SUB", "RSP", "TMP");
-                    emit(sub);
-                }
+                sub = new Instruction.Binary("SUB", "RSP", "TMP");
+                emit(sub);
+            }
             else
             {
                 emit(new Instruction.Unary("PUSH", "RBP"));
@@ -171,10 +168,10 @@ namespace Raze
             if (!leafFunc)
             {
                 if (expr.size > 128)
-            {
+                {
 
-                sub.operand2 = new Instruction.Register((expr.size - 128).ToString());
-            }
+                    sub.operand2 = new Instruction.Register((expr.size - 128).ToString());
+                }
                 else
                 {
                     sub.operand2 = new Instruction.Register(expr.size.ToString());
@@ -185,7 +182,6 @@ namespace Raze
             DoFooter();
 
             footerType.RemoveAt(footerType.Count - 1);
-            index--;
 
             if (expr._returnType != "void")
             {
@@ -299,8 +295,6 @@ namespace Raze
                 emit(new Instruction.Function(ConditionalLabel));
                 tJump.operand = new Instruction.FunctionRef(ConditionalLabel);
 
-                index++;
-                instructions.Add(new());
                 conditionalCount++;
                 return null;
             }
@@ -431,6 +425,8 @@ namespace Raze
         {
             if (value.IsLiteral())
             {
+                //int literalSize = SizeOfLiteral(value.name, ((Instruction.Literal)value).type);
+
                 // make sure type is always the type in the correct format (INTEGER, BOOLEAN, etc.)
                 if (size <= InstructionInfo.MaxLiteral)
                 {
@@ -501,21 +497,42 @@ namespace Raze
                 dataCount++;
             }
         }
+
         private void emit(Instruction instruction)
         {
-            while (instructions.Count <= index)
-            {
-                instructions.Add(new List<Instruction>());
-            }
-            if (index < 0)
-            {
-                throw new Errors.BackendError("Top Level Code", $"Top level code is not allowed");
-            }
-            instructions[index].Add(instruction);
+            instructions.Add(instruction);
         }
+
         private void emitData(Instruction.Data instruction)
         {
             data.Add(instruction);
+        }
+
+        private int SizeOfLiteral(string literal, string type)
+        { return 8; }
+
+        private long _SizeOfLiteral(string literal, string type)
+        {
+            switch (type)
+            {
+                case var value when value == Parser.Literals[0]:
+                    return BigInteger.Parse(literal).GetBitLength();
+                case var value when value == Parser.Literals[1]:
+                    return BigInteger.Parse(literal).GetBitLength();
+                case var value when value == Parser.Literals[2]:
+                    // 1 Char = 8 Bits
+                    return (literal.Length * 8);
+                case var value when value == Parser.Literals[3]:
+                    // Remove the '0b' prefix
+                    return literal[2..].Length;
+                case var value when value == Parser.Literals[4]:
+                    // Remove the 'x' of the prefix
+                    return BigInteger.Parse(literal[0] + literal[2..], NumberStyles.AllowHexSpecifier).GetBitLength();
+                case var value when value == Parser.Literals[5]:
+                    return 8;
+                default:
+                    throw new Exception();
+            };
         }
 
     }
