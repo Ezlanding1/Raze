@@ -88,13 +88,13 @@ namespace Raze
                     Expr.Parameter paramExpr = expr.internalFunction.parameters[i];
 
                     var assignType = expr.arguments[i].Accept(this);
-                    if (!MatchesType(paramExpr.type.lexeme, assignType))
+                    if (!MatchesType(paramExpr.stack.type.ToString(), assignType))
                     {
-                        throw new Errors.AnalyzerError("Type Mismatch", $"You cannot assign type '{assignType}' to type '{paramExpr.type.lexeme}'");
+                        throw new Errors.AnalyzerError("Type Mismatch", $"You cannot assign type '{assignType}' to type '{paramExpr.stack.type.ToString()}'");
                     }
                 }
                 callReturn = true;
-                return expr.internalFunction._returnType;
+                return expr.internalFunction._returnType.ToString();
             }
 
             public override string visitClassExpr(Expr.Class expr)
@@ -107,9 +107,9 @@ namespace Raze
             public override string visitDeclareExpr(Expr.Declare expr)
             {
                 string assignType = expr.value.Accept(this);
-                if (!MatchesType(expr.type.lexeme, assignType))
+                if (!MatchesType(expr.stack.type.ToString(), assignType))
                 {
-                    throw new Errors.AnalyzerError("Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.type.lexeme}'");
+                    throw new Errors.AnalyzerError("Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.stack.type.ToString()}'");
                 }
 
                 return "void";
@@ -128,14 +128,14 @@ namespace Raze
                     int _returnCount = 0;
                     foreach (var ret in _return)
                     {
-                        if (!MatchesType(expr._returnType, ret.Item1))
+                        if (!MatchesType(expr._returnType.ToString(), ret.Item1))
                         {
                             throw new Errors.AnalyzerError("Type Mismatch", $"You cannot return type '{ret.Item1}' from type '{expr._returnType}'");
                         }
 
-                        if (primitives.ContainsKey(expr._returnType))
+                        if (primitives.ContainsKey(expr._returnType.ToString()))
                         {
-                            ret.Item3.size = primitives[expr._returnType].size;
+                            ret.Item3.size = primitives[expr._returnType.ToString()].size;
                         }
 
                         if (!ret.Item2)
@@ -143,7 +143,7 @@ namespace Raze
                             _returnCount++;
                         }
                     }
-                    if (_returnCount == 0 && expr._returnType != "void")
+                    if (_returnCount == 0 && expr._returnType.name.type != "void")
                     {
                         if (!expr.modifiers["unsafe"])
                         {
@@ -171,6 +171,8 @@ namespace Raze
 
             public override string visitGetExpr(Expr.Get expr)
             {
+                if (expr.get == null) { return null; }
+
                 return expr.get.Accept(this);
             }
 
@@ -225,8 +227,7 @@ namespace Raze
 
             public override string visitVariableExpr(Expr.Variable expr)
             {
-                return (expr.define.Item1)? expr.define.Item2.Accept(this)
-                       : (expr.stackOffset != null)? expr.type.lexeme : "null";
+                return (expr.define.Item1)? expr.define.Item2.Accept(this): expr.stack.type.ToString();
             }
 
             public override string visitReturnExpr(Expr.Return expr)
@@ -243,17 +244,17 @@ namespace Raze
                 {
                     string operand = expr.value.Accept(this);
 
-                    if (!(Primitives.PrimitiveOps(expr.variable.type.lexeme))
-                            ._operators.ContainsKey((expr.op.lexeme + " BIN", expr.variable.type.lexeme, operand)))
+                    if (!(Primitives.PrimitiveOps(expr.member.variable.stack.type.ToString()))
+                            ._operators.ContainsKey((expr.op.lexeme + " BIN", expr.member.variable.stack.type.ToString(), operand)))
                     {
-                        throw new Errors.AnalyzerError("Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on types '{expr.variable.type}' and '{operand}'");
+                        throw new Errors.AnalyzerError("Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on types '{expr.member.variable.stack.type}' and '{operand}'");
                     }
                 }
                 else
                 {
-                    if (!MatchesType(expr.variable.type.lexeme, assignType))
+                    if (!MatchesType(expr.member.variable.stack.type.ToString(), assignType))
                     {
-                        throw new Errors.AnalyzerError("Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.variable.type.lexeme}'");
+                        throw new Errors.AnalyzerError("Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.member.variable.stack.type.ToString()}'");
                     }
                 }
                 return "void";

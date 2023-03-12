@@ -105,13 +105,17 @@ namespace Raze
 
         }
 
-        public class Declare : Variable
+        public class Declare : Expr
         {
+            public Token name;
             public Expr value;
 
-            public Declare(Variable var, Expr value)
-                : base(var)
+            public StackData stack = new();
+
+            public Declare(Get type, Token name, Expr value)
             {
+                this.stack.type = type;
+                this.name = name;
                 this.value = value;
             }
 
@@ -190,13 +194,13 @@ namespace Raze
 
         public class Call : Expr
         {
-            public Variable callee;
+            public Get callee;
             public bool constructor;
             public Function internalFunction;
             public List<Expr> arguments;
             public int stackOffset;
             
-            public Call(Variable callee, List<Expr> arguments)
+            public Call(Get callee, List<Expr> arguments)
             {
                 this.callee = callee;
                 this.arguments = arguments;
@@ -209,18 +213,26 @@ namespace Raze
 
         }
 
-        public class Get : Variable
+        public class Get : Expr
         {
-            public Variable get;
+            public Token name;
+            public Get get;
 
-            public Get(Variable getter, Variable get)
-                : base(getter)
+            public Get(Token getter)
             {
+                name = getter;
+                get = null;
+            }
+
+            public Get(Get getter, Get get)
+            {
+                this.name = getter.name;
                 this.get = get;
             }
-            public Get(Token getter, Variable get)
-                : base(getter)
+
+            public Get(Token getter, Get get)
             {
+                this.name = getter;
                 this.get = get;
             }
 
@@ -231,7 +243,7 @@ namespace Raze
 
             public override string ToString()
             {
-                return name.lexeme.ToString() + "." + get.ToString();
+                return name.lexeme.ToString() + ((get != null) ? ("." + get.ToString()) : "");
             }
         }
 
@@ -267,38 +279,68 @@ namespace Raze
                 return visitor.visitAssemblyExpr(this);
             }
         }
+        
+        public class Member : Expr
+        {
+            public Variable variable;
+            public Get get;
 
-        public class Variable : Expr
+            public Member(Get get)
+            {
+                this.get = get;
+
+                GetVariableReference();
+            }
+
+            public void GetVariableReference()
+            {
+                if (get.get == null)
+                {
+                    get = new Variable(get.name);
+                    this.variable = (Variable)get;
+
+                    return;
+                }
+
+                Get? x = get;
+
+                while (x.get.get != null)
+                {
+                    x = x.get;
+                }
+
+                x.get = new Variable(x.get.name);
+                this.variable = (Variable)x.get;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return this.get.Accept(visitor);
+            }
+        }
+
+        // Note: Due to C# limitations on multiple inheritance, the StackData class will be a member of the classes that needs its fields 
+        public class StackData
+        {
+            public Get type;
+            public int size;
+            public int stackOffset;
+        }
+
+        public class Variable : Get
         {
             public (bool, Literal) define;
 
-            public Token name;
-            public Token type;
-            public int size;
-            public int stackOffset;
+            public StackData stack = new();
 
-            public Variable(Token name)
+            public Variable(Token name) : base(name)
             {
                 this.name = name;
             }
 
-            public Variable(Token type, Token name) : this(name)
+            public Variable(Get type, Token name) : base(name)
             {
-                this.type = type;
-            }
-
-            public Variable(Token type, Token name, int size) : this(type, name)
-            {
-                this.size = size;
-            }
-
-
-            
-
-            public Variable(Variable @this)
-            {
-                this.name = @this.name;
-                this.type = @this.type;
+                this.stack.type = type;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -308,7 +350,7 @@ namespace Raze
 
             public override string ToString()
             {
-                return name.lexeme.ToString();
+                return name.lexeme;
             }
         }
 
@@ -361,17 +403,21 @@ namespace Raze
             }
         }
 
-        public class Parameter : Variable
+        public class Parameter : Expr
         {
-            public Parameter(Token type, Token name)
-                : base(type, name)
+            public Token name;
+
+            public StackData stack = new();
+
+            public Parameter(Get type, Token name)
             {
-                this.type = type;
+                this.stack.type = type;
+                this.name = name;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
             {
-                return visitor.visitVariableExpr(this);
+                return this.stack.type.Accept(visitor);
             }
         }
 
@@ -399,9 +445,10 @@ namespace Raze
             public abstract override T Accept<T>(IVisitor<T> visitor);
         }
 
-        public class Function : Definition {
+        public class Function : Definition
+        {
             public List<Parameter> parameters;
-            public string _returnType;
+            public Get _returnType;
             public int _returnSize;
             public int arity
             {
@@ -425,7 +472,7 @@ namespace Raze
                 };
             }
 
-            public void Add(string _returnType, Token name, List<Parameter> parameters, Block block)
+            public void Add(Get _returnType, Token name, List<Parameter> parameters, Block block)
             {
                 base.name = name;
                 base.block = block;
@@ -506,20 +553,20 @@ namespace Raze
 
         public class Assign : Expr
         {
-            public Variable variable;
+            public Member member;
             public Token? op;
             public Expr value;
 
-            public Assign(Variable variable, Token op, Expr value)
+            public Assign(Member member, Token op, Expr value)
             {
-                this.variable = variable;
+                this.member = member;
                 this.op = op;
                 this.value = value;
             }
 
-            public Assign(Variable variable, Expr value)
+            public Assign(Member member, Expr value)
             {
-                this.variable = variable;
+                this.member = member;
                 this.value = value;
             }
 
@@ -549,11 +596,11 @@ namespace Raze
         public class Is : Expr
         {
             public Expr left;
-            public Variable right;
+            public Get right;
 
             public string value;
 
-            public Is(Expr left, Variable right)
+            public Is(Expr left, Get right)
             {
                 this.left = left;
                 this.right = right;

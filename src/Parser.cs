@@ -54,36 +54,29 @@ namespace Raze
                 if (definitionType.type == "function")
                 {
                     var function = new Expr.Function();
-                    string _returnType;
+                    Expr.Get _return;
+
+                    while (function.modifiers.ContainsKey(current.lexeme))
+                    {
+                        function.modifiers[current.lexeme] = true;
+                        advance();
+                    }
+
                     if (peek().type == "IDENTIFIER")
                     {
-                        if (!function.modifiers.ContainsKey(current.lexeme))
+                        Expect("IDENTIFIER", "function return type");
+                        _return = new(previous());
+
+                        if (TypeMatch("DOT"))
                         {
-                            Expect("IDENTIFIER", "function return type");
-                            _returnType = previous().lexeme;
-                        }
-                        else
-                        {
-                            _returnType = "void";
+                            _return = GetGetter(_return);
                         }
                     }
                     else
                     {
-                        _returnType = "void";
+                        _return = new(new Token("void", "void"));
                     }
-                    while (peek().type != "LPAREN")
-                    {
-                        Expect("IDENTIFIER", "an identifier as a function modifier");
-                        var modifier = previous();
-                        if (function.modifiers.ContainsKey(previous().lexeme))
-                        {
-                            function.modifiers[modifier.lexeme] = true;
-                        }
-                        else
-                        {
-                            throw new Errors.ParseError("Invalid Modifier", $"The modifier '{modifier.lexeme}' does not exist");
-                        }
-                    }
+
                     Expect("IDENTIFIER", definitionType.type + " name");
                     Token name = previous();
                     Expect("LPAREN", "'(' after function name");
@@ -91,7 +84,13 @@ namespace Raze
                     while (!TypeMatch("RPAREN"))
                     {
                         Expect("IDENTIFIER", "identifier as function parameter type");
-                        Token type = previous();
+                        Expr.Get type = new(previous());
+
+                        if (TypeMatch("DOT"))
+                        {
+                            type = GetGetter(type);
+                        }
+
                         Expect("IDENTIFIER", "identifier as function parameter");
                         Token variable = previous();
 
@@ -106,7 +105,7 @@ namespace Raze
                             throw new Errors.ParseError("Unexpected End In Function Parameters", $"Function '{name.lexeme}' reached an unexpected end during it's parameters");
                         }
                     }
-                    function.Add(_returnType, name, parameters, GetBlock(definitionType.type));
+                    function.Add(_return, name, parameters, GetBlock(definitionType.type));
                     return function;
                 }
                 else if (definitionType.type == "class")
@@ -326,7 +325,7 @@ namespace Raze
             while (!isAtEnd() && TypeMatch("is"))
             {
                 Expect("IDENTIFIER", "type after 'is' operator");
-                var variable = new Expr.Variable(previous());
+                var variable = new Expr.Get(previous());
                  expr = new Expr.Is(expr, TypeMatch("DOT")? 
                      GetGetter(variable)
                      : variable
@@ -355,7 +354,7 @@ namespace Raze
                 if (TypeMatch("IDENTIFIER"))
                 {
                     Expr expr;
-                    Expr.Variable variable = new Expr.Variable(previous());
+                    Expr.Get variable = new Expr.Get(previous());
 
                     if (TypeMatch("DOT"))
                     {
@@ -363,12 +362,12 @@ namespace Raze
                     }
                     if (TypeMatch("EQUALS"))
                     {
-                        expr = new Expr.Assign(variable, NoSemicolon());
+                        expr = new Expr.Assign(new Expr.Member(variable), NoSemicolon());
                     }
                     else if (TypeMatch(new string[] { "PLUS", "MINUS", "MULTIPLY", "DIVIDE", "MODULO" }, new string[] { "EQUALS" }))
                     {
                         var sign = tokens[index-2];
-                        expr = new Expr.Assign(variable, sign, NoSemicolon());
+                        expr = new Expr.Assign(new Expr.Member(variable), sign, NoSemicolon());
                     }
                     else if (TypeMatch("PLUSPLUS", "MINUSMINUS"))
                     {
@@ -376,11 +375,10 @@ namespace Raze
                     }
                     else if (TypeMatch("IDENTIFIER"))
                     {
-                        variable.type = new("IDENTIFIER", variable.ToString());
-                        variable.name = previous();
+                        var name = previous();
                         Expect("EQUALS", "'=' when declaring variable");
                         Expr value = NoSemicolon();
-                        expr = new Expr.Declare(variable, value);
+                        expr = new Expr.Declare(variable, name, value);
                     }
                     else if (TypeMatch("LPAREN"))
                     {
@@ -388,7 +386,7 @@ namespace Raze
                     }
                     else
                     {
-                        expr = variable;
+                        expr = new Expr.Member(variable);
                     }
                     return expr;
                 }
@@ -412,7 +410,7 @@ namespace Raze
                 if (TypeMatch("new"))
                 {
                     Expect("IDENTIFIER", "class name after 'new' keyword");
-                    Expr.Variable variable = new Expr.Variable(previous());
+                    Expr.Get variable = new Expr.Get(previous());
 
                     if (TypeMatch("DOT"))
                     {
@@ -435,11 +433,11 @@ namespace Raze
             return null;
         }
 
-        private Expr.Variable GetGetter(Expr.Variable getter)
+        private Expr.Get GetGetter(Expr.Get getter)
         {
             Expect("IDENTIFIER", "variable name after '.'");
             
-            Expr.Variable get = new Expr.Variable(previous());
+            Expr.Get get = new Expr.Get(previous());
             if (TypeMatch("DOT"))
             {
                 get = GetGetter(get);
@@ -453,7 +451,7 @@ namespace Raze
             return new Errors.ParseError("Expression Reached Unexpected End", $"Expression '{((previous() != null)? previous().lexeme : "")}' reached an unexpected end");
         }
 
-        private Expr.Call Call(Expr.Variable name)
+        private Expr.Call Call(Expr.Get name)
         {
             return new Expr.Call(name, GetArgs());
         }

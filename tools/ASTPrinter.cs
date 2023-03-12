@@ -38,7 +38,7 @@ namespace Raze.Tools
             }
             else if (expr is Expr.Variable)
             {
-                PrintAST(((Expr.Variable)expr).type);
+                PrintAST(((Expr.Variable)expr).stack.type);
                 PrintAST(((Expr.Variable)expr).name);
             }
             else if (expr is Expr.Unary)
@@ -157,7 +157,6 @@ namespace Raze.Tools
 
         public object? visitGetExpr(Expr.Get expr)
         {
-            PrintAST(expr.type);
             PrintAST(expr.name);
             PrintAST(expr.get);
             return null;
@@ -184,14 +183,14 @@ namespace Raze.Tools
 
         public object? visitVariableExpr(Expr.Variable expr)
         {
-            PrintAST(expr.type);
+            PrintAST(expr.stack.type);
             PrintAST(expr.name);
             return null;
         }
 
         public object? visitDeclareExpr(Expr.Declare expr)
         {
-            PrintAST(expr.type);
+            PrintAST(expr.stack.type);
             PrintAST(expr.name);
             PrintAST(expr.value);
             return null;
@@ -220,7 +219,7 @@ namespace Raze.Tools
         public object? visitAssignExpr(Expr.Assign expr)
         {
             PrintAST(expr.value);
-            PrintAST(expr.variable);
+            PrintAST(expr.member);
             return null;
         }
 

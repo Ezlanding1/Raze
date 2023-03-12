@@ -62,7 +62,7 @@ namespace Raze
 
                 int nOff = 0;
                 
-                while (x is Expr.Get)
+                while (x.get != null)
                 {
                     if (first)
                     {
@@ -192,9 +192,9 @@ namespace Raze
                 }
                 else
                 {
-                    SetSize(expr.type.lexeme, ref expr.size);
+                    SetSize(expr.stack.type.ToString(), ref expr.stack.size);
                     base.visitDeclareExpr(expr);
-                    symbolTable.Add(expr);
+                    symbolTable.Add(expr.stack, name);
                 }
                 
                 return null;
@@ -214,8 +214,8 @@ namespace Raze
                 for (int i = 0; i < expr.arity; i++)
                 {
                     Expr.Parameter paramExpr = expr.parameters[i];
-                    SetSize(paramExpr.type.lexeme, ref paramExpr.size);
-                    symbolTable.Add(paramExpr);
+                    SetSize(paramExpr.stack.type.ToString(), ref paramExpr.stack.size);
+                    symbolTable.Add(paramExpr.stack, paramExpr.name);
                 }
 
                 expr.block.Accept(this);
@@ -234,13 +234,13 @@ namespace Raze
                     {
                         var s = ((SymbolTable.Symbol.Variable)symbol).self;
 
-                        expr.size = s.size;
-                        expr.stackOffset = s.stackOffset;
-                        expr.type = s.type;
+                        expr.stack.size = s.size;
+                        expr.stack.stackOffset = s.stackOffset;
+                        expr.stack.type = s.type;
 
                         if (symbolTable.Current.IsFunc() && (isClassScoped || symbolTable.other.classScopedVars.Contains(s)))
                         {
-                            symbolTable.other.classScopedVars.Add(expr);
+                            symbolTable.other.classScopedVars.Add(expr.stack);
                         }
 
                     }
@@ -274,8 +274,7 @@ namespace Raze
 
             public override object? visitAssignExpr(Expr.Assign expr)
             {
-                expr.variable.Accept(this);
-
+                expr.member.Accept(this);
                 base.visitAssignExpr(expr);
                 return null;
             }
@@ -327,10 +326,6 @@ namespace Raze
 
                 expr.get.Accept(this);
 
-                expr.type = expr.get.type;
-                expr.stackOffset = expr.get.stackOffset;
-                expr.size = expr.get.size;
-
                 symbolTable.UpContext();
 
                 return null;
@@ -342,7 +337,7 @@ namespace Raze
                 {
                     if (symbol.IsVariable())
                     {
-                        expr.value = ((SymbolTable.Symbol.Variable)symbol).self.type.lexeme == expr.right.ToString()? "1" : "0";
+                        expr.value = ((SymbolTable.Symbol.Variable)symbol).self.type.ToString() == expr.right.ToString()? "1" : "0";
 
                     }
                     else if (symbol.IsDefine())
@@ -378,12 +373,14 @@ namespace Raze
                 return symbolTable.Current.IsFunc() && !((SymbolTable.Symbol.Function)symbolTable.Current).self.modifiers["static"];
             }
 
-            private void DownGet(Expr.Variable get, bool first=true)
+            private void DownGet(Expr.Get get, bool first=true)
             {
+                if (get == null) { return; }
+
                 DownContainer(get, first);
-                if (get is Expr.Get)
+                if (!(get is Expr.Variable))
                 {
-                    DownGet(((Expr.Get)get).get, false);
+                    DownGet(get.get, false);
                 }
                 else
                 {
@@ -392,8 +389,10 @@ namespace Raze
             }
 
 
-            private void DownContainer(Expr.Variable get, bool first)
+            private void DownContainer(Expr.Get get, bool first)
             {
+                if (get == null) { return; }
+
                 switch (first)
                 {
                     case true:

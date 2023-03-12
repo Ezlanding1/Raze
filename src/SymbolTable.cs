@@ -12,7 +12,7 @@ namespace Raze
         internal struct Other
         {
             public Dictionary<string, Expr.Primitive> primitives = new();
-            public HashSet<Expr.Variable> classScopedVars = new();
+            public HashSet<Expr.StackData> classScopedVars = new();
             public int? globalClassVarOffset = null;
             public Dictionary<Expr.Class, SymbolTable.Symbol.Class> classToSymbol = new();
             public Expr.Function main = null;
@@ -40,18 +40,16 @@ namespace Raze
 
             public SymbolTable()
             {
-                //
                 this.head = new Symbol.Class(null);
                 this.Current = this.head;
-                //
                 this.block = new(null);
             }
 
-            public void Add(Expr.Variable v)
+            public void Add(Expr.StackData v, Token name)
             {
-                block.keys.Add(v.name.lexeme);
+                block.keys.Add(name.lexeme);
 
-                var _ = new Symbol.Variable(v);
+                var _ = new Symbol.Variable(v, name);
 
                 Current.self.size += v.size;
                 v.stackOffset = Current.self.size;
@@ -337,13 +335,15 @@ namespace Raze
 
                 internal class Variable : Var
                 {
-                    public override Token Name { get { return self.name; } }
+                    private Token name;
+                    public override Token Name { get { return name; } }
 
-                    internal Expr.Variable self;
+                    internal Expr.StackData self;
 
-                    public Variable(Expr.Variable self) : base(2)
+                    public Variable(Expr.StackData self, Token name) : base(2)
                     {
                         this.self = self;
+                        this.name = name;
                     }
                 }
 

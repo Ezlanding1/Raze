@@ -60,11 +60,11 @@ namespace Raze
 
                 symbolTable.Add(expr);
 
-                if (expr._returnType != "void")
+                if (expr._returnType.name.type != "void")
                 {
-                    if (SymbolTableSingleton.SymbolTable.other.primitives.ContainsKey(expr._returnType))
+                    if (SymbolTableSingleton.SymbolTable.other.primitives.ContainsKey(expr._returnType.ToString()))
                     {
-                        expr._returnSize = SymbolTableSingleton.SymbolTable.other.primitives[expr._returnType].size;
+                        expr._returnSize = SymbolTableSingleton.SymbolTable.other.primitives[expr._returnType.ToString()].size;
                     }
                     else
                     {
@@ -220,6 +220,8 @@ namespace Raze
 
             public override object? visitGetExpr(Expr.Get expr)
             {
+                if (expr.get == null) { return null; }
+
                 expr.get.Accept(this);
                 return null;
             }
@@ -233,7 +235,7 @@ namespace Raze
 
             public override object visitAssignExpr(Expr.Assign expr)
             {
-                expr.variable.Accept(this);
+                expr.member.Accept(this);
                 return base.visitAssignExpr(expr);
             }
 

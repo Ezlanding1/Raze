@@ -41,7 +41,7 @@ namespace Raze
 
         private void CheckMain(Expr.Function main)
         {
-            if (main._returnType != "void" && main._returnType != "number")
+            if (main._returnType.name.type != "void" && main._returnType.ToString() != "number")
             {
                 throw new Errors.AnalyzerError("Main Invalid Return Type", $"Main can only return types 'number', and 'void'. Got '{main._returnType}'");
             }
@@ -66,7 +66,7 @@ namespace Raze
             }
             if (literal is Expr.Variable)
             {
-                return ((Expr.Variable)literal).type.lexeme;
+                return ((Expr.Variable)literal).stack.type.ToString();
             }
             if (literal is Expr.Literal)
             {

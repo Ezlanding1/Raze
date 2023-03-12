@@ -92,7 +92,7 @@ namespace Raze
             for (int i = 0; i < expr.arguments.Count; i++)
             {
                 Instruction.Register arg = expr.arguments[i].Accept(this);
-                DeclareToRegister(expr.internalFunction.parameters[i].size, InstructionInfo.paramRegister[i], arg);
+                DeclareToRegister(expr.internalFunction.parameters[i].stack.size, InstructionInfo.paramRegister[i], arg);
             }
 
             string operand1 = expr.internalFunction.QualifiedName;
@@ -105,7 +105,7 @@ namespace Raze
 
             emit(new Instruction.Unary("CALL", operand1));
             
-            if (expr.internalFunction._returnType != "void")
+            if (expr.internalFunction._returnType.name.type != "void")
             {
                 return new Instruction.Register(InstructionInfo.Registers[("RAX", expr.internalFunction._returnSize)]);
             }
@@ -132,7 +132,7 @@ namespace Raze
             {
                 return null;
             }
-            Declare(expr.size, expr.stackOffset, operand2, SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(expr));
+            Declare(expr.stack.size, expr.stack.stackOffset, operand2, SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(expr.stack));
             return null;
         }
 
@@ -160,7 +160,7 @@ namespace Raze
             for (int i = 0; i < expr.arity; i++)
             {
                 var paramExpr = expr.parameters[i];
-                emit(new Instruction.Binary("MOV", new Instruction.Pointer(paramExpr.stackOffset, paramExpr.size), new Instruction.Register(InstructionInfo.Registers[(InstructionInfo.paramRegister[i], paramExpr.size)])));
+                emit(new Instruction.Binary("MOV", new Instruction.Pointer(paramExpr.stack.stackOffset, paramExpr.stack.size), new Instruction.Register(InstructionInfo.Registers[(InstructionInfo.paramRegister[i], paramExpr.stack.size)])));
             }
 
             expr.block.Accept(this);
@@ -183,7 +183,7 @@ namespace Raze
 
             footerType.RemoveAt(footerType.Count - 1);
 
-            if (expr._returnType != "void")
+            if (expr._returnType.name.type != "void")
             {
                 return new Instruction.Register(InstructionInfo.Registers[("RAX", expr._returnSize)]);
             }
@@ -239,11 +239,11 @@ namespace Raze
                 return expr.define.Item2.Accept(this);
             }
 
-            if (expr.stackOffset == null)
+            if (expr.stack.stackOffset == null)
             {
                 return new Instruction.Literal("0", Parser.Literals[0]);
             }
-            return new Instruction.Pointer(SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(expr), expr.stackOffset, expr.size);
+            return new Instruction.Pointer(SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(expr.stack), expr.stack.stackOffset, expr.stack.size);
         }
 
         public Instruction.Register? visitConditionalExpr(Expr.Conditional expr)
@@ -353,11 +353,11 @@ namespace Raze
             if (expr.op != null)
             {
                 string instruction = InstructionInfo.ToType(expr.op.type);
-                emit(new Instruction.Binary(instruction, new Instruction.Pointer(SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(expr.variable), expr.variable.stackOffset, expr.variable.size), operand2));
+                emit(new Instruction.Binary(instruction, new Instruction.Pointer(expr.member.variable.stack.stackOffset, expr.member.variable.stack.size, SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(expr.member.variable.stack)), operand2));
             }
             else
             {
-                Declare(expr.variable.size, expr.variable.stackOffset, operand2, SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(expr.variable));
+                Declare(expr.member.variable.stack.size, expr.member.variable.stack.stackOffset, operand2, SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(expr.member.variable.stack));
             }
             return null;
         }
@@ -386,9 +386,9 @@ namespace Raze
         {
             foreach (var variable in expr.variables.Keys)
             {
-                expr.variables[variable].name = SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(variable) ? InstructionInfo.InstanceRegister : "RBP";
-                expr.variables[variable].offset = variable.stackOffset;
-                expr.variables[variable].size = variable.size;
+                expr.variables[variable].name = SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(variable.stack) ? InstructionInfo.InstanceRegister : "RBP";
+                expr.variables[variable].offset = variable.stack.stackOffset;
+                expr.variables[variable].size = variable.stack.size;
             }
             foreach (var instruction in expr.block)
             {
