@@ -83,31 +83,35 @@ internal abstract class Instruction
     }
     internal class Pointer : Register
     {
-        public int offset;
         public int size;
 
-        private Pointer(string ptr, int offset, int size, bool checkClassVar) : base(1, ptr)
+        public Pointer(string ptr, int size) : base(1, ptr)
         {
-            this.offset = offset;
             this.size = size;
-
-
-            if (checkClassVar)
-            {
-                if (SymbolTableSingleton.SymbolTable.other.globalClassVarOffset != null)
-                {
-                    this.offset += (int)SymbolTableSingleton.SymbolTable.other.globalClassVarOffset;
-                }
-            }
         }
 
-        public Pointer(int offset, int size, bool checkClassVar=true)
-            : this("RBP", offset, size, checkClassVar)
+        public Pointer(int offset, int size) : base(1, "RBP - " + offset)
+        {
+            this.size = size;
+        }
+
+        public Pointer(string ptr, int offset, int size) : base(1, ptr + " - " + offset)
+        {
+            this.size = size;
+        }
+
+        public Pointer(int size)
+            : this("RBP", size)
         {
         }
 
-        public Pointer(bool isClassScoped, int offset, int size, bool checkClassVar=true)
-            : this(isClassScoped? InstructionInfo.InstanceRegister : "RBP", offset, size, checkClassVar)
+        public Pointer(bool isClassScoped, int offset, int size)
+            : this((isClassScoped? InstructionInfo.InstanceRegister : "RBP") + " - " + offset, size)
+        {
+        }
+        
+        public Pointer(bool isClassScoped, string ptr, int offset, int size)
+            : this((isClassScoped? InstructionInfo.InstanceRegister : ptr) + " - " + offset, size)
         {
         }
 

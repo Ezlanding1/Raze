@@ -27,6 +27,7 @@ namespace Raze
             get { return "LC" + dataCount; } 
         }
         string lastJump;
+        bool firstGet;
 
         public Assembler(List<Expr> expressions)
         {
@@ -92,7 +93,7 @@ namespace Raze
             for (int i = 0; i < expr.arguments.Count; i++)
             {
                 Instruction.Register arg = expr.arguments[i].Accept(this);
-                DeclareToRegister(expr.internalFunction.parameters[i].stack.size, InstructionInfo.paramRegister[i], arg);
+                DeclareToRegister(expr.internalFunction.parameters[i].member.variable.stack.size, InstructionInfo.paramRegister[i], arg);
             }
 
             string operand1 = expr.internalFunction.QualifiedName;
@@ -100,12 +101,12 @@ namespace Raze
             if (!expr.internalFunction.modifiers["static"])
             {
                 // Note: Is this the proprer register? c++ uses it as the first param (RDI)
-                emit(new Instruction.Binary("LEA", new Instruction.Register(InstructionInfo.InstanceRegister), new Instruction.Pointer(expr.stackOffset, 8)));
+                emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.InstanceRegister), expr.constructor? new Instruction.Register("RAX") : new Instruction.Pointer(expr.stackOffset, 8)));
             }
 
             emit(new Instruction.Unary("CALL", operand1));
             
-            if (expr.internalFunction._returnType.name.type != "void")
+            if (expr.internalFunction._returnType.type.name.type != "void")
             {
                 return new Instruction.Register(InstructionInfo.Registers[("RAX", expr.internalFunction._returnSize)]);
             }
@@ -147,7 +148,7 @@ namespace Raze
             {
                 emit(new Instruction.Unary("PUSH", "RBP"));
                 emit(new Instruction.Binary("MOV", "RBP", "RSP"));
-                sub = new Instruction.Binary("SUB", "RSP", "TMP");
+                sub = new Instruction.StackAlloc("SUB", "RSP", "TMP");
                 emit(sub);
             }
             else
@@ -160,7 +161,7 @@ namespace Raze
             for (int i = 0; i < expr.arity; i++)
             {
                 var paramExpr = expr.parameters[i];
-                emit(new Instruction.Binary("MOV", new Instruction.Pointer(paramExpr.stack.stackOffset, paramExpr.stack.size), new Instruction.Register(InstructionInfo.Registers[(InstructionInfo.paramRegister[i], paramExpr.stack.size)])));
+                emit(new Instruction.Binary("MOV", new Instruction.Pointer(paramExpr.member.variable.stack.stackOffset, paramExpr.member.variable.stack.size), new Instruction.Register(InstructionInfo.Registers[(InstructionInfo.paramRegister[i], paramExpr.member.variable.stack.size)])));
             }
 
             expr.block.Accept(this);
@@ -183,7 +184,7 @@ namespace Raze
 
             footerType.RemoveAt(footerType.Count - 1);
 
-            if (expr._returnType.name.type != "void")
+            if (expr._returnType.type.name.type != "void")
             {
                 return new Instruction.Register(InstructionInfo.Registers[("RAX", expr._returnSize)]);
             }
@@ -195,6 +196,8 @@ namespace Raze
 
         public Instruction.Register? visitGetExpr(Expr.Get expr)
         {
+            emit(new Instruction.Binary("MOV", new Instruction.Register("RAX"), new Instruction.Pointer(firstGet ? "RBP" : "RAX",expr.stackOffset, 8)));
+            firstGet = false;
             return expr.get.Accept(this);
         }
 
@@ -243,7 +246,9 @@ namespace Raze
             {
                 return new Instruction.Literal("0", Parser.Literals[0]);
             }
-            return new Instruction.Pointer(SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(expr.stack), expr.stack.stackOffset, expr.stack.size);
+            bool frst = firstGet;
+            firstGet = false;
+            return new Instruction.Pointer(SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(expr.stack), frst ? "RBP" : "RAX", expr.stack.stackOffset, expr.stack.size);
         }
 
         public Instruction.Register? visitConditionalExpr(Expr.Conditional expr)
@@ -353,7 +358,7 @@ namespace Raze
             if (expr.op != null)
             {
                 string instruction = InstructionInfo.ToType(expr.op.type);
-                emit(new Instruction.Binary(instruction, new Instruction.Pointer(expr.member.variable.stack.stackOffset, expr.member.variable.stack.size, SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(expr.member.variable.stack)), operand2));
+                emit(new Instruction.Binary(instruction, new Instruction.Pointer(SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(expr.member.variable.stack), expr.member.variable.stack.stackOffset, expr.member.variable.stack.size), operand2));
             }
             else
             {
@@ -364,6 +369,10 @@ namespace Raze
 
         public Instruction.Register? visitPrimitiveExpr(Expr.Primitive expr)
         {
+            foreach (var blockExpr in expr.block.block)
+            {
+                blockExpr.Accept(this);
+            }
             return null;
         }
 
@@ -386,8 +395,7 @@ namespace Raze
         {
             foreach (var variable in expr.variables.Keys)
             {
-                expr.variables[variable].name = SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(variable.stack) ? InstructionInfo.InstanceRegister : "RBP";
-                expr.variables[variable].offset = variable.stack.stackOffset;
+                expr.variables[variable].name = (SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(variable.stack) ? InstructionInfo.InstanceRegister : "RBP") + " - " + variable.stack.stackOffset;
                 expr.variables[variable].size = variable.stack.size;
             }
             foreach (var instruction in expr.block)
@@ -399,16 +407,29 @@ namespace Raze
 
         public Instruction.Register? visitNewExpr(Expr.New expr)
         {
-            SymbolTableSingleton.SymbolTable.other.globalClassVarOffset = expr.call.stackOffset;
-            foreach (var blockExpr in expr.internalClass.topLevelBlock.block)
-            {
-                blockExpr.Accept(this);
-            }
-            SymbolTableSingleton.SymbolTable.other.globalClassVarOffset = null;
+            // either dealloc on exit (handled by OS), require manual delete, or implement GC
+
+            // Move the following into a runtime procedure, and pass in the expr.internalClass.size as a parameter
+            // {
+            emit(new Instruction.Binary("MOV", new Instruction.Register("RAX"), new Instruction.Literal("12", Parser.Literals[0])));
+            emit(new Instruction.Binary("MOV", new Instruction.Register("RDI"), new Instruction.Literal("0", Parser.Literals[0])));
+            emit(new Instruction.Zero("SYSCALL"));
+
+            var ptr = new Instruction.Pointer("RAX + " + expr.internalClass.size, 8);
+            emit(new Instruction.Binary("LEA", new Instruction.Register("RBX"), ptr));
+
+            emit(new Instruction.Binary("LEA", new Instruction.Register("RDI"), ptr));
+            emit(new Instruction.Binary("MOV", new Instruction.Register("RAX"), new Instruction.Literal("12", Parser.Literals[0])));
+            emit(new Instruction.Zero("SYSCALL"));
+               
+            emit(new Instruction.Binary("MOV", new Instruction.Register("RAX"), new Instruction.Register("RBX")));
+            // }
+
+            emit(new Instruction.Binary("MOV", new Instruction.Register("RBX"), new Instruction.Register("RAX")));
 
             expr.call.Accept(this);
 
-            return null;
+            return new Instruction.Register("RBX");
         }
 
         public Instruction.Register? visitDefineExpr(Expr.Define expr)
@@ -420,6 +441,13 @@ namespace Raze
         {
             return new Instruction.Literal(expr.value, Parser.Literals[5]);
         }
+
+        public Instruction.Register? visitMemberExpr(Expr.Member expr)
+        {
+            firstGet = true;
+            return expr.get.Accept(this);
+        }
+
 
         private void Declare(int size, int stackOffset, Instruction.Register value, bool isClassScoped)
         {
@@ -534,7 +562,6 @@ namespace Raze
                     throw new Exception();
             };
         }
-
     }
     
 }

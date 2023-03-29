@@ -11,10 +11,7 @@ namespace Raze
     {
         internal struct Other
         {
-            public Dictionary<string, Expr.Primitive> primitives = new();
             public HashSet<Expr.StackData> classScopedVars = new();
-            public int? globalClassVarOffset = null;
-            public Dictionary<Expr.Class, SymbolTable.Symbol.Class> classToSymbol = new();
             public Expr.Function main = null;
             public Other()
             {
@@ -45,11 +42,11 @@ namespace Raze
                 this.block = new(null);
             }
 
-            public void Add(Expr.StackData v, Token name)
+            public void Add(Expr.StackData v, Token name, Symbol.Container definition)
             {
                 block.keys.Add(name.lexeme);
 
-                var _ = new Symbol.Variable(v, name);
+                var _ = new Symbol.Variable(v, name, definition);
 
                 Current.self.size += v.size;
                 v.stackOffset = Current.self.size;
@@ -63,18 +60,14 @@ namespace Raze
                 Current.containers.Add(_.Name.lexeme, _);
                 _.enclosing = Current;
                 Current = _;
-                other.classToSymbol[c]  = _;
             }
 
-            public void Add(Expr.New n, Token name)
+            public void Add(Expr.Primitive p)
             {
-                var _ = new Symbol.New(n, Current.self.size, name);
-                Current.variables.Add(_.Name.lexeme, _);
+                var _ = new Symbol.Primitive(p);
+                Current.containers.Add(_.Name.lexeme, _);
                 _.enclosing = Current;
-                _.variables = other.classToSymbol[_.self].variables;
-                _.containers = other.classToSymbol[_.self].containers;
-                _.self.size = other.classToSymbol[_.self].self.size;
-                Current.self.size += _.self.size;
+                Current = _;
             }
 
             public void Add(Expr.Function f)
@@ -85,15 +78,15 @@ namespace Raze
                 Current = _;
             }
 
-            public void Add(Expr.Define d)
-            {
-                var _ = new Symbol.Define(d);
-                Current.variables.Add(_.Name.lexeme, _);
-            }
+            //public void Add(Expr.Define d)
+            //{
+            //    var _ = new Symbol.Define(d);
+            //    Current.variables.Add(_.Name.lexeme, _);
+            //}
 
             // 'Get' Methods:
 
-            public Symbol GetVariable(string key)
+            public Symbol.Variable GetVariable(string key)
             {
                 if (Current.variables.TryGetValue(key, out var value))
                 {
@@ -109,46 +102,41 @@ namespace Raze
                 }
                 throw new Errors.AnalyzerError("Undefined Reference", $"The {(func ? "function" : "class")} '{key}' does not exist in the current context");
             }
+            public Symbol.Container GetContainer(string key, Symbol.Container x, bool func = false)
+            {
+                if (x.containers.TryGetValue(key, out var value))
+                {
+                    return value;
+                }
+                throw new Errors.AnalyzerError("Undefined Reference", $"The {(func ? "function" : "class")} '{key}' does not exist in the current context");
+            }
 
             // 'TryGet' Methods:
 
-            public bool TryGetVariable(string key, out Symbol symbol, out bool isClassScoped, bool classAccess = false)
+            public bool TryGetVariable(string key, out Symbol.Variable symbol, out bool isClassScoped)
             {
-                if (!classAccess)
+                if (Current.variables.TryGetValue(key, out var value))
                 {
-                    if (Current.variables.TryGetValue(key, out var value))
+                    symbol = value;
+                    isClassScoped = false;
+                    return true;
+                }
+
+                if (Current.IsFunc() && (!((Symbol.Function)Current).self.modifiers["static"]))
+                {
+                    if (Current.enclosing.variables.TryGetValue(key, out var classValue))
                     {
-                        symbol = value;
-                        isClassScoped = Current.IsClass();
+                        symbol = classValue;
+                        isClassScoped = true;
                         return true;
                     }
                 }
-                else
-                {
-                    var x = Current;
 
-                    while (x != null)
-                    {
-
-                        if (x.variables.TryGetValue(key, out var value))
-                        {
-                            symbol = value;
-                            isClassScoped = x.IsClass();
-                            return true;
-                        }
-
-                        if (x.IsClass())
-                        {
-                            break;
-                        }
-
-                        x = x.enclosing;
-                    }
-                }
                 symbol = null;
                 isClassScoped = false;
                 return false;
             }
+
             public bool TryGetContainer(string key, out Symbol.Container symbol)
             {
                 if (Current.containers.TryGetValue(key, out var value))
@@ -162,8 +150,9 @@ namespace Raze
 
             // 'TryGetFullScope' Methods:
 
-            public bool TryGetContainerFullScope(string key, out Symbol.Container symbol, int type)
+            public bool TryGetContainerFullScope(string key, out Symbol.Container symbol)
             {
+                // is this right?
                 var x = Current;
 
                 while (x != null)
@@ -176,11 +165,8 @@ namespace Raze
 
                     if (x.containers.TryGetValue(key, out var value))
                     {
-                        if ((type == 0) ? value.IsClass() : (type == 1) ? value.IsFunc() : true)
-                        {
-                            symbol = value;
-                            return true;
-                        }
+                        symbol = value;
+                        return true;
                     }
                     x = x.enclosing;
                 }
@@ -234,15 +220,25 @@ namespace Raze
             {
                 public abstract Token Name { get; }
 
-                // 0 = Class, 1 = Func, 2 = Variable, 3 = Define
-                private int type;
+                public enum SymbolType
+                {
+                    Class,
+                    Function,
+                    Primitive,
+                    Variable,
+                    Define
+                }
 
-                public bool IsClass() => type == 0;
-                public bool IsFunc() => type == 1;
-                public bool IsVariable() => type == 2;
-                public bool IsDefine() => type == 3;
+                private SymbolType type;
 
-                public Symbol(int type)
+
+                public bool IsClass() => type == SymbolType.Class;
+                public bool IsFunc() => type == SymbolType.Function;
+                public bool IsPrimitive() => type == SymbolType.Primitive;
+                public bool IsVariable() => type == SymbolType.Variable;
+                public bool IsDefine() => type == SymbolType.Define;
+
+                public Symbol(SymbolType type)
                 {
                     this.type = type;
                 }
@@ -251,22 +247,21 @@ namespace Raze
                 {
                     internal Container enclosing;
 
-                    internal Dictionary<string, Symbol> variables;
-
-                    internal abstract Dictionary<string, Symbol.Container> containers { get; set; }
+                    internal abstract Dictionary<string, Variable> variables { get; }
+                    internal abstract Dictionary<string, Container> containers { get; }
 
                     internal Expr.Definition self {
                         get
                         {
                             if (this.IsClass()) { return ((Class)this).self; }
                             else if (this.IsFunc()) { return ((Function)this).self; }
+                            else if (this.IsPrimitive()) { return ((Primitive)this).self; }
                             else { throw new Errors.ImpossibleError("Type of symbol not recognized"); }
                         }
                     }
 
-                    public Container(int type) : base(type)
+                    public Container(SymbolType type) : base(type)
                     {
-                        this.variables = new();
                         this.enclosing = null;
                     }
                 }
@@ -275,35 +270,25 @@ namespace Raze
                 {
                     public override Token Name { get { return self.name; } }
 
+                    internal override Dictionary<string, Variable> variables 
+                    {
+                        get => _variables;
+                    }
                     internal override Dictionary<string, Container> containers 
                     { 
-                        get => _containers; 
-                        set => _containers = value; 
+                        get => _containers;  
                     }
-
+                    
+                    internal Dictionary<string, Variable> _variables;
                     internal Dictionary<string, Container> _containers;
 
                     new internal Expr.Class self;
 
-                    public Class(Expr.Class self) : base(0)
+                    public Class(Expr.Class self) : base(SymbolType.Class)
                     {
+                        this._variables = new();
                         this._containers = new();
                         this.self = self;
-                    }
-                }
-
-                internal class New : Class
-                {
-                    private Token name;
-                    public override Token Name { get { return name; } }
-
-                    public Expr.New newSelf;
-
-                    public New(Expr.New self, int stackOffset, Token name) : base(self.internalClass)
-                    {
-                        this.newSelf = self;
-                        this.newSelf.call.stackOffset = stackOffset;
-                        this.name = name;
                     }
                 }
 
@@ -311,49 +296,73 @@ namespace Raze
                 {
                     public override Token Name { get { return self.name; } }
 
+                    internal override Dictionary<string, Variable> variables 
+                    {
+                        get => _variables; 
+                    }
                     internal override Dictionary<string, Container> containers 
                     {
                         get => throw new Errors.ImpossibleError("Requested Access of function's containers (null)");
-                        set => throw new Errors.ImpossibleError("Requested Access of function's containers (null)");
                     }
+
+                    internal Dictionary<string, Variable> _variables;
 
                     new internal Expr.Function self;
 
-                    public Function(Expr.Function self) : base(1)
+                    public Function(Expr.Function self) : base(SymbolType.Function)
                     {
+                        this._variables = new();
                         this.self = self;
                     }
                 }
 
-                abstract internal class Var : Symbol
+                internal class Primitive : Container
                 {
-                    public Var(int type) : base(type)
-                    {
+                    public override Token Name { get { return self.name; } }
 
+                    internal override Dictionary<string, Container> containers
+                    {
+                        get => _containers;
+                    }
+                    internal override Dictionary<string, Variable> variables
+                    {
+                        get => throw new Errors.ImpossibleError("Requested Access of primitive's variables (null)");
+                    }
+
+                    internal Dictionary<string, Container> _containers;
+
+                    new internal Expr.Primitive self;
+
+                    public Primitive(Expr.Primitive self) : base(SymbolType.Primitive)
+                    {
+                        this._containers = new();
+                        this.self = self;
                     }
                 }
 
-                internal class Variable : Var
+                internal class Variable : Symbol
                 {
                     private Token name;
                     public override Token Name { get { return name; } }
+                    public Container definition;
 
                     internal Expr.StackData self;
 
-                    public Variable(Expr.StackData self, Token name) : base(2)
+                    public Variable(Expr.StackData self, Token name, Container definition) : base(SymbolType.Variable)
                     {
                         this.self = self;
                         this.name = name;
+                        this.definition = definition;
                     }
                 }
 
-                internal class Define : Var
+                internal class Define : Symbol
                 {
                     public override Token Name { get { return self.name; } }
 
                     internal Expr.Define self;
 
-                    public Define(Expr.Define self) : base(3)
+                    public Define(Expr.Define self) : base(SymbolType.Define)
                     {
                         this.self = self;
                     }

@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
-using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -15,12 +13,10 @@ namespace Raze
         {
             List<(string, bool, Expr.Return)> _return;
             bool callReturn;
-            Dictionary<string, Expr.Primitive> primitives;
 
             public TypeCheckPass(List<Expr> expressions) : base(expressions)
             {
                 _return = new();
-                this.primitives = SymbolTableSingleton.SymbolTable.other.primitives;
             }
 
             internal override List<Expr> Run()
@@ -88,9 +84,9 @@ namespace Raze
                     Expr.Parameter paramExpr = expr.internalFunction.parameters[i];
 
                     var assignType = expr.arguments[i].Accept(this);
-                    if (!MatchesType(paramExpr.stack.type.ToString(), assignType))
+                    if (!MatchesType(paramExpr.member.variable.stack.type, assignType))
                     {
-                        throw new Errors.AnalyzerError("Type Mismatch", $"You cannot assign type '{assignType}' to type '{paramExpr.stack.type.ToString()}'");
+                        throw new Errors.AnalyzerError("Type Mismatch", $"You cannot assign type '{assignType}' to type '{paramExpr.member.variable.stack.type.ToString()}'");
                     }
                 }
                 callReturn = true;
@@ -107,7 +103,7 @@ namespace Raze
             public override string visitDeclareExpr(Expr.Declare expr)
             {
                 string assignType = expr.value.Accept(this);
-                if (!MatchesType(expr.stack.type.ToString(), assignType))
+                if (!MatchesType(expr.stack.type, assignType))
                 {
                     throw new Errors.AnalyzerError("Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.stack.type.ToString()}'");
                 }
@@ -128,22 +124,19 @@ namespace Raze
                     int _returnCount = 0;
                     foreach (var ret in _return)
                     {
-                        if (!MatchesType(expr._returnType.ToString(), ret.Item1))
+                        if (!MatchesType(expr._returnType, ret.Item1))
                         {
                             throw new Errors.AnalyzerError("Type Mismatch", $"You cannot return type '{ret.Item1}' from type '{expr._returnType}'");
                         }
 
-                        if (primitives.ContainsKey(expr._returnType.ToString()))
-                        {
-                            ret.Item3.size = primitives[expr._returnType.ToString()].size;
-                        }
+                        ret.Item3.size = expr._returnSize;
 
                         if (!ret.Item2)
                         {
                             _returnCount++;
                         }
                     }
-                    if (_returnCount == 0 && expr._returnType.name.type != "void")
+                    if (_returnCount == 0 && expr._returnType.type.name.type != "void")
                     {
                         if (!expr.modifiers["unsafe"])
                         {
@@ -252,7 +245,7 @@ namespace Raze
                 }
                 else
                 {
-                    if (!MatchesType(expr.member.variable.stack.type.ToString(), assignType))
+                    if (!MatchesType(expr.member.variable.stack.type, assignType))
                     {
                         throw new Errors.AnalyzerError("Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.member.variable.stack.type.ToString()}'");
                     }
@@ -267,6 +260,7 @@ namespace Raze
 
             public override string visitPrimitiveExpr(Expr.Primitive expr)
             {
+                expr.block.Accept(this);
                 return "void";
             }
 
@@ -300,33 +294,16 @@ namespace Raze
                 return "void";
             }
 
-            private bool MatchesType(string type1, string type2)
+            private bool MatchesType(Expr.Type type1, string type2)
             {
-                if (primitives.ContainsKey(type1))
+                if (type1.literals == null)
                 {
-                    if (Parser.Literals.Contains(type2))
-                    {
-                        if ((!primitives[type1].literals.Contains(type2)) && type2 != "null")
-                        {
-                            return false;
-                        }
-                    }
-                    else
-                    {
-                        if (type1 != type2 && type2 != "null")
-                        {
-                            return false;
-                        }
-                    }
+                    return type1.type.ToString() == type2;
                 }
                 else
                 {
-                    if (type1 != type2 && type2 != "null")
-                    {
-                        return false;
-                    }
+                    return (type1.type.ToString() == type2 || type1.literals.Contains(type2));
                 }
-                return true;
             }
         }
     }

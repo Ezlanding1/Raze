@@ -60,19 +60,6 @@ namespace Raze
 
                 symbolTable.Add(expr);
 
-                if (expr._returnType.name.type != "void")
-                {
-                    if (SymbolTableSingleton.SymbolTable.other.primitives.ContainsKey(expr._returnType.ToString()))
-                    {
-                        expr._returnSize = SymbolTableSingleton.SymbolTable.other.primitives[expr._returnType.ToString()].size;
-                    }
-                    else
-                    {
-                        throw new Exception();
-                        //expr._returnSize = 8;
-                    }
-                }
-
                 if (expr.name.lexeme == "Main")
                 {
                     if (SymbolTableSingleton.SymbolTable.other.main != null)
@@ -114,6 +101,11 @@ namespace Raze
             public override object? visitDeclareExpr(Expr.Declare expr)
             {
                 if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
+
+                if (symbolTable.Current.IsPrimitive())
+                {
+                    throw new Errors.AnalyzerError("Invalid Variable Declaration", "A variable may not be declared within a primitive definition");
+                }
 
                 return base.visitDeclareExpr(expr);
             }
@@ -241,14 +233,24 @@ namespace Raze
 
             public override object visitPrimitiveExpr(Expr.Primitive expr)
             {
-                if (!SymbolTableSingleton.SymbolTable.other.primitives.ContainsKey(expr.name.lexeme))
+                if (symbolTable.Current.IsFunc())
                 {
-                    SymbolTableSingleton.SymbolTable.other.primitives[expr.name.lexeme] = expr;
+                    throw new Errors.AnalyzerError("Invalid Class Definition", "A primitive class definition may be only within another class");
                 }
-                else
+
+                if (symbolTable.TryGetContainer(expr.name.lexeme, out _))
                 {
-                    throw new Errors.AnalyzerError("Double Declaration", $"A primtive named '{expr.name.lexeme}' is already defined");
+                    throw new Errors.AnalyzerError("Double Declaration", $"A primitive class named '{expr.name.lexeme}' is already defined in this scope");
                 }
+
+                SetPath(expr);
+
+                symbolTable.Add(expr);
+
+                expr.block.Accept(this);
+
+                symbolTable.UpContext();
+
                 return null;
             }
 

@@ -268,5 +268,11 @@ namespace Raze.Tools
             PrintAST(expr.right);
             return null;
         }
+
+        public object? visitMemberExpr(Expr.Member expr)
+        {
+            expr.get.Accept(this);
+            return null;
+        }
     }
 }

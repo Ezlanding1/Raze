@@ -153,6 +153,11 @@ namespace Raze
                 expr.right.Accept(this);
                 return default(T);
             }
+
+            public virtual T visitMemberExpr(Expr.Member expr)
+            {
+                return expr.get.Accept(this);;
+            }
         }
     }
 }

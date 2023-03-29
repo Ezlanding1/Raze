@@ -94,7 +94,7 @@ namespace Raze
                         Expect("IDENTIFIER", "identifier as function parameter");
                         Token variable = previous();
 
-                        parameters.Add(new Expr.Parameter(type, variable));
+                        parameters.Add(new Expr.Parameter(new Expr.Type(type), variable));
                         if (TypeMatch("RPAREN"))
                         {
                             break;
@@ -105,13 +105,19 @@ namespace Raze
                             throw new Errors.ParseError("Unexpected End In Function Parameters", $"Function '{name.lexeme}' reached an unexpected end during it's parameters");
                         }
                     }
-                    function.Add(_return, name, parameters, GetBlock(definitionType.type));
+                    function.Add(new Expr.Type(_return), name, parameters, GetBlock(definitionType.type));
                     return function;
                 }
                 else if (definitionType.type == "class")
                 {
                     Expect("IDENTIFIER", definitionType.type + " name");
                     Token name = previous();
+
+                    if (Literals.Contains(name.lexeme))
+                    {
+                        throw new Errors.ParseError("Invalid Class", $"The name of a class may not be a literal ({name.lexeme})");
+                    }
+
                     return new Expr.Class(name, GetBlock(definitionType.type));
                 }
                 else if (definitionType.type == "asm")
@@ -327,8 +333,8 @@ namespace Raze
                 Expect("IDENTIFIER", "type after 'is' operator");
                 var variable = new Expr.Get(previous());
                  expr = new Expr.Is(expr, TypeMatch("DOT")? 
-                     GetGetter(variable)
-                     : variable
+                     new Expr.Type(GetGetter(variable))
+                     : new Expr.Type(variable)
                      );
             }
             return expr;
@@ -378,7 +384,7 @@ namespace Raze
                         var name = previous();
                         Expect("EQUALS", "'=' when declaring variable");
                         Expr value = NoSemicolon();
-                        expr = new Expr.Declare(variable, name, value);
+                        expr = new Expr.Declare(new Expr.Type(variable), name, value);
                     }
                     else if (TypeMatch("LPAREN"))
                     {

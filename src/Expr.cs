@@ -24,6 +24,7 @@ namespace Raze
             public T visitBlockExpr(Block expr);
             public T visitAssemblyExpr(Assembly expr);
             public T visitVariableExpr(Variable expr);
+            public T visitMemberExpr(Member expr);
             public T visitFunctionExpr(Function expr);
             public T visitClassExpr(Class expr);
             public T visitReturnExpr(Return expr);
@@ -112,7 +113,7 @@ namespace Raze
 
             public StackData stack = new();
 
-            public Declare(Get type, Token name, Expr value)
+            public Declare(Type type, Token name, Expr value)
             {
                 this.stack.type = type;
                 this.name = name;
@@ -216,6 +217,7 @@ namespace Raze
         public class Get : Expr
         {
             public Token name;
+            public int stackOffset;
             public Get get;
 
             public Get(Token getter)
@@ -257,6 +259,11 @@ namespace Raze
                 this.block = block;
             }
 
+            public void Extend(Block block2)
+            {
+                this.block.InsertRange(0, block2.block);
+            }
+
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.visitBlockExpr(this);
@@ -282,7 +289,7 @@ namespace Raze
         
         public class Member : Expr
         {
-            public Variable variable;
+            public StackGet variable;
             public Get get;
 
             public Member(Get get)
@@ -315,30 +322,29 @@ namespace Raze
 
             public override T Accept<T>(IVisitor<T> visitor)
             {
-                return this.get.Accept(visitor);
+                return visitor.visitMemberExpr(this);
             }
         }
 
         // Note: Due to C# limitations on multiple inheritance, the StackData class will be a member of the classes that needs its fields 
         public class StackData
         {
-            public Get type;
+            public Type type;
             public int size;
             public int stackOffset;
         }
 
-        public class Variable : Get
+        public class Variable : StackGet
         {
             public (bool, Literal) define;
 
-            public StackData stack = new();
 
             public Variable(Token name) : base(name)
             {
                 this.name = name;
             }
 
-            public Variable(Get type, Token name) : base(name)
+            public Variable(Type type, Token name) : base(name)
             {
                 this.stack.type = type;
             }
@@ -407,17 +413,18 @@ namespace Raze
         {
             public Token name;
 
-            public StackData stack = new();
+            public Member member;
 
-            public Parameter(Get type, Token name)
+            public Parameter(Type type, Token name)
             {
-                this.stack.type = type;
+                this.member = new(type.type);
+                this.member.variable.stack.type = type;
                 this.name = name;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
             {
-                return this.stack.type.Accept(visitor);
+                return this.member.variable.stack.type.Accept(visitor);
             }
         }
 
@@ -448,7 +455,7 @@ namespace Raze
         public class Function : Definition
         {
             public List<Parameter> parameters;
-            public Get _returnType;
+            public Type _returnType;
             public int _returnSize;
             public int arity
             {
@@ -472,7 +479,7 @@ namespace Raze
                 };
             }
 
-            public void Add(Get _returnType, Token name, List<Parameter> parameters, Block block)
+            public void Add(Type _returnType, Token name, List<Parameter> parameters, Block block)
             {
                 base.name = name;
                 base.block = block;
@@ -596,11 +603,11 @@ namespace Raze
         public class Is : Expr
         {
             public Expr left;
-            public Get right;
+            public Type right;
 
             public string value;
 
-            public Is(Expr left, Get right)
+            public Is(Expr left, Type right)
             {
                 this.left = left;
                 this.right = right;
@@ -609,6 +616,48 @@ namespace Raze
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.visitIsExpr(this);
+            }
+        }
+
+        public abstract class StackGet : Get
+        {
+            public StackData stack = new();
+
+            public StackGet(Token name) : base(name)
+            {
+                this.name = name;
+            }
+
+            public StackGet(Type type, Token name) : base(name)
+            {
+                this.stack.type = type;
+            }
+        }
+
+        public class Type : Expr
+        {
+            public Get type;
+            public List<string>? literals = null;
+
+            public Type(Get type)
+            {
+                this.type = type;
+            }
+
+            public Type(Get type, List<string> literals)
+            {
+                this.type = type;
+                this.literals = literals;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return type.Accept(visitor);
+            }
+
+            public override string ToString()
+            {
+                return type.ToString();
             }
         }
     }

@@ -51,6 +51,7 @@ namespace Raze
                         if (instruction.operand2 is Instruction.Register)
                             return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, { AlignTo16((Instruction.Register)instruction.operand2) }";
                         else
+                            //
                             throw new Exception();
                     if (instruction.operand2 is Instruction.Pointer)
                         if (instruction.operand1 is Instruction.Pointer)
@@ -93,7 +94,7 @@ namespace Raze
 
                 public string visitPointer(Instruction.Pointer instruction)
                 {
-                    return $"{InstructionInfo.wordSize[(int)instruction.size]} [{instruction.name}{( (instruction.offset != 0)? $"-{(instruction.offset)}" : "" )}]";
+                    return $"{InstructionInfo.wordSize[instruction.size]} [{instruction.name}]";
                 }
 
                 public string visitFunctionRef(Instruction.FunctionRef instruction)
@@ -123,7 +124,7 @@ namespace Raze
 
                 private string PointerToString(Instruction.Pointer instruction)
                 {
-                    return $"[{instruction.name}{( (instruction.offset != 0)? $"-{(instruction.offset)}" : "" )}]";
+                    return $"[{instruction.name}]";
                 }
 
                 private string AlignTo16(Instruction.Register instruction)
