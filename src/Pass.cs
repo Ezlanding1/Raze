@@ -156,7 +156,12 @@ namespace Raze
 
             public virtual T visitMemberExpr(Expr.Member expr)
             {
-                return expr.get.Accept(this);;
+                return expr.get.Accept(this);
+            }
+
+            public virtual T visitThisExpr(Expr.This expr)
+            {
+                return visitGetExpr(expr);
             }
         }
     }

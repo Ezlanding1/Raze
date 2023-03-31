@@ -92,7 +92,8 @@ namespace Raze
             "asm",
             "define",
             "is",
-            "primitive"
+            "primitive",
+            "this"
         };
 
         /*

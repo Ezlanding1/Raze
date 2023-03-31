@@ -169,6 +169,13 @@ namespace Raze
                 return expr.get.Accept(this);
             }
 
+            public override string visitThisExpr(Expr.This expr)
+            {
+                if (expr.get == null) { return expr.type; }
+
+                return expr.get.Accept(this);
+            }
+
             public override string visitGroupingExpr(Expr.Grouping expr)
             {
                 return expr.expression.Accept(this);

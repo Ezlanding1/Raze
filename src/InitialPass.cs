@@ -69,15 +69,11 @@ namespace Raze
                     expr.modifiers["static"] = true;
                     SymbolTableSingleton.SymbolTable.other.main = expr;
                 }
+
                 int paramsCount = expr.parameters.Count;
-                if (paramsCount > InstructionInfo.paramRegister.Length)
+                if (paramsCount > InstructionInfo.paramRegister.Length - (expr.modifiers["static"]? 0 : 1))
                 {
                     throw new Errors.AnalyzerError("Too Many Parameters", $"A function cannot have more than { InstructionInfo.paramRegister.Length } parameters");
-                }
-
-                foreach (Expr.Parameter paramExpr in expr.parameters)
-                {
-                    paramExpr.Accept(this);
                 }
 
                 expr.block.Accept(this);
@@ -132,7 +128,7 @@ namespace Raze
                 expr.topLevelBlock.Accept(this);
                 expr.block.Accept(this);
 
-                expr.constructor = GetConstructor(expr);
+                expr.constructor = GetConstructor();
 
                 symbolTable.UpContext();
                 return null;
@@ -212,10 +208,15 @@ namespace Raze
 
             public override object? visitGetExpr(Expr.Get expr)
             {
-                if (expr.get == null) { return null; }
-
                 expr.get.Accept(this);
                 return null;
+            }
+
+            public override object visitThisExpr(Expr.This expr)
+            {
+                if (expr.get == null) { return null; }
+
+                return this.visitGetExpr(expr);
             }
 
             public override object? visitVariableExpr(Expr.Variable expr)
@@ -265,7 +266,7 @@ namespace Raze
                 return null;
             }
 
-            private Expr.Function GetConstructor(Expr.Class @class)
+            private Expr.Function GetConstructor()
             {
                 if (!symbolTable.TryGetContainer(symbolTable.Current.Name.lexeme, out var symbol))
                 {

@@ -357,7 +357,7 @@ namespace Raze
                     return new Expr.Grouping(expr);
                 }
 
-                if (TypeMatch("IDENTIFIER"))
+                if (TypeMatch("IDENTIFIER", "this"))
                 {
                     Expr expr;
                     Expr.Get variable = new Expr.Get(previous());
@@ -377,10 +377,18 @@ namespace Raze
                     }
                     else if (TypeMatch("PLUSPLUS", "MINUSMINUS"))
                     {
+                        if (variable.name.type == "this")
+                        {
+                            throw new Errors.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword may only be used in a member to reference the enclosing class");
+                        }
                         expr = new Expr.Unary(previous(), variable);
                     }
                     else if (TypeMatch("IDENTIFIER"))
                     {
+                        if (variable.name.type == "this")
+                        {
+                            throw new Errors.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword may only be used in a member to reference the enclosing class");
+                        }
                         var name = previous();
                         Expect("EQUALS", "'=' when declaring variable");
                         Expr value = NoSemicolon();
@@ -388,6 +396,10 @@ namespace Raze
                     }
                     else if (TypeMatch("LPAREN"))
                     {
+                        if (variable.name.type == "this")
+                        {
+                            throw new Errors.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword may only be used in a member to reference the enclosing class");
+                        }
                         expr = Call(variable);
                     }
                     else

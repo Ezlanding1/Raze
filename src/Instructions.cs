@@ -54,22 +54,17 @@ internal abstract class Instruction
         // 0 = Register, 1 = Pointer, 2 = Literal
         public int registerType;
         public string name;
+
         public Register(string name)
         {
             this.registerType = 0;
             this.name = name;
         }
 
-        public Register(int registerType, string name)
+        private protected Register(int registerType, string name)
         {
             this.registerType = registerType;
             this.name = name;
-        }
-
-        public Register(Register @this)
-        {
-            this.registerType = @this.registerType;
-            this.name = @this.name;
         }
 
         public bool IsRegister() => registerType == 0;
@@ -102,16 +97,6 @@ internal abstract class Instruction
 
         public Pointer(int size)
             : this("RBP", size)
-        {
-        }
-
-        public Pointer(bool isClassScoped, int offset, int size)
-            : this((isClassScoped? InstructionInfo.InstanceRegister : "RBP") + " - " + offset, size)
-        {
-        }
-        
-        public Pointer(bool isClassScoped, string ptr, int offset, int size)
-            : this((isClassScoped? InstructionInfo.InstanceRegister : ptr) + " - " + offset, size)
         {
         }
 
@@ -299,7 +284,7 @@ internal abstract class Instruction
 internal class InstructionInfo
 {
     public const int MaxLiteral = 4;
-    public const string InstanceRegister = "R12";
+    public const string InstanceRegister = "FIX";
 
     internal static bool IsStack(Instruction.Register input, bool addSize=false)
     {

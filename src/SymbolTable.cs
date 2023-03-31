@@ -113,7 +113,7 @@ namespace Raze
 
             // 'TryGet' Methods:
 
-            public bool TryGetVariable(string key, out Symbol.Variable symbol, out bool isClassScoped)
+            public bool TryGetVariable(string key, out Symbol.Variable symbol, out bool isClassScoped, bool ignoreEnclosing=false)
             {
                 if (Current.variables.TryGetValue(key, out var value))
                 {
@@ -122,7 +122,7 @@ namespace Raze
                     return true;
                 }
 
-                if (Current.IsFunc() && (!((Symbol.Function)Current).self.modifiers["static"]))
+                if (!ignoreEnclosing && Current.IsFunc() && (!((Symbol.Function)Current).self.modifiers["static"]))
                 {
                     if (Current.enclosing.variables.TryGetValue(key, out var classValue))
                     {
@@ -150,9 +150,8 @@ namespace Raze
 
             // 'TryGetFullScope' Methods:
 
-            public bool TryGetContainerFullScope(string key, out Symbol.Container symbol)
+            public bool TryGetContainerFullScope(string key, out Symbol.Container symbol, bool notFunc=false)
             {
-                // is this right?
                 var x = Current;
 
                 while (x != null)
@@ -163,7 +162,7 @@ namespace Raze
                         continue;
                     }
 
-                    if (x.containers.TryGetValue(key, out var value))
+                    if (x.containers.TryGetValue(key, out var value) && (notFunc? !value.IsFunc() : true))
                     {
                         symbol = value;
                         return true;

@@ -34,6 +34,7 @@ namespace Raze
             public T visitNewExpr(New expr);
             public T visitDefineExpr(Define expr);
             public T visitIsExpr(Is expr);
+            public T visitThisExpr(This expr);
         }
 
         public class Binary : Expr
@@ -223,19 +224,15 @@ namespace Raze
             public Get(Token getter)
             {
                 name = getter;
-                get = null;
             }
 
-            public Get(Get getter, Get get)
+            public Get(Token getter, Get get) : this(getter)
             {
-                this.name = getter.name;
                 this.get = get;
             }
 
-            public Get(Token getter, Get get)
+            public Get(Get getter, Get get) : this(getter.name, get)
             {
-                this.name = getter;
-                this.get = get;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -246,6 +243,22 @@ namespace Raze
             public override string ToString()
             {
                 return name.lexeme.ToString() + ((get != null) ? ("." + get.ToString()) : "");
+            }
+        }
+
+        public class This : Get
+        {
+            public string type;
+
+            public This(Token name, Get get) : base (name, get)
+            {
+                this.get = get;
+                this.stackOffset = 8;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.visitThisExpr(this);
             }
         }
 
@@ -301,6 +314,16 @@ namespace Raze
 
             public void GetVariableReference()
             {
+                if (get.name.type == "this")
+                {
+                    get = new This(get.name, get.get);
+                    
+                    if (get.get == null)
+                    {
+                        return;
+                    }
+                }
+                
                 if (get.get == null)
                 {
                     get = new Variable(get.name);
@@ -652,7 +675,7 @@ namespace Raze
 
             public override T Accept<T>(IVisitor<T> visitor)
             {
-                return type.Accept(visitor);
+                return visitor.visitGetExpr(type);
             }
 
             public override string ToString()

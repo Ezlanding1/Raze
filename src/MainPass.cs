@@ -202,7 +202,7 @@ namespace Raze
             {
                 var name = expr.name;
 
-                if (symbolTable.TryGetVariable(name.lexeme, out _, out _))
+                if (symbolTable.TryGetVariable(name.lexeme, out _, out _, true))
                 {
                     throw new Errors.AnalyzerError("Double Declaration", $"A variable named '{name.lexeme}' is already defined in this scope");
                 }
@@ -245,6 +245,11 @@ namespace Raze
 
 
                 symbolTable.CreateBlock();
+
+                if (!expr.modifiers["static"])
+                {
+                    symbolTable.Current.self.size += 8;
+                }
 
                 for (int i = 0; i < expr.arity; i++)
                 {
@@ -333,9 +338,33 @@ namespace Raze
                 var context = symbolTable.Current;
 
                 var variable = symbolTable.GetVariable(expr.name.lexeme);
+
+                if (variable.definition.IsPrimitive())
+                {
+                    throw new Errors.AnalyzerError("Primitive Field Access", "Primitive classes cannot contain fields");
+                }
+
                 expr.stackOffset = variable.self.stackOffset;
 
                 symbolTable.SetContext(variable.definition);
+
+                expr.get.Accept(this);
+
+                symbolTable.SetContext(context);
+
+                return null;
+            }
+
+            public override object visitThisExpr(Expr.This expr)
+            {
+                expr.type = NearestEnclosingClass().self.QualifiedName;
+
+                if (expr.get == null) { return null; }
+
+                var context = symbolTable.Current;
+
+
+                symbolTable.SetContext(NearestEnclosingClass());
 
                 expr.get.Accept(this);
 
@@ -365,49 +394,9 @@ namespace Raze
                 }
             }
 
-            private void DownGet(Expr.Get get, bool first=true)
-            {
-                if (get == null) { return; }
-
-                DownContainer(get, first);
-                if (!(get is Expr.Variable))
-                {
-                    DownGet(get.get, false);
-                }
-                else
-                {
-                    return;
-                }
-            }
-
-
-            private void DownContainer(Expr.Get get, bool first)
-            {
-                if (get == null) { return; }
-
-                switch (first)
-                {
-                    case true:
-                        {
-                            if (symbolTable.TryGetContainerFullScope(get.name.lexeme, out var symbol))
-                            {
-                                symbolTable.SetContext(symbol);
-                            }
-                            else
-                            {
-                                throw new Errors.AnalyzerError("Undefined Reference", $"The class '{get.name.lexeme}' does not exist in the current context");
-                            }
-                        }
-                        break;
-                    case false:
-                        symbolTable.SetContext(symbolTable.GetContainer(get.name.lexeme));
-                        break;
-                }
-            }
-
             private (int, List<string>, SymbolTable.Symbol.Container) GetTypeAndSize(Expr.Type type)
             {
-                if (symbolTable.TryGetContainerFullScope(type.type.name.lexeme, out var container))
+                if (symbolTable.TryGetContainerFullScope(type.type.name.lexeme, out var container, true))
                 {
                     var x = type.type.get;
                     while (x != null)
@@ -434,6 +423,12 @@ namespace Raze
                     return (self.size, self.literals, container);
                 }
                 return (8, null, container);
+            }
+
+            private SymbolTable.Symbol.Container NearestEnclosingClass()
+            {
+                // Assumes a function is enclosed by a class (no nested functions)
+                return symbolTable.Current.IsFunc() ? symbolTable.Current.enclosing : symbolTable.Current;
             }
         }
     }
