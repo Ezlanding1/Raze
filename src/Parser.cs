@@ -130,7 +130,7 @@ namespace Raze
                     Expect("IDENTIFIER", "name of 'Define'");
                     var name = previous();
 
-                    return new Expr.Define(name, Literal() 
+                    return new Expr.Define(name, Literal()
                         ?? throw new Errors.ParseError("Invalid Define", "The value of 'Define' should be a literal"));
                 }
                 else if (definitionType.type == "primitive")
@@ -167,7 +167,7 @@ namespace Raze
 
                     if (!literals.All(Literals.Contains))
                     {
-                        throw new Errors.ParseError("Invalid Primitive", $"The literal of a primitive must be a valid literal ({string.Join(", " , Literals)})");
+                        throw new Errors.ParseError("Invalid Primitive", $"The literal of a primitive must be a valid literal ({string.Join(", ", Literals)})");
                     }
 
                     ExpectValue("IDENTIFIER", "sizeof", "'sizeof' keyword");
@@ -238,7 +238,29 @@ namespace Raze
 
         private Expr NoSemicolon()
         {
-            Expr expr = Logical();
+            Expr expr = Return();
+            return expr;
+        }
+
+        private Expr Return()
+        {
+            Expr expr;
+
+            if (TypeMatch("return"))
+            {
+                if (current.type == "SEMICOLON")
+                {
+                    expr = new Expr.Return(new Expr.Keyword("void"), true);
+                }
+                else
+                {
+                    expr = new Expr.Return(Logical());
+                }
+            }
+            else
+            {
+                expr = Logical();
+            }
             return expr;
         }
 
@@ -407,17 +429,6 @@ namespace Raze
                         expr = new Expr.Member(variable);
                     }
                     return expr;
-                }
-
-
-                if (TypeMatch("return"))
-                {
-                    if (current.type == "SEMICOLON")
-                    {
-                        return new Expr.Return(new Expr.Keyword("void"), true);
-                    }
-                    Expr value = Additive();
-                    return new Expr.Return(value);
                 }
 
                 if (TypeMatch("null", "true", "false"))
