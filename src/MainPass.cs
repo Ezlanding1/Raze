@@ -333,10 +333,19 @@ namespace Raze
                 return null;
             }
 
-            public override object? visitGetExpr(Expr.Get expr)
+            public override object visitMemberExpr(Expr.Member expr)
             {
                 var context = symbolTable.Current;
 
+                base.visitMemberExpr(expr);
+
+                symbolTable.SetContext(context);
+
+                return null;
+            }
+
+            public override object? visitGetExpr(Expr.Get expr)
+            {
                 var variable = symbolTable.GetVariable(expr.name.lexeme);
 
                 if (variable.definition.IsPrimitive())
@@ -349,8 +358,6 @@ namespace Raze
                 symbolTable.SetContext(variable.definition);
 
                 expr.get.Accept(this);
-
-                symbolTable.SetContext(context);
 
                 return null;
             }
