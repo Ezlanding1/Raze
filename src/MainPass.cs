@@ -13,6 +13,7 @@ namespace Raze
         {
             SymbolTable symbolTable = SymbolTableSingleton.SymbolTable;
             HashSet<Expr.Definition> handledClasses;
+            bool member;
 
             public MainPass(List<Expr> expressions) : base(expressions)
             {
@@ -207,6 +208,10 @@ namespace Raze
                     throw new Errors.AnalyzerError("Double Declaration", $"A variable named '{name.lexeme}' is already defined in this scope");
                 }
 
+                if (symbolTable.Current.IsClass())
+                {
+                    symbolTable.other.classScopedVars.Add(expr.stack);
+                }
 
                 base.visitDeclareExpr(expr);
                 (expr.stack.size, expr.stack.type.literals, var definition) = GetTypeAndSize(expr.stack.type);
@@ -281,10 +286,9 @@ namespace Raze
                     expr.stack.stackOffset = symbol.self.stackOffset;
                     expr.stack.type = symbol.self.type;
 
-                    if (isClassScoped)
+                    if (isClassScoped && !member)
                     {
                         symbolTable.other.classScopedVars.Add(expr.stack);
-                        symbolTable.other.classScopedVars.Add(symbol.self);
                     }
                 }
                 else
@@ -336,9 +340,7 @@ namespace Raze
             public override object visitMemberExpr(Expr.Member expr)
             {
                 var context = symbolTable.Current;
-
                 base.visitMemberExpr(expr);
-
                 symbolTable.SetContext(context);
 
                 return null;
@@ -354,10 +356,10 @@ namespace Raze
                 }
 
                 expr.stackOffset = variable.self.stackOffset;
-
+                member = true;
                 symbolTable.SetContext(variable.definition);
-
                 expr.get.Accept(this);
+                member = false;
 
                 return null;
             }

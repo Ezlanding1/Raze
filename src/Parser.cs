@@ -563,7 +563,7 @@ namespace Raze
                                 Expect("IDENTIFIER", "after escape '$'");
                                 var ptr = new Instruction.Pointer(0, 0);
                                 variables[new Expr.Variable(previous())] = ptr;
-                                instructions.Add(new Instruction.Binary(op.lexeme, new Instruction.Register(operand1.lexeme), ptr));
+                                instructions.Add(new Instruction.Binary(op.lexeme, new Instruction.Register(operand1.lexeme, null), ptr));
                             }
                             else
                             {

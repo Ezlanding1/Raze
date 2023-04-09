@@ -565,6 +565,7 @@ namespace Raze
             public Expr value;
             public bool _void;
             public int size;
+            public bool opRet;
 
             public Return(Expr value)
             {

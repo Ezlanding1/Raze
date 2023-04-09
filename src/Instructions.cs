@@ -11,11 +11,11 @@ internal abstract class Instruction
         public string visitSection(Section instruction);
         public string visitRegister(Register instruction);
         public string visitPointer(Pointer instruction);
+        public string visitLiteral(Literal instruction);
         public string visitData(Data instruction);
         public string visitDataRef(DataRef instruction);
-        public string visitFunction(Function instruction);
-        public string visitFunctionRef(FunctionRef instruction);
-        public string visitClass(Class instruction);
+        public string visitProcedure(Procedure instruction);
+        public string visitProcedureRef(ProcedureRef instruction);
         public string visitBinary(Binary instruction);
         public string visitUnary(Unary instruction);
         public string visitZero(Zero instruction);
@@ -49,54 +49,80 @@ internal abstract class Instruction
             return visitor.visitSection(this);
         }
     }
-    internal class Register : Instruction
+
+    internal abstract class Value : Instruction
     {
-        // 0 = Register, 1 = Pointer, 2 = Literal
-        public int registerType;
         public string name;
 
-        public Register(string name)
+        // 0 = Register, 1 = Pointer, 2 = Literal
+        public int valueType;
+
+        public Value(int valueType, string name)
         {
-            this.registerType = 0;
+            this.valueType = valueType;
             this.name = name;
         }
 
-        private protected Register(int registerType, string name)
+        public bool IsRegister() => valueType == 0;
+        public bool IsPointer() => valueType == 1;
+        public bool IsLiteral() => valueType == 2;
+    }
+
+    internal class Register : Value
+    {
+        public enum RegisterSize
         {
-            this.registerType = registerType;
-            this.name = name;
+            _64Bits = 8,
+            _32Bits = 4, 
+            _16Bits = 2, 
+            _8BitsUpper = 0, 
+            _8Bits = 1
         }
 
-        public bool IsRegister() => registerType == 0;
-        public bool IsPointer() => registerType == 1;
-        public bool IsLiteral() => registerType == 2;
+        public RegisterSize? size;
+
+        private protected Register(int registerType, string register, RegisterSize? size) : base(registerType, register)
+        {
+            this.size = size;
+        }
+        
+        private protected Register(int registerType, string register, int size) : base(registerType, register)
+        {
+            this.size = Enum.IsDefined(typeof(RegisterSize), size) ? ((RegisterSize)size) : throw new Errors.ImpossibleError($"Invalid Register Size ({size})"); ;
+        }
+        
+        public Register(string register, RegisterSize? size) : base(0, register)
+        {
+            this.size = size;
+        }
+
+        public Register(string register, int size) : base(0, register)
+        {
+            this.size = Enum.IsDefined(typeof(RegisterSize), size) ? ((RegisterSize)size) : throw new Errors.ImpossibleError($"Invalid Register Size ({size})");
+        }
 
         public override string Accept(IVisitor visitor)
         {
             return visitor.visitRegister(this);
         }
     }
+
     internal class Pointer : Register
     {
-        public int size;
+        public int offset;
+        public char _operator;
 
-        public Pointer(string ptr, int size) : base(1, ptr)
+        public Pointer(string register, int offset, int size, char _operator) : base(1, register, size)
         {
-            this.size = size;
+            this.offset = offset;
+            this._operator = _operator;
         }
 
-        public Pointer(int offset, int size) : base(1, "RBP - " + offset)
+        public Pointer(int offset, int size) : this("RBP", offset, size, '-')
         {
-            this.size = size;
         }
 
-        public Pointer(string ptr, int offset, int size) : base(1, ptr + " - " + offset)
-        {
-            this.size = size;
-        }
-
-        public Pointer(int size)
-            : this("RBP", size)
+        public Pointer(string register, int offset, int size) : this(register, offset, size, '-')
         {
         }
 
@@ -105,12 +131,19 @@ internal abstract class Instruction
             return visitor.visitPointer(this);
         }
     }
-    internal class Literal : Register
+
+    internal class Literal : Value
     {
         public string type;
+
         public Literal(string name, string type) : base(2, name)
         {
             this.type = type;
+        }
+
+        public override string Accept(IVisitor visitor)
+        {
+            return visitor.visitLiteral(this);
         }
     }
 
@@ -147,45 +180,32 @@ internal abstract class Instruction
         }
     }
 
-    internal class Function : Instruction
+    internal class Procedure : Instruction
     {
         public string name;
-        public Function(string name)
+        public Procedure(string name)
         {
             this.name = name;
         }
 
         public override string Accept(IVisitor visitor)
         {
-            return visitor.visitFunction(this);
+            return visitor.visitProcedure(this);
         }
     }
 
-    internal class FunctionRef : Instruction
-    {
+    internal class ProcedureRef : Instruction
+    { 
         public string name;
-        public FunctionRef(string name)
+
+        public ProcedureRef(string name)
         {
             this.name = name;
         }
 
         public override string Accept(IVisitor visitor)
         {
-            return visitor.visitFunctionRef(this);
-        }
-    }
-
-    internal class Class : Instruction
-    {
-        public string name;
-        public Class(string name)
-        {
-            this.name = name;
-        }
-
-        public override string Accept(IVisitor visitor)
-        {
-            return visitor.visitClass(this);
+            return visitor.visitProcedureRef(this);
         }
     }
 
@@ -201,9 +221,9 @@ internal abstract class Instruction
             this.operand2 = operand2;
         }
 
-        public Binary(string instruction, string operand1, string operand2) 
-            : this (instruction, new Register(operand1), new Register(operand2)) 
-        { 
+        public Binary(string instruction, string operand1, string operand2)
+            : this(instruction, new Register(operand1, Register.RegisterSize._64Bits), new Register(operand2, Register.RegisterSize._64Bits))
+        {
         }
 
         public override string Accept(IVisitor visitor)
@@ -214,7 +234,7 @@ internal abstract class Instruction
 
     internal class StackAlloc : Binary
     {
-        public StackAlloc(string instruction, Instruction operand1, Instruction operand2) 
+        public StackAlloc(string instruction, Instruction operand1, Instruction operand2)
             : base (instruction, operand1, operand2)
         {
         }
@@ -234,16 +254,15 @@ internal abstract class Instruction
     {
         public Instruction operand;
         public string instruction;
+
         public Unary(string instruction, Instruction operand)
         {
             this.instruction = instruction;
             this.operand = operand;
         }
 
-        public Unary(string instruction, string operand)
+        public Unary(string instruction, string operand) : this(instruction, new Instruction.Register(operand, Register.RegisterSize._64Bits))
         {
-            this.instruction = instruction;
-            this.operand = new Instruction.Register(operand);
         }
 
         public override string Accept(IVisitor visitor)
@@ -283,14 +302,6 @@ internal abstract class Instruction
 
 internal class InstructionInfo
 {
-    public const int MaxLiteral = 4;
-    public const string InstanceRegister = "FIX";
-
-    internal static bool IsStack(Instruction.Register input, bool addSize=false)
-    {
-        return (input.name[0] == '[');
-    }
-
     internal static string ToType(string input, bool unary=false)
     {
         if (!unary)
@@ -301,24 +312,6 @@ internal class InstructionInfo
         {
             return StringToOperatorTypeUnary[input];
         }
-    }
-
-    internal static string DataSizeOf(int size, ref string value)
-    {
-        // This check is needed for string literals
-        if (value[0] == '"')
-        {
-            value += ", 0";
-            return dataSize[1];
-        }
-
-        return dataSize[size];
-    }
-
-    internal static string ToRegister(int input, bool bits=false, string register="RAX")
-    {
-        input = bits ? (input / 8) : input;
-        return Registers[(register, input)];
     }
 
     private readonly static Dictionary<string, string> StringToOperatorTypeBinary = new()
@@ -347,7 +340,6 @@ internal class InstructionInfo
         { "PLUSPLUS",  "INC" },
         { "MINUSMINUS",  "DEC" },
         { "MINUS",  "NEG" },
-        { "return",  "RET" }
     };
 
     internal readonly static Dictionary<string, string> ConditionalJump = new()
@@ -379,95 +371,126 @@ internal class InstructionInfo
         "rbx"
     };
 
-    internal readonly static Dictionary<(string, int), string> Registers = new()
+    internal readonly static string[] storageRegisters = new string[]
     {
-        { ("RAX", 8), "RAX" }, // 64-Bits 
-        { ("RAX", 4), "EAX" }, // Lower 32-Bits
-        { ("RAX", 2), "AX" }, // Lower 16-Bits
-        { ("RAX", 1), "AL" }, // Lower 8-Bits
-
-        { ("RCX", 8), "RCX" },
-        { ("RCX", 4), "ECX" },
-        { ("RCX", 2), "CX" },
-        { ("RCX", 1), "CL" },
-
-        { ("RDX", 8), "RDX" },
-        { ("RDX", 4), "EDX" },
-        { ("RDX", 2), "DX" },
-        { ("RDX", 1), "DL" },
-
-        { ("RBX", 8), "RBX" },
-        { ("RBX", 4), "EBX" },
-        { ("RBX", 2), "BX" },
-        { ("RBX", 1), "BL" },
-
-        { ("RSI", 8), "RSI" },
-        { ("RSI", 4), "ESI" },
-        { ("RSI", 2), "SI" },
-        { ("RSI", 1), "SIL" },
-
-        { ("RDI", 8), "RDI" },
-        { ("RDI", 4), "EDI" },
-        { ("RDI", 2), "DI" },
-        { ("RDI", 1), "DIL" },
-
-        { ("RSP", 8), "RSP" },
-        { ("RSP", 4), "ESP" },
-        { ("RSP", 2), "SP" },
-        { ("RSP", 1), "SPL" },
-
-        { ("RBP", 8), "RBP" },
-        { ("RBP", 4), "EBP" },
-        { ("RBP", 2), "BP" },
-        { ("RBP", 1), "BPL" },
-
-        { ("R8", 8), "R8" },
-        { ("R8", 4), "R8D" },
-        { ("R8", 2), "R8W" },
-        { ("R8", 1), "R8B" },
-
-        { ("R9", 8), "R9" },
-        { ("R9", 4), "R9D" },
-        { ("R9", 2), "R9W" },
-        { ("R9", 1), "R9B" },
-
-        { ("R10", 8), "R10" },
-        { ("R10", 4), "R10D" },
-        { ("R10", 2), "R10W" },
-        { ("R10", 1), "R10B" },
-
-        { ("R11", 8), "R11" },
-        { ("R11", 4), "R11D" },
-        { ("R11", 2), "R11W" },
-        { ("R11", 1), "R11B" },
-
-        { ("R12", 8), "R12" },
-        { ("R12", 4), "R12D" },
-        { ("R12", 2), "R12W" },
-        { ("R12", 1), "R12B" },
-
-        { ("R13", 8), "R13" },
-        { ("R13", 4), "R13D" },
-        { ("R13", 2), "R13W" },
-        { ("R13", 1), "R13B" },
-
-        { ("R14", 8), "R14" },
-        { ("R14", 4), "R14D" },
-        { ("R14", 2), "R14W" },
-        { ("R14", 1), "R14B" },
-
-        { ("R15", 8), "R15" },
-        { ("R15", 4), "R15D" },
-        { ("R15", 2), "R15W" },
-        { ("R15", 1), "R15B" },
+        // REGISTER_NAME : true = scratch, false = preserved
+        "RAX",
+        "RBX",
+        "R12",
+        "R13",
+        "R14",
+        "R15"
     };
 
-    internal readonly static Dictionary<int, string> wordSize = new()
+    public static string NextRegister(ref int idx)
     {
-        { 8, "QWORD"}, // 64-Bits
-        { 4, "DWORD"}, // 32-Bits
-        { 2, "WORD"}, // 16-Bits
-        { 1, "BYTE"}, // 8-Bits
+        return storageRegisters[idx++];
+    }
+
+    public static string CurrentRegister(int idx)
+    {
+        return storageRegisters[idx];
+    }
+
+    public static void FreeRegister(ref int idx)
+    {
+        idx--;
+    }
+
+    internal readonly static Dictionary<(string, Instruction.Register.RegisterSize?), string> Registers = new()
+    {
+        { ("RAX", Instruction.Register.RegisterSize._64Bits), "RAX" }, // 64-Bits 
+        { ("RAX", Instruction.Register.RegisterSize._32Bits), "EAX" }, // Lower 32-Bits
+        { ("RAX", Instruction.Register.RegisterSize._16Bits), "AX" }, // Lower 16-Bits
+        { ("RAX", Instruction.Register.RegisterSize._8BitsUpper), "AH" }, // Upper 16-Bits
+        { ("RAX", Instruction.Register.RegisterSize._8Bits), "AL" }, // Lower 8-Bits
+
+        { ("RCX", Instruction.Register.RegisterSize._64Bits), "RCX" },
+        { ("RCX", Instruction.Register.RegisterSize._32Bits), "ECX" },
+        { ("RCX", Instruction.Register.RegisterSize._16Bits), "CX" },
+        { ("RCX", Instruction.Register.RegisterSize._8BitsUpper), "CH" },
+        { ("RCX", Instruction.Register.RegisterSize._8Bits), "CL" },
+
+        { ("RDX", Instruction.Register.RegisterSize._64Bits), "RDX" },
+        { ("RDX", Instruction.Register.RegisterSize._32Bits), "EDX" },
+        { ("RDX", Instruction.Register.RegisterSize._16Bits), "DX" },
+        { ("RDX", Instruction.Register.RegisterSize._8BitsUpper), "DH" },
+        { ("RDX", Instruction.Register.RegisterSize._8Bits), "DL" },
+
+        { ("RBX", Instruction.Register.RegisterSize._64Bits), "RBX" },
+        { ("RBX", Instruction.Register.RegisterSize._32Bits), "EBX" },
+        { ("RBX", Instruction.Register.RegisterSize._16Bits), "BX" },
+        { ("RBX", Instruction.Register.RegisterSize._8BitsUpper), "BH" },
+        { ("RBX", Instruction.Register.RegisterSize._8Bits), "BL" },
+
+        { ("RSI", Instruction.Register.RegisterSize._64Bits), "RSI" },
+        { ("RSI", Instruction.Register.RegisterSize._32Bits), "ESI" },
+        { ("RSI", Instruction.Register.RegisterSize._16Bits), "SI" },
+        { ("RSI", Instruction.Register.RegisterSize._8Bits), "SIL" },
+
+        { ("RDI", Instruction.Register.RegisterSize._64Bits), "RDI" },
+        { ("RDI", Instruction.Register.RegisterSize._32Bits), "EDI" },
+        { ("RDI", Instruction.Register.RegisterSize._16Bits), "DI" },
+        { ("RDI", Instruction.Register.RegisterSize._8Bits), "DIL" },
+
+        { ("RSP", Instruction.Register.RegisterSize._64Bits), "RSP" },
+        { ("RSP", Instruction.Register.RegisterSize._32Bits), "ESP" },
+        { ("RSP", Instruction.Register.RegisterSize._16Bits), "SP" },
+        { ("RSP", Instruction.Register.RegisterSize._8Bits), "SPL" },
+
+        { ("RBP", Instruction.Register.RegisterSize._64Bits), "RBP" },
+        { ("RBP", Instruction.Register.RegisterSize._32Bits), "EBP" },
+        { ("RBP", Instruction.Register.RegisterSize._16Bits), "BP" },
+        { ("RBP", Instruction.Register.RegisterSize._8Bits), "BPL" },
+
+        { ("R8", Instruction.Register.RegisterSize._64Bits), "R8" },
+        { ("R8", Instruction.Register.RegisterSize._32Bits), "R8D" },
+        { ("R8", Instruction.Register.RegisterSize._16Bits), "R8W" },
+        { ("R8", Instruction.Register.RegisterSize._8Bits), "R8B" },
+
+        { ("R9", Instruction.Register.RegisterSize._64Bits), "R9" },
+        { ("R9", Instruction.Register.RegisterSize._32Bits), "R9D" },
+        { ("R9", Instruction.Register.RegisterSize._16Bits), "R9W" },
+        { ("R9", Instruction.Register.RegisterSize._8Bits), "R9B" },
+
+        { ("R10", Instruction.Register.RegisterSize._64Bits), "R10" },
+        { ("R10", Instruction.Register.RegisterSize._32Bits), "R10D" },
+        { ("R10", Instruction.Register.RegisterSize._16Bits), "R10W" },
+        { ("R10", Instruction.Register.RegisterSize._8Bits), "R10B" },
+
+        { ("R11", Instruction.Register.RegisterSize._64Bits), "R11" },
+        { ("R11", Instruction.Register.RegisterSize._32Bits), "R11D" },
+        { ("R11", Instruction.Register.RegisterSize._16Bits), "R11W" },
+        { ("R11", Instruction.Register.RegisterSize._8Bits), "R11B" },
+
+        { ("R12", Instruction.Register.RegisterSize._64Bits), "R12" },
+        { ("R12", Instruction.Register.RegisterSize._32Bits), "R12D" },
+        { ("R12", Instruction.Register.RegisterSize._16Bits), "R12W" },
+        { ("R12", Instruction.Register.RegisterSize._8Bits), "R12B" },
+
+        { ("R13", Instruction.Register.RegisterSize._64Bits), "R13" },
+        { ("R13", Instruction.Register.RegisterSize._32Bits), "R13D" },
+        { ("R13", Instruction.Register.RegisterSize._16Bits), "R13W" },
+        { ("R13", Instruction.Register.RegisterSize._8Bits), "R13B" },
+
+        { ("R14", Instruction.Register.RegisterSize._64Bits), "R14" },
+        { ("R14", Instruction.Register.RegisterSize._32Bits), "R14D" },
+        { ("R14", Instruction.Register.RegisterSize._16Bits), "R14W" },
+        { ("R14", Instruction.Register.RegisterSize._8Bits), "R14B" },
+
+        { ("R15", Instruction.Register.RegisterSize._64Bits), "R15" },
+        { ("R15", Instruction.Register.RegisterSize._32Bits), "R15D" },
+        { ("R15", Instruction.Register.RegisterSize._16Bits), "R15W" },
+        { ("R15", Instruction.Register.RegisterSize._8Bits), "R15B" },
+    };
+
+    internal readonly static Dictionary<Instruction.Register.RegisterSize?, string> wordSize = new()
+    {
+        { Instruction.Register.RegisterSize._64Bits, "QWORD"}, // 64-Bits
+        { Instruction.Register.RegisterSize._32Bits, "DWORD"}, // 32-Bits
+        { Instruction.Register.RegisterSize._16Bits, "WORD"}, // 16-Bits
+        { Instruction.Register.RegisterSize._8BitsUpper, "BYTE"}, // 8-Bits
+        { Instruction.Register.RegisterSize._8Bits, "BYTE"}, // 8-Bits
     };
 
     internal readonly static Dictionary<int, string> dataSize = new()

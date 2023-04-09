@@ -118,7 +118,7 @@ namespace Raze
                 if (Current.variables.TryGetValue(key, out var value))
                 {
                     symbol = value;
-                    isClassScoped = false;
+                    isClassScoped = Current.IsClass();
                     return true;
                 }
 

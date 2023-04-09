@@ -24,10 +24,10 @@ namespace Raze
                     {
                         { new Instruction.Global("_start") },
                         { new Instruction.Section("text") },
-                        { new Instruction.Function("_start") },
-                        { new Instruction.Unary("CALL", main.QualifiedName) },
-                        { new Instruction.Binary("MOV", "RDI", (main._returnType.ToString() == "number") ? "RAX" : "0") },
-                        { new Instruction.Binary("MOV", "RAX", "60") },
+                        { new Instruction.Procedure("_start") },
+                        { new Instruction.Unary("CALL", new Instruction.ProcedureRef(main.QualifiedName)) },
+                        { new Instruction.Binary("MOV", new Instruction.Register("RDI", Instruction.Register.RegisterSize._64Bits), (main._returnType.ToString() == "number") ? new Instruction.Register("RAX", Instruction.Register.RegisterSize._64Bits) : new Instruction.Literal("0", Parser.Literals[0])) },
+                        { new Instruction.Binary("MOV", new Instruction.Register("RAX", Instruction.Register.RegisterSize._64Bits), new Instruction.Literal("60", Parser.Literals[0])) },
                         { new Instruction.Zero("SYSCALL") }
                     };
                 }
@@ -48,23 +48,15 @@ namespace Raze
                 public string visitBinary(Instruction.Binary instruction)
                 {
                     if (instruction is Instruction.StackAlloc)
-                        if (instruction.operand2 is Instruction.Register)
-                            return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, { AlignTo16((Instruction.Register)instruction.operand2) }";
+                        if (instruction.operand2 is Instruction.Literal)
+                            return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, { AlignTo16((Instruction.Literal)instruction.operand2) }";
                         else
                             //
                             throw new Exception();
                     if (instruction.operand2 is Instruction.Pointer)
-                        if (instruction.operand1 is Instruction.Pointer)
-                            return new Instruction.Binary("MOV", new Instruction.Register(RegisterFor(((Instruction.Pointer)instruction.operand2), "RAX")), instruction.operand2).Accept(this) + "\n" + new Instruction.Binary("MOV", instruction.operand1, new Instruction.Register(RegisterFor(((Instruction.Pointer)instruction.operand1), "RAX"))).Accept(this);
-                        else
                             return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, { PointerToString( (Instruction.Pointer)instruction.operand2 ) }";
 
                     return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, {instruction.operand2.Accept(this)}";
-                }
-
-                public string visitClass(Instruction.Class instruction)
-                {
-                    return $"{instruction.name}:";
                 }
 
                 public string visitComment(Instruction.Comment instruction)
@@ -82,7 +74,7 @@ namespace Raze
                     return $"{instruction.dataName}";
                 }
 
-                public string visitFunction(Instruction.Function instruction)
+                public string visitProcedure(Instruction.Procedure instruction)
                 {
                     return $"{instruction.name}:";
                 }
@@ -94,17 +86,17 @@ namespace Raze
 
                 public string visitPointer(Instruction.Pointer instruction)
                 {
-                    return $"{InstructionInfo.wordSize[instruction.size]} [{instruction.name}]";
+                    return $"{InstructionInfo.wordSize[instruction.size]} [{InstructionInfo.Registers[(instruction.name, instruction.size)]} {instruction._operator} {instruction.offset}]";
                 }
 
-                public string visitFunctionRef(Instruction.FunctionRef instruction)
+                public string visitProcedureRef(Instruction.ProcedureRef instruction)
                 {
                     return $"{instruction.name}";
                 }
 
                 public string visitRegister(Instruction.Register instruction)
                 {
-                    return $"{instruction.name}";
+                    return $"{InstructionInfo.Registers[(instruction.name, instruction.size)]}";
                 }
 
                 public string visitSection(Instruction.Section instruction)
@@ -124,15 +116,20 @@ namespace Raze
 
                 private string PointerToString(Instruction.Pointer instruction)
                 {
-                    return $"[{instruction.name}]";
+                    return $"[{InstructionInfo.Registers[(instruction.name, instruction.size)]} {instruction._operator} {instruction.offset}]";
+                }
+                
+                public string visitLiteral(Instruction.Literal instruction)
+                {
+                    return $"{instruction.name}";
                 }
 
-                private string AlignTo16(Instruction.Register instruction)
+                private string AlignTo16(Instruction.Literal instruction)
                 {
                     if (int.TryParse(instruction.name, out var value)) 
                     {
                         string name = (((int)Math.Ceiling(value / 16f)) * 16).ToString();
-                        return new Instruction.Register(name).Accept(this);
+                        return new Instruction.Literal(name, instruction.type).Accept(this);
                     }
                     else
                     {
@@ -140,7 +137,7 @@ namespace Raze
                     }
                 }
 
-                private string RegisterFor(Instruction.Pointer pointer, string register) => InstructionInfo.Registers[(register, pointer.size)];
+                
             }
 
             partial class GasSyntax : ISyntaxFactory, Instruction.IVisitor
@@ -154,7 +151,7 @@ namespace Raze
                     {
                         { new Instruction.Section("text") },
                         { new Instruction.Global("main") },
-                        { new Instruction.Function("main") },
+                        { new Instruction.Procedure("main") },
                         { new Instruction.Unary("CALL", main.QualifiedName) },
                         { new Instruction.Binary("MOV", "RDI", (main._returnType.ToString() == "number")? "RAX" : "0") },
                         { new Instruction.Binary("MOV", "RAX", "60") },
@@ -181,7 +178,7 @@ namespace Raze
                     throw new NotImplementedException();
                 }
 
-                public string visitClass(Instruction.Class instruction)
+                public string visitProcedure(Instruction.Procedure instruction)
                 {
                     throw new NotImplementedException();
                 }
@@ -201,22 +198,12 @@ namespace Raze
                     throw new NotImplementedException();
                 }
 
-                public string visitFunction(Instruction.Function instruction)
-                {
-                    throw new NotImplementedException();
-                }
-
                 public string visitGlobal(Instruction.Global instruction)
                 {
                     throw new NotImplementedException();
                 }
 
                 public string visitPointer(Instruction.Pointer instruction)
-                {
-                    throw new NotImplementedException();
-                }
-
-                public string visitFunctionRef(Instruction.FunctionRef instruction)
                 {
                     throw new NotImplementedException();
                 }
@@ -237,6 +224,16 @@ namespace Raze
                 }
 
                 public string visitZero(Instruction.Zero instruction)
+                {
+                    throw new NotImplementedException();
+                }
+
+                public string visitProcedureRef(Instruction.ProcedureRef instruction)
+                {
+                    throw new NotImplementedException();
+                }
+
+                public string visitLiteral(Instruction.Literal instruction)
                 {
                     throw new NotImplementedException();
                 }

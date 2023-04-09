@@ -193,7 +193,7 @@ namespace Raze
                 {
                     throw new Errors.AnalyzerError("ASM Block Not In Function", "Assembly Blocks must be placed in functions");
                 }
-                if (!((SymbolTable.Symbol.Function)symbolTable.Current).self.modifiers["unsafe"])
+                if (symbolTable.Current.IsFunc() && !((SymbolTable.Symbol.Function)symbolTable.Current).self.modifiers["unsafe"])
                 {
                     throw new Errors.AnalyzerError("Unsafe Code in Safe Function", "Mark a function with 'unsafe' to include unsafe code");
                 }

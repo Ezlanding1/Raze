@@ -11,7 +11,6 @@ namespace Raze
     internal partial class Analyzer
     {
         List<Expr> expressions;
-        Dictionary<string, Expr.Primitive> primitives;
 
         public Analyzer(List<Expr> expressions)
         {
