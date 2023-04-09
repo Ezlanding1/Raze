@@ -549,16 +549,17 @@ namespace Raze
 
                         if (TypeMatch("COMMA"))
                         {
-                            
-                            if (!TypeMatch("IDENTIFIER", "INTEGER", "FLOATING", "STRING", "HEX", "BINARY", "DOLLAR"))
-                            {
-                                Expected("IDENTIFIER, INTEGER, FLOAT, STRING, HEX, BINARY", "operand after comma ','");
-                            }
-
-                            var operand2 = previous();
-
                             // Binary
-                            if (operand2.type == "DOLLAR")
+                            
+                            if (TypeMatch("IDENTIFIER"))
+                            {
+                                instructions.Add(new Instruction.Binary(op.lexeme, operand1.lexeme, previous().lexeme));
+                            }
+                            else if (TypeMatch("INTEGER", "FLOATING", "STRING", "HEX", "BINARY"))
+                            {
+                                instructions.Add(new Instruction.Binary(op.lexeme, new Instruction.Register(operand1.lexeme, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(previous().lexeme, previous().type)));
+                            }
+                            else if (TypeMatch("DOLLAR"))
                             {
                                 Expect("IDENTIFIER", "after escape '$'");
                                 var ptr = new Instruction.Pointer(0, 0);
@@ -567,7 +568,7 @@ namespace Raze
                             }
                             else
                             {
-                                instructions.Add(new Instruction.Binary(op.lexeme, operand1.lexeme, operand2.lexeme));
+                                Expected("IDENTIFIER, INTEGER, FLOAT, STRING, HEX, BINARY", "operand after comma ','");
                             }
                         }
                         else
