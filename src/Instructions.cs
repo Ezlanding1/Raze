@@ -65,7 +65,17 @@ internal abstract class Instruction
         public bool IsLiteral() => valueType == 2;
     }
 
-    internal class Register : Value
+    internal abstract class SizedValue : Value
+    {
+        public Register.RegisterSize size;
+
+        public SizedValue(int valueType) : base(valueType)
+        {
+
+        }
+    }
+
+    internal class Register : SizedValue
     {
         public enum RegisterSize // ToDo: make this inherit from byte. use switch instead of cast
         {
@@ -98,9 +108,8 @@ internal abstract class Instruction
         }
 
         public RegisterName name;
-        public RegisterSize? size;
 
-        private protected Register(int registerType, RegisterName register, RegisterSize? size) : base(registerType)
+        private protected Register(int registerType, RegisterName register, RegisterSize size) : base(registerType)
         {
             this.name = register;
             this.size = size;
@@ -112,7 +121,7 @@ internal abstract class Instruction
             this.size = Enum.IsDefined(typeof(RegisterSize), size) ? ((RegisterSize)size) : throw new Errors.ImpossibleError($"Invalid Register Size ({size})"); ;
         }
         
-        public Register(RegisterName register, RegisterSize? size) : base(0)
+        public Register(RegisterName register, RegisterSize size) : base(0)
         {
             this.name = register;
             this.size = size;
@@ -130,10 +139,9 @@ internal abstract class Instruction
         }
     }
 
-    internal class Pointer : Value
+    internal class Pointer : SizedValue
     {
         public Register register;
-        public Register.RegisterSize size;
         public int offset;
         public char _operator;
 
@@ -425,7 +433,7 @@ internal class InstructionInfo
         idx--;
     }
 
-    internal readonly static Dictionary<string, (Instruction.Register.RegisterName, Instruction.Register.RegisterSize?)> Registers = new()
+    internal readonly static Dictionary<string, (Instruction.Register.RegisterName, Instruction.Register.RegisterSize)> Registers = new()
     {
         { "RAX", (Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits) }, // 64-Bits 
         { "EAX", (Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._32Bits) }, // Lower 32-Bits
