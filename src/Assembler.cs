@@ -178,7 +178,7 @@ namespace Raze
             for (int i = 0; i < expr.arity; i++)
             {
                 var paramExpr = expr.parameters[i];
-                emit(new Instruction.Binary("MOV", new Instruction.Pointer(paramExpr.member.variable.stack.stackOffset, paramExpr.member.variable.stack.size), new Instruction.Register(InstructionInfo.paramRegister[count], paramExpr.member.variable.stack.size)));
+                emit(new Instruction.Binary("MOV", new Instruction.Pointer(paramExpr.member.variable.stack.stackOffset, paramExpr.member.variable.stack.size), new Instruction.Register(InstructionInfo.paramRegister[i+count], paramExpr.member.variable.stack.size)));
             }
 
             expr.block.Accept(this);
@@ -240,7 +240,7 @@ namespace Raze
             {
                 case "STRING":
                     string name = DataLabel;
-                    emitData(new Instruction.Data(name, InstructionInfo.dataSize[1], expr.literal.lexeme));
+                    emitData(new Instruction.Data(name, InstructionInfo.dataSize[1], expr.literal.lexeme + ", 0"));
                     dataCount++;
                     return new Instruction.Literal(name, expr.literal.type);
                 case "INTEGER":
@@ -407,6 +407,7 @@ namespace Raze
         public Instruction.Value? visitAssignExpr(Expr.Assign expr)
         {
             Instruction.Value operand1 = expr.member.Accept(this);
+            var checkRegisterAlloc = registerIdx;
             Instruction.Value operand2 = expr.value.Accept(this);
 
             // Note: Defualt instruction is assignment
@@ -419,12 +420,12 @@ namespace Raze
 
             if (operand2.IsPointer())
             {
-                Instruction.Register reg = new Instruction.Register(InstructionInfo.storageRegisters[registerIdx - 1], ((Instruction.Pointer)operand2).size);
-                emit(new Instruction.Binary(instruction, reg, operand2));
+                Instruction.Register reg = new Instruction.Register(InstructionInfo.storageRegisters[(registerIdx == (checkRegisterAlloc+1))? registerIdx-1 : registerIdx], ((Instruction.Pointer)operand2).size);
+                emit(new Instruction.Binary("MOV", reg, operand2));
                 operand2 = reg;
             }
 
-            emit(new Instruction.Binary("MOV", operand1, operand2));
+            emit(new Instruction.Binary(instruction, operand1, operand2));
             return null;
         }
 
