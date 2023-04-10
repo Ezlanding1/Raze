@@ -79,12 +79,11 @@ namespace Raze
                 return default(T);
             }
 
-            public virtual T visitConditionalExpr(Expr.Conditional expr)
+            public virtual T visitIfExpr(Expr.If expr)
             {
-                if (expr.condition != null)
-                    expr.condition.Accept(this);
+                expr.conditional.condition.Accept(this);
 
-                expr.block.Accept(this);
+                expr.conditional.block.Accept(this);
                 return default(T);
             }
 
@@ -162,6 +161,24 @@ namespace Raze
             public virtual T visitThisExpr(Expr.This expr)
             {
                 return visitGetExpr(expr);
+            }
+
+            public virtual T visitWhileExpr(Expr.While expr)
+            {
+                expr.conditional.condition.Accept(this);
+
+                expr.conditional.block.Accept(this);
+                return default(T);
+            }
+
+            public virtual T visitForExpr(Expr.For expr)
+            {
+                expr.initExpr.Accept(this);
+                expr.conditional.condition.Accept(this);
+                expr.updateExpr.Accept(this);
+
+                expr.conditional.block.Accept(this);
+                return default(T);
             }
         }
     }

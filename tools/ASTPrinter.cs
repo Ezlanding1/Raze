@@ -196,12 +196,33 @@ namespace Raze.Tools
             return null;
         }
 
-        public object? visitConditionalExpr(Expr.Conditional expr)
+        public object? visitIfExpr(Expr.If expr)
         {
-            PrintAST(expr.type);
+            PrintConditional(expr.conditional, "if");
+
+            expr.ElseIfs.ForEach(x => PrintConditional(x.conditional, "else if"));
+
+            PrintConditional(expr._else.conditional, "else");
+            return null;
+        }
+
+        public object? visitWhileExpr(Expr.While expr)
+        {
+            PrintConditional(expr.conditional, "while");
+            return null;
+        }
+
+        public object? visitForExpr(Expr.For expr)
+        {
+            PrintConditional(expr.conditional, "for");
+            return null;
+        }
+
+        private void PrintConditional(Expr.Conditional expr, string type)
+        {
+            PrintAST(type);
             PrintAST(expr.condition);
             PrintAST(expr.block);
-            return null;
         }
 
         public object? visitBlockExpr(Expr.Block expr)

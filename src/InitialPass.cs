@@ -13,10 +13,6 @@ namespace Raze
         {
             SymbolTable symbolTable = SymbolTableSingleton.SymbolTable;
 
-            Tuple<bool, int, Expr.If> waitingIf;
-
-            int index;
-
             public InitialPass(List<Expr> expressions) : base(expressions)
             {
             }
@@ -40,7 +36,6 @@ namespace Raze
                 foreach (var blockExpr in expr.block)
                 {
                     blockExpr.Accept(this);
-                    index++;
                 }
                 return null;
             }
@@ -133,46 +128,26 @@ namespace Raze
                 symbolTable.UpContext();
                 return null;
             }
-            public override object? visitConditionalExpr(Expr.Conditional expr)
+
+            public override object? visitIfExpr(Expr.If expr)
             {
                 if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
 
-                if (expr.type.type == "if")
-                {
-                    waitingIf = new Tuple<bool, int, Expr.If>(true, index, (Expr.If)expr);
-                }
-                else if (expr.type.type == "else if")
-                {
-                    if (waitingIf != null && (waitingIf.Item1 == true && waitingIf.Item2 == (index - 1)))
-                    {
-                        Expr.ElseIf elif = (Expr.ElseIf)expr;
-                        elif.top = waitingIf.Item3;
-                        waitingIf.Item3.ElseIfs.Add(elif);
-                        waitingIf = new(true, waitingIf.Item2+1, waitingIf.Item3);
-                    }
-                    else
-                    {
-                        throw new Errors.AnalyzerError("Invalid Else If", "'else if' conditional has no matching 'if'");
-                    }
-                }
-                else if (expr.type.type == "else")
-                {
-                    if (waitingIf != null && (waitingIf.Item1 == true && waitingIf.Item2 == (index - 1)))
-                    {
-                        Expr.Else _else = (Expr.Else)expr;
-                        _else.top = waitingIf.Item3;
-                        waitingIf.Item3._else = _else;
-                        waitingIf = new(false, waitingIf.Item2, null);
-                    }
-                    else
-                    {
-                        throw new Errors.AnalyzerError("Invalid Else", "'else' conditional has no matching 'if'");
-                    }
-                }
-                int tmpidx = index;
-                base.visitConditionalExpr(expr);
-                index = tmpidx;
-                return null;
+                return base.visitIfExpr(expr);
+            }
+
+            public override object visitWhileExpr(Expr.While expr)
+            {
+                if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
+
+                return base.visitWhileExpr(expr);
+            }
+
+            public override object visitForExpr(Expr.For expr)
+            {
+                if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
+
+                return base.visitForExpr(expr);
             }
 
             public override object? visitNewExpr(Expr.New expr)

@@ -181,24 +181,42 @@ namespace Raze
                 return expr.expression.Accept(this);
             }
 
-            public override string visitConditionalExpr(Expr.Conditional expr)
+            public override string visitIfExpr(Expr.If expr)
             {
-                int _returnCount = _return.Count;
-                if (expr.condition != null)
+                TypeCheckConditional(expr.conditional);
+
+                expr.ElseIfs.ForEach(x => TypeCheckConditional(x.conditional));
+
+                TypeCheckConditional(expr._else.conditional);
+
+                return "void";
+            }
+
+            public override string visitWhileExpr(Expr.While expr)
+            {
+                TypeCheckConditional(expr.conditional);
+
+                return "void";
+            }
+
+            public override string visitForExpr(Expr.For expr)
+            {
+                var result = expr.initExpr.Accept(this);
+                if (result != "void" && !callReturn)
                 {
-                    if (expr.condition.Accept(this) != "BOOLEAN")
-                    {
-                        throw new Errors.AnalyzerError("Type Mismatch", $"'{expr.type.type}' expects condition to return 'BOOLEAN'. Got '{expr.condition.Accept(this)}'");
-                    }
+                    throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
                 }
-                expr.block.Accept(this);
-                if (expr.type.type != "else")
+                callReturn = false;
+
+                result = expr.updateExpr.Accept(this);
+                if (result != "void" && !callReturn)
                 {
-                    for (int i = _returnCount; i < _return.Count; i++)
-                    {
-                        _return[i] = (_return[i].Item1, true, _return[i].Item3);
-                    }
+                    throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
                 }
+                callReturn = false;
+
+                TypeCheckConditional(expr.conditional);
+
                 return "void";
             }
 
@@ -310,6 +328,27 @@ namespace Raze
                 else
                 {
                     return (type1.type.ToString() == type2 || type1.literals.Contains(type2));
+                }
+            }
+
+            private void TypeCheckConditional(Expr.Conditional expr, bool _else=false)
+            {
+                int _returnCount = _return.Count;
+                if (expr.condition != null)
+                {
+                    if (expr.condition.Accept(this) != "BOOLEAN")
+                    {
+                        throw new Errors.AnalyzerError("Type Mismatch", $"'if' expects condition to return 'BOOLEAN'. Got '{expr.condition.Accept(this)}'");
+                    }
+                }
+                expr.block.Accept(this);
+
+                if (!_else)
+                {
+                    for (int i = _returnCount; i < _return.Count; i++)
+                    {
+                        _return[i] = (_return[i].Item1, true, _return[i].Item3);
+                    }
                 }
             }
         }

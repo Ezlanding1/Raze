@@ -193,36 +193,58 @@ namespace Raze
                 Token conditionalType = previous();
                 Expr.Block block;
 
-                conditionalType.type = (TypeMatch("if"))?  "else if" : conditionalType.type;
-
                 switch (conditionalType.type)
                 {
                     case "if":
                     {
                         Expr condition = GetCondition();
                         block = GetBlock(conditionalType.type);
-                        return new Expr.If(conditionalType, condition, block);
-                    }
-                    case "else if":
-                    {
-                        Expr condition = GetCondition();
-                        block = GetBlock(conditionalType.type);
-                        return new Expr.ElseIf(conditionalType, condition, block);
+                        var expr = new Expr.If(condition, block);
+                        while (TypeMatch("else"))
+                        {
+                            if (TypeMatch("if"))
+                            {
+                                condition = GetCondition();
+                                block = GetBlock("if else");
+                                expr.ElseIfs.Add(new Expr.ElseIf(condition, block));
+                            }
+                            else
+                            {
+                                block = GetBlock("else");
+                                expr._else = new Expr.Else(block);
+                            }
+                        }
+                        return expr;
                     }
                     case "else":
                     {
-                        block = GetBlock(conditionalType.type);
-                        return new Expr.Else(conditionalType, block);
+                        if (current.type == "if")
+                        {
+                            throw new Errors.AnalyzerError("Invalid Else If", "'else if' conditional has no matching 'if'");
+                        }
+                        else
+                        {
+                            throw new Errors.AnalyzerError("Invalid Else", "'else' conditional has no matching 'if'");
+                        }
+                        
                     }
                     case "while":
                     {
                         Expr condition = GetCondition();
                         block = GetBlock(conditionalType.type);
-                        return new Expr.While(conditionalType, condition, block);
+                        return new Expr.While(condition, block);
                     }
                     case "for":
                     {
-                        throw new NotImplementedException();
+                        Expect("LPAREN", "'(' after 'for'");
+                        var initExpr = Logical();
+                        Expect("SEMICOLON", "';' after expression");
+                        var condition = Logical();
+                        Expect("SEMICOLON", "';' after expression");
+                        var updateExpr = Logical();
+                        Expect("RPAREN", "')' after update of For Statement");
+                        block = GetBlock(conditionalType.type);
+                        return new Expr.For(condition, block, initExpr, updateExpr);
                     }
                 }
             }
@@ -403,7 +425,7 @@ namespace Raze
                         {
                             throw new Errors.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword may only be used in a member to reference the enclosing class");
                         }
-                        expr = new Expr.Unary(previous(), variable);
+                        expr = new Expr.Unary(previous(), new Expr.Member(variable));
                     }
                     else if (TypeMatch("IDENTIFIER"))
                     {
@@ -504,7 +526,7 @@ namespace Raze
         {
             Expect("LPAREN", "'(' after conditional");
             var condition = Logical();
-            Expect("RPAREN", "')' after condition");
+            Expect("RPAREN", "')' after conditional");
             return condition;
         }
 

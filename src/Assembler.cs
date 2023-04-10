@@ -296,83 +296,95 @@ namespace Raze
             return new Instruction.Pointer(frst ? Instruction.Register.RegisterName.RBP : InstructionInfo.NextRegister(ref registerIdx), expr.stack.stackOffset, expr.stack.size);
         }
 
-        public Instruction.Value? visitConditionalExpr(Expr.Conditional expr)
+        public Instruction.Value? visitIfExpr(Expr.If expr)
         {
-            if (expr.type.lexeme == "if")
+            expr.conditional.condition.Accept(this);
+            var fJump = new Instruction.Unary(InstructionInfo.ConditionalJumpReversed[lastJump], Instruction.Register.RegisterName.TMP);
+            emit(fJump);
+
+            expr.conditional.block.Accept(this);
+
+
+            var tJump = new Instruction.Unary("JMP", Instruction.Register.RegisterName.TMP);
+            emit(tJump);
+
+
+            foreach (Expr.ElseIf elif in expr.ElseIfs)
             {
-                var _if = (Expr.If)expr;
-
-                expr.condition.Accept(this);
-                var fJump = new Instruction.Unary(InstructionInfo.ConditionalJump[lastJump], Instruction.Register.RegisterName.TMP);
-                emit(fJump);
-
-                expr.block.Accept(this);
-
-
-                var tJump = new Instruction.Unary("JMP", Instruction.Register.RegisterName.TMP);
-                emit(tJump);
-
-
-                foreach (Expr.ElseIf elif in _if.ElseIfs)
-                {
-                    fJump.operand = new Instruction.ProcedureRef(ConditionalLabel);
-                    emit(new Instruction.Procedure(ConditionalLabel));
-                    conditionalCount++;
-
-                    elif.condition.Accept(this);
-
-                    fJump = new Instruction.Unary(InstructionInfo.ConditionalJump[lastJump], Instruction.Register.RegisterName.TMP);
-
-                    emit(fJump);
-                    foreach (Expr blockExpr in elif.block.block)
-                    {
-                        blockExpr.Accept(this);
-                    }
-
-                    emit(tJump);
-                }
-
                 fJump.operand = new Instruction.ProcedureRef(ConditionalLabel);
                 emit(new Instruction.Procedure(ConditionalLabel));
                 conditionalCount++;
-                if (_if._else != null)
+
+                elif.conditional.condition.Accept(this);
+
+                fJump = new Instruction.Unary(InstructionInfo.ConditionalJumpReversed[lastJump], Instruction.Register.RegisterName.TMP);
+
+                emit(fJump);
+                foreach (Expr blockExpr in elif.conditional.block.block)
                 {
-                    foreach (Expr blockExpr in _if._else.block.block)
-                    {
-                        blockExpr.Accept(this);
-                    }
+                    blockExpr.Accept(this);
                 }
-                emit(new Instruction.Procedure(ConditionalLabel));
-                tJump.operand = new Instruction.ProcedureRef(ConditionalLabel);
 
-                conditionalCount++;
-                return null;
+                emit(tJump);
             }
-            else if (expr.type.lexeme == "else" || expr.type.lexeme == "else if")
+
+            fJump.operand = new Instruction.ProcedureRef(ConditionalLabel);
+            emit(new Instruction.Procedure(ConditionalLabel));
+            conditionalCount++;
+            if (expr._else != null)
             {
-                return null;
+                foreach (Expr blockExpr in expr._else.conditional.block.block)
+                {
+                    blockExpr.Accept(this);
+                }
             }
-            else if (expr.type.lexeme == "while")
-            {
-                emit(new Instruction.Unary("JMP", new Instruction.ProcedureRef(ConditionalLabel)));
-                
-                conditionalCount++;
-                emit(new Instruction.Procedure(ConditionalLabel));
+            emit(new Instruction.Procedure(ConditionalLabel));
+            tJump.operand = new Instruction.ProcedureRef(ConditionalLabel);
 
-                expr.block.Accept(this);
+            conditionalCount++;
+            return null;
+        }
 
-                conditionalCount--;
-                
-                emit(new Instruction.Procedure(ConditionalLabel));
-                expr.condition.Accept(this);
-                conditionalCount++;
-                emit(new Instruction.Unary(InstructionInfo.ConditionalJump[lastJump], new Instruction.ProcedureRef(ConditionalLabel)));
-                conditionalCount--;
-                conditionalCount += 2;
+        public Instruction.Value? visitWhileExpr(Expr.While expr)
+        {
+            emit(new Instruction.Unary("JMP", new Instruction.ProcedureRef(ConditionalLabel)));
 
-                return null;
-            }
-            throw new NotImplementedException();
+            var conditional = new Instruction.Procedure(ConditionalLabel);
+
+            conditionalCount++;
+
+            emit(new Instruction.Procedure(ConditionalLabel));
+
+            expr.conditional.block.Accept(this);
+
+            emit(conditional);
+            expr.conditional.condition.Accept(this);
+            emit(new Instruction.Unary(InstructionInfo.ConditionalJump[lastJump], new Instruction.ProcedureRef(ConditionalLabel)));
+            conditionalCount++;
+
+            return null;
+        }
+
+        public Instruction.Value? visitForExpr(Expr.For expr)
+        {
+            expr.initExpr.Accept(this);
+            emit(new Instruction.Unary("JMP", new Instruction.ProcedureRef(ConditionalLabel)));
+
+            var conditional = new Instruction.Procedure(ConditionalLabel);
+
+            conditionalCount++;
+
+            emit(new Instruction.Procedure(ConditionalLabel));
+
+            expr.conditional.block.Accept(this);
+            expr.updateExpr.Accept(this);
+
+            emit(conditional);
+            expr.conditional.condition.Accept(this);
+            emit(new Instruction.Unary(InstructionInfo.ConditionalJump[lastJump], new Instruction.ProcedureRef(ConditionalLabel)));
+            conditionalCount++;
+
+            return null;
         }
 
         public Instruction.Value? visitBlockExpr(Expr.Block expr)

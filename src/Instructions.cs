@@ -381,6 +381,15 @@ internal class InstructionInfo
 
     internal readonly static Dictionary<string, string> ConditionalJump = new()
     {
+        { "EQUALTO" , "JE" },
+        { "NOTEQUALTO" , "JNE" },
+        { "GREATER" , "JG" },
+        { "LESS" , "JE" },
+        { "GREATEREQUAL" , "JGE" },
+        { "LESSEQUAL" , "JLE" },
+    };
+    internal readonly static Dictionary<string, string> ConditionalJumpReversed = new()
+    {
         { "EQUALTO" , "JNE" },
         { "NOTEQUALTO" , "JE" },
         { "GREATER" , "JLE" },

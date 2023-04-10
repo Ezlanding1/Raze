@@ -298,6 +298,18 @@ namespace Raze
                 return null;
             }
 
+            public override object visitIfExpr(Expr.If expr)
+            {
+                HandleConditional(expr.conditional);
+
+                expr.ElseIfs.ForEach(x => HandleConditional(x.conditional));
+
+                HandleConditional(expr._else.conditional);
+
+                return null;
+            }
+
+
             //public override object? visitDefineExpr(Expr.Define expr)
             //{
             //    //symbolTable.Add(expr);
@@ -393,6 +405,14 @@ namespace Raze
                     throw new Errors.AnalyzerError("Undefined Reference", $"The variable '{((Expr.Variable)expr.left).ToString()}' does not exist in the current context");
                 }
                 return null;
+            }
+            
+            private void HandleConditional(Expr.Conditional expr)
+            {
+                if (expr.condition != null)
+                    expr.condition.Accept(this);
+
+                expr.block.Accept(this);
             }
 
             private void CurrentCalls()

@@ -18,7 +18,9 @@ namespace Raze
             public T visitGroupingExpr(Grouping expr);
             public T visitLiteralExpr(Literal expr);
             public T visitDeclareExpr(Declare expr);
-            public T visitConditionalExpr(Conditional expr);
+            public T visitIfExpr(If expr);
+            public T visitForExpr(For expr);
+            public T visitWhileExpr(While expr);
             public T visitCallExpr(Call expr);
             public T visitGetExpr(Get expr);
             public T visitBlockExpr(Block expr);
@@ -128,69 +130,86 @@ namespace Raze
 
         }
 
-        public abstract class Conditional : Expr
+        public class Conditional
         {
-            public Token type;
             public Expr condition;
             public Block block;
 
-            public Conditional(Token type, Expr condition, Block block)
+            public Conditional(Expr condition, Block block)
             {
-                this.type = type;
                 this.condition = condition;
                 this.block = block;
+            }
+        }
+
+        public class If : Expr
+        {
+            public Conditional conditional;
+
+            public List<ElseIf> ElseIfs;
+            public Else _else;
+            public If(Expr condition, Block block)
+            {
+                this.conditional = new(condition, block);
+                this.ElseIfs = new();
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
             {
-                return visitor.visitConditionalExpr(this);
+                return visitor.visitIfExpr(this);
+            }
+        }
+        public class ElseIf
+        {
+            public Conditional conditional;
+
+            public ElseIf(Expr condition, Block block)
+            {
+                this.conditional = new(condition, block);
+            }
+        }
+        public class Else
+        {
+            public Conditional conditional;
+
+            public Else(Block block)
+            {
+                this.conditional = new(null, block);
             }
         }
 
-        public abstract class IfThenElse : Conditional 
+        public class While : Expr
         {
-            public IfThenElse(Token type, Expr condition, Block block)
-                : base(type, condition, block)
-            {
+            public Conditional conditional;
 
+            public While(Expr condition, Block block)
+            {
+                conditional = new(condition, block);
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.visitWhileExpr(this);
             }
         }
 
-        public class If : IfThenElse
+        public class For : Expr
         {
-            public List<ElseIf> ElseIfs;
-            public Else _else;
-            public If(Token type, Expr condition, Block block)
-                : base(type, condition, block)
+            public Conditional conditional;
+
+            public Expr initExpr;
+            public Expr updateExpr;
+
+            public For(Expr condition, Block block, Expr initExpr, Expr updateExpr)
             {
-                this.ElseIfs = new();
+                this.conditional = new(condition, block);
+                this.initExpr = initExpr;
+                this.updateExpr = updateExpr;
             }
-        }
-        public class ElseIf : IfThenElse
-        {
-            public If top;
-            public ElseIf(Token type, Expr condition, Block block)
-                : base(type, condition, block)
+
+            public override T Accept<T>(IVisitor<T> visitor)
             {
-
-            }
-        }
-        public class Else : IfThenElse
-        {
-            public If top;
-            public Else(Token type, Block block)
-                : base(type, null, block)
-            {
-
-            }
-        }
-
-        public class While : Conditional
-        {
-            public While(Token type, Expr condition, Block block)
-                : base(type, condition, block)
-            {
-
+                return visitor.visitForExpr(this);
             }
         }
 
