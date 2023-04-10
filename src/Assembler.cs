@@ -129,7 +129,7 @@ namespace Raze
 
             if (operand.IsPointer())
             {
-                var reg = new Instruction.Register(InstructionInfo.storageRegisters[registerIdx-1], ((Instruction.Pointer)operand).register.size);
+                var reg = new Instruction.Register(InstructionInfo.storageRegisters[registerIdx-1], ((Instruction.Pointer)operand).size);
                 emit(new Instruction.Binary("MOV", reg, operand));
                 operand = reg;
             }
@@ -411,7 +411,7 @@ namespace Raze
 
             if (operand2.IsPointer())
             {
-                Instruction.Register reg = new Instruction.Register(InstructionInfo.storageRegisters[registerIdx - 1], ((Instruction.Pointer)operand2).register.size);
+                Instruction.Register reg = new Instruction.Register(InstructionInfo.storageRegisters[registerIdx - 1], ((Instruction.Pointer)operand2).size);
                 emit(new Instruction.Binary(instruction, reg, operand2));
                 operand2 = reg;
             }
@@ -449,7 +449,7 @@ namespace Raze
             foreach (var variable in expr.variables.Keys)
             {
                 expr.variables[variable].register.name = (SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(variable.stack) ? Instruction.Register.RegisterName.RAX : Instruction.Register.RegisterName.RBP) + variable.stack.stackOffset;
-                expr.variables[variable].register.size = Enum.IsDefined(typeof(Instruction.Register.RegisterSize), variable.stack.size) ? ((Instruction.Register.RegisterSize)variable.stack.size) : throw new Errors.ImpossibleError($"Invalid Register Size ({variable.stack.size})");
+                expr.variables[variable].size = Enum.IsDefined(typeof(Instruction.Register.RegisterSize), variable.stack.size) ? ((Instruction.Register.RegisterSize)variable.stack.size) : throw new Errors.ImpossibleError($"Invalid Register Size ({variable.stack.size})");
             }
             foreach (var instruction in expr.block)
             {

@@ -133,12 +133,14 @@ internal abstract class Instruction
     internal class Pointer : Value
     {
         public Register register;
+        public Register.RegisterSize size;
         public int offset;
         public char _operator;
 
         public Pointer(Register.RegisterName register, int offset, int size, char _operator) : base(1)
         {
-            this.register = new Register(register, size);
+            this.register = new Register(register, Register.RegisterSize._64Bits);
+            this.size = Enum.IsDefined(typeof(Register.RegisterSize), size) ? ((Register.RegisterSize)size) : throw new Errors.ImpossibleError($"Invalid Register Size ({size})"); ;
             this.offset = offset;
             this._operator = _operator;
         }
