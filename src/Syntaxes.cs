@@ -26,8 +26,8 @@ namespace Raze
                         { new Instruction.Section("text") },
                         { new Instruction.Procedure("_start") },
                         { new Instruction.Unary("CALL", new Instruction.ProcedureRef(main.QualifiedName)) },
-                        { new Instruction.Binary("MOV", new Instruction.Register("RDI", Instruction.Register.RegisterSize._64Bits), (main._returnType.ToString() == "number") ? new Instruction.Register("RAX", Instruction.Register.RegisterSize._64Bits) : new Instruction.Literal("0", Parser.Literals[0])) },
-                        { new Instruction.Binary("MOV", new Instruction.Register("RAX", Instruction.Register.RegisterSize._64Bits), new Instruction.Literal("60", Parser.Literals[0])) },
+                        { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), (main._returnType.ToString() == "number") ? new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits) : new Instruction.Literal("0", Parser.Literals[0])) },
+                        { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal("60", Parser.Literals[0])) },
                         { new Instruction.Zero("SYSCALL") }
                     };
                 }
@@ -49,12 +49,12 @@ namespace Raze
                 {
                     if (instruction is Instruction.StackAlloc)
                         if (instruction.operand2 is Instruction.Literal)
-                            return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, { AlignTo16((Instruction.Literal)instruction.operand2) }";
+                            return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, {AlignTo16((Instruction.Literal)instruction.operand2)}";
                         else
                             //
                             throw new Exception();
                     if (instruction.operand2 is Instruction.Pointer)
-                            return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, { PointerToString( (Instruction.Pointer)instruction.operand2 ) }";
+                        return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, {PointerToString((Instruction.Pointer)instruction.operand2)}";
 
                     return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, {instruction.operand2.Accept(this)}";
                 }
@@ -86,7 +86,7 @@ namespace Raze
 
                 public string visitPointer(Instruction.Pointer instruction)
                 {
-                    return $"{InstructionInfo.wordSize[instruction.size]} [{InstructionInfo.Registers[(instruction.name, instruction.size)]} {instruction._operator} {instruction.offset}]";
+                    return $"{InstructionInfo.wordSize[instruction.register.size]} [{instruction.register.Accept(this)} {instruction._operator} {instruction.offset}]";
                 }
 
                 public string visitProcedureRef(Instruction.ProcedureRef instruction)
@@ -96,7 +96,12 @@ namespace Raze
 
                 public string visitRegister(Instruction.Register instruction)
                 {
-                    return $"{InstructionInfo.Registers[(instruction.name, instruction.size)]}";
+                    if (instruction.name == Instruction.Register.RegisterName.TMP)
+                    {
+                        throw new Errors.ImpossibleError("TMP Register Cannot Be Emitted");
+                    }
+
+                    return $"{RegisterToString[(instruction.name, instruction.size)]}";
                 }
 
                 public string visitSection(Instruction.Section instruction)
@@ -116,17 +121,17 @@ namespace Raze
 
                 private string PointerToString(Instruction.Pointer instruction)
                 {
-                    return $"[{InstructionInfo.Registers[(instruction.name, instruction.size)]} {instruction._operator} {instruction.offset}]";
+                    return $"[{instruction.register.Accept(this)} {instruction._operator} {instruction.offset}]";
                 }
-                
+
                 public string visitLiteral(Instruction.Literal instruction)
                 {
-                    return $"{instruction.name}";
+                    return $"{instruction.value}";
                 }
 
                 private string AlignTo16(Instruction.Literal instruction)
                 {
-                    if (int.TryParse(instruction.name, out var value)) 
+                    if (int.TryParse(instruction.value, out var value))
                     {
                         string name = (((int)Math.Ceiling(value / 16f)) * 16).ToString();
                         return new Instruction.Literal(name, instruction.type).Accept(this);
@@ -137,7 +142,92 @@ namespace Raze
                     }
                 }
 
-                
+                private static Dictionary<(Instruction.Register.RegisterName, Instruction.Register.RegisterSize?), string> RegisterToString = new()
+                {
+                    { (Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), "RAX" }, // 64-Bits 
+                    { (Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._32Bits), "EAX" }, // Lower 32-Bits
+                    { (Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._16Bits), "AX" }, // Lower 16-Bits
+                    { (Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._8BitsUpper), "AH" }, // Upper 16-Bits
+                    { (Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._8Bits), "AL" }, // Lower 8-Bits
+
+                    { (Instruction.Register.RegisterName.RCX, Instruction.Register.RegisterSize._64Bits), "RCX" },
+                    { (Instruction.Register.RegisterName.RCX, Instruction.Register.RegisterSize._32Bits), "ECX" },
+                    { (Instruction.Register.RegisterName.RCX, Instruction.Register.RegisterSize._16Bits), "CX" },
+                    { (Instruction.Register.RegisterName.RCX, Instruction.Register.RegisterSize._8BitsUpper), "CH" },
+                    { (Instruction.Register.RegisterName.RCX, Instruction.Register.RegisterSize._8Bits), "CL" },
+
+                    { (Instruction.Register.RegisterName.RDX, Instruction.Register.RegisterSize._64Bits), "RDX" },
+                    { (Instruction.Register.RegisterName.RDX, Instruction.Register.RegisterSize._32Bits), "EDX" },
+                    { (Instruction.Register.RegisterName.RDX, Instruction.Register.RegisterSize._16Bits), "DX" },
+                    { (Instruction.Register.RegisterName.RDX, Instruction.Register.RegisterSize._8BitsUpper), "DH" },
+                    { (Instruction.Register.RegisterName.RDX, Instruction.Register.RegisterSize._8Bits), "DL" },
+
+                    { (Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits), "RBX" },
+                    { (Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._32Bits), "EBX" },
+                    { (Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._16Bits), "BX" },
+                    { (Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._8BitsUpper), "BH" },
+                    { (Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._8Bits), "BL" },
+
+                    { (Instruction.Register.RegisterName.RSI, Instruction.Register.RegisterSize._64Bits), "RSI" },
+                    { (Instruction.Register.RegisterName.RSI, Instruction.Register.RegisterSize._32Bits), "ESI" },
+                    { (Instruction.Register.RegisterName.RSI, Instruction.Register.RegisterSize._16Bits), "SI" },
+                    { (Instruction.Register.RegisterName.RSI, Instruction.Register.RegisterSize._8Bits), "SIL" },
+
+                    { (Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), "RDI" },
+                    { (Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._32Bits), "EDI" },
+                    { (Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._16Bits), "DI" },
+                    { (Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._8Bits), "DIL" },
+
+                    { (Instruction.Register.RegisterName.RSP, Instruction.Register.RegisterSize._64Bits), "RSP" },
+                    { (Instruction.Register.RegisterName.RSP, Instruction.Register.RegisterSize._32Bits), "ESP" },
+                    { (Instruction.Register.RegisterName.RSP, Instruction.Register.RegisterSize._16Bits), "SP" },
+                    { (Instruction.Register.RegisterName.RSP, Instruction.Register.RegisterSize._8Bits), "SPL" },
+
+                    { (Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._64Bits), "RBP" },
+                    { (Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._32Bits), "EBP" },
+                    { (Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._16Bits), "BP" },
+                    { (Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._8Bits), "BPL" },
+
+                    { (Instruction.Register.RegisterName.R8, Instruction.Register.RegisterSize._64Bits), "R8" },
+                    { (Instruction.Register.RegisterName.R8, Instruction.Register.RegisterSize._32Bits), "R8D" },
+                    { (Instruction.Register.RegisterName.R8, Instruction.Register.RegisterSize._16Bits), "R8W" },
+                    { (Instruction.Register.RegisterName.R8, Instruction.Register.RegisterSize._8Bits), "R8B" },
+
+                    { (Instruction.Register.RegisterName.R9, Instruction.Register.RegisterSize._64Bits), "R9" },
+                    { (Instruction.Register.RegisterName.R9, Instruction.Register.RegisterSize._32Bits), "R9D" },
+                    { (Instruction.Register.RegisterName.R9, Instruction.Register.RegisterSize._16Bits), "R9W" },
+                    { (Instruction.Register.RegisterName.R9, Instruction.Register.RegisterSize._8Bits), "R9B" },
+
+                    { (Instruction.Register.RegisterName.R10, Instruction.Register.RegisterSize._64Bits), "R10" },
+                    { (Instruction.Register.RegisterName.R10, Instruction.Register.RegisterSize._32Bits), "R10D" },
+                    { (Instruction.Register.RegisterName.R10, Instruction.Register.RegisterSize._16Bits), "R10W" },
+                    { (Instruction.Register.RegisterName.R10, Instruction.Register.RegisterSize._8Bits), "R10B" },
+
+                    { (Instruction.Register.RegisterName.R11, Instruction.Register.RegisterSize._64Bits), "R11" },
+                    { (Instruction.Register.RegisterName.R11, Instruction.Register.RegisterSize._32Bits), "R11D" },
+                    { (Instruction.Register.RegisterName.R11, Instruction.Register.RegisterSize._16Bits), "R11W" },
+                    { (Instruction.Register.RegisterName.R11, Instruction.Register.RegisterSize._8Bits), "R11B" },
+
+                    { (Instruction.Register.RegisterName.R12, Instruction.Register.RegisterSize._64Bits), "R12" },
+                    { (Instruction.Register.RegisterName.R12, Instruction.Register.RegisterSize._32Bits), "R12D" },
+                    { (Instruction.Register.RegisterName.R12, Instruction.Register.RegisterSize._16Bits), "R12W" },
+                    { (Instruction.Register.RegisterName.R12, Instruction.Register.RegisterSize._8Bits), "R12B" },
+
+                    { (Instruction.Register.RegisterName.R13, Instruction.Register.RegisterSize._64Bits), "R13" },
+                    { (Instruction.Register.RegisterName.R13, Instruction.Register.RegisterSize._32Bits), "R13D" },
+                    { (Instruction.Register.RegisterName.R13, Instruction.Register.RegisterSize._16Bits), "R13W" },
+                    { (Instruction.Register.RegisterName.R13, Instruction.Register.RegisterSize._8Bits), "R13B" },
+
+                    { (Instruction.Register.RegisterName.R14, Instruction.Register.RegisterSize._64Bits), "R14" },
+                    { (Instruction.Register.RegisterName.R14, Instruction.Register.RegisterSize._32Bits), "R14D" },
+                    { (Instruction.Register.RegisterName.R14, Instruction.Register.RegisterSize._16Bits), "R14W" },
+                    { (Instruction.Register.RegisterName.R14, Instruction.Register.RegisterSize._8Bits), "R14B" },
+
+                    { (Instruction.Register.RegisterName.R15, Instruction.Register.RegisterSize._64Bits), "R15" },
+                    { (Instruction.Register.RegisterName.R15, Instruction.Register.RegisterSize._32Bits), "R15D" },
+                    { (Instruction.Register.RegisterName.R15, Instruction.Register.RegisterSize._16Bits), "R15W" },
+                    { (Instruction.Register.RegisterName.R15, Instruction.Register.RegisterSize._8Bits), "R15B" },
+                };
             }
 
             partial class GasSyntax : ISyntaxFactory, Instruction.IVisitor
@@ -149,12 +239,12 @@ namespace Raze
                 public override List<Instruction> GenerateHeaderInstructions(Expr.Function main){
                     return new List<Instruction>()
                     {
+                        { new Instruction.Global("_start") },
                         { new Instruction.Section("text") },
-                        { new Instruction.Global("main") },
-                        { new Instruction.Procedure("main") },
-                        { new Instruction.Unary("CALL", main.QualifiedName) },
-                        { new Instruction.Binary("MOV", "RDI", (main._returnType.ToString() == "number")? "RAX" : "0") },
-                        { new Instruction.Binary("MOV", "RAX", "60") },
+                        { new Instruction.Procedure("_start") },
+                        { new Instruction.Unary("CALL", new Instruction.ProcedureRef(main.QualifiedName)) },
+                        { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), (main._returnType.ToString() == "number") ? new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits) : new Instruction.Literal("0", Parser.Literals[0])) },
+                        { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal("60", Parser.Literals[0])) },
                         { new Instruction.Zero("SYSCALL") }
                     };
                 }

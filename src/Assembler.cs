@@ -64,9 +64,9 @@ namespace Raze
             }
             if (operand1.IsLiteral() && operand2.IsLiteral())
             {
-                emit(new Instruction.Binary("MOV", new Instruction.Register("RAX", Instruction.Register.RegisterSize._64Bits), operand1));
-                emit(new Instruction.Binary(instruction, new Instruction.Register("RAX", Instruction.Register.RegisterSize._64Bits), operand2));
-                return new Instruction.Register("RAX", Instruction.Register.RegisterSize._64Bits);
+                emit(new Instruction.Binary("MOV", new Instruction.Register( Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), operand1));
+                emit(new Instruction.Binary(instruction, new Instruction.Register( Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), operand2));
+                return new Instruction.Register( Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits);
             }
             else if (operand1.IsRegister() || operand1.IsPointer()) 
             {
@@ -90,7 +90,7 @@ namespace Raze
             int paramReg = 0;
             if (!expr.internalFunction.modifiers["static"])
             {
-                emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.paramRegister[0], Instruction.Register.RegisterSize._64Bits), expr.constructor? new Instruction.Register("RBX", Instruction.Register.RegisterSize._64Bits) : new Instruction.Pointer(expr.stackOffset, 8)));
+                emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.paramRegister[0], Instruction.Register.RegisterSize._64Bits), expr.constructor? new Instruction.Register( Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits) : new Instruction.Pointer(expr.stackOffset, 8)));
                 paramReg++;
             }
 
@@ -109,7 +109,7 @@ namespace Raze
             
             if (expr.internalFunction._returnType.type.name.type != "void")
             {
-                return new Instruction.Register("RAX", expr.internalFunction._returnSize);
+                return new Instruction.Register( Instruction.Register.RegisterName.RAX, expr.internalFunction._returnSize);
             }
             return null;
         }
@@ -129,14 +129,14 @@ namespace Raze
 
             if (operand.IsPointer())
             {
-                var reg = new Instruction.Register(InstructionInfo.storageRegisters[registerIdx-1], ((Instruction.Pointer)operand).size);
+                var reg = new Instruction.Register(InstructionInfo.storageRegisters[registerIdx-1], ((Instruction.Pointer)operand).register.size);
                 emit(new Instruction.Binary("MOV", reg, operand));
                 operand = reg;
             }
 
             if (SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(expr.stack))
             {
-                emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.storageRegisters[registerIdx], Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer("RBP", 8, 8)));
+                emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.storageRegisters[registerIdx], Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(Instruction.Register.RegisterName.RBP, 8, 8)));
                 emit(new Instruction.Binary("MOV", new Instruction.Pointer(InstructionInfo.storageRegisters[registerIdx], expr.stack.stackOffset, expr.stack.size), operand));
             }
             else
@@ -156,15 +156,15 @@ namespace Raze
             Instruction.Binary? sub = null;
             if (!leafFunc)
             {
-                emit(new Instruction.Unary("PUSH", "RBP"));
-                emit(new Instruction.Binary("MOV", "RBP", "RSP"));
-                sub = new Instruction.StackAlloc("SUB", "RSP", "TMP");
+                emit(new Instruction.Unary("PUSH", Instruction.Register.RegisterName.RBP));
+                emit(new Instruction.Binary("MOV", Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterName.RSP));
+                sub = new Instruction.StackAlloc("SUB", Instruction.Register.RegisterName.RSP, Instruction.Register.RegisterName.TMP);
                 emit(sub);
             }
             else
             {
-                emit(new Instruction.Unary("PUSH", "RBP"));
-                emit(new Instruction.Binary("MOV", "RBP", "RSP"));
+                emit(new Instruction.Unary("PUSH", Instruction.Register.RegisterName.RBP));
+                emit(new Instruction.Binary("MOV", Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterName.RSP));
             }
             footerType.Add(leafFunc);
 
@@ -203,7 +203,7 @@ namespace Raze
 
             if (expr._returnType.type.name.type != "void")
             {
-                return new Instruction.Register("RAX", expr._returnSize);
+                return new Instruction.Register( Instruction.Register.RegisterName.RAX, expr._returnSize);
             }
             else
             {
@@ -213,7 +213,7 @@ namespace Raze
 
         public Instruction.Value? visitGetExpr(Expr.Get expr)
         {
-            emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.storageRegisters[registerIdx], Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(firstGet ? "RBP" : InstructionInfo.storageRegisters[registerIdx], expr.stackOffset, 8)));
+            emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.storageRegisters[registerIdx], Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(firstGet ? Instruction.Register.RegisterName.RBP : InstructionInfo.storageRegisters[registerIdx], expr.stackOffset, 8)));
             firstGet = false;
             return expr.get.Accept(this);
         }
@@ -222,8 +222,8 @@ namespace Raze
         {
             if (expr.get == null) 
             {
-                emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.storageRegisters[registerIdx], Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer("RBP", 8, 8))); 
-                return new Instruction.Register("RAX", Instruction.Register.RegisterSize._64Bits);  
+                emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.storageRegisters[registerIdx], Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(Instruction.Register.RegisterName.RBP, 8, 8))); 
+                return new Instruction.Register( Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits);  
             }
 
             return this.visitGetExpr(expr);
@@ -267,9 +267,9 @@ namespace Raze
             }
             else
             {
-                emit(new Instruction.Binary("MOV", new Instruction.Register("RAX", Instruction.Register.RegisterSize._64Bits), operand1));
-                emit(new Instruction.Unary(instruction, new Instruction.Register("RAX", Instruction.Register.RegisterSize._64Bits)));
-                return new Instruction.Register("RAX", Instruction.Register.RegisterSize._64Bits);
+                emit(new Instruction.Binary("MOV", new Instruction.Register( Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), operand1));
+                emit(new Instruction.Unary(instruction, new Instruction.Register( Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits)));
+                return new Instruction.Register( Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits);
             }
         }
 
@@ -289,11 +289,11 @@ namespace Raze
 
             if (SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(expr.stack))
             {
-                emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.storageRegisters[registerIdx], Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer("RBP", 8, 8)));
+                emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.storageRegisters[registerIdx], Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(Instruction.Register.RegisterName.RBP, 8, 8)));
                 frst = false;
             }
 
-            return new Instruction.Pointer(frst ? "RBP" : InstructionInfo.NextRegister(ref registerIdx), expr.stack.stackOffset, expr.stack.size);
+            return new Instruction.Pointer(frst ? Instruction.Register.RegisterName.RBP : InstructionInfo.NextRegister(ref registerIdx), expr.stack.stackOffset, expr.stack.size);
         }
 
         public Instruction.Value? visitConditionalExpr(Expr.Conditional expr)
@@ -303,13 +303,13 @@ namespace Raze
                 var _if = (Expr.If)expr;
 
                 expr.condition.Accept(this);
-                var fJump = new Instruction.Unary(InstructionInfo.ConditionalJump[lastJump], "TMP");
+                var fJump = new Instruction.Unary(InstructionInfo.ConditionalJump[lastJump], Instruction.Register.RegisterName.TMP);
                 emit(fJump);
 
                 expr.block.Accept(this);
 
 
-                var tJump = new Instruction.Unary("JMP", "TMP");
+                var tJump = new Instruction.Unary("JMP", Instruction.Register.RegisterName.TMP);
                 emit(tJump);
 
 
@@ -321,7 +321,7 @@ namespace Raze
 
                     elif.condition.Accept(this);
 
-                    fJump = new Instruction.Unary(InstructionInfo.ConditionalJump[lastJump], "TMP");
+                    fJump = new Instruction.Unary(InstructionInfo.ConditionalJump[lastJump], Instruction.Register.RegisterName.TMP);
 
                     emit(fJump);
                     foreach (Expr blockExpr in elif.block.block)
@@ -354,7 +354,7 @@ namespace Raze
             }
             else if (expr.type.lexeme == "while")
             {
-                emit(new Instruction.Unary("JMP", ConditionalLabel));
+                emit(new Instruction.Unary("JMP", new Instruction.ProcedureRef(ConditionalLabel)));
                 
                 conditionalCount++;
                 emit(new Instruction.Procedure(ConditionalLabel));
@@ -366,7 +366,7 @@ namespace Raze
                 emit(new Instruction.Procedure(ConditionalLabel));
                 expr.condition.Accept(this);
                 conditionalCount++;
-                emit(new Instruction.Unary(InstructionInfo.ConditionalJump[lastJump], ConditionalLabel));
+                emit(new Instruction.Unary(InstructionInfo.ConditionalJump[lastJump], new Instruction.ProcedureRef(ConditionalLabel)));
                 conditionalCount--;
                 conditionalCount += 2;
 
@@ -390,7 +390,7 @@ namespace Raze
             if (!expr._void)
             {
                 Instruction.Value operand = expr.value.Accept(this);
-                emit(new Instruction.Binary("MOV", new Instruction.Register("RAX", Instruction.Register.RegisterSize._64Bits), operand));
+                emit(new Instruction.Binary("MOV", new Instruction.Register( Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), operand));
             }
             DoFooter();
             return null;
@@ -411,7 +411,7 @@ namespace Raze
 
             if (operand2.IsPointer())
             {
-                Instruction.Register reg = new Instruction.Register(InstructionInfo.storageRegisters[registerIdx - 1], ((Instruction.Pointer)operand2).size);
+                Instruction.Register reg = new Instruction.Register(InstructionInfo.storageRegisters[registerIdx - 1], ((Instruction.Pointer)operand2).register.size);
                 emit(new Instruction.Binary(instruction, reg, operand2));
                 operand2 = reg;
             }
@@ -448,8 +448,8 @@ namespace Raze
         {
             foreach (var variable in expr.variables.Keys)
             {
-                expr.variables[variable].name = (SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(variable.stack) ? "RAX" : "RBP") + " - " + variable.stack.stackOffset;
-                expr.variables[variable].size = Enum.IsDefined(typeof(Instruction.Register.RegisterSize), variable.stack.size) ? ((Instruction.Register.RegisterSize)variable.stack.size) : throw new Errors.ImpossibleError($"Invalid Register Size ({variable.stack.size})");
+                expr.variables[variable].register.name = (SymbolTableSingleton.SymbolTable.other.classScopedVars.Contains(variable.stack) ? Instruction.Register.RegisterName.RAX : Instruction.Register.RegisterName.RBP) + variable.stack.stackOffset;
+                expr.variables[variable].register.size = Enum.IsDefined(typeof(Instruction.Register.RegisterSize), variable.stack.size) ? ((Instruction.Register.RegisterSize)variable.stack.size) : throw new Errors.ImpossibleError($"Invalid Register Size ({variable.stack.size})");
             }
             foreach (var instruction in expr.block)
             {
@@ -464,25 +464,25 @@ namespace Raze
 
             // Move the following into a runtime procedure, and pass in the expr.internalClass.size as a parameter
             // {
-            emit(new Instruction.Binary("MOV", new Instruction.Register("RAX", Instruction.Register.RegisterSize._64Bits), new Instruction.Literal("12", Parser.Literals[0])));
-            emit(new Instruction.Binary("MOV", new Instruction.Register("RDI", Instruction.Register.RegisterSize._64Bits), new Instruction.Literal("0", Parser.Literals[0])));
+            emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal("12", Parser.Literals[0])));
+            emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal("0", Parser.Literals[0])));
             emit(new Instruction.Zero("SYSCALL"));
 
-            var ptr = new Instruction.Pointer("RAX", expr.internalClass.size, 8, '+');
-            emit(new Instruction.Binary("LEA", new Instruction.Register("RBX", Instruction.Register.RegisterSize._64Bits), ptr));
+            var ptr = new Instruction.Pointer( Instruction.Register.RegisterName.RAX, expr.internalClass.size, 8, '+');
+            emit(new Instruction.Binary("LEA", new Instruction.Register( Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits), ptr));
 
-            emit(new Instruction.Binary("LEA", new Instruction.Register("RDI", Instruction.Register.RegisterSize._64Bits), ptr));
-            emit(new Instruction.Binary("MOV", new Instruction.Register("RAX", Instruction.Register.RegisterSize._64Bits), new Instruction.Literal("12", Parser.Literals[0])));
+            emit(new Instruction.Binary("LEA", new Instruction.Register( Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), ptr));
+            emit(new Instruction.Binary("MOV", new Instruction.Register( Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal("12", Parser.Literals[0])));
             emit(new Instruction.Zero("SYSCALL"));
                
-            emit(new Instruction.Binary("MOV", new Instruction.Register("RAX", Instruction.Register.RegisterSize._64Bits), new Instruction.Register("RBX", Instruction.Register.RegisterSize._64Bits)));
+            emit(new Instruction.Binary("MOV", new Instruction.Register( Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Register( Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits)));
             // }
 
-            emit(new Instruction.Binary("MOV", new Instruction.Register("RBX", Instruction.Register.RegisterSize._64Bits), new Instruction.Register("RAX", Instruction.Register.RegisterSize._64Bits)));
+            emit(new Instruction.Binary("MOV", new Instruction.Register( Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits), new Instruction.Register( Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits)));
 
             expr.call.Accept(this);
 
-            return new Instruction.Register("RBX", Instruction.Register.RegisterSize._64Bits);
+            return new Instruction.Register( Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits);
         }
 
         public Instruction.Value? visitDefineExpr(Expr.Define expr)
@@ -505,7 +505,7 @@ namespace Raze
         {
             if (footerType[footerType.Count - 1])
             {
-                emit(new Instruction.Unary("POP", "RBP"));
+                emit(new Instruction.Unary("POP", Instruction.Register.RegisterName.RBP));
                 emit(new Instruction.Zero("RET"));
             }
             else

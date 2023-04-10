@@ -553,18 +553,18 @@ namespace Raze
                             
                             if (TypeMatch("IDENTIFIER"))
                             {
-                                instructions.Add(new Instruction.Binary(op.lexeme, operand1.lexeme, previous().lexeme));
+                                instructions.Add(new Instruction.Binary(op.lexeme, new Instruction.Register(InstructionInfo.Registers[operand1.lexeme].Item1, InstructionInfo.Registers[operand1.lexeme].Item2), new Instruction.Register(InstructionInfo.Registers[previous().lexeme].Item1, InstructionInfo.Registers[previous().lexeme].Item2)));
                             }
                             else if (TypeMatch("INTEGER", "FLOATING", "STRING", "HEX", "BINARY"))
                             {
-                                instructions.Add(new Instruction.Binary(op.lexeme, new Instruction.Register(operand1.lexeme, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(previous().lexeme, previous().type)));
+                                instructions.Add(new Instruction.Binary(op.lexeme, new Instruction.Register(InstructionInfo.Registers[operand1.lexeme].Item1, InstructionInfo.Registers[operand1.lexeme].Item2), new Instruction.Literal(previous().lexeme, previous().type)));
                             }
                             else if (TypeMatch("DOLLAR"))
                             {
                                 Expect("IDENTIFIER", "after escape '$'");
                                 var ptr = new Instruction.Pointer(0, 0);
                                 variables[new Expr.Variable(previous())] = ptr;
-                                instructions.Add(new Instruction.Binary(op.lexeme, new Instruction.Register(operand1.lexeme, null), ptr));
+                                instructions.Add(new Instruction.Binary(op.lexeme, new Instruction.Register(Instruction.Register.RegisterName.TMP, null), ptr));
                             }
                             else
                             {
@@ -583,7 +583,7 @@ namespace Raze
                             }
                             else
                             {
-                                instructions.Add(new Instruction.Unary(op.lexeme, operand1.lexeme));
+                                instructions.Add(new Instruction.Unary(op.lexeme, new Instruction.Register(InstructionInfo.Registers[operand1.lexeme].Item1, InstructionInfo.Registers[operand1.lexeme].Item2)));
                             }
                             
                         }
