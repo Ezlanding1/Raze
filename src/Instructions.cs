@@ -427,21 +427,6 @@ internal class InstructionInfo
         Instruction.Register.RegisterName.R15
     };
 
-    public static Instruction.Register.RegisterName NextRegister(ref int idx)
-    {
-        return storageRegisters[idx++];
-    }
-
-    public static Instruction.Register.RegisterName CurrentRegister(int idx)
-    {
-        return storageRegisters[idx];
-    }
-
-    public static void FreeRegister(ref int idx)
-    {
-        idx--;
-    }
-
     internal readonly static Dictionary<string, (Instruction.Register.RegisterName, Instruction.Register.RegisterSize)> Registers = new()
     {
         { "RAX", (Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits) }, // 64-Bits 
