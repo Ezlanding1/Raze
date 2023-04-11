@@ -269,14 +269,8 @@ namespace Raze
                     internal abstract Dictionary<string, Variable> variables { get; }
                     internal abstract Dictionary<string, Container> containers { get; }
 
-                    internal Expr.Definition self {
-                        get
-                        {
-                            if (this.IsClass()) { return ((Class)this).self; }
-                            else if (this.IsFunc()) { return ((Function)this).self; }
-                            else if (this.IsPrimitive()) { return ((Primitive)this).self; }
-                            else { throw new Errors.ImpossibleError("Type of symbol not recognized"); }
-                        }
+                    abstract internal Expr.Definition self {
+                        get;
                     }
 
                     public Container(SymbolType type) : base(type)
@@ -301,14 +295,23 @@ namespace Raze
                     internal Dictionary<string, Variable> _variables;
                     internal Dictionary<string, Container> _containers;
 
-                    new internal Expr.Class self;
 
-                    public Class(Expr.Class self) : base(SymbolType.Class)
+                    override internal Expr.Class self
+                    {
+                        get
+                        {
+                            return _self;
+                        }
+                    }
+                    internal Expr.Class _self;
+
+                    public Class(Expr.Class _self) : base(SymbolType.Class)
                     {
                         this._variables = new();
                         this._containers = new();
-                        this.self = self;
+                        this._self = _self;
                     }
+
                 }
 
                 internal class Function : Container
@@ -326,12 +329,19 @@ namespace Raze
 
                     internal Dictionary<string, Variable> _variables;
 
-                    new internal Expr.Function self;
+                    override internal Expr.Function self
+                    {
+                        get
+                        {
+                            return _self;
+                        }
+                    }
+                    internal Expr.Function _self;
 
-                    public Function(Expr.Function self) : base(SymbolType.Function)
+                    public Function(Expr.Function _self) : base(SymbolType.Function)
                     {
                         this._variables = new();
-                        this.self = self;
+                        this._self = _self;
                     }
                 }
 
@@ -350,12 +360,19 @@ namespace Raze
 
                     internal Dictionary<string, Container> _containers;
 
-                    new internal Expr.Primitive self;
+                    override internal Expr.Primitive self
+                    {
+                        get
+                        {
+                            return _self;
+                        }
+                    }
+                    internal Expr.Primitive _self;
 
-                    public Primitive(Expr.Primitive self) : base(SymbolType.Primitive)
+                    public Primitive(Expr.Primitive _self) : base(SymbolType.Primitive)
                     {
                         this._containers = new();
-                        this.self = self;
+                        this._self = _self;
                     }
                 }
 
