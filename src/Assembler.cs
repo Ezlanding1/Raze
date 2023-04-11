@@ -98,7 +98,14 @@ namespace Raze
             for (int i = 0; i < expr.arguments.Count; i++)
             {
                 Instruction.Value arg = expr.arguments[i].Accept(this);
-                emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.paramRegister[paramReg + i], expr.internalFunction.parameters[i].member.variable.stack.size), arg));
+                if (i+paramReg < InstructionInfo.paramRegister.Length)
+                {
+                    emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.paramRegister[paramReg + i], expr.internalFunction.parameters[i].member.variable.stack.size), arg));
+                }
+                else
+                {
+                    emit(new Instruction.Unary("PUSH", arg));
+                }
             }
 
 
@@ -106,7 +113,12 @@ namespace Raze
 
 
             emit(new Instruction.Unary("CALL", new Instruction.ProcedureRef(operand1)));
-            
+
+            if (expr.arguments.Count > InstructionInfo.paramRegister.Length && footerType)
+            {
+                emit(new Instruction.Binary("ADD", new Instruction.Register(Instruction.Register.RegisterName.RSP, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(((expr.arguments.Count - InstructionInfo.paramRegister.Length)*8).ToString(), Parser.Literals[0])));
+            }
+
             if (expr.internalFunction._returnType.type.name.type != "void")
             {
                 return new Instruction.Register( Instruction.Register.RegisterName.RAX, expr.internalFunction._returnSize);
@@ -125,11 +137,12 @@ namespace Raze
 
         public Instruction.Value? visitDeclareExpr(Expr.Declare expr)
         {
+            var checkRegisterAlloc = registerIdx;
             Instruction.Value operand = expr.value.Accept(this);
 
             if (operand.IsPointer())
             {
-                var reg = new Instruction.Register(InstructionInfo.storageRegisters[registerIdx-1], ((Instruction.Pointer)operand).size);
+                var reg = new Instruction.Register((registerIdx == (checkRegisterAlloc+1))? InstructionInfo.storageRegisters[registerIdx - 1] : CurrentRegister(), ((Instruction.Pointer)operand).size);
                 emit(new Instruction.Binary("MOV", reg, operand));
                 operand = reg;
             }
@@ -179,7 +192,8 @@ namespace Raze
                 emit(new Instruction.Binary("MOV", new Instruction.Pointer(8, 8), new Instruction.Register(InstructionInfo.paramRegister[0], 8)));
                 count++;
             }
-            for (int i = 0; i < expr.arity; i++)
+
+            for (int i = 0, len = Math.Min(expr.arity + count, InstructionInfo.paramRegister.Length); i < len; i++)
             {
                 var paramExpr = expr.parameters[i];
                 emit(new Instruction.Binary("MOV", new Instruction.Pointer(paramExpr.member.variable.stack.stackOffset, paramExpr.member.variable.stack.size), new Instruction.Register(InstructionInfo.paramRegister[i+count], paramExpr.member.variable.stack.size)));
@@ -300,7 +314,7 @@ namespace Raze
                 frst = false;
             }
 
-            return new Instruction.Pointer(frst ? Instruction.Register.RegisterName.RBP : NextRegister(), expr.stack.stackOffset, expr.stack.size);
+            return new Instruction.Pointer(frst ? Instruction.Register.RegisterName.RBP : NextRegister(), expr.stack.stackOffset, expr.stack.size, expr.stack.minus ? '-' : '+');
         }
 
         public Instruction.Value? visitIfExpr(Expr.If expr)
@@ -440,15 +454,7 @@ namespace Raze
             if (operand2.IsPointer())
             {
                 Instruction.Register.RegisterName regName;
-                if (registerIdx == checkRegisterAlloc + 1)
-                {
-                    regName = InstructionInfo.storageRegisters[registerIdx - 1];
-                }
-                else
-                {
-                    regName = CurrentRegister();
-                }
-                var reg = new Instruction.Register(regName, ((Instruction.Pointer)operand2).size);
+                var reg = new Instruction.Register((registerIdx == (checkRegisterAlloc + 1)) ? InstructionInfo.storageRegisters[registerIdx - 1] : CurrentRegister(), ((Instruction.Pointer)operand2).size);
                 emit(new Instruction.Binary("MOV", reg, operand2));
                 operand2 = reg;
             }

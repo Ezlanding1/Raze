@@ -65,12 +65,6 @@ namespace Raze
                     SymbolTableSingleton.SymbolTable.other.main = expr;
                 }
 
-                int paramsCount = expr.parameters.Count;
-                if (paramsCount > InstructionInfo.paramRegister.Length - (expr.modifiers["static"]? 0 : 1))
-                {
-                    throw new Errors.AnalyzerError("Too Many Parameters", $"A function cannot have more than { InstructionInfo.paramRegister.Length } parameters");
-                }
-
                 expr.block.Accept(this);
 
                 symbolTable.UpContext();

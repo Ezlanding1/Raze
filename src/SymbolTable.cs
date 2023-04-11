@@ -78,6 +78,26 @@ namespace Raze
                 Current = _;
             }
 
+            public void Add(Expr.Parameter p, Symbol.Container definition, int i, int arity)
+            {
+                block.keys.Add(p.name.lexeme);
+
+                var _ = new Symbol.Variable(p.member.variable.stack, p.name, definition);
+
+                if (i < InstructionInfo.paramRegister.Length)
+                {
+                    Current.self.size += p.member.variable.stack.size;
+                    p.member.variable.stack.stackOffset = Current.self.size;
+                }
+                else
+                {
+                    p.member.variable.stack.minus = false;
+                    p.member.variable.stack.stackOffset = (8 * ((arity-i))) + 8;
+                }
+
+                Current.variables.Add(_.Name.lexeme, _);
+            }
+
             //public void Add(Expr.Define d)
             //{
             //    var _ = new Symbol.Define(d);

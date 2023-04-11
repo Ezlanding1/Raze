@@ -372,6 +372,7 @@ namespace Raze
         public class StackData
         {
             public Type type;
+            public bool minus = true;
             public int size;
             public int stackOffset;
         }
@@ -379,7 +380,6 @@ namespace Raze
         public class Variable : StackGet
         {
             public (bool, Literal) define;
-
 
             public Variable(Token name) : base(name)
             {

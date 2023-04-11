@@ -251,16 +251,19 @@ namespace Raze
 
                 symbolTable.CreateBlock();
 
+                int count = 0;
+
                 if (!expr.modifiers["static"])
                 {
                     symbolTable.Current.self.size += 8;
+                    count++;
                 }
 
                 for (int i = 0; i < expr.arity; i++)
                 {
                     Expr.Parameter paramExpr = expr.parameters[i];
                     (paramExpr.member.variable.stack.size, paramExpr.member.variable.stack.type.literals, var definition) = GetTypeAndSize(paramExpr.member.variable.stack.type);
-                    symbolTable.Add(paramExpr.member.variable.stack, paramExpr.name, definition);
+                    symbolTable.Add(paramExpr, definition, i+count, expr.arity);
                 }
 
                 expr.block.Accept(this);
@@ -283,6 +286,7 @@ namespace Raze
                 if (symbolTable.TryGetVariable(expr.name.lexeme, out SymbolTable.Symbol.Variable symbol, out bool isClassScoped))
                 {
                     expr.stack.size = symbol.self.size;
+                    expr.stack.minus = symbol.self.minus;
                     expr.stack.stackOffset = symbol.self.stackOffset;
                     expr.stack.type = symbol.self.type;
 
