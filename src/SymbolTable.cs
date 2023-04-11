@@ -194,6 +194,12 @@ namespace Raze
                 return false;
             }
 
+            public Symbol.Container NearestEnclosingClass()
+            {
+                // Assumes a function is enclosed by a class (no nested functions)
+                return Current.IsFunc() ? Current.enclosing : Current;
+            }
+
 
             public void UpContext()
             {

@@ -421,28 +421,24 @@ namespace Raze
                     }
                     else if (TypeMatch("PLUSPLUS", "MINUSMINUS"))
                     {
-                        if (variable.name.type == "this")
-                        {
-                            throw new Errors.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword may only be used in a member to reference the enclosing class");
-                        }
                         expr = new Expr.Unary(previous(), new Expr.Member(variable));
                     }
-                    else if (TypeMatch("IDENTIFIER"))
+                    else if (TypeMatch("IDENTIFIER", "this"))
                     {
-                        if (variable.name.type == "this")
-                        {
-                            throw new Errors.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword may only be used in a member to reference the enclosing class");
-                        }
                         var name = previous();
+                        if (name.type == "this")
+                        {
+                            throw new Errors.ParseError("Invalid 'This' Keyword", "The 'this' keyword may only be used in a member to reference the enclosing class");
+                        }
                         Expect("EQUALS", "'=' when declaring variable");
                         Expr value = NoSemicolon();
                         expr = new Expr.Declare(new Expr.Type(variable), name, value);
                     }
-                    else if (TypeMatch("LPAREN"))
+                    else if (TypeMatch("LPAREN", "this"))
                     {
                         if (variable.name.type == "this")
                         {
-                            throw new Errors.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword may only be used in a member to reference the enclosing class");
+                            throw new Errors.ParseError("Invalid 'This' Keyword", "The 'this' keyword may only be used in a member to reference the enclosing class");
                         }
                         expr = Call(variable);
                     }

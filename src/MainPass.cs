@@ -382,14 +382,14 @@ namespace Raze
 
             public override object visitThisExpr(Expr.This expr)
             {
-                expr.type = NearestEnclosingClass().self.QualifiedName;
+                expr.type = symbolTable.NearestEnclosingClass().self.QualifiedName;
 
                 if (expr.get == null) { return null; }
 
                 var context = symbolTable.Current;
 
 
-                symbolTable.SetContext(NearestEnclosingClass());
+                symbolTable.SetContext(symbolTable.NearestEnclosingClass());
 
                 expr.get.Accept(this);
 
@@ -456,12 +456,6 @@ namespace Raze
                     return (self.size, self.literals, container);
                 }
                 return (8, null, container);
-            }
-
-            private SymbolTable.Symbol.Container NearestEnclosingClass()
-            {
-                // Assumes a function is enclosed by a class (no nested functions)
-                return symbolTable.Current.IsFunc() ? symbolTable.Current.enclosing : symbolTable.Current;
             }
         }
     }
