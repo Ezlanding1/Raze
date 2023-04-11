@@ -565,28 +565,58 @@ namespace Raze
                 if (TypeMatch("IDENTIFIER"))
                 {
                     var op = previous();
+
                     if (TypeMatch("IDENTIFIER", "DOLLAR"))
                     {
-                        var operand1 = previous();
+                        // Unary
+                        Instruction.Value value;
+
+                        if (previous().type == "DOLLAR")
+                        {
+                            Expect("IDENTIFIER", "after escape '$'");
+                            var ptr = new Instruction.Pointer(0, 0);
+                            variables[new Expr.Variable(previous())] = ptr;
+                            value = ptr;
+                        }
+                        else
+                        {
+                            var identifier = previous();
+                            if (InstructionInfo.Registers.TryGetValue(identifier.lexeme, out var reg))
+                            {
+                                value = new Instruction.Register(reg.Item1, reg.Item2);
+                            }
+                            else
+                            {
+                                throw new Errors.ParseError("Invalid Assembly Register", $"Invalid assembly register given '{identifier}'");
+                            }
+                        }
 
                         if (TypeMatch("COMMA"))
                         {
                             // Binary
-                            
+
                             if (TypeMatch("IDENTIFIER"))
                             {
-                                instructions.Add(new Instruction.Binary(op.lexeme, new Instruction.Register(InstructionInfo.Registers[operand1.lexeme].Item1, InstructionInfo.Registers[operand1.lexeme].Item2), new Instruction.Register(InstructionInfo.Registers[previous().lexeme].Item1, InstructionInfo.Registers[previous().lexeme].Item2)));
+                                var identifier = previous();
+                                if (InstructionInfo.Registers.TryGetValue(identifier.lexeme, out var reg))
+                                {
+                                    instructions.Add(new Instruction.Binary(op.lexeme, value, new Instruction.Register(reg.Item1, reg.Item2)));
+                                }
+                                else
+                                {
+                                    throw new Errors.ParseError("Invalid Assembly Register", $"Invalid assembly register given '{identifier.lexeme}'");
+                                }
                             }
                             else if (TypeMatch("INTEGER", "FLOATING", "STRING", "HEX", "BINARY"))
                             {
-                                instructions.Add(new Instruction.Binary(op.lexeme, new Instruction.Register(InstructionInfo.Registers[operand1.lexeme].Item1, InstructionInfo.Registers[operand1.lexeme].Item2), new Instruction.Literal(previous().lexeme, previous().type)));
+                                instructions.Add(new Instruction.Binary(op.lexeme, value, new Instruction.Literal(previous().lexeme, previous().type)));
                             }
                             else if (TypeMatch("DOLLAR"))
                             {
                                 Expect("IDENTIFIER", "after escape '$'");
                                 var ptr = new Instruction.Pointer(0, 0);
                                 variables[new Expr.Variable(previous())] = ptr;
-                                instructions.Add(new Instruction.Binary(op.lexeme, new Instruction.Register(InstructionInfo.Registers[operand1.lexeme].Item1, InstructionInfo.Registers[operand1.lexeme].Item2), ptr));
+                                instructions.Add(new Instruction.Binary(op.lexeme, value, ptr));
                             }
                             else
                             {
@@ -595,19 +625,7 @@ namespace Raze
                         }
                         else
                         {
-                            // Unary
-                            if (operand1.type == "DOLLAR")
-                            {
-                                Expect("IDENTIFIER", "after escape '$'");
-                                var ptr = new Instruction.Pointer(0, 0);
-                                variables[new Expr.Variable(previous())] = ptr;
-                                instructions.Add(new Instruction.Unary(op.lexeme, ptr));
-                            }
-                            else
-                            {
-                                instructions.Add(new Instruction.Unary(op.lexeme, new Instruction.Register(InstructionInfo.Registers[operand1.lexeme].Item1, InstructionInfo.Registers[operand1.lexeme].Item2)));
-                            }
-                            
+                            instructions.Add(new Instruction.Unary(op.lexeme, value));
                         }
                     }
                     else
