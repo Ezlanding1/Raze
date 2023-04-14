@@ -197,7 +197,7 @@ namespace Raze
 
             public override object visitAssignExpr(Expr.Assign expr)
             {
-                if (!symbolTable.NearestEnclosingClass().IsPrimitive()) { throw new Errors.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword cannot be assigned to");  }
+                if (expr.member.get.name.type == "this" && expr.member.variable == null && !symbolTable.NearestEnclosingClass().IsPrimitive()) { throw new Errors.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword cannot be assigned to");  }
 
                 expr.member.Accept(this);
                 return base.visitAssignExpr(expr);

@@ -193,7 +193,7 @@ namespace Raze
                 count++;
             }
 
-            for (int i = 0, len = Math.Min(expr.arity + count, InstructionInfo.paramRegister.Length); i < len; i++)
+            for (int i = 0, len = Math.Min(expr.arity, InstructionInfo.paramRegister.Length-count); i < len; i++)
             {
                 var paramExpr = expr.parameters[i];
                 emit(new Instruction.Binary("MOV", new Instruction.Pointer(paramExpr.member.variable.stack.stackOffset, paramExpr.member.variable.stack.size), new Instruction.Register(InstructionInfo.paramRegister[i+count], paramExpr.member.variable.stack.size)));
