@@ -54,7 +54,9 @@ namespace Raze
 
             public virtual T visitDeclareExpr(Expr.Declare expr)
             {
-                expr.value.Accept(this);
+                if (expr.value != null)
+                    expr.value.Accept(this);
+
                 return default(T);
             }
 
@@ -68,7 +70,12 @@ namespace Raze
                 return default(T);
             }
 
-            public virtual T visitGetExpr(Expr.Get expr)
+            public virtual T visitTypeReferenceExpr(Expr.TypeReference expr)
+            {
+                return default(T);
+            }
+
+            public virtual T visitGetReferenceExpr(Expr.GetReference expr)
             {
                 return default(T);
             }
@@ -151,16 +158,6 @@ namespace Raze
                 expr.left.Accept(this);
                 expr.right.Accept(this);
                 return default(T);
-            }
-
-            public virtual T visitMemberExpr(Expr.Member expr)
-            {
-                return expr.get.Accept(this);
-            }
-
-            public virtual T visitThisExpr(Expr.This expr)
-            {
-                return visitGetExpr(expr);
             }
 
             public virtual T visitWhileExpr(Expr.While expr)

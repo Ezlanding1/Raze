@@ -9,17 +9,10 @@ namespace Raze
 {
     internal partial class Analyzer
     {
-        internal struct Other
-        {
-            public HashSet<Expr.StackData> classScopedVars = new();
-            public Expr.Function main = null;
-            public Other()
-            {
-            }
-        }
-
         internal class SymbolTable
         {
+            public Type global = new(new(""), null);
+
             private Symbol.Class head;
             private Symbol.Container current;
             public Symbol.Container Current
@@ -33,7 +26,7 @@ namespace Raze
 
             private Block block;
 
-            public Other other = new();
+            public Expr.Function main = null;
 
             public SymbolTable()
             {
@@ -82,17 +75,17 @@ namespace Raze
             {
                 block.keys.Add(p.name.lexeme);
 
-                var _ = new Symbol.Variable(p.member.variable.stack, p.name, definition);
+                var _ = new Symbol.Variable(p.stack, p.name, definition);
 
                 if (i < InstructionInfo.paramRegister.Length)
                 {
-                    Current.self.size += p.member.variable.stack.size;
-                    p.member.variable.stack.stackOffset = Current.self.size;
+                    Current.self.size += p.stack.size;
+                    p.stack.stackOffset = Current.self.size;
                 }
                 else
                 {
-                    p.member.variable.stack.minus = false;
-                    p.member.variable.stack.stackOffset = (8 * ((arity-i))) + 8;
+                    p.stack.plus = true;
+                    p.stack.stackOffset = (8 * ((arity - i))) + 8;
                 }
 
                 Current.variables.Add(_.Name.lexeme, _);
@@ -108,13 +101,27 @@ namespace Raze
 
             public Symbol.Variable GetVariable(string key)
             {
-                if (Current.variables.TryGetValue(key, out var value))
+                return GetVariable(key, out _);
+            }
+            public Symbol.Variable GetVariable(string key, out bool isClassScoped)
+            {
+                if(Current.variables.TryGetValue(key, out var value))
                 {
+                    isClassScoped = Current.IsClass();
                     return value;
+                }
+
+                if (Current.IsFunc() && (!((Symbol.Function)Current).self.modifiers["static"]))
+                {
+                    if (Current.enclosing.variables.TryGetValue(key, out var classValue))
+                    {
+                        isClassScoped = true;
+                        return classValue;
+                    }
                 }
                 throw new Errors.AnalyzerError("Undefined Reference", $"The variable '{key}' does not exist in the current context");
             }
-            public Symbol.Container GetContainer(string key, bool func=false)
+            public Symbol.Container GetContainer(string key, bool func = false)
             {
                 if (Current.containers.TryGetValue(key, out var value))
                 {
@@ -122,18 +129,42 @@ namespace Raze
                 }
                 throw new Errors.AnalyzerError("Undefined Reference", $"The {(func ? "function" : "class")} '{key}' does not exist in the current context");
             }
-            public Symbol.Container GetContainer(string key, Symbol.Container x, bool func = false)
+            public Symbol.Container GetClassFullScope(string key)
             {
-                if (x.containers.TryGetValue(key, out var value))
+                var x = Current;
+
+                if (x.IsFunc())
                 {
+                    x = x.enclosing;
+                }
+
+                while (!(x == head))
+                {
+
+                    if (x.Name.lexeme == key)
+                    {
+                        return x;
+                    }
+                    x = x.enclosing;
+                }
+
+                if (x.containers.TryGetValue(key, out Symbol.Container value))
+                {
+                    if (value.IsFunc())
+                    {
+                        throw new Errors.AnalyzerError("Undefined Reference", $"The class '{key}' does not exist in the current context");
+                    }
                     return value;
                 }
-                throw new Errors.AnalyzerError("Undefined Reference", $"The {(func ? "function" : "class")} '{key}' does not exist in the current context");
+
+                throw new Errors.AnalyzerError("Undefined Reference", $"The class '{key}' does not exist in the current context");
+
+
             }
 
             // 'TryGet' Methods:
 
-            public bool TryGetVariable(string key, out Symbol.Variable symbol, out bool isClassScoped, bool ignoreEnclosing=false)
+            public bool TryGetVariable(string key, out Symbol.Variable symbol, out bool isClassScoped, bool ignoreEnclosing = false)
             {
                 if (Current.variables.TryGetValue(key, out var value))
                 {
@@ -168,31 +199,6 @@ namespace Raze
                 return false;
             }
 
-            // 'TryGetFullScope' Methods:
-
-            public bool TryGetContainerFullScope(string key, out Symbol.Container symbol, bool notFunc=false)
-            {
-                var x = Current;
-
-                while (x != null)
-                {
-                    if (x.IsFunc())
-                    {
-                        x = x.enclosing;
-                        continue;
-                    }
-
-                    if (x.containers.TryGetValue(key, out var value) && (notFunc? !value.IsFunc() : true))
-                    {
-                        symbol = value;
-                        return true;
-                    }
-                    x = x.enclosing;
-                }
-
-                symbol = null;
-                return false;
-            }
 
             public Symbol.Container NearestEnclosingClass()
             {
@@ -203,11 +209,11 @@ namespace Raze
 
             public void UpContext()
             {
-                Current = Current.enclosing 
+                Current = Current.enclosing
                     ?? throw new Errors.ImpossibleError("Up Context Called On 'GLOBAL' context (no enclosing)");
             }
 
-            public void CreateBlock() 
+            public void CreateBlock()
             {
                 Block nBlock = new(block);
                 block = nBlock;
@@ -275,7 +281,8 @@ namespace Raze
                     internal abstract Dictionary<string, Variable> variables { get; }
                     internal abstract Dictionary<string, Container> containers { get; }
 
-                    abstract internal Expr.Definition self {
+                    abstract internal Expr.Definition self
+                    {
                         get;
                     }
 
@@ -289,15 +296,15 @@ namespace Raze
                 {
                     public override Token Name { get { return self.name; } }
 
-                    internal override Dictionary<string, Variable> variables 
+                    internal override Dictionary<string, Variable> variables
                     {
                         get => _variables;
                     }
-                    internal override Dictionary<string, Container> containers 
-                    { 
-                        get => _containers;  
+                    internal override Dictionary<string, Container> containers
+                    {
+                        get => _containers;
                     }
-                    
+
                     internal Dictionary<string, Variable> _variables;
                     internal Dictionary<string, Container> _containers;
 
@@ -324,11 +331,11 @@ namespace Raze
                 {
                     public override Token Name { get { return self.name; } }
 
-                    internal override Dictionary<string, Variable> variables 
+                    internal override Dictionary<string, Variable> variables
                     {
-                        get => _variables; 
+                        get => _variables;
                     }
-                    internal override Dictionary<string, Container> containers 
+                    internal override Dictionary<string, Container> containers
                     {
                         get => throw new Errors.ImpossibleError("Requested Access of function's containers (null)");
                     }

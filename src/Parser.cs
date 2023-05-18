@@ -54,7 +54,7 @@ namespace Raze
                 if (definitionType.type == "function")
                 {
                     var function = new Expr.Function();
-                    Expr.Get _return;
+                    Expr.TypeReference _return;
 
                     while (function.modifiers.ContainsKey(current.lexeme))
                     {
@@ -65,16 +65,18 @@ namespace Raze
                     if (peek().type == "IDENTIFIER")
                     {
                         Expect("IDENTIFIER", "function return type");
-                        _return = new(previous());
+                        _return = new(new());
+                        _return.typeName.Enqueue(previous());
 
                         if (TypeMatch("DOT"))
                         {
-                            _return = GetGetter(_return);
+                            _return = GetTypeGetter();
                         }
                     }
                     else
                     {
-                        _return = new(new Token("void", "void"));
+                        _return = new(new());
+                        _return.typeName.Enqueue(new Token("void", "void"));
                     }
 
                     Expect("IDENTIFIER", definitionType.type + " name");
@@ -84,17 +86,12 @@ namespace Raze
                     while (!TypeMatch("RPAREN"))
                     {
                         Expect("IDENTIFIER", "identifier as function parameter type");
-                        Expr.Get type = new(previous());
-
-                        if (TypeMatch("DOT"))
-                        {
-                            type = GetGetter(type);
-                        }
+                        Expr.TypeReference type = GetTypeGetter();
 
                         Expect("IDENTIFIER", "identifier as function parameter");
                         Token variable = previous();
 
-                        parameters.Add(new Expr.Parameter(new Expr.Type(type), variable));
+                        parameters.Add(new Expr.Parameter(type, variable));
                         if (TypeMatch("RPAREN"))
                         {
                             break;
@@ -105,7 +102,7 @@ namespace Raze
                             throw new Errors.ParseError("Unexpected End In Function Parameters", $"Function '{name.lexeme}' reached an unexpected end during it's parameters");
                         }
                     }
-                    function.Add(new Expr.Type(_return), name, parameters, GetBlock(definitionType.type));
+                    function.Add(_return, name, parameters, GetBlock(definitionType.type));
                     return function;
                 }
                 else if (definitionType.type == "class")
@@ -276,7 +273,7 @@ namespace Raze
                 }
                 else
                 {
-                    expr = new Expr.Return(Logical());
+                    expr = new Expr.Return(Logical(), false);
                 }
             }
             else
@@ -375,11 +372,7 @@ namespace Raze
             while (!isAtEnd() && TypeMatch("is"))
             {
                 Expect("IDENTIFIER", "type after 'is' operator");
-                var variable = new Expr.Get(previous());
-                 expr = new Expr.Is(expr, TypeMatch("DOT")? 
-                     new Expr.Type(GetGetter(variable))
-                     : new Expr.Type(variable)
-                     );
+                expr = new Expr.Is(expr, GetTypeGetter());
             }
             return expr;
         }
@@ -403,28 +396,17 @@ namespace Raze
 
                 if (TypeMatch("IDENTIFIER", "this"))
                 {
-                    Expr expr;
-                    Expr.Get variable = new Expr.Get(previous());
+                    Expr expr = null;
+                    
+                    var variable = GetGetter();
 
-                    if (TypeMatch("DOT"))
+                    if (TypeMatch("IDENTIFIER", "this"))
                     {
-                        variable = GetGetter(variable);
-                    }
-                    if (TypeMatch("EQUALS"))
-                    {
-                        expr = new Expr.Assign(new Expr.Member(variable), NoSemicolon());
-                    }
-                    else if (TypeMatch(new string[] { "PLUS", "MINUS", "MULTIPLY", "DIVIDE", "MODULO" }, new string[] { "EQUALS" }))
-                    {
-                        var sign = tokens[index-2];
-                        expr = new Expr.Assign(new Expr.Member(variable), sign, NoSemicolon());
-                    }
-                    else if (TypeMatch("PLUSPLUS", "MINUSMINUS"))
-                    {
-                        expr = new Expr.Unary(previous(), new Expr.Member(variable));
-                    }
-                    else if (TypeMatch("IDENTIFIER", "this"))
-                    {
+                        if (variable.Item2)
+                        {
+                            throw new Errors.ParseError("Invalid Assign Statement", "Cannot assign to a non-variable");
+                        }
+
                         var name = previous();
                         if (name.type == "this")
                         {
@@ -432,20 +414,39 @@ namespace Raze
                         }
                         Expect("EQUALS", "'=' when declaring variable");
                         Expr value = NoSemicolon();
-                        expr = new Expr.Declare(new Expr.Type(variable), name, value);
+
+                        expr = new Expr.Declare((Expr.TypeReference)variable.Item1, name, value);
                     }
-                    else if (TypeMatch("LPAREN", "this"))
+                    else if (TypeMatch("EQUALS"))
                     {
-                        if (variable.name.type == "this")
+                        if (variable.Item2)
                         {
-                            throw new Errors.ParseError("Invalid 'This' Keyword", "The 'this' keyword may only be used in a member to reference the enclosing class");
+                            throw new Errors.ParseError("Invalid Assign Statement", "Cannot assign to a non-variable");
                         }
-                        expr = Call(variable);
+                        expr = new Expr.Assign((Expr.Variable)variable.Item1, NoSemicolon());
+                    }
+                    else if (TypeMatch(new string[] { "PLUS", "MINUS", "MULTIPLY", "DIVIDE", "MODULO" }, new string[] { "EQUALS" }))
+                    {
+                        if (variable.Item2)
+                        {
+                            throw new Errors.ParseError("Invalid Assign Statement", "Cannot assign to a non-variable");
+                        }
+                        var sign = tokens[index - 2];
+                        expr = new Expr.Assign((Expr.Variable)variable.Item1, sign, NoSemicolon());
+                    }
+                    else if (TypeMatch("PLUSPLUS", "MINUSMINUS"))
+                    {
+                        if (variable.Item2)
+                        {
+                            throw new Errors.ParseError("Invalid Unary Operator", "Cannot assign to a non-variable");
+                        }
+                        expr = new Expr.Unary(previous(), (Expr.Variable)variable.Item1);
                     }
                     else
                     {
-                        expr = new Expr.Member(variable);
+                        expr = variable.Item1;
                     }
+
                     return expr;
                 }
 
@@ -456,16 +457,8 @@ namespace Raze
 
                 if (TypeMatch("new"))
                 {
-                    Expect("IDENTIFIER", "class name after 'new' keyword");
-                    Expr.Get variable = new Expr.Get(previous());
-
-                    if (TypeMatch("DOT"))
-                    {
-                        variable = GetGetter(variable);
-                    }
-                    Expect("LPAREN", "'(' starting constructor parameters");
-
-                    return new Expr.New(new Expr.Call(variable, GetArgs()));
+                    Expect("IDENTIFIER", "identifier after new expression");
+                    return new Expr.New(GetNewGetter());
                 }
             }
             throw End();
@@ -480,27 +473,80 @@ namespace Raze
             return null;
         }
 
-        private Expr.Get GetGetter(Expr.Get getter)
+        private (Expr.GetReference, bool) GetGetter()
         {
-            Expect("IDENTIFIER", "variable name after '.'");
-            
-            Expr.Get get = new Expr.Get(previous());
-            if (TypeMatch("DOT"))
+            Queue<Token> typeName = new Queue<Token>();
+            typeName.Enqueue(previous());
+
+            if (peek().type != "DOT" && TypeMatch("LPAREN"))
             {
-                get = GetGetter(get);
+                return (new Expr.Call(typeName.Dequeue(), null, null, GetArgs()), true);
             }
 
-            return new Expr.Get(getter, get);
+            while (TypeMatch("DOT"))
+            {
+                Expect("IDENTIFIER", "variable name after '.'");
+                var variable = previous();
+
+                if (TypeMatch("LPAREN"))
+                {
+                    var args = GetArgs();
+                    return (new Expr.Call(variable, typeName, (peek().type != "DOT")? null : GetGetter().Item1, args), true);
+                }
+                else
+                {
+                    typeName.Enqueue(variable);
+                }
+            }
+
+            return (new Expr.Variable(typeName), false);
         }
+
+        private Expr.Call GetNewGetter()
+        {
+            Queue<Token> typeName = new Queue<Token>();
+            typeName.Enqueue(previous());
+
+            if (peek().type != "DOT" && TypeMatch("LPAREN"))
+            {
+                return new Expr.Call(typeName.Dequeue(), null, null, GetArgs());
+            }
+
+            while (TypeMatch("DOT"))
+            {
+                Expect("IDENTIFIER", "variable name after '.'");
+
+                if (TypeMatch("LPAREN"))
+                {
+                    return new Expr.Call(previous(2), typeName, null, GetArgs());
+                }
+                else
+                {
+                    typeName.Enqueue(previous());
+                }
+            }
+
+            throw Expected("LPAREN", "'(' after type in new expression");
+        }
+
+        private Expr.TypeReference GetTypeGetter()
+        {
+            Queue<Token> typeName = new Queue<Token>();
+            typeName.Enqueue(previous());
+
+            while (TypeMatch("DOT"))
+            {
+                Expect("IDENTIFIER", "variable name after '.'");
+                typeName.Enqueue(previous());
+            }
+
+            return new Expr.TypeReference(typeName);
+        }
+
 
         private Exception End()
         {
             return new Errors.ParseError("Expression Reached Unexpected End", $"Expression '{((previous() != null)? previous().lexeme : "")}' reached an unexpected end");
-        }
-
-        private Expr.Call Call(Expr.Get name)
-        {
-            return new Expr.Call(name, GetArgs());
         }
 
         private List<Expr> GetArgs()
@@ -571,7 +617,9 @@ namespace Raze
                         {
                             Expect("IDENTIFIER", "after escape '$'");
                             var ptr = new Instruction.Pointer(0, 0);
-                            variables[new Expr.Variable(previous())] = ptr;
+                            Queue<Token> queue = new();
+                            queue.Enqueue(previous());
+                            variables[new Expr.Variable(queue)] = ptr;
                             value = ptr;
                         }
                         else
@@ -611,7 +659,9 @@ namespace Raze
                             {
                                 Expect("IDENTIFIER", "after escape '$'");
                                 var ptr = new Instruction.Pointer(0, 0);
-                                variables[new Expr.Variable(previous())] = ptr;
+                                Queue<Token> queue = new();
+                                queue.Enqueue(previous());
+                                variables[new Expr.Variable(queue)] = ptr;
                                 instructions.Add(new Instruction.Binary(op.lexeme, value, ptr));
                             }
                             else
@@ -720,11 +770,11 @@ namespace Raze
             return new Errors.ParseError($"{type}", "Expected " + errorMessage + $"{((current != null) ? "\nGot: '" + current.lexeme + "' Instead" : "")}");
         }
 
-        private Token? previous()
+        private Token? previous(int sub=1)
         {
-            if (!isAtEnd(index - 1))
+            if (!isAtEnd(index - sub))
             {
-                return tokens[index - 1];
+                return tokens[index - sub];
             }
             return null;
         }

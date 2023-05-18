@@ -38,8 +38,8 @@ namespace Raze.Tools
             }
             else if (expr is Expr.Variable)
             {
-                PrintAST(((Expr.Variable)expr).stack.type);
-                PrintAST(((Expr.Variable)expr).name);
+                //PrintAST(((Expr.Variable)expr).stack.type);
+                //PrintAST(((Expr.Variable)expr).name);
             }
             else if (expr is Expr.Unary)
             {
@@ -131,7 +131,7 @@ namespace Raze.Tools
 
         public object? visitCallExpr(Expr.Call expr)
         {
-            PrintAST(expr.callee);
+            this.visitTypeReferenceExpr(expr);
             PrintAST(expr.arguments, false);
             return null;
         }
@@ -155,11 +155,20 @@ namespace Raze.Tools
             return null;
         }
 
-        public object? visitGetExpr(Expr.Get expr)
+        public object? visitTypeReferenceExpr(Expr.TypeReference expr)
         {
-            PrintAST(expr.name);
-            PrintAST(expr.get);
+            if (expr.typeName == null) return null;
+
+            foreach (var type in expr.typeName)
+            {
+                PrintAST(type);
+            }
             return null;
+        }
+
+        public object? visitGetReferenceExpr(Expr.GetReference expr)
+        {
+            return this.visitTypeReferenceExpr(expr);
         }
 
         public object? visitGroupingExpr(Expr.Grouping expr)
@@ -183,16 +192,21 @@ namespace Raze.Tools
 
         public object? visitVariableExpr(Expr.Variable expr)
         {
-            PrintAST(expr.stack.type);
-            PrintAST(expr.name);
+            foreach (var type in expr.typeName)
+            {
+                PrintAST(type);
+            }
             return null;
         }
 
         public object? visitDeclareExpr(Expr.Declare expr)
         {
-            PrintAST(expr.stack.type);
+            PrintAST(expr.type.ToString());
             PrintAST(expr.name);
-            PrintAST(expr.value);
+
+            if (expr.value != null)
+                PrintAST(expr.value);
+
             return null;
         }
 
@@ -288,17 +302,6 @@ namespace Raze.Tools
             PrintAST("is");
             PrintAST(expr.right);
             return null;
-        }
-
-        public object? visitMemberExpr(Expr.Member expr)
-        {
-            expr.get.Accept(this);
-            return null;
-        }
-
-        public object? visitThisExpr(Expr.This expr)
-        {
-            return visitGetExpr(expr);
         }
     }
 }

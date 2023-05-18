@@ -9,10 +9,28 @@ namespace Raze
 {
     internal partial class Analyzer
     {
-        internal partial class TypeCheckPass : Pass<string>
+        internal partial class TypeCheckPass : Pass<Analyzer.Type>
         {
-            List<(string, bool, Expr.Return)> _return;
+            List<(Analyzer.Type, bool, Expr.Return)> _return;
             bool callReturn;
+
+            public static Analyzer.Type _voidType = new(new Token("void"));
+            Func<Analyzer.Type, bool> isVoidType = (type) => { return type.name.type == "void"; };
+
+            Dictionary<string, Analyzer.Type> literalTypes = new Dictionary<string, Analyzer.Type>()
+            {
+                { Parser.Literals[0], new(new Token(Parser.Literals[0])) },
+                { Parser.Literals[1], new(new Token(Parser.Literals[1])) },
+                { Parser.Literals[2], new(new Token(Parser.Literals[2])) },
+                { Parser.Literals[3], new(new Token(Parser.Literals[3])) },
+                { Parser.Literals[4], new(new Token(Parser.Literals[4])) },
+                { Parser.Literals[5], new(new Token(Parser.Literals[5])) },
+                { "true", new(new Token("true")) },
+                { "false", new(new Token("false")) },
+                { "null", new(new Token("null")) },
+            };
+            
+            Func<Analyzer.Type, byte, bool> isLiteralType = (type, literal) => { return type.name.type == Parser.Literals[literal]; };
 
             public TypeCheckPass(List<Expr> expressions) : base(expressions)
             {
@@ -23,8 +41,8 @@ namespace Raze
             {
                 foreach (Expr expr in expressions)
                 {
-                    string result = expr.Accept(this);
-                    if (result != "void" && !callReturn)
+                    Analyzer.Type result = expr.Accept(this);
+                    if (!isVoidType(result) && !callReturn)
                     {
                         throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
                     }
@@ -37,81 +55,78 @@ namespace Raze
                 return expressions;
             }
 
-            public override string visitBinaryExpr(Expr.Binary expr)
+            public override Analyzer.Type visitBinaryExpr(Expr.Binary expr)
             {
-                string operand1 = expr.left.Accept(this);
-                string operand2 = expr.right.Accept(this);
+                Analyzer.Type operand1 = expr.left.Accept(this);
+                Analyzer.Type operand2 = expr.right.Accept(this);
 
-                if ((Primitives.PrimitiveOps(operand1))
-                        ._operators.TryGetValue((expr.op.lexeme + " BIN", operand1, operand2), out string value))
-                {
-                    return value;
-                }
-                else
-                {
-                    if (operand1 == "null" || operand2 == "null")
-                    {
-                        throw new Errors.AnalyzerError("Null Reference Exception", $"Reference is not set to an instance of an object.");
-                    }
-
-                    throw new Errors.AnalyzerError("Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on types '{operand1}' and '{operand2}'");
-                }
+                //if ((Primitives.PrimitiveOps(operand1))
+                //        ._operators.TryGetValue((expr.op.lexeme + " BIN", operand1, operand2), out string value))
+                //{
+                //    return value;
+                //}
+                //else
+                //{
+                //    throw new Errors.AnalyzerError("Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on types '{operand1}' and '{operand2}'");
+                //}
+                return null;
             }
 
-            public override string visitBlockExpr(Expr.Block expr)
+            public override Analyzer.Type visitBlockExpr(Expr.Block expr)
             {
                 foreach (var blockExpr in expr.block)
                 {
-                    string result = blockExpr.Accept(this);
+                    Analyzer.Type result = blockExpr.Accept(this);
                     if (expr._classBlock && _return.Count != 0)
                     {
                         throw new Errors.AnalyzerError("Invalid Return", $"A class may not have a 'return'");
                     }
 
-                    if (result != "void" && !callReturn)
+                    if (!isVoidType(result) && !callReturn)
                     {
-                        throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
+                        if (false)
+                            throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
                     }
                     callReturn = false; 
                 }
-                return "void";
+                return _voidType;
             }
 
-            public override string visitCallExpr(Expr.Call expr)
+            public override Analyzer.Type visitCallExpr(Expr.Call expr)
             {
                 for (int i = 0; i < expr.internalFunction.arity; i++)
                 {
                     Expr.Parameter paramExpr = expr.internalFunction.parameters[i];
 
                     var assignType = expr.arguments[i].Accept(this);
-                    if (!MatchesType(paramExpr.member.variable.stack.type, assignType))
+                    if (!MatchesType(paramExpr.stack.type, assignType))
                     {
-                        throw new Errors.AnalyzerError("Type Mismatch", $"You cannot assign type '{assignType}' to type '{paramExpr.member.variable.stack.type.ToString()}'");
+                        throw new Errors.AnalyzerError("Type Mismatch", $"You cannot assign type '{assignType}' to type '{paramExpr.stack.type.ToString()}'");
                     }
                 }
                 callReturn = true;
-                return expr.internalFunction._returnType.ToString();
+                return expr.internalFunction._returnType.type;
             }
 
-            public override string visitClassExpr(Expr.Class expr)
+            public override Analyzer.Type visitClassExpr(Expr.Class expr)
             {
                 expr.topLevelBlock.Accept(this);
                 expr.block.Accept(this);
-                return "void";
+                return _voidType;
             }
 
-            public override string visitDeclareExpr(Expr.Declare expr)
+            public override Analyzer.Type visitDeclareExpr(Expr.Declare expr)
             {
-                string assignType = expr.value.Accept(this);
+                Analyzer.Type assignType = expr.value.Accept(this);
                 if (!MatchesType(expr.stack.type, assignType))
                 {
                     throw new Errors.AnalyzerError("Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.stack.type.ToString()}'");
                 }
 
-                return "void";
+                return _voidType;
             }
 
-            public override string visitFunctionExpr(Expr.Function expr)
+            public override Analyzer.Type visitFunctionExpr(Expr.Function expr)
             {
                 foreach (Expr.Parameter paramExpr in expr.parameters)
                 {
@@ -124,9 +139,9 @@ namespace Raze
                     int _returnCount = 0;
                     foreach (var ret in _return)
                     {
-                        if (!MatchesType(expr._returnType, ret.Item1))
+                        if (!MatchesType(expr._returnType.type, ret.Item1))
                         {
-                            throw new Errors.AnalyzerError("Type Mismatch", $"You cannot return type '{ret.Item1}' from type '{expr._returnType}'");
+                            throw new Errors.AnalyzerError("Type Mismatch", $"You cannot return type '{ret.Item1}' from type '{expr._returnType.type}'");
                         }
 
                         ret.Item3.size = expr._returnSize;
@@ -136,7 +151,7 @@ namespace Raze
                             _returnCount++;
                         }
                     }
-                    if (_returnCount == 0 && expr._returnType.type.name.type != "void")
+                    if (_returnCount == 0 && !isVoidType(expr._returnType.type))
                     {
                         if (!expr.modifiers["unsafe"])
                         {
@@ -159,29 +174,25 @@ namespace Raze
                         throw new Errors.AnalyzerError("Invalid Return", $"A constructor cannot have a 'return' expression");
                     }
                 }
-                return "void";
+                return _voidType;
             }
 
-            public override string visitGetExpr(Expr.Get expr)
+            public override Analyzer.Type visitTypeReferenceExpr(Expr.TypeReference expr)
             {
-                if (expr.get == null) { return null; }
-
-                return expr.get.Accept(this);
+                return expr.type;
             }
 
-            public override string visitThisExpr(Expr.This expr)
+            public override Analyzer.Type visitGetReferenceExpr(Expr.GetReference expr)
             {
-                if (expr.get == null) { return expr.type; }
-
-                return expr.get.Accept(this);
+                return expr.type;
             }
 
-            public override string visitGroupingExpr(Expr.Grouping expr)
+            public override Analyzer.Type visitGroupingExpr(Expr.Grouping expr)
             {
                 return expr.expression.Accept(this);
             }
 
-            public override string visitIfExpr(Expr.If expr)
+            public override Analyzer.Type visitIfExpr(Expr.If expr)
             {
                 TypeCheckConditional(expr.conditional);
 
@@ -189,27 +200,27 @@ namespace Raze
 
                 TypeCheckConditional(expr._else.conditional);
 
-                return "void";
+                return _voidType;
             }
 
-            public override string visitWhileExpr(Expr.While expr)
+            public override Analyzer.Type visitWhileExpr(Expr.While expr)
             {
                 TypeCheckConditional(expr.conditional);
 
-                return "void";
+                return _voidType;
             }
 
-            public override string visitForExpr(Expr.For expr)
+            public override Analyzer.Type visitForExpr(Expr.For expr)
             {
                 var result = expr.initExpr.Accept(this);
-                if (result != "void" && !callReturn)
+                if (!isVoidType(result) && !callReturn)
                 {
                     throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
                 }
                 callReturn = false;
 
                 result = expr.updateExpr.Accept(this);
-                if (result != "void" && !callReturn)
+                if (!isVoidType(result) && !callReturn)
                 {
                     throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
                 }
@@ -217,118 +228,111 @@ namespace Raze
 
                 TypeCheckConditional(expr.conditional);
 
-                return "void";
+                return _voidType;
             }
 
-            public override string visitLiteralExpr(Expr.Literal expr)
+            public override Analyzer.Type visitLiteralExpr(Expr.Literal expr)
             {
-                return TypeOf(expr);
+                return literalTypes[expr.literal.type];
             }
 
-            public override string visitUnaryExpr(Expr.Unary expr)
+            public override Analyzer.Type visitUnaryExpr(Expr.Unary expr)
             {
-                string operand1 = expr.operand.Accept(this);
-                if ((Primitives.PrimitiveOps(operand1))
-                        ._operators.TryGetValue((expr.op.lexeme + " UN", operand1, ""), out string value))
-                {
-                    return value;
-                }
-                else
-                {
-                    if (operand1 == "null")
-                    {
-                        throw new Errors.AnalyzerError("Null Reference Exception", $"Reference is not set to an instance of an object.");
-                    }
-                    throw new Errors.AnalyzerError("Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on type '{operand1}'");
-                }
+                Analyzer.Type operand1 = expr.operand.Accept(this);
+                //if ((Primitives.PrimitiveOps(operand1))
+                //        ._operators.TryGetValue((expr.op.lexeme + " UN", operand1, ""), out string value))
+                //{
+                //    return value;
+                //}
+                //else
+                //{
+                //    throw new Errors.AnalyzerError("Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on type '{operand1}'");
+                //}
+                return null;
             }
 
-            public override string visitVariableExpr(Expr.Variable expr)
+            public override Analyzer.Type visitVariableExpr(Expr.Variable expr)
             {
-                return (expr.define.Item1)? expr.define.Item2.Accept(this): expr.stack.type.ToString();
+                return (expr.define.Item1)? expr.define.Item2.Accept(this): expr.stack.type;
             }
 
-            public override string visitReturnExpr(Expr.Return expr)
+            public override Analyzer.Type visitReturnExpr(Expr.Return expr)
+            { 
+                _return.Add((expr._void? _voidType : expr.value.Accept(this), false, expr));
+
+                return _voidType;
+            }
+
+            public override Analyzer.Type visitAssignExpr(Expr.Assign expr)
             {
-                _return.Add((expr.value.Accept(this), false, expr));
-                return "void";
+                Analyzer.Type assignType = expr.value.Accept(this);
+
+                //if (expr.op != null)
+                //{
+                //    Analyzer.Type operand = expr.value.Accept(this);
+
+                //    if (!(Primitives.PrimitiveOps(expr.member.stack.type.ToString()))
+                //            ._operators.ContainsKey((expr.op.lexeme + " BIN", expr.member.stack.type.ToString(), operand)))
+                //    {
+                //        throw new Errors.AnalyzerError("Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on types '{expr.member.stack.type}' and '{operand}'");
+                //    }
+                //}
+                //else
+                //{
+                //    if (!MatchesType(expr.member.stack.type, assignType))
+                //    {
+                //        throw new Errors.AnalyzerError("Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.member.stack.type.ToString()}'");
+                //    }
+                //}
+                return _voidType;
             }
 
-            public override string visitAssignExpr(Expr.Assign expr)
+            public override Analyzer.Type visitKeywordExpr(Expr.Keyword expr)
             {
-                string assignType = expr.value.Accept(this);
-
-                if (expr.op != null)
-                {
-                    string operand = expr.value.Accept(this);
-
-                    if (!(Primitives.PrimitiveOps(expr.member.variable.stack.type.ToString()))
-                            ._operators.ContainsKey((expr.op.lexeme + " BIN", expr.member.variable.stack.type.ToString(), operand)))
-                    {
-                        throw new Errors.AnalyzerError("Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on types '{expr.member.variable.stack.type}' and '{operand}'");
-                    }
-                }
-                else
-                {
-                    if (!MatchesType(expr.member.variable.stack.type, assignType))
-                    {
-                        throw new Errors.AnalyzerError("Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.member.variable.stack.type.ToString()}'");
-                    }
-                }
-                return "void";
+                return literalTypes[expr.keyword]; 
             }
 
-            public override string visitKeywordExpr(Expr.Keyword expr)
-            {
-                return TypeOf(expr); 
-            }
-
-            public override string visitPrimitiveExpr(Expr.Primitive expr)
+            public override Analyzer.Type visitPrimitiveExpr(Expr.Primitive expr)
             {
                 expr.block.Accept(this);
-                return "void";
+                return _voidType;
             }
 
-            public override string visitNewExpr(Expr.New expr)
+            public override Analyzer.Type visitNewExpr(Expr.New expr)
             {
                 foreach (Expr argExpr in expr.call.arguments)
                 {
                     argExpr.Accept(this);
                 }
 
-                return expr.call.callee.ToString();
+                return expr.internalClass.type;
             }
 
-            public override string visitDefineExpr(Expr.Define expr)
+            public override Analyzer.Type visitDefineExpr(Expr.Define expr)
             {
-                return "void";
+                return _voidType;
             }
 
-            public override string visitIsExpr(Expr.Is expr)
+            public override Analyzer.Type visitIsExpr(Expr.Is expr)
             {
-                return "BOOLEAN";
+                expr.value = expr.right.Accept(this) == expr.right.type ? "1" : "0";
+
+                return literalTypes[Parser.Literals[5]];
             }
 
-            public override string visitAssemblyExpr(Expr.Assembly expr)
+            public override Analyzer.Type visitAssemblyExpr(Expr.Assembly expr)
             {
                 foreach (var variable in expr.variables.Keys)
                 {
                     variable.Accept(this);
                 }
 
-                return "void";
+                return _voidType;
             }
 
-            private bool MatchesType(Expr.Type type1, string type2)
+            private bool MatchesType(Analyzer.Type type1, Analyzer.Type type2)
             {
-                if (type1.literals == null)
-                {
-                    return type1.type.ToString() == type2;
-                }
-                else
-                {
-                    return (type1.type.ToString() == type2 || type1.literals.Contains(type2));
-                }
+                return type1 == type2;
             }
 
             private void TypeCheckConditional(Expr.Conditional expr, bool _else=false)
@@ -336,7 +340,7 @@ namespace Raze
                 int _returnCount = _return.Count;
                 if (expr.condition != null)
                 {
-                    if (expr.condition.Accept(this) != "BOOLEAN")
+                    if (!isLiteralType(expr.condition.Accept(this), 5))
                     {
                         throw new Errors.AnalyzerError("Type Mismatch", $"'if' expects condition to return 'BOOLEAN'. Got '{expr.condition.Accept(this)}'");
                     }

@@ -22,11 +22,11 @@ namespace Raze
             public T visitForExpr(For expr);
             public T visitWhileExpr(While expr);
             public T visitCallExpr(Call expr);
-            public T visitGetExpr(Get expr);
+            public T visitTypeReferenceExpr(TypeReference expr);
+            public T visitGetReferenceExpr(GetReference expr);
             public T visitBlockExpr(Block expr);
             public T visitAssemblyExpr(Assembly expr);
             public T visitVariableExpr(Variable expr);
-            public T visitMemberExpr(Member expr);
             public T visitFunctionExpr(Function expr);
             public T visitClassExpr(Class expr);
             public T visitReturnExpr(Return expr);
@@ -36,7 +36,6 @@ namespace Raze
             public T visitNewExpr(New expr);
             public T visitDefineExpr(Define expr);
             public T visitIsExpr(Is expr);
-            public T visitThisExpr(This expr);
         }
 
         public class Binary : Expr
@@ -112,13 +111,16 @@ namespace Raze
         public class Declare : Expr
         {
             public Token name;
-            public Expr value;
+
+            public Expr? value;
+
+            public TypeReference type;
 
             public StackData stack = new();
 
-            public Declare(Type type, Token name, Expr value)
+            public Declare(TypeReference type, Token name, Expr value)
             {
-                this.stack.type = type;
+                this.type = type;
                 this.name = name;
                 this.value = value;
             }
@@ -213,17 +215,22 @@ namespace Raze
             }
         }
 
-        public class Call : Expr
+        public class Call : GetReference
         {
-            public Get callee;
+            public Token name;
+            public Queue<Token> callee { get => typeName; set => typeName = value; } 
+            public TypeReference get;
             public bool constructor;
             public Function internalFunction;
             public List<Expr> arguments;
             public int stackOffset;
-            
-            public Call(Get callee, List<Expr> arguments)
+
+            public Call(Token name, Queue<Token> callee, GetReference get, List<Expr> arguments)
             {
+                this.name = name;
                 this.callee = callee;
+                this.offsets = typeName != null ? new LimitedStackData[typeName.Count] : null;
+                this.get = get;
                 this.arguments = arguments;
             }
 
@@ -234,50 +241,38 @@ namespace Raze
 
         }
 
-        public class Get : Expr
+        public class TypeReference : Expr
         {
-            public Token name;
-            public int stackOffset;
-            public Get get;
+            public Queue<Token> typeName;
+            public Analyzer.Type type;
 
-            public Get(Token getter)
-            {
-                name = getter;
-            }
+            private protected TypeReference() { }
 
-            public Get(Token getter, Get get) : this(getter)
+            public TypeReference(Queue<Token> typeName)
             {
-                this.get = get;
-            }
-
-            public Get(Get getter, Get get) : this(getter.name, get)
-            {
+                this.typeName = typeName;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
             {
-                return visitor.visitGetExpr(this);
-            }
-
-            public override string ToString()
-            {
-                return name.lexeme.ToString() + ((get != null) ? ("." + get.ToString()) : "");
+                return visitor.visitTypeReferenceExpr(this);
             }
         }
 
-        public class This : Get
+        public class GetReference : TypeReference
         {
-            public string type;
+            public LimitedStackData[] offsets;
 
-            public This(Token name, Get get) : base (name, get)
+            private protected GetReference() { }
+
+            public GetReference(Queue<Token> typeName) : base(typeName)
             {
-                this.get = get;
-                this.stackOffset = 8;
+                offsets = new LimitedStackData[typeName.Count];
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
             {
-                return visitor.visitThisExpr(this);
+                return visitor.visitGetReferenceExpr(this);
             }
         }
 
@@ -318,95 +313,61 @@ namespace Raze
                 return visitor.visitAssemblyExpr(this);
             }
         }
-        
-        public class Member : Expr
+
+        public class LimitedStackData
         {
-            public StackGet variable;
-            public Get get;
-
-            public Member(Get get)
-            {
-                this.get = get;
-
-                GetVariableReference();
-            }
-
-            public void GetVariableReference()
-            {
-                if (get.name.type == "this")
-                {
-                    get = new This(get.name, get.get);
-                    
-                    if (get.get == null)
-                    {
-                        return;
-                    }
-                }
-                
-                if (get.get == null)
-                {
-                    get = new Variable(get.name);
-                    this.variable = (Variable)get;
-
-                    return;
-                }
-
-                Get? x = get;
-
-                while (x.get.get != null)
-                {
-                    x = x.get;
-                }
-
-                x.get = new Variable(x.get.name);
-                this.variable = (Variable)x.get;
-            }
-
-            public override T Accept<T>(IVisitor<T> visitor)
-            {
-                return visitor.visitMemberExpr(this);
-            }
-        }
-
-        // Note: Due to C# limitations on multiple inheritance, the StackData class will be a member of the classes that needs its fields 
-        public class StackData
-        {
-            public Type type;
-            public bool minus = true;
-            public int size;
             public int stackOffset;
+
+            public LimitedStackData() { }
+
+            public LimitedStackData(int stackOffset)
+            {
+                this.stackOffset = stackOffset;
+            }
         }
 
-        public class Variable : StackGet
+        public class StackData : LimitedStackData
         {
+            public Analyzer.Type type;
+            public bool plus;
+            public int size;
+            public bool classScoped;
+
+            public StackData() { }
+
+            public StackData(int stackOffset) : base(stackOffset)
+            {
+            }
+
+            public StackData(Analyzer.Type type, bool plus, int size, int stackOffset, bool classScoped) : base(stackOffset)
+            {
+                (this.type, this.plus, this.size, this.classScoped) = (type, plus, size, classScoped);
+            }
+        }
+
+        public class Variable : GetReference
+        {
+            public StackData stack
+            {
+                get => (StackData)offsets[0];
+                set => offsets[0] = value;
+            }
+
             public (bool, Literal) define;
 
-            public Variable(Token name) : base(name)
+            public Variable(Queue<Token> typeName) : base(typeName)
             {
-                this.name = name;
-            }
-
-            public Variable(Type type, Token name) : base(name)
-            {
-                this.stack.type = type;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.visitVariableExpr(this);
             }
-
-            public override string ToString()
-            {
-                return name.lexeme;
-            }
         }
 
         public class Primitive : Definition
         {
             public List<string> literals;
-
-            public override string QualifiedName { get => name.lexeme; }
 
             public Primitive(Token name, List<string> literals, int size, Block block) : base (name, block, size)
             {
@@ -453,20 +414,20 @@ namespace Raze
 
         public class Parameter : Expr
         {
+            public TypeReference type;
             public Token name;
 
-            public Member member;
+            public StackData stack = new();
 
-            public Parameter(Type type, Token name)
+            public Parameter(TypeReference type, Token name)
             {
-                this.member = new(type.type);
-                this.member.variable.stack.type = type;
+                this.type = type;
                 this.name = name;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
             {
-                return this.member.variable.stack.type.Accept(visitor);
+                return visitor.visitTypeReferenceExpr(this.type);
             }
         }
 
@@ -476,8 +437,7 @@ namespace Raze
             public Block block;
             public int size;
 
-            public string path;
-            public abstract string QualifiedName { get; }
+            public Analyzer.Type type;
 
             public Definition(Token name, Block block)
             {
@@ -497,7 +457,7 @@ namespace Raze
         public class Function : Definition
         {
             public List<Parameter> parameters;
-            public Type _returnType;
+            public TypeReference _returnType;
             public int _returnSize;
             public int arity
             {
@@ -506,11 +466,6 @@ namespace Raze
             public bool leaf = true;
             public Dictionary<string, bool> modifiers;
             public bool constructor;
-
-            public override string QualifiedName
-            {
-                get { return (this.path ?? "") + (constructor ? "." : "") + ((this.name == null) ? "" : this.name.lexeme); }
-            }
 
             public Function()
                 : base(null, null)
@@ -521,7 +476,7 @@ namespace Raze
                 };
             }
 
-            public void Add(Type _returnType, Token name, List<Parameter> parameters, Block block)
+            public void Add(TypeReference _returnType, Token name, List<Parameter> parameters, Block block)
             {
                 base.name = name;
                 base.block = block;
@@ -540,11 +495,6 @@ namespace Raze
             public Function constructor;
 
             public Block topLevelBlock;
-
-            public override string QualifiedName
-            {
-                get { return this.path + this.name.lexeme; }
-            }
 
             public Class(Token name, Block block) : base(name, new(new())) 
             {
@@ -584,17 +534,13 @@ namespace Raze
             public Expr value;
             public bool _void;
             public int size;
-            public bool opRet;
 
-            public Return(Expr value)
-            {
-                this.value = value;
-            }
             public Return(Expr value, bool _void)
             {
                 this.value = value;
                 this._void = _void;
             }
+
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.visitReturnExpr(this);
@@ -603,18 +549,18 @@ namespace Raze
 
         public class Assign : Expr
         {
-            public Member member;
+            public Variable member;
             public Token? op;
             public Expr value;
 
-            public Assign(Member member, Token op, Expr value)
+            public Assign(Variable member, Token op, Expr value)
             {
                 this.member = member;
                 this.op = op;
                 this.value = value;
             }
 
-            public Assign(Member member, Expr value)
+            public Assign(Variable member, Expr value)
             {
                 this.member = member;
                 this.value = value;
@@ -646,11 +592,11 @@ namespace Raze
         public class Is : Expr
         {
             public Expr left;
-            public Type right;
+            public TypeReference right;
 
             public string value;
 
-            public Is(Expr left, Type right)
+            public Is(Expr left, TypeReference right)
             {
                 this.left = left;
                 this.right = right;
@@ -659,48 +605,6 @@ namespace Raze
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.visitIsExpr(this);
-            }
-        }
-
-        public abstract class StackGet : Get
-        {
-            public StackData stack = new();
-
-            public StackGet(Token name) : base(name)
-            {
-                this.name = name;
-            }
-
-            public StackGet(Type type, Token name) : base(name)
-            {
-                this.stack.type = type;
-            }
-        }
-
-        public class Type : Expr
-        {
-            public Get type;
-            public List<string>? literals = null;
-
-            public Type(Get type)
-            {
-                this.type = type;
-            }
-
-            public Type(Get type, List<string> literals)
-            {
-                this.type = type;
-                this.literals = literals;
-            }
-
-            public override T Accept<T>(IVisitor<T> visitor)
-            {
-                return visitor.visitGetExpr(type);
-            }
-
-            public override string ToString()
-            {
-                return type.ToString();
             }
         }
     }

@@ -24,7 +24,7 @@ namespace Raze
                     expr.Accept(this);
                 }
 
-                if (SymbolTableSingleton.SymbolTable.other.main == null)
+                if (SymbolTableSingleton.SymbolTable.main == null)
                 {
                     throw new Errors.AnalyzerError("Entrypoint Not Found", "Program does not contain a Main method");
                 }
@@ -57,12 +57,12 @@ namespace Raze
 
                 if (expr.name.lexeme == "Main")
                 {
-                    if (SymbolTableSingleton.SymbolTable.other.main != null)
+                    if (SymbolTableSingleton.SymbolTable.main != null)
                     {
                         throw new Errors.AnalyzerError("Function Declared Twice", "A Program may have only one 'Main' method");
                     }
                     expr.modifiers["static"] = true;
-                    SymbolTableSingleton.SymbolTable.other.main = expr;
+                    SymbolTableSingleton.SymbolTable.main = expr;
                 }
 
                 expr.block.Accept(this);
@@ -80,6 +80,12 @@ namespace Raze
                 {
                     argExpr.Accept(this);
                 }
+
+                if (expr.get != null)
+                {
+                    expr.get.Accept(this);
+                }
+                
                 return null;
             }
 
@@ -148,6 +154,9 @@ namespace Raze
             {
                 if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
 
+                expr.call.callee ??= new();
+                expr.call.callee.Enqueue(expr.call.name);
+
                 return null;
             }
 
@@ -175,19 +184,6 @@ namespace Raze
                 return base.visitAssemblyExpr(expr);
             }
 
-            public override object? visitGetExpr(Expr.Get expr)
-            {
-                expr.get.Accept(this);
-                return null;
-            }
-
-            public override object visitThisExpr(Expr.This expr)
-            {
-                if (expr.get == null) { return null; }
-
-                return this.visitGetExpr(expr);
-            }
-
             public override object? visitVariableExpr(Expr.Variable expr)
             {
                 if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
@@ -197,7 +193,7 @@ namespace Raze
 
             public override object visitAssignExpr(Expr.Assign expr)
             {
-                if (expr.member.get.name.type == "this" && expr.member.variable == null && !symbolTable.NearestEnclosingClass().IsPrimitive()) { throw new Errors.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword cannot be assigned to");  }
+                if (expr.member.typeName.Peek().type == "this" && expr.member.typeName.Count == 1 && !symbolTable.NearestEnclosingClass().IsPrimitive()) { throw new Errors.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword cannot be assigned to");  }
 
                 expr.member.Accept(this);
                 return base.visitAssignExpr(expr);
@@ -255,13 +251,7 @@ namespace Raze
                 return constructor;
             }
 
-            private void SetPath(Expr.Definition definition)
-            {
-                if (symbolTable.Current.self != null && symbolTable.Current.self.QualifiedName != "")
-                {
-                    definition.path = symbolTable.Current.self.QualifiedName + ".";
-                }
-            }
+            private void SetPath(Expr.Definition definition) => definition.type = new(definition.name, symbolTable.CurrentIsTop()? symbolTable.global : symbolTable.Current.self.type);
         }
     }
 }

@@ -23,68 +23,36 @@ namespace Raze
 
             SymbolTableSingleton.SymbolTable.TopContext();
 
-            if (SymbolTableSingleton.SymbolTable.other.main == null)
+            if (SymbolTableSingleton.SymbolTable.main == null)
             {
                 throw new Errors.AnalyzerError("Main Not Found", "No Main method for entrypoint found");
             }
-            CheckMain(SymbolTableSingleton.SymbolTable.other.main);
 
             Pass<object?> mainPass = new MainPass(expressions);
             expressions = mainPass.Run();
 
-            Pass<string> TypeChackPass = new TypeCheckPass(expressions);
+            Pass<Analyzer.Type> TypeChackPass = new TypeCheckPass(expressions);
             expressions = TypeChackPass.Run();
+
+            CheckMain(SymbolTableSingleton.SymbolTable.main);
 
             return expressions;
         }
 
         private void CheckMain(Expr.Function main)
         {
-            if (main._returnType.type.name.type != "void" && main._returnType.ToString() != "number")
+            if (main._returnType.type.name.type != "void" && main._returnType.type.ToString() != "number")
             {
                 throw new Errors.AnalyzerError("Main Invalid Return Type", $"Main can only return types 'number', and 'void'. Got '{main._returnType}'");
             }
+
             foreach (var item in main.modifiers)
             {
-                if (item.Key != "static" && item.Value)
+                if (item.Value && item.Key != "static")
                 {
                     throw new Errors.AnalyzerError("Main Invalid Modifier", $"Main cannot have the '{item.Key}' modifier");
                 }
             } 
-        }
-
-        internal static string TypeOf(Expr literal)
-        {
-            if (literal is Expr.Class)
-            {
-                return ((Expr.Class)literal).name.lexeme;
-            }
-            if (literal is Expr.Function)
-            {
-                return ((Expr.Function)literal).name.lexeme;
-            }
-            if (literal is Expr.Variable)
-            {
-                return ((Expr.Variable)literal).stack.type.ToString();
-            }
-            if (literal is Expr.Literal)
-            {
-                var l = (Expr.Literal)literal;
-                return l.literal.type;
-            }
-            if (literal is Expr.Keyword)
-            {
-                var l = (Expr.Keyword)literal;
-                if (l.keyword == "null" || l.keyword == "void")
-                {
-                    return l.keyword;
-                }
-                if (l.keyword == "true" || l.keyword == "false")
-                {
-                    return "BOOLEAN";
-                }
-            }
-            throw new Errors.ImpossibleError("Invalid TypeOf");
         }
     }
 

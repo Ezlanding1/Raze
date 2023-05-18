@@ -66,7 +66,7 @@ namespace Raze
 
 
                 #if DEBUG
-                Raze.tools.AssemblyPrinter.PrintAssembly(instructions, data, SymbolTableSingleton.SymbolTable.other.main);
+                Raze.tools.AssemblyPrinter.PrintAssembly(instructions, data, SymbolTableSingleton.SymbolTable.main);
                 #endif
 
                 // Output Result

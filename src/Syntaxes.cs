@@ -25,8 +25,8 @@ namespace Raze
                         { new Instruction.Global("_start") },
                         { new Instruction.Section("text") },
                         { new Instruction.Procedure("_start") },
-                        { new Instruction.Unary("CALL", new Instruction.ProcedureRef(main.QualifiedName)) },
-                        { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), (main._returnType.ToString() == "number") ? new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits) : new Instruction.Literal("0", Parser.Literals[0])) },
+                        { new Instruction.Unary("CALL", new Instruction.ProcedureRef(main.type.ToString())) },
+                        { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), (main._returnType.type.ToString() == "number") ? new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits) : new Instruction.Literal("0", Parser.Literals[0])) },
                         { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal("60", Parser.Literals[0])) },
                         { new Instruction.Zero("SYSCALL") }
                     };
@@ -242,8 +242,8 @@ namespace Raze
                         { new Instruction.Global("_start") },
                         { new Instruction.Section("text") },
                         { new Instruction.Procedure("_start") },
-                        { new Instruction.Unary("CALL", new Instruction.ProcedureRef(main.QualifiedName)) },
-                        { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), (main._returnType.ToString() == "number") ? new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits) : new Instruction.Literal("0", Parser.Literals[0])) },
+                        { new Instruction.Unary("CALL", new Instruction.ProcedureRef(main.type.ToString())) },
+                        { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), (main._returnType.type.ToString() == "number") ? new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits) : new Instruction.Literal("0", Parser.Literals[0])) },
                         { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal("60", Parser.Literals[0])) },
                         { new Instruction.Zero("SYSCALL") }
                     };

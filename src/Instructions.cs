@@ -77,7 +77,7 @@ internal abstract class Instruction
 
     internal class Register : SizedValue
     {
-        public enum RegisterSize // ToDo: make this inherit from byte. use switch instead of cast
+        public enum RegisterSize
         {
             _64Bits = 8,
             _32Bits = 4, 
@@ -118,7 +118,7 @@ internal abstract class Instruction
         private protected Register(int registerType, RegisterName register, int size) : base(registerType)
         {
             this.name = register;
-            this.size = Enum.IsDefined(typeof(RegisterSize), size) ? ((RegisterSize)size) : throw new Errors.ImpossibleError($"Invalid Register Size ({size})"); ;
+            this.size = InstructionInfo.ToRegisterSize(size);
         }
         
         public Register(RegisterName register, RegisterSize size) : base(0)
@@ -130,7 +130,7 @@ internal abstract class Instruction
         public Register(RegisterName register, int size) : base(0)
         {
             this.name = register;
-            this.size = Enum.IsDefined(typeof(RegisterSize), size) ? ((RegisterSize)size) : throw new Errors.ImpossibleError($"Invalid Register Size ({size})");
+            this.size = InstructionInfo.ToRegisterSize(size);
         }
 
         public override string Accept(IVisitor visitor)
@@ -148,7 +148,7 @@ internal abstract class Instruction
         public Pointer(Register.RegisterName register, int offset, int size, char _operator) : base(1)
         {
             this.register = new Register(register, Register.RegisterSize._64Bits);
-            this.size = Enum.IsDefined(typeof(Register.RegisterSize), size) ? ((Register.RegisterSize)size) : throw new Errors.ImpossibleError($"Invalid Register Size ({size})"); ;
+            this.size = InstructionInfo.ToRegisterSize(size);
             this.offset = offset;
             this._operator = _operator;
         }
@@ -513,6 +513,12 @@ internal class InstructionInfo
         { "R15W", (Instruction.Register.RegisterName.R15, Instruction.Register.RegisterSize._16Bits) },
         { "R15B", (Instruction.Register.RegisterName.R15, Instruction.Register.RegisterSize._8Bits) },
     };
+
+    public static Instruction.Register.RegisterSize ToRegisterSize(int size)
+    {
+        return Enum.IsDefined(typeof(Instruction.Register.RegisterSize), size) ? ((Instruction.Register.RegisterSize)size) : throw new Errors.ImpossibleError($"Invalid Register Size ({size})");
+    }
+    
 
     internal readonly static Dictionary<Instruction.Register.RegisterSize?, string> wordSize = new()
     {
