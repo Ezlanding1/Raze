@@ -49,7 +49,7 @@ namespace Raze
                 {
                     index += match.Length;
                     col += match.Length;
-                    if (pattern.type == "WHITESPACE")
+                    if (pattern.type == Token.TokenType.WHITESPACE)
                     {
                         if (lexeme[0] == '\n')
                         {
@@ -58,18 +58,18 @@ namespace Raze
                         }
                         return null;
                     }
-                    if (pattern.type == "IDENTIFIER")
+                    if (pattern.type == Token.TokenType.IDENTIFIER)
                     {
                         if (TokenList.Reserved.Contains(match.ToString()))
                         {
-                            return new Token(match.ToString(), match.ToString());
+                            return new Token(Token.TokenType.RESERVED, match.ToString());
                         }
                     }
-                    if (pattern.type == "COMMENT")
+                    if (pattern.type == Token.TokenType.COMMENT)
                     {
                         return null;
                     }
-                    if (pattern.type == "STRING")
+                    if (pattern.type == Token.TokenType.STRING)
                     {
                         string str = match.ToString();
                         Escape(ref str);
@@ -132,10 +132,10 @@ namespace Raze
     // Holds a token's regex and literal
     class TokenDefinition
     {
-        public string type;
+        public Token.TokenType type;
         public Regex regex;
 
-        public TokenDefinition(string type, string pattern)
+        public TokenDefinition(Token.TokenType type, string pattern)
         {
             this.type = type;
             regex = new Regex(pattern);

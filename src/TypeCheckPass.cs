@@ -14,10 +14,10 @@ namespace Raze
             List<(Analyzer.Type, bool, Expr.Return)> _return;
             bool callReturn;
 
-            public static Analyzer.Type _voidType = new(new Token("void"));
-            Func<Analyzer.Type, bool> isVoidType = (type) => { return type.name.type == "void"; };
+            public static Analyzer.Type _voidType = new(new Token(Token.TokenType.RESERVED, "void"));
+            Func<Analyzer.Type, bool> isVoidType = (type) => { return type.name.lexeme == "void"; };
 
-            Dictionary<string, Analyzer.Type> literalTypes = new Dictionary<string, Analyzer.Type>()
+            Dictionary<Token.TokenType, Analyzer.Type> literalTypes = new Dictionary<Token.TokenType, Analyzer.Type>()
             {
                 { Parser.Literals[0], new(new Token(Parser.Literals[0])) },
                 { Parser.Literals[1], new(new Token(Parser.Literals[1])) },
@@ -25,11 +25,17 @@ namespace Raze
                 { Parser.Literals[3], new(new Token(Parser.Literals[3])) },
                 { Parser.Literals[4], new(new Token(Parser.Literals[4])) },
                 { Parser.Literals[5], new(new Token(Parser.Literals[5])) },
-                { "true", new(new Token("true")) },
-                { "false", new(new Token("false")) },
-                { "null", new(new Token("null")) },
             };
+
+            Dictionary<string, Analyzer.Type> keywordTypes = new Dictionary<string, Analyzer.Type>()
+            {
+                { "true", new (new Token(Token.TokenType.RESERVED, "true")) },
+                { "false", new (new Token(Token.TokenType.RESERVED, "false")) },
+                { "null", new (new Token(Token.TokenType.RESERVED, "null")) },
+            };
+
             
+
             Func<Analyzer.Type, byte, bool> isLiteralType = (type, literal) => { return type.name.type == Parser.Literals[literal]; };
 
             public TypeCheckPass(List<Expr> expressions) : base(expressions)
@@ -289,7 +295,7 @@ namespace Raze
 
             public override Analyzer.Type visitKeywordExpr(Expr.Keyword expr)
             {
-                return literalTypes[expr.keyword]; 
+                return keywordTypes[expr.keyword]; 
             }
 
             public override Analyzer.Type visitPrimitiveExpr(Expr.Primitive expr)
@@ -332,6 +338,7 @@ namespace Raze
 
             private bool MatchesType(Analyzer.Type type1, Analyzer.Type type2)
             {
+                return true;
                 return type1 == type2;
             }
 

@@ -190,7 +190,7 @@
             {
                 symbolTable.SetContext(symbolTable.GetContainer(expr.name.lexeme, true));
 
-                if (expr._returnType.typeName.Peek().type != "void")
+                if (expr._returnType.typeName.Peek().type != Token.TokenType.RESERVED && expr._returnType.typeName.Peek().lexeme != "void")
                 {
                     var context = symbolTable.Current;
                     expr._returnType.Accept(this);
@@ -286,7 +286,7 @@
                 }
                 
 
-                if (expr.typeName.Peek().type == "this")
+                if (expr.typeName.Peek().lexeme == "this")
                 {
                     expr.stack = new(symbolTable.NearestEnclosingClass().self.type, false, 8, 8, false);
                 }
@@ -409,7 +409,7 @@
             
             private bool HandleThisCase(Expr.GetReference expr)
             {
-                if (expr.typeName.Peek().type == "this")
+                if (expr.typeName.Peek().lexeme == "this")
                 {
                     expr.typeName.Dequeue();
 

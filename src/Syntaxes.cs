@@ -26,8 +26,8 @@ namespace Raze
                         { new Instruction.Section("text") },
                         { new Instruction.Procedure("_start") },
                         { new Instruction.Unary("CALL", new Instruction.ProcedureRef(main.type.ToString())) },
-                        { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), (main._returnType.type.ToString() == "number") ? new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits) : new Instruction.Literal("0", Parser.Literals[0])) },
-                        { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal("60", Parser.Literals[0])) },
+                        { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), (main._returnType.type.ToString() == "number") ? new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits) : new Instruction.Literal(Parser.Literals[0], "0")) },
+                        { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.Literals[0], "60")) },
                         { new Instruction.Zero("SYSCALL") }
                     };
                 }
@@ -134,7 +134,7 @@ namespace Raze
                     if (int.TryParse(instruction.value, out var value))
                     {
                         string name = (((int)Math.Ceiling(value / 16f)) * 16).ToString();
-                        return new Instruction.Literal(name, instruction.type).Accept(this);
+                        return new Instruction.Literal(instruction.type, name).Accept(this);
                     }
                     else
                     {
@@ -243,8 +243,8 @@ namespace Raze
                         { new Instruction.Section("text") },
                         { new Instruction.Procedure("_start") },
                         { new Instruction.Unary("CALL", new Instruction.ProcedureRef(main.type.ToString())) },
-                        { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), (main._returnType.type.ToString() == "number") ? new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits) : new Instruction.Literal("0", Parser.Literals[0])) },
-                        { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal("60", Parser.Literals[0])) },
+                        { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), (main._returnType.type.ToString() == "number") ? new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits) : new Instruction.Literal(Parser.Literals[0], "0")) },
+                        { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.Literals[0], "60")) },
                         { new Instruction.Zero("SYSCALL") }
                     };
                 }

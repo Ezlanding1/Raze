@@ -11,7 +11,7 @@ namespace Raze
     {
         internal class SymbolTable
         {
-            public Type global = new(new(""), null);
+            public Type global = new(null, null);
 
             private Symbol.Class head;
             private Symbol.Container current;

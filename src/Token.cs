@@ -1,16 +1,16 @@
 ﻿namespace Raze
 {
-    internal class Token
+    internal partial class Token
     {
-        internal string type;
+        internal TokenType type;
         internal string lexeme;
 
-        public Token(string type)
+        public Token(TokenType type)
         {
             this.type = type;
             this.lexeme = "";
         }
-        public Token(string type, string lexeme)
+        public Token(TokenType type, string lexeme)
         {
             this.type = type;
             this.lexeme = lexeme;

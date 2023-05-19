@@ -26,7 +26,7 @@ namespace Raze
 
             public override string ToString()
             {
-                return ((parent == null || parent.name.type == "") ? "" : (parent.ToString() + ".")) + name.lexeme;
+                return ((parent == null || parent.name == null) ? "" : (parent.ToString() + ".")) + name.lexeme;
             }
         }
     }

@@ -169,13 +169,13 @@ internal abstract class Instruction
 
     internal class Literal : Value
     {
+        public Token.TokenType type;
         public string value;
-        public string type;
 
-        public Literal(string value, string type) : base(2)
+        public Literal(Token.TokenType type, string value) : base(2)
         {
-            this.value = value;
             this.type = type;
+            this.value = value;
         }
 
         public override string Accept(IVisitor visitor)
@@ -339,7 +339,7 @@ internal abstract class Instruction
 
 internal class InstructionInfo
 {
-    internal static string ToType(string input, bool unary=false)
+    internal static string ToType(Token.TokenType input, bool unary=false)
     {
         if (!unary)
         {
@@ -351,51 +351,51 @@ internal class InstructionInfo
         }
     }
 
-    private readonly static Dictionary<string, string> StringToOperatorTypeBinary = new()
+    private readonly static Dictionary<Token.TokenType, string> StringToOperatorTypeBinary = new()
     {
         // Binary
-        { "SHIFTRIGHT" , "SHR" },
-        { "SHIFTLEFT" , "SHL" },
-        { "DIVIDE" , "DIV" },
-        { "MULTIPLY" , "IMUL" },
-        { "B_NOT" , "NOT" },
-        { "B_OR" , "OR" },
-        { "B_AND" , "AND" },
-        { "B_XOR" , "XOR" },
-        { "PLUS" , "ADD" },
-        { "MINUS" , "SUB" },
-        { "EQUALTO" , "CMP" },
-        { "NOTEQUALTO" , "CMP" },
-        { "GREATER" , "CMP" },
-        { "LESS" , "CMP" },
-        { "GREATEREQUAL" , "CMP" },
-        { "LESSEQUAL" , "CMP" },
+        { Token.TokenType.SHIFTRIGHT , "SHR" },
+        { Token.TokenType.SHIFTLEFT , "SHL" },
+        { Token.TokenType.DIVIDE , "DIV" },
+        { Token.TokenType.MULTIPLY , "IMUL" },
+        { Token.TokenType.B_NOT , "NOT" },
+        { Token.TokenType.B_OR , "OR" },
+        { Token.TokenType.B_AND , "AND" },
+        { Token.TokenType.B_XOR , "XOR" },
+        { Token.TokenType.PLUS , "ADD" },
+        { Token.TokenType.MINUS , "SUB" },
+        { Token.TokenType.EQUALTO , "CMP" },
+        { Token.TokenType.NOTEQUALTO , "CMP" },
+        { Token.TokenType.GREATER , "CMP" },
+        { Token.TokenType.LESS , "CMP" },
+        { Token.TokenType.GREATEREQUAL , "CMP" },
+        { Token.TokenType.LESSEQUAL , "CMP" },
     };
-    private readonly static Dictionary<string, string> StringToOperatorTypeUnary = new()
+    private readonly static Dictionary<Token.TokenType, string> StringToOperatorTypeUnary = new()
     {
         // Unary
-        { "PLUSPLUS",  "INC" },
-        { "MINUSMINUS",  "DEC" },
-        { "MINUS",  "NEG" },
+        { Token.TokenType.PLUSPLUS,  "INC" },
+        { Token.TokenType.MINUSMINUS,  "DEC" },
+        { Token.TokenType.MINUS,  "NEG" },
     };
 
-    internal readonly static Dictionary<string, string> ConditionalJump = new()
+    internal readonly static Dictionary<Token.TokenType, string> ConditionalJump = new()
     {
-        { "EQUALTO" , "JE" },
-        { "NOTEQUALTO" , "JNE" },
-        { "GREATER" , "JG" },
-        { "LESS" , "JE" },
-        { "GREATEREQUAL" , "JGE" },
-        { "LESSEQUAL" , "JLE" },
+        { Token.TokenType.EQUALTO , "JE" },
+        { Token.TokenType.NOTEQUALTO , "JNE" },
+        { Token.TokenType.GREATER , "JG" },
+        { Token.TokenType.LESS , "JE" },
+        { Token.TokenType.GREATEREQUAL , "JGE" },
+        { Token.TokenType.LESSEQUAL , "JLE" },
     };
-    internal readonly static Dictionary<string, string> ConditionalJumpReversed = new()
+    internal readonly static Dictionary<Token.TokenType, string> ConditionalJumpReversed = new()
     {
-        { "EQUALTO" , "JNE" },
-        { "NOTEQUALTO" , "JE" },
-        { "GREATER" , "JLE" },
-        { "LESS" , "JGE" },
-        { "GREATEREQUAL" , "JE" },
-        { "LESSEQUAL" , "JG" },
+        { Token.TokenType.EQUALTO , "JNE" },
+        { Token.TokenType.NOTEQUALTO , "JE" },
+        { Token.TokenType.GREATER , "JLE" },
+        { Token.TokenType.LESS , "JGE" },
+        { Token.TokenType.GREATEREQUAL , "JE" },
+        { Token.TokenType.LESSEQUAL , "JG" },
     };
 
     internal readonly static Instruction.Register.RegisterName[] paramRegister = new Instruction.Register.RegisterName[] 

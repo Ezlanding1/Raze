@@ -98,7 +98,7 @@ namespace Raze.Tools
             
         }
 
-        public void PrintAST(List<string> exprs)
+        public void PrintAST(IEnumerable<string> exprs)
         {
             foreach (string s in exprs)
             {
@@ -121,6 +121,7 @@ namespace Raze.Tools
             Console.Write(offset);
             Console.WriteLine("├─'" + s + "'");
         }
+
         public object? visitBinaryExpr(Expr.Binary expr)
         {
             PrintAST(expr.left);
@@ -267,7 +268,7 @@ namespace Raze.Tools
         public object? visitPrimitiveExpr(Expr.Primitive expr)
         {
             PrintAST(expr.name);
-            PrintAST(expr.literals);
+            PrintAST(string.Join(", ", expr.literals));
             PrintAST(expr.size.ToString());
             PrintAST(expr.block);
             return null;

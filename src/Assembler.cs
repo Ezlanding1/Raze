@@ -26,7 +26,7 @@ namespace Raze
         { 
             get { return "LC" + dataCount; } 
         }
-        string lastJump;
+        Token.TokenType lastJump;
         int registerIdx;
         HashSet<Instruction.Register.RegisterName> fncPushPreserved;
 
@@ -38,7 +38,6 @@ namespace Raze
             this.instructions = new();
             this.conditionalCount = 0;
             this.dataCount = 0;
-            this.lastJump = "";
         }
         
         internal (List<Instruction>, List<Instruction>) Assemble()
@@ -115,7 +114,7 @@ namespace Raze
 
             if (expr.arguments.Count > InstructionInfo.paramRegister.Length && footerType)
             {
-                emit(new Instruction.Binary("ADD", new Instruction.Register(Instruction.Register.RegisterName.RSP, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(((expr.arguments.Count - InstructionInfo.paramRegister.Length)*8).ToString(), Parser.Literals[0])));
+                emit(new Instruction.Binary("ADD", new Instruction.Register(Instruction.Register.RegisterName.RSP, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.Literals[0], ((expr.arguments.Count - InstructionInfo.paramRegister.Length) * 8).ToString())));
             }
             
             return new Instruction.Register(Instruction.Register.RegisterName.RAX, InstructionInfo.ToRegisterSize(expr.internalFunction._returnSize));
@@ -201,11 +200,11 @@ namespace Raze
                 if (expr.size > 128)
                 {
 
-                    sub.operand2 = new Instruction.Literal((expr.size - 128).ToString(), Parser.Literals[0]);
+                    sub.operand2 = new Instruction.Literal(Parser.Literals[0], (expr.size - 128).ToString());
                 }
                 else
                 {
-                    sub.operand2 = new Instruction.Literal(expr.size.ToString(), Parser.Literals[0]);
+                    sub.operand2 = new Instruction.Literal(Parser.Literals[0], expr.size.ToString());
                 }
             }
 
@@ -242,17 +241,17 @@ namespace Raze
         {
             switch (expr.literal.type)
             {
-                case "STRING":
+                case Token.TokenType.STRING:
                     string name = DataLabel;
                     emitData(new Instruction.Data(name, InstructionInfo.dataSize[1], expr.literal.lexeme + ", 0"));
                     dataCount++;
-                    return new Instruction.Literal(name, expr.literal.type);
-                case "INTEGER":
-                case "FLOAT":
-                case "BINARY":
-                case "HEX":
-                case "BOOLEAN":
-                    return new Instruction.Literal(expr.literal.lexeme, expr.literal.type);
+                    return new Instruction.Literal(expr.literal.type, name);
+                case Token.TokenType.INTEGER:
+                case Token.TokenType.FLOATING:
+                case Token.TokenType.BINARY:
+                case Token.TokenType.HEX:
+                case Token.TokenType.BOOLEAN:
+                    return new Instruction.Literal(expr.literal.type, expr.literal.lexeme);
                 default:
                     throw new Errors.ImpossibleError($"Invalid Literal Type ({expr.literal.type})");
             }
@@ -421,7 +420,7 @@ namespace Raze
             }
             else
             {
-                emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal("0", Parser.Literals[0])));
+                emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.Literals[0], "0")));
             }
 
             DoFooter();
@@ -468,11 +467,11 @@ namespace Raze
             switch (expr.keyword)
             {
                 case "null":
-                    return new Instruction.Literal("0", Parser.Literals[0]);
+                    return new Instruction.Literal(Parser.Literals[0], "0");
                 case "true":
-                    return new Instruction.Literal("1", Parser.Literals[0]);
+                    return new Instruction.Literal(Parser.Literals[0], "1");
                 case "false":
-                    return new Instruction.Literal("0", Parser.Literals[0]);
+                    return new Instruction.Literal(Parser.Literals[0], "0");
                 default:
                     throw new Errors.ImpossibleError($"'{expr.keyword}' is not a keyword");
             }
@@ -499,15 +498,15 @@ namespace Raze
 
             // Move the following into a runtime procedure, and pass in the expr.internalClass.size as a parameter
             // {
-            emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal("12", Parser.Literals[0])));
-            emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal("0", Parser.Literals[0])));
+            emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.Literals[0], "12")));
+            emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.Literals[0], "0")));
             emit(new Instruction.Zero("SYSCALL"));
 
             var ptr = new Instruction.Pointer( Instruction.Register.RegisterName.RAX, expr.internalClass.size, 8, '+');
             emit(new Instruction.Binary("LEA", new Instruction.Register( Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits), ptr));
 
             emit(new Instruction.Binary("LEA", new Instruction.Register( Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), ptr));
-            emit(new Instruction.Binary("MOV", new Instruction.Register( Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal("12", Parser.Literals[0])));
+            emit(new Instruction.Binary("MOV", new Instruction.Register( Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.Literals[0], "12")));
             emit(new Instruction.Zero("SYSCALL"));
                
             emit(new Instruction.Binary("MOV", new Instruction.Register( Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Register( Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits)));
@@ -529,7 +528,7 @@ namespace Raze
 
         public Instruction.Value? visitIsExpr(Expr.Is expr)
         {
-            return new Instruction.Literal(expr.value, Parser.Literals[5]);
+            return new Instruction.Literal(Parser.Literals[5], expr.value);
         }
 
         private void DoFooter()
@@ -581,10 +580,10 @@ namespace Raze
 
         
 
-        private int SizeOfLiteral(string literal, string type)
+        private int SizeOfLiteral(Token.TokenType type, string literal)
         { return 8; }
 
-        private long _SizeOfLiteral(string literal, string type)
+        private long _SizeOfLiteral(Token.TokenType type, string literal)
         {
             switch (type)
             {

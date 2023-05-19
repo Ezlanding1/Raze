@@ -14,14 +14,14 @@ namespace Raze
         Token? current;
         int index;
 
-        public static readonly string[] Literals = 
+        public static readonly Token.TokenType[] Literals = 
         { 
-            "INTEGER", 
-            "FLOAT", 
-            "STRING", 
-            "BINARY", 
-            "HEX",
-            "BOOLEAN"
+            Token.TokenType.INTEGER, 
+            Token.TokenType.FLOATING, 
+            Token.TokenType.STRING, 
+            Token.TokenType.BINARY, 
+            Token.TokenType.HEX,
+            Token.TokenType.BOOLEAN
         };
 
         public Parser(List<Token> tokens)
@@ -48,10 +48,10 @@ namespace Raze
 
         private Expr Definition()
         {
-            if (!isAtEnd() && TypeMatch("function", "class", "asm", "define", "primitive"))
+            if (!isAtEnd() && ReservedValueMatch("function", "class", "asm", "define", "primitive"))
             {
                 Token definitionType = previous();
-                if (definitionType.type == "function")
+                if (definitionType.lexeme == "function")
                 {
                     var function = new Expr.Function();
                     Expr.TypeReference _return;
@@ -62,13 +62,13 @@ namespace Raze
                         advance();
                     }
 
-                    if (peek().type == "IDENTIFIER")
+                    if (peek().type == Token.TokenType.IDENTIFIER)
                     {
-                        Expect("IDENTIFIER", "function return type");
+                        Expect(Token.TokenType.IDENTIFIER, "function return type");
                         _return = new(new());
                         _return.typeName.Enqueue(previous());
 
-                        if (TypeMatch("DOT"))
+                        if (TypeMatch(Token.TokenType.DOT))
                         {
                             _return = GetTypeGetter();
                         }
@@ -76,99 +76,99 @@ namespace Raze
                     else
                     {
                         _return = new(new());
-                        _return.typeName.Enqueue(new Token("void", "void"));
+                        _return.typeName.Enqueue(new Token(Token.TokenType.RESERVED, "void"));
                     }
 
-                    Expect("IDENTIFIER", definitionType.type + " name");
+                    Expect(Token.TokenType.IDENTIFIER, definitionType.type + " name");
                     Token name = previous();
-                    Expect("LPAREN", "'(' after function name");
+                    Expect(Token.TokenType.LPAREN, "'(' after function name");
                     List<Expr.Parameter> parameters = new();
-                    while (!TypeMatch("RPAREN"))
+                    while (!TypeMatch(Token.TokenType.RPAREN))
                     {
-                        Expect("IDENTIFIER", "identifier as function parameter type");
+                        Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter type");
                         Expr.TypeReference type = GetTypeGetter();
 
-                        Expect("IDENTIFIER", "identifier as function parameter");
+                        Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter");
                         Token variable = previous();
 
                         parameters.Add(new Expr.Parameter(type, variable));
-                        if (TypeMatch("RPAREN"))
+                        if (TypeMatch(Token.TokenType.RPAREN))
                         {
                             break;
                         }
-                        Expect("COMMA", "',' between parameters");
+                        Expect(Token.TokenType.COMMA, "',' between parameters");
                         if (isAtEnd())
                         {
                             throw new Errors.ParseError("Unexpected End In Function Parameters", $"Function '{name.lexeme}' reached an unexpected end during it's parameters");
                         }
                     }
-                    function.Add(_return, name, parameters, GetBlock(definitionType.type));
+                    function.Add(_return, name, parameters, GetBlock(definitionType.lexeme));
                     return function;
                 }
-                else if (definitionType.type == "class")
+                else if (definitionType.lexeme == "class")
                 {
-                    Expect("IDENTIFIER", definitionType.type + " name");
+                    Expect(Token.TokenType.IDENTIFIER, definitionType.type + " name");
                     Token name = previous();
 
-                    if (Literals.Contains(name.lexeme))
+                    if (Literals.Contains(name.type))
                     {
                         throw new Errors.ParseError("Invalid Class", $"The name of a class may not be a literal ({name.lexeme})");
                     }
 
-                    return new Expr.Class(name, GetBlock(definitionType.type));
+                    return new Expr.Class(name, GetBlock(definitionType.lexeme));
                 }
-                else if (definitionType.type == "asm")
+                else if (definitionType.lexeme == "asm")
                 {
                     var instructions = GetAsmInstructions();
                     return new Expr.Assembly(instructions.Item1, instructions.Item2);
                 }
-                else if (definitionType.type == "define")
+                else if (definitionType.lexeme == "define")
                 {
-                    Expect("IDENTIFIER", "name of 'Define'");
+                    Expect(Token.TokenType.IDENTIFIER, "name of 'Define'");
                     var name = previous();
 
                     return new Expr.Define(name, Literal()
                         ?? throw new Errors.ParseError("Invalid Define", "The value of 'Define' should be a literal"));
                 }
-                else if (definitionType.type == "primitive")
+                else if (definitionType.lexeme == "primitive")
                 {
-                    Expect("class", "'class' keyword");
-                    Expect("IDENTIFIER", "name of primitive type");
+                    ExpectValue(Token.TokenType.RESERVED, "class", "'class' keyword");
+                    Expect(Token.TokenType.IDENTIFIER, "name of primitive type");
                     var name = previous();
 
-                    if (Literals.Contains(name.lexeme))
+                    if (Literals.Contains(name.type))
                     {
                         throw new Errors.ParseError("Invalid Primitive", $"The name of a primitive may not be a literal ({name.lexeme})");
                     }
 
-                    Expect("is", "'is' keyword");
+                    ExpectValue(Token.TokenType.RESERVED, "is", "'is' keyword");
 
                     List<string> literals = new();
-                    if (TypeMatch("LBRACE"))
+                    if (TypeMatch(Token.TokenType.LBRACE))
                     {
-                        while (!TypeMatch("RBRACE"))
+                        while (!TypeMatch(Token.TokenType.RBRACE))
                         {
-                            Expect("IDENTIFIER", "token literal of primitive type");
+                            Expect(Token.TokenType.IDENTIFIER, "token literal of primitive type");
                             literals.Add(previous().lexeme);
                             if (isAtEnd())
                             {
-                                Expect("RBRACE", "'}' after token literals of primitive type");
+                                Expect(Token.TokenType.RBRACE, "'}' after token literals of primitive type");
                             }
                         }
                     }
                     else
                     {
-                        Expect("IDENTIFIER", "token literal of primitive type");
+                        Expect(Token.TokenType.IDENTIFIER, "token literal of primitive type");
                         literals.Add(previous().lexeme);
                     }
 
-                    if (!literals.All(Literals.Contains))
+                    if (!literals.All(Enum.GetNames(typeof(Token.TokenType)).Contains))
                     {
                         throw new Errors.ParseError("Invalid Primitive", $"The literal of a primitive must be a valid literal ({string.Join(", ", Literals)})");
                     }
 
-                    ExpectValue("IDENTIFIER", "sizeof", "'sizeof' keyword");
-                    Expect("INTEGER", "size (in bytes) of primitive");
+                    ExpectValue(Token.TokenType.IDENTIFIER, "sizeof", "'sizeof' keyword");
+                    Expect(Token.TokenType.INTEGER, "size (in bytes) of primitive");
                     Token size = previous();
 
                     if (!new List<string>() { "8", "4", "2", "1" }.Contains(size.lexeme))
@@ -176,7 +176,7 @@ namespace Raze
                         throw new Errors.ParseError("Invalid Primitive", "The size of primitive classes must be the integers '8', '4', '2', or '1'");
                     }
 
-                    var block = GetBlock(definitionType.type);
+                    var block = GetBlock(definitionType.lexeme);
                     return new Expr.Primitive(name, literals, int.Parse(size.lexeme), block);
                 }
             }
@@ -185,21 +185,21 @@ namespace Raze
 
         private Expr Conditional()
         {
-            if (!isAtEnd() && TypeMatch("if", "else", "while", "for"))
+            if (!isAtEnd() && ReservedValueMatch("if", "else", "while", "for"))
             {
                 Token conditionalType = previous();
                 Expr.Block block;
 
-                switch (conditionalType.type)
+                switch (conditionalType.lexeme)
                 {
                     case "if":
                     {
                         Expr condition = GetCondition();
-                        block = GetBlock(conditionalType.type);
+                        block = GetBlock(conditionalType.lexeme);
                         var expr = new Expr.If(condition, block);
-                        while (TypeMatch("else"))
+                        while (ReservedValueMatch("else"))
                         {
-                            if (TypeMatch("if"))
+                            if (ReservedValueMatch("if"))
                             {
                                 condition = GetCondition();
                                 block = GetBlock("if else");
@@ -215,7 +215,7 @@ namespace Raze
                     }
                     case "else":
                     {
-                        if (current.type == "if")
+                        if (current.lexeme == "if")
                         {
                             throw new Errors.AnalyzerError("Invalid Else If", "'else if' conditional has no matching 'if'");
                         }
@@ -228,19 +228,19 @@ namespace Raze
                     case "while":
                     {
                         Expr condition = GetCondition();
-                        block = GetBlock(conditionalType.type);
+                        block = GetBlock(conditionalType.lexeme);
                         return new Expr.While(condition, block);
                     }
                     case "for":
                     {
-                        Expect("LPAREN", "'(' after 'for'");
+                        Expect(Token.TokenType.LPAREN, "'(' after 'for'");
                         var initExpr = Logical();
-                        Expect("SEMICOLON", "';' after expression");
+                        Expect(Token.TokenType.SEMICOLON, "';' after expression");
                         var condition = Logical();
-                        Expect("SEMICOLON", "';' after expression");
+                        Expect(Token.TokenType.SEMICOLON, "';' after expression");
                         var updateExpr = Logical();
-                        Expect("RPAREN", "')' after update of For Statement");
-                        block = GetBlock(conditionalType.type);
+                        Expect(Token.TokenType.RPAREN, "')' after update of For Statement");
+                        block = GetBlock(conditionalType.lexeme);
                         return new Expr.For(condition, block, initExpr, updateExpr);
                     }
                 }
@@ -251,7 +251,7 @@ namespace Raze
         private Expr Semicolon()
         {
             Expr expr = NoSemicolon();
-            Expect("SEMICOLON", "';' after expression");
+            Expect(Token.TokenType.SEMICOLON, "';' after expression");
             return expr;
         }
 
@@ -265,9 +265,9 @@ namespace Raze
         {
             Expr expr;
 
-            if (TypeMatch("return"))
+            if (ReservedValueMatch("return"))
             {
-                if (current.type == "SEMICOLON")
+                if (current.type == Token.TokenType.SEMICOLON)
                 {
                     expr = new Expr.Return(new Expr.Keyword("void"), true);
                 }
@@ -286,7 +286,7 @@ namespace Raze
         private Expr Logical()
         {
             Expr expr = Bitwise();
-            while (!isAtEnd() && TypeMatch("AND", "OR"))
+            while (!isAtEnd() && TypeMatch(Token.TokenType.AND, Token.TokenType.OR))
             {
                 Token op = previous();
                 Expr right = Bitwise();
@@ -298,7 +298,7 @@ namespace Raze
         private Expr Bitwise()
         {
             Expr expr = Equality();
-            while (!isAtEnd() && TypeMatch("B_OR", "B_AND", "B_XOR", "B_NOT"))
+            while (!isAtEnd() && TypeMatch(Token.TokenType.B_OR, Token.TokenType.B_AND, Token.TokenType.B_XOR, Token.TokenType.B_NOT))
             {
                 Token op = previous();
                 Expr right = Equality();
@@ -310,7 +310,7 @@ namespace Raze
         private Expr Equality()
         {
             Expr expr = Comparison();
-            while (!isAtEnd() && TypeMatch("EQUALTO", "NOTEQUALTO"))
+            while (!isAtEnd() && TypeMatch(Token.TokenType.EQUALTO, Token.TokenType.NOTEQUALTO))
             {
                 Token op = previous();
                 Expr right = Comparison();
@@ -322,7 +322,7 @@ namespace Raze
         private Expr Comparison()
         {
             Expr expr = Additive();
-            while (!isAtEnd() && TypeMatch("GREATEREQUAL", "LESSEQUAL", "GREATER", "LESS"))
+            while (!isAtEnd() && TypeMatch(Token.TokenType.GREATEREQUAL, Token.TokenType.LESSEQUAL, Token.TokenType.GREATER, Token.TokenType.LESS))
             {
                 Token op = previous();
                 Expr right = Additive();
@@ -334,7 +334,7 @@ namespace Raze
         private Expr Additive()
         {
             Expr expr = Multiplicative();
-            while (!isAtEnd() && TypeMatch("PLUS", "MINUS"))
+            while (!isAtEnd() && TypeMatch(Token.TokenType.PLUS, Token.TokenType.MINUS))
             {
                 Token op = previous();
                 Expr right = Multiplicative();
@@ -346,7 +346,7 @@ namespace Raze
         private Expr Multiplicative()
         {
             Expr expr = Unary();
-            while (!isAtEnd() && TypeMatch("MULTIPLY", "DIVIDE", "MODULO"))
+            while (!isAtEnd() && TypeMatch(Token.TokenType.MULTIPLY, Token.TokenType.DIVIDE, Token.TokenType.MODULO))
             {
                 Token op = previous();
                 Expr right = Unary();
@@ -357,7 +357,7 @@ namespace Raze
 
         private Expr Unary()
         {
-            while (!isAtEnd() && TypeMatch("NOT", "MINUS"))
+            while (!isAtEnd() && TypeMatch(Token.TokenType.NOT, Token.TokenType.MINUS))
             {
                 Token op = previous();
                 Expr right = Unary();
@@ -369,9 +369,9 @@ namespace Raze
         private Expr Is()
         {
             Expr expr = Primary();
-            while (!isAtEnd() && TypeMatch("is"))
+            while (!isAtEnd() && ReservedValueMatch("is"))
             {
-                Expect("IDENTIFIER", "type after 'is' operator");
+                Expect(Token.TokenType.IDENTIFIER, "type after 'is' operator");
                 expr = new Expr.Is(expr, GetTypeGetter());
             }
             return expr;
@@ -387,20 +387,20 @@ namespace Raze
                     return x;
                 }
 
-                if (TypeMatch("LPAREN"))
+                if (TypeMatch(Token.TokenType.LPAREN))
                 {
                     Expr expr = Logical();
-                    Expect("RPAREN", "')' after expression.");
+                    Expect(Token.TokenType.RPAREN, "')' after expression.");
                     return new Expr.Grouping(expr);
                 }
 
-                if (TypeMatch("IDENTIFIER", "this"))
+                if (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this"))
                 {
                     Expr expr = null;
                     
                     var variable = GetGetter();
 
-                    if (TypeMatch("IDENTIFIER", "this"))
+                    if (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this"))
                     {
                         if (variable.Item2)
                         {
@@ -408,16 +408,16 @@ namespace Raze
                         }
 
                         var name = previous();
-                        if (name.type == "this")
+                        if (name.lexeme == "this")
                         {
                             throw new Errors.ParseError("Invalid 'This' Keyword", "The 'this' keyword may only be used in a member to reference the enclosing class");
                         }
-                        Expect("EQUALS", "'=' when declaring variable");
+                        Expect(Token.TokenType.EQUALS, "'=' when declaring variable");
                         Expr value = NoSemicolon();
 
                         expr = new Expr.Declare((Expr.TypeReference)variable.Item1, name, value);
                     }
-                    else if (TypeMatch("EQUALS"))
+                    else if (TypeMatch(Token.TokenType.EQUALS))
                     {
                         if (variable.Item2)
                         {
@@ -425,7 +425,7 @@ namespace Raze
                         }
                         expr = new Expr.Assign((Expr.Variable)variable.Item1, NoSemicolon());
                     }
-                    else if (TypeMatch(new string[] { "PLUS", "MINUS", "MULTIPLY", "DIVIDE", "MODULO" }, new string[] { "EQUALS" }))
+                    else if (TypeMatch(new[] { Token.TokenType.PLUS, Token.TokenType.MINUS, Token.TokenType.MULTIPLY, Token.TokenType.DIVIDE, Token.TokenType.MODULO }, new[] { Token.TokenType.EQUALS }))
                     {
                         if (variable.Item2)
                         {
@@ -434,7 +434,7 @@ namespace Raze
                         var sign = tokens[index - 2];
                         expr = new Expr.Assign((Expr.Variable)variable.Item1, sign, NoSemicolon());
                     }
-                    else if (TypeMatch("PLUSPLUS", "MINUSMINUS"))
+                    else if (TypeMatch(Token.TokenType.PLUSPLUS, Token.TokenType.MINUSMINUS))
                     {
                         if (variable.Item2)
                         {
@@ -450,14 +450,14 @@ namespace Raze
                     return expr;
                 }
 
-                if (TypeMatch("null", "true", "false"))
+                if (ReservedValueMatch("null", "true", "false"))
                 {
                     return new Expr.Keyword(previous().lexeme);
                 }
 
-                if (TypeMatch("new"))
+                if (ReservedValueMatch("new"))
                 {
-                    Expect("IDENTIFIER", "identifier after new expression");
+                    Expect(Token.TokenType.IDENTIFIER, "identifier after new expression");
                     return new Expr.New(GetNewGetter());
                 }
             }
@@ -478,20 +478,20 @@ namespace Raze
             Queue<Token> typeName = new Queue<Token>();
             typeName.Enqueue(previous());
 
-            if (peek().type != "DOT" && TypeMatch("LPAREN"))
+            if (peek().type != Token.TokenType.DOT && TypeMatch(Token.TokenType.LPAREN))
             {
                 return (new Expr.Call(typeName.Dequeue(), null, null, GetArgs()), true);
             }
 
-            while (TypeMatch("DOT"))
+            while (TypeMatch(Token.TokenType.DOT))
             {
-                Expect("IDENTIFIER", "variable name after '.'");
+                Expect(Token.TokenType.IDENTIFIER, "variable name after '.'");
                 var variable = previous();
 
-                if (TypeMatch("LPAREN"))
+                if (TypeMatch(Token.TokenType.LPAREN))
                 {
                     var args = GetArgs();
-                    return (new Expr.Call(variable, typeName, (peek().type != "DOT")? null : GetGetter().Item1, args), true);
+                    return (new Expr.Call(variable, typeName, (peek().type != Token.TokenType.DOT)? null : GetGetter().Item1, args), true);
                 }
                 else
                 {
@@ -507,16 +507,16 @@ namespace Raze
             Queue<Token> typeName = new Queue<Token>();
             typeName.Enqueue(previous());
 
-            if (peek().type != "DOT" && TypeMatch("LPAREN"))
+            if (peek().type != Token.TokenType.DOT && TypeMatch(Token.TokenType.LPAREN))
             {
                 return new Expr.Call(typeName.Dequeue(), null, null, GetArgs());
             }
 
-            while (TypeMatch("DOT"))
+            while (TypeMatch(Token.TokenType.DOT))
             {
-                Expect("IDENTIFIER", "variable name after '.'");
+                Expect(Token.TokenType.IDENTIFIER, "variable name after '.'");
 
-                if (TypeMatch("LPAREN"))
+                if (TypeMatch(Token.TokenType.LPAREN))
                 {
                     return new Expr.Call(previous(2), typeName, null, GetArgs());
                 }
@@ -526,7 +526,7 @@ namespace Raze
                 }
             }
 
-            throw Expected("LPAREN", "'(' after type in new expression");
+            throw Expected(Token.TokenType.LPAREN.ToString(), "'(' after type in new expression");
         }
 
         private Expr.TypeReference GetTypeGetter()
@@ -534,9 +534,9 @@ namespace Raze
             Queue<Token> typeName = new Queue<Token>();
             typeName.Enqueue(previous());
 
-            while (TypeMatch("DOT"))
+            while (TypeMatch(Token.TokenType.DOT))
             {
-                Expect("IDENTIFIER", "variable name after '.'");
+                Expect(Token.TokenType.IDENTIFIER, "variable name after '.'");
                 typeName.Enqueue(previous());
             }
 
@@ -552,23 +552,23 @@ namespace Raze
         private List<Expr> GetArgs()
         {
             List<Expr> arguments = new();
-            while (!TypeMatch("RPAREN"))
+            while (!TypeMatch(Token.TokenType.RPAREN))
             {
                 arguments.Add(Logical());
-                if (TypeMatch("RPAREN"))
+                if (TypeMatch(Token.TokenType.RPAREN))
                 {
                     break;
                 }
-                Expect("COMMA", "',' between parameters");
+                Expect(Token.TokenType.COMMA, "',' between parameters");
             }
             return arguments;
         }
 
         private Expr GetCondition()
         {
-            Expect("LPAREN", "'(' after conditional");
+            Expect(Token.TokenType.LPAREN, "'(' after conditional");
             var condition = Logical();
-            Expect("RPAREN", "')' after conditional");
+            Expect(Token.TokenType.RPAREN, "')' after conditional");
             return condition;
         }
 
@@ -580,15 +580,15 @@ namespace Raze
         private List<Expr> GetBlockItems(string bodytype)
         {
             List<Expr> bodyExprs = new();
-            Expect("LBRACE", "'{' before " + bodytype + " body");
-            while (!TypeMatch("RBRACE"))
+            Expect(Token.TokenType.LBRACE, "'{' before " + bodytype + " body");
+            while (!TypeMatch(Token.TokenType.RBRACE))
             {
                 bodyExprs.Add(Start());
                 if (isAtEnd())
                 {
-                    Expect("RBRACE", "'}' after block");
+                    Expect(Token.TokenType.RBRACE, "'}' after block");
                 }
-                if (TypeMatch("RBRACE"))
+                if (TypeMatch(Token.TokenType.RBRACE))
                 {
                     break;
                 }
@@ -601,21 +601,21 @@ namespace Raze
             List<Instruction> instructions = new();
             Dictionary<Expr.Variable, Instruction.Pointer> variables = new();
 
-            Expect("LBRACE", "'{' before Assembly Block body");
-            while (!TypeMatch("RBRACE"))
+            Expect(Token.TokenType.LBRACE, "'{' before Assembly Block body");
+            while (!TypeMatch(Token.TokenType.RBRACE))
             {
-                if (TypeMatch("IDENTIFIER"))
+                if (TypeMatch(Token.TokenType.IDENTIFIER))
                 {
                     var op = previous();
 
-                    if (TypeMatch("IDENTIFIER", "DOLLAR"))
+                    if (TypeMatch(Token.TokenType.IDENTIFIER, Token.TokenType.DOLLAR))
                     {
                         // Unary
                         Instruction.Value value;
 
-                        if (previous().type == "DOLLAR")
+                        if (previous().type == Token.TokenType.DOLLAR)
                         {
-                            Expect("IDENTIFIER", "after escape '$'");
+                            Expect(Token.TokenType.IDENTIFIER, "after escape '$'");
                             var ptr = new Instruction.Pointer(0, 0);
                             Queue<Token> queue = new();
                             queue.Enqueue(previous());
@@ -635,11 +635,11 @@ namespace Raze
                             }
                         }
 
-                        if (TypeMatch("COMMA"))
+                        if (TypeMatch(Token.TokenType.COMMA))
                         {
                             // Binary
 
-                            if (TypeMatch("IDENTIFIER"))
+                            if (TypeMatch(Token.TokenType.IDENTIFIER))
                             {
                                 var identifier = previous();
                                 if (InstructionInfo.Registers.TryGetValue(identifier.lexeme, out var reg))
@@ -651,13 +651,13 @@ namespace Raze
                                     throw new Errors.ParseError("Invalid Assembly Register", $"Invalid assembly register given '{identifier.lexeme}'");
                                 }
                             }
-                            else if (TypeMatch("INTEGER", "FLOATING", "STRING", "HEX", "BINARY"))
+                            else if (TypeMatch(Token.TokenType.INTEGER, Token.TokenType.FLOATING, Token.TokenType.STRING, Token.TokenType.HEX, Token.TokenType.BINARY))
                             {
-                                instructions.Add(new Instruction.Binary(op.lexeme, value, new Instruction.Literal(previous().lexeme, previous().type)));
+                                instructions.Add(new Instruction.Binary(op.lexeme, value, new Instruction.Literal(previous().type, previous().lexeme)));
                             }
-                            else if (TypeMatch("DOLLAR"))
+                            else if (TypeMatch(Token.TokenType.DOLLAR))
                             {
-                                Expect("IDENTIFIER", "after escape '$'");
+                                Expect(Token.TokenType.IDENTIFIER, "after escape '$'");
                                 var ptr = new Instruction.Pointer(0, 0);
                                 Queue<Token> queue = new();
                                 queue.Enqueue(previous());
@@ -679,7 +679,7 @@ namespace Raze
                         // Zero
                         instructions.Add(new Instruction.Zero(op.lexeme));
                     }
-                    Expect("SEMICOLON", "';' after Assembly statement");
+                    Expect(Token.TokenType.SEMICOLON, "';' after Assembly statement");
                 }
                 else
                 {
@@ -688,9 +688,9 @@ namespace Raze
 
                 if (isAtEnd())
                 {
-                    Expect("RBRACE", "'}' after Assembly Block");
+                    Expect(Token.TokenType.RBRACE, "'}' after Assembly Block");
                 }
-                if (TypeMatch("RBRACE"))
+                if (TypeMatch(Token.TokenType.RBRACE))
                 {
                     break;
                 }
@@ -698,7 +698,7 @@ namespace Raze
             return (instructions, variables);
         }
 
-        private bool TypeMatch(params string[] types)
+        private bool TypeMatch(params Token.TokenType[] types)
         {
             if (current == null)
             {
@@ -715,7 +715,43 @@ namespace Raze
             return false;
         }
 
-        private bool TypeMatch(string[] type1, string[] type2)
+        private bool ValueMatch(params string[] types)
+        {
+            if (current == null)
+            {
+                return false;
+            }
+            foreach (var type in types)
+            {
+                if (current.lexeme == type)
+                {
+                    advance();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private bool ReservedValueMatch(params string[] types)
+        {
+            // Note: Only checks lexeme and assumes there are no cases where an identifier has the name as a reserved keyword
+            // This also applies when checking for 'void' and 'this' in other places of the code
+            if (current == null)
+            {
+                return false;
+            }
+            foreach (var type in types)
+            {
+                if (current.lexeme == type)
+                {
+                    advance();
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private bool TypeMatch(Token.TokenType[] type1, Token.TokenType[] type2)
         {
             if (current == null)
             {
@@ -745,17 +781,17 @@ namespace Raze
             return (t == 2);
         }
 
-        private void Expect(string type, string errorMessage)
+        private void Expect(Token.TokenType type, string errorMessage)
         {
             if (current != null && current.type == type)
             {
                 advance();
                 return;
             }
-            throw Expected(type, errorMessage);
+            throw Expected(type.ToString(), errorMessage);
         }
 
-        private void ExpectValue(string type, string value, string errorMessage)
+        private void ExpectValue(Token.TokenType type, string value, string errorMessage)
         {
             if (current != null && current.type == type && current.lexeme == value)
             {
