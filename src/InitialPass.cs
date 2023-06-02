@@ -42,20 +42,20 @@ namespace Raze
 
             public override object? visitFunctionExpr(Expr.Function expr)
             {
-                if (symbolTable.TryGetContainer(expr.name.lexeme, out _))
+                if (symbolTable.TryGetContainer(expr.name.name.lexeme, out _))
                 {
-                    if (expr.name.lexeme == "Main")
+                    if (expr.name.name.lexeme == "Main")
                     {
                         throw new Errors.AnalyzerError("Double Declaration", "A Program may have only one 'Main' method");
                     }
-                    throw new Errors.AnalyzerError("Double Declaration", $"Function '{expr.name.lexeme}()' was declared twice");
+                    throw new Errors.AnalyzerError("Double Declaration", $"Function '{expr.name.name.lexeme}()' was declared twice");
                 }
 
                 SetPath(expr);
 
                 symbolTable.Add(expr);
 
-                if (expr.name.lexeme == "Main")
+                if (expr.name.name.lexeme == "Main")
                 {
                     if (SymbolTableSingleton.SymbolTable.main != null)
                     {
@@ -108,9 +108,9 @@ namespace Raze
                     throw new Errors.AnalyzerError("Invalid Class Definition", "A class definition may be only within another class");
                 }
 
-                if (symbolTable.TryGetContainer(expr.name.lexeme, out _))
+                if (symbolTable.TryGetContainer(expr.name.name.lexeme, out _))
                 {
-                    throw new Errors.AnalyzerError("Double Declaration", $"A class named '{expr.name.lexeme}' is already defined in this scope");
+                    throw new Errors.AnalyzerError("Double Declaration", $"A class named '{expr.name.name.lexeme}' is already defined in this scope");
                 }
 
                 SetPath(expr);
@@ -206,9 +206,9 @@ namespace Raze
                     throw new Errors.AnalyzerError("Invalid Class Definition", "A primitive class definition may be only within another class");
                 }
 
-                if (symbolTable.TryGetContainer(expr.name.lexeme, out _))
+                if (symbolTable.TryGetContainer(expr.name.name.lexeme, out _))
                 {
-                    throw new Errors.AnalyzerError("Double Declaration", $"A primitive class named '{expr.name.lexeme}' is already defined in this scope");
+                    throw new Errors.AnalyzerError("Double Declaration", $"A primitive class named '{expr.name.name.lexeme}' is already defined in this scope");
                 }
 
                 SetPath(expr);
@@ -251,7 +251,7 @@ namespace Raze
                 return constructor;
             }
 
-            private void SetPath(Expr.Definition definition) => definition.type = new(definition.name, symbolTable.CurrentIsTop()? symbolTable.global : symbolTable.Current.self.type);
+            private void SetPath(Expr.Definition definition) => definition.name.parent = symbolTable.CurrentIsTop()? null : symbolTable.Current.self.name;
         }
     }
 }

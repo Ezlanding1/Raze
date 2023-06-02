@@ -53,12 +53,17 @@ namespace Raze
                 Token definitionType = previous();
                 if (definitionType.lexeme == "function")
                 {
-                    var function = new Expr.Function();
+                    Dictionary<string, bool> modifiers = new()
+                    {
+                        { "static", false },
+                        { "unsafe", false }
+                    };
+
                     Expr.TypeReference _return;
 
-                    while (function.modifiers.ContainsKey(current.lexeme))
+                    while (modifiers.ContainsKey(current.lexeme))
                     {
-                        function.modifiers[current.lexeme] = true;
+                        modifiers[current.lexeme] = true;
                         advance();
                     }
 
@@ -102,8 +107,8 @@ namespace Raze
                             throw new Errors.ParseError("Unexpected End In Function Parameters", $"Function '{name.lexeme}' reached an unexpected end during it's parameters");
                         }
                     }
-                    function.Add(_return, name, parameters, GetBlock(definitionType.lexeme));
-                    return function;
+                    
+                    return new Expr.Function(modifiers, _return, name, parameters, GetBlock(definitionType.lexeme));
                 }
                 else if (definitionType.lexeme == "class")
                 {
@@ -115,7 +120,7 @@ namespace Raze
                         throw new Errors.ParseError("Invalid Class", $"The name of a class may not be a literal ({name.lexeme})");
                     }
 
-                    return new Expr.Class(name, GetBlock(definitionType.lexeme));
+                    return new Expr.Class(name, GetBlock(definitionType.lexeme), new(null));
                 }
                 else if (definitionType.lexeme == "asm")
                 {
@@ -141,32 +146,6 @@ namespace Raze
                         throw new Errors.ParseError("Invalid Primitive", $"The name of a primitive may not be a literal ({name.lexeme})");
                     }
 
-                    ExpectValue(Token.TokenType.RESERVED, "is", "'is' keyword");
-
-                    List<string> literals = new();
-                    if (TypeMatch(Token.TokenType.LBRACE))
-                    {
-                        while (!TypeMatch(Token.TokenType.RBRACE))
-                        {
-                            Expect(Token.TokenType.IDENTIFIER, "token literal of primitive type");
-                            literals.Add(previous().lexeme);
-                            if (isAtEnd())
-                            {
-                                Expect(Token.TokenType.RBRACE, "'}' after token literals of primitive type");
-                            }
-                        }
-                    }
-                    else
-                    {
-                        Expect(Token.TokenType.IDENTIFIER, "token literal of primitive type");
-                        literals.Add(previous().lexeme);
-                    }
-
-                    if (!literals.All(Enum.GetNames(typeof(Token.TokenType)).Contains))
-                    {
-                        throw new Errors.ParseError("Invalid Primitive", $"The literal of a primitive must be a valid literal ({string.Join(", ", Literals)})");
-                    }
-
                     ExpectValue(Token.TokenType.IDENTIFIER, "sizeof", "'sizeof' keyword");
                     Expect(Token.TokenType.INTEGER, "size (in bytes) of primitive");
                     Token size = previous();
@@ -176,8 +155,24 @@ namespace Raze
                         throw new Errors.ParseError("Invalid Primitive", "The size of primitive classes must be the integers '8', '4', '2', or '1'");
                     }
 
+                    Expr.TypeReference type = new(null);
+
+                    if (ValueMatch("extends"))
+                    {
+                        Expect(Token.TokenType.IDENTIFIER, "superclass of primitive type");
+                        type = new(new());
+                        type.typeName.Enqueue(previous());
+
+
+                        if (!Enum.TryParse<Token.TokenType>(previous().lexeme, out var literalEnum) || !Literals.Contains(literalEnum))
+                        {
+                            throw new Errors.ParseError("Invalid Primitive", $"The superclass of a primitive must be a valid literal ({string.Join(", ", Literals)}). Got '{previous().lexeme}'");
+                        }
+                    }
+
                     var block = GetBlock(definitionType.lexeme);
-                    return new Expr.Primitive(name, literals, int.Parse(size.lexeme), block);
+
+                    return new Expr.Primitive(name, block, int.Parse(size.lexeme), type);
                 }
             }
             return Conditional();

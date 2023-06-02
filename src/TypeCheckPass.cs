@@ -14,29 +14,29 @@ namespace Raze
             List<(Analyzer.Type, bool, Expr.Return)> _return;
             bool callReturn;
 
-            public static Analyzer.Type _voidType = new(new Token(Token.TokenType.RESERVED, "void"));
-            Func<Analyzer.Type, bool> isVoidType = (type) => { return type.name.lexeme == "void"; };
+            public static Analyzer.Type _voidType = new(new TypeName(new(Token.TokenType.RESERVED, "void")));
+            Func<Analyzer.Type, bool> isVoidType = (type) => { return type.name.name.lexeme == "void"; };
 
-            Dictionary<Token.TokenType, Analyzer.Type> literalTypes = new Dictionary<Token.TokenType, Analyzer.Type>()
+            public static Dictionary<Token.TokenType, Analyzer.Type> literalTypes = new Dictionary<Token.TokenType, Analyzer.Type>()
             {
-                { Parser.Literals[0], new(new Token(Parser.Literals[0])) },
-                { Parser.Literals[1], new(new Token(Parser.Literals[1])) },
-                { Parser.Literals[2], new(new Token(Parser.Literals[2])) },
-                { Parser.Literals[3], new(new Token(Parser.Literals[3])) },
-                { Parser.Literals[4], new(new Token(Parser.Literals[4])) },
-                { Parser.Literals[5], new(new Token(Parser.Literals[5])) },
+                { Parser.Literals[0], new(new(new Token(Parser.Literals[0]))) },
+                { Parser.Literals[1], new(new(new Token(Parser.Literals[1]))) },
+                { Parser.Literals[2], new(new(new Token(Parser.Literals[2]))) },
+                { Parser.Literals[3], new(new(new Token(Parser.Literals[3]))) },
+                { Parser.Literals[4], new(new(new Token(Parser.Literals[4]))) },
+                { Parser.Literals[5], new(new(new Token(Parser.Literals[5]))) },
             };
 
             Dictionary<string, Analyzer.Type> keywordTypes = new Dictionary<string, Analyzer.Type>()
             {
-                { "true", new (new Token(Token.TokenType.RESERVED, "true")) },
-                { "false", new (new Token(Token.TokenType.RESERVED, "false")) },
-                { "null", new (new Token(Token.TokenType.RESERVED, "null")) },
+                { "true", literalTypes[Token.TokenType.BOOLEAN] },
+                { "false", literalTypes[Token.TokenType.BOOLEAN] },
+                { "null", null },
             };
 
             
 
-            Func<Analyzer.Type, byte, bool> isLiteralType = (type, literal) => { return type.name.type == Parser.Literals[literal]; };
+            Func<Analyzer.Type, byte, bool> isLiteralType = (type, literal) => { return type.name.name.type == Parser.Literals[literal]; };
 
             public TypeCheckPass(List<Expr> expressions) : base(expressions)
             {
@@ -105,10 +105,8 @@ namespace Raze
                     Expr.Parameter paramExpr = expr.internalFunction.parameters[i];
 
                     var assignType = expr.arguments[i].Accept(this);
-                    if (!MatchesType(paramExpr.stack.type, assignType))
-                    {
-                        throw new Errors.AnalyzerError("Type Mismatch", $"You cannot assign type '{assignType}' to type '{paramExpr.stack.type.ToString()}'");
-                    }
+
+                    MustMatchType(paramExpr.stack.type, assignType);
                 }
                 callReturn = true;
                 return expr.internalFunction._returnType.type;
@@ -124,10 +122,7 @@ namespace Raze
             public override Analyzer.Type visitDeclareExpr(Expr.Declare expr)
             {
                 Analyzer.Type assignType = expr.value.Accept(this);
-                if (!MatchesType(expr.stack.type, assignType))
-                {
-                    throw new Errors.AnalyzerError("Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.stack.type.ToString()}'");
-                }
+                MustMatchType(expr.stack.type, assignType);
 
                 return _voidType;
             }
@@ -145,10 +140,7 @@ namespace Raze
                     int _returnCount = 0;
                     foreach (var ret in _return)
                     {
-                        if (!MatchesType(expr._returnType.type, ret.Item1))
-                        {
-                            throw new Errors.AnalyzerError("Type Mismatch", $"You cannot return type '{ret.Item1}' from type '{expr._returnType.type}'");
-                        }
+                        MustMatchType(expr._returnType.type, ret.Item1, "You cannot return type '{0}' from type '{1}'");
 
                         ret.Item3.size = expr._returnSize;
 
@@ -311,7 +303,7 @@ namespace Raze
                     argExpr.Accept(this);
                 }
 
-                return expr.internalClass.type;
+                return expr.internalClass.type.type;
             }
 
             public override Analyzer.Type visitDefineExpr(Expr.Define expr)
@@ -323,7 +315,7 @@ namespace Raze
             {
                 expr.value = expr.right.Accept(this) == expr.right.type ? "1" : "0";
 
-                return literalTypes[Parser.Literals[5]];
+                return literalTypes[Token.TokenType.BOOLEAN];
             }
 
             public override Analyzer.Type visitAssemblyExpr(Expr.Assembly expr)
@@ -338,8 +330,15 @@ namespace Raze
 
             private bool MatchesType(Analyzer.Type type1, Analyzer.Type type2)
             {
-                return true;
-                return type1 == type2;
+                return type2.Matches(type1);
+            }
+
+            private void MustMatchType(Analyzer.Type type1, Analyzer.Type type2, string error= "You cannot assign type '{0}' to type '{1}'")
+            {
+                if (!type2.Matches(type1))
+                {
+                    throw new Errors.AnalyzerError("Type Mismatch", string.Format(error, type2, type1));
+                }
             }
 
             private void TypeCheckConditional(Expr.Conditional expr, bool _else=false)
@@ -347,7 +346,7 @@ namespace Raze
                 int _returnCount = _return.Count;
                 if (expr.condition != null)
                 {
-                    if (!isLiteralType(expr.condition.Accept(this), 5))
+                    if (!expr.condition.Accept(this).Matches(literalTypes[Token.TokenType.BOOLEAN]))
                     {
                         throw new Errors.AnalyzerError("Type Mismatch", $"'if' expects condition to return 'BOOLEAN'. Got '{expr.condition.Accept(this)}'");
                     }

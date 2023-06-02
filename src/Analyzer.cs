@@ -41,7 +41,7 @@ namespace Raze
 
         private void CheckMain(Expr.Function main)
         {
-            if (main._returnType.type.name.lexeme != "void" && main._returnType.type.ToString() != "number")
+            if (main._returnType.type.name.name.lexeme != "void" && !main._returnType.type.Matches(Analyzer.TypeCheckPass.literalTypes[Token.TokenType.INTEGER]))
             {
                 throw new Errors.AnalyzerError("Main Invalid Return Type", $"Main can only return types 'number', and 'void'. Got '{main._returnType}'");
             }

@@ -5,11 +5,9 @@
         internal class MainPass : Pass<object?>
         {
             SymbolTable symbolTable = SymbolTableSingleton.SymbolTable;
-            HashSet<Expr.Definition> handledClasses;
 
             public MainPass(List<Expr> expressions) : base(expressions)
             {
-                this.handledClasses = new();
             }
 
             internal override List<Expr> Run()
@@ -56,7 +54,6 @@
 
                     if (instanceCall)
                     {
-                        expr.stackOffset = topSymbol_I.self.stackOffset;
                         this.visitGetReferenceExpr(expr);
                     }
                     else
@@ -64,7 +61,8 @@
                         this.visitTypeReferenceExpr(expr);
                     }
                 }
-                
+
+                symbolTable.SetContext(symbolTable.NearestEnclosingClass());
                 symbolTable.SetContext(symbolTable.GetContainer(expr.name.lexeme, true));
 
                 // 
@@ -98,7 +96,7 @@
 
                 if (expr.arguments.Count != callee.arity)
                 {
-                    throw new Errors.BackendError("Arity Mismatch", $"Arity of call for {callee.type.ToString()} ({expr.arguments.Count}) does not match the definition's arity ({callee.arity})");
+                    throw new Errors.BackendError("Arity Mismatch", $"Arity of call for {callee.name.ToString()} ({expr.arguments.Count}) does not match the definition's arity ({callee.arity})");
                 }
 
                 expr.internalFunction = callee;
@@ -118,14 +116,7 @@
 
             public override object? visitClassExpr(Expr.Class expr)
             {
-                if (handledClasses.Contains(expr))
-                {
-                    return null;
-                }
-
-                handledClasses.Add(expr);
-
-                symbolTable.SetContext(symbolTable.GetContainer(expr.name.lexeme));
+                symbolTable.SetContext(symbolTable.GetContainer(expr.name.name.lexeme));
 
                 expr.topLevelBlock.Accept(this);
                 expr.block.Accept(this);
@@ -159,7 +150,7 @@
 
                 symbolTable.SetContext(context);
 
-                expr.stack.type = definition.self.type;
+                expr.stack.type = ((Expr.DataType)definition.self).type.type;
 
 
                 symbolTable.Add(expr.stack, name, definition);
@@ -169,14 +160,31 @@
 
             public override object? visitPrimitiveExpr(Expr.Primitive expr)
             {
-                if (handledClasses.Contains(expr))
+                symbolTable.SetContext(symbolTable.GetContainer(expr.name.name.lexeme));
+
+                switch (expr.type.typeName.Dequeue().lexeme)
                 {
-                    return null;
+                    case "INTEGER":
+                        expr.type.type.parent = TypeCheckPass.literalTypes[Parser.Literals[0]];
+                        break;
+                    case "FLOATING":
+                        expr.type.type.parent = TypeCheckPass.literalTypes[Parser.Literals[1]];
+                        break;
+                    case "STRING":
+                        expr.type.type.parent = TypeCheckPass.literalTypes[Parser.Literals[2]];
+                        break;
+                    case "BINARY":
+                        expr.type.type.parent = TypeCheckPass.literalTypes[Parser.Literals[3]];
+                        break;
+                    case "HEX":
+                        expr.type.type.parent = TypeCheckPass.literalTypes[Parser.Literals[4]];
+                        break;
+                    case "BOOLEAN":
+                        expr.type.type.parent = TypeCheckPass.literalTypes[Parser.Literals[5]];
+                        break;
+                    default: 
+                        throw new Errors.ImpossibleError("Invalid primitive superclass");
                 }
-
-                handledClasses.Add(expr);
-
-                symbolTable.SetContext(symbolTable.GetContainer(expr.name.lexeme));
 
                 expr.block.Accept(this);
 
@@ -188,13 +196,13 @@
 
             public override object? visitFunctionExpr(Expr.Function expr)
             {
-                symbolTable.SetContext(symbolTable.GetContainer(expr.name.lexeme, true));
+                symbolTable.SetContext(symbolTable.GetContainer(expr.name.name.lexeme, true));
 
                 if (expr._returnType.typeName.Peek().type != Token.TokenType.RESERVED && expr._returnType.typeName.Peek().lexeme != "void")
                 {
                     var context = symbolTable.Current;
                     expr._returnType.Accept(this);
-                    expr._returnType.type = symbolTable.Current.self.type;
+                    expr._returnType.type = ((Expr.DataType)symbolTable.Current.self).type.type;
                     expr._returnSize = symbolTable.Current.IsPrimitive() ? ((SymbolTable.Symbol.Primitive)symbolTable.Current).self.size : 8;
                     symbolTable.SetContext(context);
                 }
@@ -206,12 +214,11 @@
 
                 symbolTable.CreateBlock();
 
-                int count = 0;
+                bool instance = !expr.modifiers["static"];
 
-                if (!expr.modifiers["static"])
+                if (instance)
                 {
                     symbolTable.Current.self.size += 8;
-                    count++;
                 }
 
                 for (int i = 0; i < expr.arity; i++)
@@ -225,9 +232,9 @@
 
                     symbolTable.SetContext(context);
 
-                    paramExpr.stack.type = definition.self.type;
+                    paramExpr.stack.type = ((Expr.DataType)definition.self).type.type;
 
-                    symbolTable.Add(paramExpr, definition, i+count, expr.arity);
+                    symbolTable.Add(paramExpr, definition, i+Convert.ToInt16(instance), expr.arity);
                 }
 
                 expr.block.Accept(this);
@@ -288,7 +295,7 @@
 
                 if (expr.typeName.Peek().lexeme == "this")
                 {
-                    expr.stack = new(symbolTable.NearestEnclosingClass().self.type, false, 8, 8, false);
+                    expr.stack = new(((Expr.DataType)symbolTable.NearestEnclosingClass().self).type.type, false, 8, 8, false);
                 }
                 else if (symbolTable.TryGetVariable(expr.typeName.Peek().lexeme, out SymbolTable.Symbol.Variable symbol, out bool isClassScopedVar))
                 {
@@ -419,7 +426,7 @@
 
                     if (expr.typeName.Count == 0)
                     {
-                        expr.type = symbolTable.Current.self.type;
+                        expr.type = ((Expr.DataType)symbolTable.Current.self).type.type;
                     }
                     return true;
                 }

@@ -10,15 +10,68 @@ namespace Raze
     {
         public class Type
         {
-            public Token name;
+            public TypeName name;
             public Type parent;
 
-            public Type(Token name, Type parent)
+            public Type(TypeName name, Type parent)
             {
                 this.name = name;
                 this.parent = parent;
             }
-            public Type(Token name)
+            public Type(TypeName name)
+            {
+                this.name = name;
+                this.parent = null;
+            }
+
+            public bool Matches(Type type)
+            {
+                return type._Matches(this) || ((parent != null) ? parent.Matches(type) : false);
+            }
+
+            private protected virtual bool _Matches(Type type)
+            {
+                return type == this;
+            }
+
+            public override string ToString() 
+            {
+                return name.ToString();
+            }
+        }
+
+        public class LiteralType : Type
+        {
+            public LiteralType(TypeName name, Type parent) : base(name, parent)
+            {
+            }
+
+            public LiteralType(TypeName name) : base(name)
+            {
+            }
+
+            private protected override bool _Matches(Type type)
+            {
+                return (type == this || type == parent);
+            } 
+
+            public override string ToString()
+            {
+                return name.ToString();
+            }
+        }
+
+        public class TypeName
+        {
+            public Token name;
+            public TypeName parent;
+
+            public TypeName(Token name, TypeName parent)
+            {
+                this.name = name;
+                this.parent = parent;
+            }
+            public TypeName(Token name)
             {
                 this.name = name;
                 this.parent = null;
@@ -26,7 +79,12 @@ namespace Raze
 
             public override string ToString()
             {
-                return ((parent == null || parent.name == null) ? "" : (parent.ToString() + ".")) + name.lexeme;
+                return name.lexeme != ""? 
+                        (parent != null? 
+                            parent.ToString() + "." :
+                            "") 
+                            + name.lexeme : 
+                        name.type.ToString();
             }
         }
     }

@@ -223,7 +223,6 @@ namespace Raze
             public bool constructor;
             public Function internalFunction;
             public List<Expr> arguments;
-            public int stackOffset;
 
             public Call(Token name, Queue<Token> callee, GetReference get, List<Expr> arguments)
             {
@@ -365,22 +364,6 @@ namespace Raze
             }
         }
 
-        public class Primitive : Definition
-        {
-            public List<string> literals;
-
-            public Primitive(Token name, List<string> literals, int size, Block block) : base (name, block, size)
-            {
-                this.literals = literals;
-            }
-
-
-            public override T Accept<T>(IVisitor<T> visitor)
-            {
-                return visitor.visitPrimitiveExpr(this);
-            }
-        }
-
         public class Keyword : Expr
         {
             public string keyword;
@@ -433,15 +416,15 @@ namespace Raze
 
         public abstract class Definition : Expr
         {
-            public Token name;
+            public abstract Analyzer.TypeName name { get; set; }
             public Block block;
             public int size;
 
-            public Analyzer.Type type;
+            private protected Definition() { }
 
             public Definition(Token name, Block block)
             {
-                this.name = name;
+                this.name = new(name);
                 this.block = block;
             }
 
@@ -456,6 +439,13 @@ namespace Raze
 
         public class Function : Definition
         {
+            public override Analyzer.TypeName name
+            {
+                get => _name;
+                set => _name = value;
+            }
+            private Analyzer.TypeName _name;
+
             public List<Parameter> parameters;
             public TypeReference _returnType;
             public int _returnSize;
@@ -467,19 +457,9 @@ namespace Raze
             public Dictionary<string, bool> modifiers;
             public bool constructor;
 
-            public Function()
-                : base(null, null)
+            public Function(Dictionary<string, bool> modifiers, TypeReference _returnType, Token name, List<Parameter> parameters, Block block) : base(name, block)
             {
-                this.modifiers = new(){
-                    { "static", false },
-                    { "unsafe", false }
-                };
-            }
-
-            public void Add(TypeReference _returnType, Token name, List<Parameter> parameters, Block block)
-            {
-                base.name = name;
-                base.block = block;
+                this.modifiers = modifiers;
                 this._returnType = _returnType;
                 this.parameters = parameters;
             }
@@ -490,13 +470,36 @@ namespace Raze
             }
         }
 
-        public class Class : Definition
+        public abstract class DataType : Definition
+        {
+            public override Analyzer.TypeName name 
+            {
+                get => type.type.name;
+                set => type.type.name = value;
+            }
+
+            public TypeReference type;
+
+            public DataType(Analyzer.Type type, Block block, TypeReference typeRef)
+            {
+                this.type = typeRef;
+                this.type.type = type;
+                this.block = block;
+            }
+
+            public DataType(Analyzer.Type type, Block block, int size, TypeReference typeRef) : this(type, block, typeRef)
+            {
+                this.size = size;
+            }
+        }
+
+        public class Class : DataType
         {
             public Function constructor;
 
             public Block topLevelBlock;
 
-            public Class(Token name, Block block) : base(name, new(new())) 
+            public Class(Token name, Block block, TypeReference type) : base(new(new Analyzer.TypeName(name)), new (new()), type)
             {
                 this.topLevelBlock = new(new());
                 FilterTopLevel(block);
@@ -505,12 +508,6 @@ namespace Raze
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.visitClassExpr(this);
-            }
-
-            public Class(Class @this) : base(@this.name, @this.block)
-            {
-                this.constructor = @this.constructor;
-                this.size = @this.size;
             }
 
             private void FilterTopLevel(Block block)
@@ -528,7 +525,21 @@ namespace Raze
                 }
             }
         }
-        
+
+        public class Primitive : DataType
+        {
+
+            public Primitive(Token name, Block block, int size, TypeReference type) : base(new Analyzer.LiteralType(new Analyzer.TypeName(name)), block, size, type)
+            {
+            }
+
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.visitPrimitiveExpr(this);
+            }
+        }
+
         public class Return : Expr
         {
             public Expr value;

@@ -11,7 +11,7 @@ namespace Raze
     {
         internal class SymbolTable
         {
-            public Type global = new(null, null);
+            public TypeName global = new(null, null);
 
             private Symbol.Class head;
             private Symbol.Container current;
@@ -294,7 +294,7 @@ namespace Raze
 
                 internal class Class : Container
                 {
-                    public override Token Name { get { return self.name; } }
+                    public override Token Name { get { return self.name.name; } }
 
                     internal override Dictionary<string, Variable> variables
                     {
@@ -329,7 +329,7 @@ namespace Raze
 
                 internal class Function : Container
                 {
-                    public override Token Name { get { return self.name; } }
+                    public override Token Name { get { return self.name.name; } }
 
                     internal override Dictionary<string, Variable> variables
                     {
@@ -360,7 +360,7 @@ namespace Raze
 
                 internal class Primitive : Container
                 {
-                    public override Token Name { get { return self.name; } }
+                    public override Token Name { get { return self.name.name; } }
 
                     internal override Dictionary<string, Container> containers
                     {

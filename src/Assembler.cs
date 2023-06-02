@@ -85,20 +85,14 @@ namespace Raze
 
         public Instruction.Value? visitCallExpr(Expr.Call expr)
         {
-            int paramReg = 0;
-            if (!expr.internalFunction.modifiers["static"])
-            {
-                emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.paramRegister[0], Instruction.Register.RegisterSize._64Bits), expr.constructor? new Instruction.Register( Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits) : new Instruction.Pointer(expr.stackOffset, 8)));
-                paramReg++;
-            }
-
+            bool instance = !expr.internalFunction.modifiers["static"];
 
             for (int i = 0; i < expr.arguments.Count; i++)
             {
                 Instruction.Value arg = expr.arguments[i].Accept(this);
-                if (i+paramReg < InstructionInfo.paramRegister.Length)
+                if (i + Convert.ToUInt16(instance) < InstructionInfo.paramRegister.Length)
                 {
-                    emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.paramRegister[paramReg + i], expr.internalFunction.parameters[i].stack.size), arg));
+                    emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.paramRegister[Convert.ToInt16(instance) + i], expr.internalFunction.parameters[i].stack.size), arg));
                 }
                 else
                 {
@@ -106,8 +100,31 @@ namespace Raze
                 }
             }
 
+            
+            if (instance)
+            {
+                if (!expr.constructor)
+                {
+                    if (expr.get != null)
+                    {
+                        for (int i = expr.offsets.Length - 1; i >= 1; i--)
+                        {
+                            emit(new Instruction.Binary("MOV", new Instruction.Register(CurrentRegister(), Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer((i == expr.offsets.Length - 1) ? Instruction.Register.RegisterName.RBP : CurrentRegister(), expr.offsets[i].stackOffset, 8)));
+                        }
+                        emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.paramRegister[0], Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer((0 == expr.offsets.Length - 1) ? Instruction.Register.RegisterName.RBP : CurrentRegister(), expr.offsets[0].stackOffset, 8)));
+                    }
+                    else
+                    {
+                        emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.paramRegister[0], Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(8,8)));
+                    }
+                }
+                else
+                {
+                    emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.paramRegister[0], Instruction.Register.RegisterSize._64Bits), new Instruction.Register(Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits)));
+                }
+            }
 
-            string operand1 = expr.internalFunction.type.ToString();
+            string operand1 = expr.internalFunction.name.ToString();
 
 
             emit(new Instruction.Unary("CALL", new Instruction.ProcedureRef(operand1)));
@@ -157,7 +174,7 @@ namespace Raze
         public Instruction.Value? visitFunctionExpr(Expr.Function expr)
         {
             bool leafFunc = ((expr.leaf || expr.size == 0) && expr.size <= 128);
-            emit(new Instruction.Procedure(expr.type.ToString()));
+            emit(new Instruction.Procedure(expr.name.ToString()));
 
 
             Instruction.Binary? sub = null;

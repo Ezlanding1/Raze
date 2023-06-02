@@ -60,6 +60,7 @@ namespace Raze.Tools
         {
             offset = "";
         }
+
         public void PrintAST(List<Expr> exprs, bool first=true)
         {
             foreach (Expr expr in exprs)
@@ -86,24 +87,6 @@ namespace Raze.Tools
                 offset += "|  ";
                 expr.Accept(this);
                 offset = tmp;
-            }
-        }
-        private void PrintAST(List<Token> tokens)
-        {
-            foreach (Token token in tokens)
-            {
-                Console.Write(offset);
-                Console.WriteLine("├─'" + token.lexeme + "'");
-            }
-            
-        }
-
-        public void PrintAST(IEnumerable<string> exprs)
-        {
-            foreach (string s in exprs)
-            {
-                Console.Write(offset);
-                Console.WriteLine("├─'" + s+ "'");
             }
         }
 
@@ -139,7 +122,7 @@ namespace Raze.Tools
 
         public object? visitClassExpr(Expr.Class expr)
         {
-            PrintAST(expr.name);
+            PrintAST(expr.name.ToString());
             expr.topLevelBlock.Accept(this);
             expr.block.Accept(this);
             return null;
@@ -147,7 +130,7 @@ namespace Raze.Tools
 
         public object? visitFunctionExpr(Expr.Function expr)
         {
-            PrintAST(expr.name);
+            PrintAST(expr.name.ToString());
             foreach (Expr paramExpr in expr.parameters)
             {
                 PrintAST(paramExpr);
@@ -267,8 +250,7 @@ namespace Raze.Tools
 
         public object? visitPrimitiveExpr(Expr.Primitive expr)
         {
-            PrintAST(expr.name);
-            PrintAST(string.Join(", ", expr.literals));
+            PrintAST(expr.name.ToString());
             PrintAST(expr.size.ToString());
             PrintAST(expr.block);
             return null;
