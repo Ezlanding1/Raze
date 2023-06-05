@@ -21,8 +21,6 @@ namespace Raze
             Pass<object?> initialPass = new InitialPass(expressions);
             expressions = initialPass.Run();
 
-            SymbolTableSingleton.SymbolTable.TopContext();
-
             if (SymbolTableSingleton.SymbolTable.main == null)
             {
                 throw new Errors.AnalyzerError("Main Not Found", "No Main method for entrypoint found");
@@ -31,7 +29,7 @@ namespace Raze
             Pass<object?> mainPass = new MainPass(expressions);
             expressions = mainPass.Run();
 
-            Pass<Analyzer.Type> TypeChackPass = new TypeCheckPass(expressions);
+            Pass<Expr.Type> TypeChackPass = new TypeCheckPass(expressions);
             expressions = TypeChackPass.Run();
 
             CheckMain(SymbolTableSingleton.SymbolTable.main);
@@ -41,9 +39,9 @@ namespace Raze
 
         private void CheckMain(Expr.Function main)
         {
-            if (main._returnType.type.name.name.lexeme != "void" && !main._returnType.type.Matches(Analyzer.TypeCheckPass.literalTypes[Token.TokenType.INTEGER]))
+            if (main._returnType.type.name.lexeme != "void" && !Analyzer.TypeCheckPass.literalTypes[Token.TokenType.INTEGER].Matches(main._returnType.type))
             {
-                throw new Errors.AnalyzerError("Main Invalid Return Type", $"Main can only return types 'number', and 'void'. Got '{main._returnType}'");
+                throw new Errors.AnalyzerError("Main Invalid Return Type", $"Main can only return types 'number', and 'void'. Got '{main._returnType.type}'");
             }
 
             foreach (var item in main.modifiers)

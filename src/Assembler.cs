@@ -105,7 +105,7 @@ namespace Raze
             {
                 if (!expr.constructor)
                 {
-                    if (expr.get != null)
+                    if (expr.callee != null)
                     {
                         for (int i = expr.offsets.Length - 1; i >= 1; i--)
                         {
@@ -124,7 +124,7 @@ namespace Raze
                 }
             }
 
-            string operand1 = expr.internalFunction.name.ToString();
+            string operand1 = expr.internalFunction.ToString();
 
 
             emit(new Instruction.Unary("CALL", new Instruction.ProcedureRef(operand1)));
@@ -134,15 +134,19 @@ namespace Raze
                 emit(new Instruction.Binary("ADD", new Instruction.Register(Instruction.Register.RegisterName.RSP, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.Literals[0], ((expr.arguments.Count - InstructionInfo.paramRegister.Length) * 8).ToString())));
             }
             
+            //if (expr.get != null)
             return new Instruction.Register(Instruction.Register.RegisterName.RAX, InstructionInfo.ToRegisterSize(expr.internalFunction._returnSize));
+
+            //return this.visitGetReferenceExpr(expr.get);
         }
 
         public Instruction.Value? visitClassExpr(Expr.Class expr)
         {
-            foreach (var blockExpr in expr.block.block)
+            foreach (var blockExpr in expr.definitions)
             {
                 blockExpr.Accept(this);
             }
+            
             return null;
         }
 
@@ -174,7 +178,7 @@ namespace Raze
         public Instruction.Value? visitFunctionExpr(Expr.Function expr)
         {
             bool leafFunc = ((expr.leaf || expr.size == 0) && expr.size <= 128);
-            emit(new Instruction.Procedure(expr.name.ToString()));
+            emit(new Instruction.Procedure(expr.ToString()));
 
 
             Instruction.Binary? sub = null;
@@ -210,8 +214,18 @@ namespace Raze
                 emit(new Instruction.Binary("MOV", new Instruction.Pointer(paramExpr.stack.stackOffset, paramExpr.stack.size), new Instruction.Register(InstructionInfo.paramRegister[i+count], paramExpr.stack.size)));
             }
 
-            expr.block.Accept(this);
+            if (expr.constructor && expr.enclosing?.definitionType == Expr.Definition.DefinitionType.Class)
+            {
+                Expr.ListAccept(((Expr.Class)expr.enclosing).declarations, this);
+            }
 
+            foreach (var blockExpr in expr.block)
+            {
+                blockExpr.Accept(this);
+                registerIdx = 0;
+
+            }
+            
             if (!leafFunc)
             {
                 if (expr.size > 128)
@@ -472,10 +486,8 @@ namespace Raze
 
         public Instruction.Value? visitPrimitiveExpr(Expr.Primitive expr)
         {
-            foreach (var blockExpr in expr.block.block)
-            {
-                blockExpr.Accept(this);
-            }
+            Expr.ListAccept(expr.definitions, this);
+
             return null;
         }
 
@@ -550,13 +562,13 @@ namespace Raze
 
         private void DoFooter()
         {
-            foreach (var registerName in fncPushPreserved)
-            {
-                emit(new Instruction.Unary("POP", registerName));
-            }
-
             if (footerType)
             {
+                foreach (var registerName in fncPushPreserved)
+                {
+                    emit(new Instruction.Unary("POP", registerName));
+                }
+
                 emit(new Instruction.Unary("POP", Instruction.Register.RegisterName.RBP));
                 emit(new Instruction.Zero("RET"));
             }

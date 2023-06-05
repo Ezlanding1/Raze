@@ -42,30 +42,23 @@ namespace Raze
 
             public override object? visitFunctionExpr(Expr.Function expr)
             {
-                if (symbolTable.TryGetContainer(expr.name.name.lexeme, out _))
+                symbolTable.AddDefinition(expr);
+                
+                if (expr.enclosing == null)
                 {
-                    if (expr.name.name.lexeme == "Main")
-                    {
-                        throw new Errors.AnalyzerError("Double Declaration", "A Program may have only one 'Main' method");
-                    }
-                    throw new Errors.AnalyzerError("Double Declaration", $"Function '{expr.name.name.lexeme}()' was declared twice");
+                    symbolTable.AddGlobal(expr);
                 }
 
-                SetPath(expr);
-
-                symbolTable.Add(expr);
-
-                if (expr.name.name.lexeme == "Main")
+                if (expr.name.lexeme == "Main")
                 {
-                    if (SymbolTableSingleton.SymbolTable.main != null)
-                    {
-                        throw new Errors.AnalyzerError("Function Declared Twice", "A Program may have only one 'Main' method");
-                    }
                     expr.modifiers["static"] = true;
-                    SymbolTableSingleton.SymbolTable.main = expr;
+                    symbolTable.main = expr;
                 }
 
-                expr.block.Accept(this);
+                foreach (var blockExpr in expr.block)
+                {
+                    blockExpr.Accept(this);
+                }
 
                 symbolTable.UpContext();
 
@@ -93,7 +86,7 @@ namespace Raze
             {
                 if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
 
-                if (symbolTable.Current.IsPrimitive())
+                if (symbolTable.Current?.definitionType == Expr.Definition.DefinitionType.Primitive)
                 {
                     throw new Errors.AnalyzerError("Invalid Variable Declaration", "A variable may not be declared within a primitive definition");
                 }
@@ -103,27 +96,22 @@ namespace Raze
 
             public override object? visitClassExpr(Expr.Class expr)
             {
-                if (symbolTable.Current.IsFunc())
+                if (symbolTable.Current?.definitionType == Expr.Definition.DefinitionType.Function)
                 {
                     throw new Errors.AnalyzerError("Invalid Class Definition", "A class definition may be only within another class");
                 }
+                
+                symbolTable.AddDefinition(expr);
 
-                if (symbolTable.TryGetContainer(expr.name.name.lexeme, out _))
+                if (expr.enclosing == null)
                 {
-                    throw new Errors.AnalyzerError("Double Declaration", $"A class named '{expr.name.name.lexeme}' is already defined in this scope");
+                    symbolTable.AddGlobal(expr);
                 }
 
-                SetPath(expr);
+                Expr.ListAccept(expr.declarations, this);
+                Expr.ListAccept(expr.definitions, this);
 
-                expr.block._classBlock = true;
-                expr.topLevelBlock._classBlock = true;
-
-                symbolTable.Add(expr);
-
-                expr.topLevelBlock.Accept(this);
-                expr.block.Accept(this);
-
-                expr.constructor = GetConstructor();
+                GetConstructor();
 
                 symbolTable.UpContext();
                 return null;
@@ -167,11 +155,11 @@ namespace Raze
                     throw new Errors.AnalyzerError("Top Level Assembly Block", "Assembly Blocks must be placed in an unsafe function");
                 }
 
-                if (!symbolTable.Current.IsFunc())
+                if (symbolTable.Current?.definitionType != Expr.Definition.DefinitionType.Function)
                 {
                     throw new Errors.AnalyzerError("ASM Block Not In Function", "Assembly Blocks must be placed in functions");
                 }
-                if (symbolTable.Current.IsFunc() && !((SymbolTable.Symbol.Function)symbolTable.Current).self.modifiers["unsafe"])
+                if ((symbolTable.Current?.definitionType == Expr.Definition.DefinitionType.Function) && !((Expr.Function)symbolTable.Current).modifiers["unsafe"])
                 {
                     throw new Errors.AnalyzerError("Unsafe Code in Safe Function", "Mark a function with 'unsafe' to include unsafe code");
                 }
@@ -193,7 +181,7 @@ namespace Raze
 
             public override object visitAssignExpr(Expr.Assign expr)
             {
-                if (expr.member.typeName.Peek().lexeme == "this" && expr.member.typeName.Count == 1 && !symbolTable.NearestEnclosingClass().IsPrimitive()) { throw new Errors.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword cannot be assigned to");  }
+                if (expr.member.typeName.Peek().lexeme == "this" && expr.member.typeName.Count == 1 && (symbolTable.NearestEnclosingClass()?.definitionType != Expr.Definition.DefinitionType.Primitive)) { throw new Errors.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword cannot be assigned to");  }
 
                 expr.member.Accept(this);
                 return base.visitAssignExpr(expr);
@@ -201,21 +189,28 @@ namespace Raze
 
             public override object visitPrimitiveExpr(Expr.Primitive expr)
             {
-                if (symbolTable.Current.IsFunc())
+                if (symbolTable.Current?.definitionType == Expr.Definition.DefinitionType.Function)
                 {
                     throw new Errors.AnalyzerError("Invalid Class Definition", "A primitive class definition may be only within another class");
                 }
 
-                if (symbolTable.TryGetContainer(expr.name.name.lexeme, out _))
+                if (symbolTable.TryGetContainer(expr.name, out _))
                 {
-                    throw new Errors.AnalyzerError("Double Declaration", $"A primitive class named '{expr.name.name.lexeme}' is already defined in this scope");
+                    throw new Errors.AnalyzerError("Double Declaration", $"A primitive class named '{expr.name.lexeme}' is already defined in this scope");
                 }
 
-                SetPath(expr);
+                symbolTable.AddDefinition(expr);
 
-                symbolTable.Add(expr);
+                if (expr.enclosing == null)
+                {
+                    symbolTable.AddGlobal(expr);
+                }
 
-                expr.block.Accept(this);
+                foreach (var blockExpr in expr.definitions)
+                {
+                    blockExpr.Accept(this);
+                }
+                
 
                 symbolTable.UpContext();
 
@@ -233,14 +228,14 @@ namespace Raze
                 return null;
             }
 
-            private Expr.Function GetConstructor()
+            private void GetConstructor()
             {
-                if (!symbolTable.TryGetContainer(symbolTable.Current.Name.lexeme, out var symbol))
+                if (symbolTable.CurrentIsTop() || !symbolTable.TryGetContainer(symbolTable.Current.name, out var symbol))
                 {
                     throw new Errors.AnalyzerError("Class Without Constructor", "A Class must contain a constructor method");
                 }
 
-                var constructor = ((SymbolTable.Symbol.Function)symbol).self;
+                var constructor = (Expr.Function)symbol;
 
                 constructor.constructor = true;
 
@@ -248,10 +243,7 @@ namespace Raze
                 {
                     throw new Errors.AnalyzerError("Constructor Marked 'static'", "A constructor cannot have the 'static' modifier");
                 }
-                return constructor;
             }
-
-            private void SetPath(Expr.Definition definition) => definition.name.parent = symbolTable.CurrentIsTop()? null : symbolTable.Current.self.name;
         }
     }
 }

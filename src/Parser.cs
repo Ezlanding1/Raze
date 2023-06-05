@@ -46,9 +46,9 @@ namespace Raze
             return Definition();
         }
 
-        private Expr Definition()
+        private Expr.Definition _Definition()
         {
-            if (!isAtEnd() && ReservedValueMatch("function", "class", "asm", "define", "primitive"))
+            if (!isAtEnd() && ReservedValueMatch("function", "class", "primitive"))
             {
                 Token definitionType = previous();
                 if (definitionType.lexeme == "function")
@@ -75,7 +75,7 @@ namespace Raze
 
                         if (TypeMatch(Token.TokenType.DOT))
                         {
-                            _return = GetTypeGetter();
+                            _return = new Expr.TypeReference(GetTypeGetter());
                         }
                     }
                     else
@@ -91,12 +91,12 @@ namespace Raze
                     while (!TypeMatch(Token.TokenType.RPAREN))
                     {
                         Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter type");
-                        Expr.TypeReference type = GetTypeGetter();
+                        var typeName = GetTypeGetter();
 
                         Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter");
                         Token variable = previous();
 
-                        parameters.Add(new Expr.Parameter(type, variable));
+                        parameters.Add(new Expr.Parameter(typeName, variable));
                         if (TypeMatch(Token.TokenType.RPAREN))
                         {
                             break;
@@ -107,8 +107,26 @@ namespace Raze
                             throw new Errors.ParseError("Unexpected End In Function Parameters", $"Function '{name.lexeme}' reached an unexpected end during it's parameters");
                         }
                     }
-                    
-                    return new Expr.Function(modifiers, _return, name, parameters, GetBlock(definitionType.lexeme));
+
+                    List<Expr> block = new();
+
+                    Expect(Token.TokenType.LBRACE, "'{' before class body");
+                    while (!TypeMatch(Token.TokenType.RBRACE))
+                    {
+                        block.Add(Start());
+
+                        if (isAtEnd())
+                        {
+                            Expect(Token.TokenType.RBRACE, "'}' after block");
+                        }
+                        if (TypeMatch(Token.TokenType.RBRACE))
+                        {
+                            break;
+                        }
+                    }
+
+                    // make it back to (improved) old system. save Token name  (make sure it will still work with ToString)
+                    return new Expr.Function(modifiers, _return, name, parameters, block);
                 }
                 else if (definitionType.lexeme == "class")
                 {
@@ -120,20 +138,37 @@ namespace Raze
                         throw new Errors.ParseError("Invalid Class", $"The name of a class may not be a literal ({name.lexeme})");
                     }
 
-                    return new Expr.Class(name, GetBlock(definitionType.lexeme), new(null));
-                }
-                else if (definitionType.lexeme == "asm")
-                {
-                    var instructions = GetAsmInstructions();
-                    return new Expr.Assembly(instructions.Item1, instructions.Item2);
-                }
-                else if (definitionType.lexeme == "define")
-                {
-                    Expect(Token.TokenType.IDENTIFIER, "name of 'Define'");
-                    var name = previous();
+                    List<Expr.Declare> declarations = new();
+                    List<Expr.Definition> definitions = new();
 
-                    return new Expr.Define(name, Literal()
-                        ?? throw new Errors.ParseError("Invalid Define", "The value of 'Define' should be a literal"));
+                    Expect(Token.TokenType.LBRACE, "'{' before class body");
+                    while (!TypeMatch(Token.TokenType.RBRACE))
+                    {
+                        Expr.Declare? declExpr = FullDeclare();
+                        if (declExpr != null)
+                        {
+                            declarations.Add(declExpr);
+                        }
+                        else
+                        {
+                            Expr.Definition? definitionExpr = _Definition();
+                            if (definitionExpr != null)
+                            {
+                                definitions.Add(definitionExpr);
+                            }
+                            else
+                            {
+                                throw new Errors.ParseError("Invalid Class Definition", $"A class may only contain declarations and definitions. Got '{previous().lexeme}'");
+                            }
+                        }
+
+                        if (isAtEnd())
+                        {
+                            Expect(Token.TokenType.RBRACE, "'}' after block");
+                        }
+                    }
+
+                    return new Expr.Class(name, declarations, definitions, new(null));
                 }
                 else if (definitionType.lexeme == "primitive")
                 {
@@ -170,9 +205,54 @@ namespace Raze
                         }
                     }
 
-                    var block = GetBlock(definitionType.lexeme);
+                    List<Expr.Definition> definitions = new();
+                    Expect(Token.TokenType.LBRACE, "'{' before primitive class body");
+                    while (!TypeMatch(Token.TokenType.RBRACE))
+                    {
+                        Expr.Definition? bodyExpr = _Definition();
+                        if (bodyExpr != null)
+                        {
+                            definitions.Add(bodyExpr);
+                        }
+                        else
+                        {
+                            throw new Errors.ParseError("Invalid Class Definition", $"A class may only contain declarations and definitions. Got '{previous().lexeme}'");
+                        }
 
-                    return new Expr.Primitive(name, block, int.Parse(size.lexeme), type);
+                        if (isAtEnd())
+                        {
+                            Expect(Token.TokenType.RBRACE, "'}' after block");
+                        }
+                    }
+
+                    return new Expr.Primitive(name, definitions, int.Parse(size.lexeme), type);
+                }
+            }
+            return null;
+        }
+
+        private Expr Definition()
+        {
+            return _Definition() ?? Entity();
+        }
+
+        private Expr Entity()
+        {
+            if (!isAtEnd() && ReservedValueMatch("asm", "define"))
+            {
+                Token definitionType = previous();
+                if (definitionType.lexeme == "asm")
+                {
+                    var instructions = GetAsmInstructions();
+                    return new Expr.Assembly(instructions.Item1, instructions.Item2);
+                }
+                else if (definitionType.lexeme == "define")
+                {
+                    Expect(Token.TokenType.IDENTIFIER, "name of 'Define'");
+                    var name = previous();
+
+                    return new Expr.Define(name, Literal()
+                        ?? throw new Errors.ParseError("Invalid Define", "The value of 'Define' should be a literal"));
                 }
             }
             return Conditional();
@@ -367,7 +447,7 @@ namespace Raze
             while (!isAtEnd() && ReservedValueMatch("is"))
             {
                 Expect(Token.TokenType.IDENTIFIER, "type after 'is' operator");
-                expr = new Expr.Is(expr, GetTypeGetter());
+                expr = new Expr.Is(expr, new Expr.TypeReference(GetTypeGetter()));
             }
             return expr;
         }
@@ -376,41 +456,27 @@ namespace Raze
         {
             if (!isAtEnd())
             {
-                Expr? x = null;
-                if ((x = Literal()) != null)
+                Expr? expr = Literal();
+
+                if (expr != null)
                 {
-                    return x;
+                    return expr;
                 }
 
                 if (TypeMatch(Token.TokenType.LPAREN))
                 {
-                    Expr expr = Logical();
+                    Expr logical = Logical();
                     Expect(Token.TokenType.RPAREN, "')' after expression.");
-                    return new Expr.Grouping(expr);
+                    return new Expr.Grouping(logical);
                 }
 
                 if (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this"))
                 {
-                    Expr expr = null;
-                    
                     var variable = GetGetter();
 
                     if (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this"))
                     {
-                        if (variable.Item2)
-                        {
-                            throw new Errors.ParseError("Invalid Assign Statement", "Cannot assign to a non-variable");
-                        }
-
-                        var name = previous();
-                        if (name.lexeme == "this")
-                        {
-                            throw new Errors.ParseError("Invalid 'This' Keyword", "The 'this' keyword may only be used in a member to reference the enclosing class");
-                        }
-                        Expect(Token.TokenType.EQUALS, "'=' when declaring variable");
-                        Expr value = NoSemicolon();
-
-                        expr = new Expr.Declare((Expr.TypeReference)variable.Item1, name, value);
+                        expr = Declare(variable);
                     }
                     else if (TypeMatch(Token.TokenType.EQUALS))
                     {
@@ -468,6 +534,45 @@ namespace Raze
             return null;
         }
 
+        private Expr.Declare? FullDeclare()
+        {
+            if (TypeMatch(Token.TokenType.IDENTIFIER))
+            {
+                Expr.Declare declare = null;
+
+                var variable = GetGetter();
+
+                if (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this"))
+                {
+                    declare = Declare(variable);
+                }
+                else
+                {
+                    throw new Errors.ParseError("Invalid Class Definition", $"A class may only contain declarations and definitions");
+                }
+                Expect(Token.TokenType.SEMICOLON, "';' after expression");
+                return declare;
+            }
+            return null;
+        }
+
+        private Expr.Declare Declare((Expr.GetReference, bool) variable)
+        {
+            if (variable.Item2)
+            {
+                throw new Errors.ParseError("Invalid Assign Statement", "Cannot assign to a non-variable");
+            }
+
+            var name = previous();
+            if (name.lexeme == "this")
+            {
+                throw new Errors.ParseError("Invalid 'This' Keyword", "The 'this' keyword may only be used in a member to reference the enclosing class");
+            }
+            Expect(Token.TokenType.EQUALS, "'=' when declaring variable");
+
+            return new Expr.Declare(variable.Item1.typeName, name, NoSemicolon());
+        }
+
         private (Expr.GetReference, bool) GetGetter()
         {
             Queue<Token> typeName = new Queue<Token>();
@@ -486,7 +591,7 @@ namespace Raze
                 if (TypeMatch(Token.TokenType.LPAREN))
                 {
                     var args = GetArgs();
-                    return (new Expr.Call(variable, typeName, (peek().type != Token.TokenType.DOT)? null : GetGetter().Item1, args), true);
+                    return (new Expr.Call(variable, typeName, (peek().type != Token.TokenType.DOT) ? null : GetGetter().Item1, args), true);
                 }
                 else
                 {
@@ -524,7 +629,7 @@ namespace Raze
             throw Expected(Token.TokenType.LPAREN.ToString(), "'(' after type in new expression");
         }
 
-        private Expr.TypeReference GetTypeGetter()
+        private Queue<Token> GetTypeGetter()
         {
             Queue<Token> typeName = new Queue<Token>();
             typeName.Enqueue(previous());
@@ -535,7 +640,7 @@ namespace Raze
                 typeName.Enqueue(previous());
             }
 
-            return new Expr.TypeReference(typeName);
+            return typeName;
         }
 
 

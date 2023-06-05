@@ -27,11 +27,9 @@
                 {
                     blockExpr.Accept(this);
                 }
+                
+                symbolTable.RemoveBlock();
 
-                if (!expr._classBlock)
-                {
-                    symbolTable.RemoveUnderCurrent();
-                }
                 return null;
             }
 
@@ -50,8 +48,7 @@
 
                 if (expr.callee != null)
                 {
-                    instanceCall = symbolTable.TryGetVariable(expr.callee.Peek().lexeme, out SymbolTable.Symbol.Variable topSymbol_I, out _);
-
+                    instanceCall = symbolTable.TryGetVariable(expr.callee.Peek(), out var topSymbol_I, out _);
                     if (instanceCall)
                     {
                         this.visitGetReferenceExpr(expr);
@@ -63,15 +60,15 @@
                 }
 
                 symbolTable.SetContext(symbolTable.NearestEnclosingClass());
-                symbolTable.SetContext(symbolTable.GetContainer(expr.name.lexeme, true));
+                symbolTable.SetContext(symbolTable.GetDefinition(expr.name, true));
 
                 // 
-                if (!symbolTable.Current.IsFunc())
+                if (symbolTable.Current.definitionType != Expr.Definition.DefinitionType.Function)
                 {
                     throw new Exception();
                 }
 
-                var callee = ((SymbolTable.Symbol.Function)symbolTable.Current).self;
+                var callee = ((Expr.Function)symbolTable.Current);
 
                 if (!expr.constructor && callee.constructor)
                 {
@@ -96,7 +93,7 @@
 
                 if (expr.arguments.Count != callee.arity)
                 {
-                    throw new Errors.BackendError("Arity Mismatch", $"Arity of call for {callee.name.ToString()} ({expr.arguments.Count}) does not match the definition's arity ({callee.arity})");
+                    throw new Errors.BackendError("Arity Mismatch", $"Arity of call for {callee} ({expr.arguments.Count}) does not match the definition's arity ({callee.arity})");
                 }
 
                 expr.internalFunction = callee;
@@ -116,11 +113,10 @@
 
             public override object? visitClassExpr(Expr.Class expr)
             {
-                symbolTable.SetContext(symbolTable.GetContainer(expr.name.name.lexeme));
+                symbolTable.SetContext(symbolTable.GetDefinition(expr.name));
 
-                expr.topLevelBlock.Accept(this);
-                expr.block.Accept(this);
-
+                Expr.ListAccept(expr.declarations, this);
+                Expr.ListAccept(expr.definitions, this);
 
                 symbolTable.UpContext();
 
@@ -131,63 +127,61 @@
             {
                 var name = expr.name;
 
-                if (symbolTable.TryGetVariable(name.lexeme, out _, out _, true))
+                if (symbolTable.TryGetVariable(name, out _, out _, true))
                 {
-                    throw new Errors.AnalyzerError("Double Declaration", $"A variable named '{name.lexeme}' is already defined in this scope");
+                    throw new Errors.AnalyzerError("Double Declaration", $"A variable named '{name.lexeme}' is already declared in this scope");
                 }
 
-                if (symbolTable.Current.IsClass())
+                if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Class)
                 {
                     expr.stack.classScoped = true;
                 }
 
                 expr.value.Accept(this);
-
-                var context = symbolTable.Current;
-
-                this.visitTypeReferenceExpr(expr.type);
-                (expr.stack.size, var definition) = symbolTable.Current.IsPrimitive() ? (((SymbolTable.Symbol.Primitive)symbolTable.Current).self.size, symbolTable.Current) : (8, symbolTable.Current);
-
-                symbolTable.SetContext(context);
-
-                expr.stack.type = ((Expr.DataType)definition.self).type.type;
-
-
-                symbolTable.Add(expr.stack, name, definition);
+                
+                symbolTable.Add(name, expr.stack, GetVariableDefinition(expr.typeName, expr.stack));
 
                 return null;
             }
 
             public override object? visitPrimitiveExpr(Expr.Primitive expr)
             {
-                symbolTable.SetContext(symbolTable.GetContainer(expr.name.name.lexeme));
+                symbolTable.SetContext(symbolTable.GetDefinition(expr.name));
 
-                switch (expr.type.typeName.Dequeue().lexeme)
+                if (expr.superclass.typeName.Count != 0)
+                {
+                    expr._Matches =
+                        (x) =>
+                        {
+                            return (x == expr || x == expr.superclass.type);
+                        };
+                }
+
+                switch (expr.superclass.typeName.Dequeue().lexeme)
                 {
                     case "INTEGER":
-                        expr.type.type.parent = TypeCheckPass.literalTypes[Parser.Literals[0]];
+                        expr.superclass.type = TypeCheckPass.literalTypes[Parser.Literals[0]];
                         break;
                     case "FLOATING":
-                        expr.type.type.parent = TypeCheckPass.literalTypes[Parser.Literals[1]];
+                        expr.superclass.type = TypeCheckPass.literalTypes[Parser.Literals[1]];
                         break;
                     case "STRING":
-                        expr.type.type.parent = TypeCheckPass.literalTypes[Parser.Literals[2]];
+                        expr.superclass.type = TypeCheckPass.literalTypes[Parser.Literals[2]];
                         break;
                     case "BINARY":
-                        expr.type.type.parent = TypeCheckPass.literalTypes[Parser.Literals[3]];
+                        expr.superclass.type = TypeCheckPass.literalTypes[Parser.Literals[3]];
                         break;
                     case "HEX":
-                        expr.type.type.parent = TypeCheckPass.literalTypes[Parser.Literals[4]];
+                        expr.superclass.type = TypeCheckPass.literalTypes[Parser.Literals[4]];
                         break;
                     case "BOOLEAN":
-                        expr.type.type.parent = TypeCheckPass.literalTypes[Parser.Literals[5]];
+                        expr.superclass.type = TypeCheckPass.literalTypes[Parser.Literals[5]];
                         break;
                     default: 
                         throw new Errors.ImpossibleError("Invalid primitive superclass");
                 }
 
-                expr.block.Accept(this);
-
+                Expr.ListAccept(expr.definitions, this);
 
                 symbolTable.UpContext();
 
@@ -196,14 +190,14 @@
 
             public override object? visitFunctionExpr(Expr.Function expr)
             {
-                symbolTable.SetContext(symbolTable.GetContainer(expr.name.name.lexeme, true));
+                symbolTable.SetContext(symbolTable.GetDefinition(expr.name, true));
 
                 if (expr._returnType.typeName.Peek().type != Token.TokenType.RESERVED && expr._returnType.typeName.Peek().lexeme != "void")
                 {
                     var context = symbolTable.Current;
                     expr._returnType.Accept(this);
-                    expr._returnType.type = ((Expr.DataType)symbolTable.Current.self).type.type;
-                    expr._returnSize = symbolTable.Current.IsPrimitive() ? ((SymbolTable.Symbol.Primitive)symbolTable.Current).self.size : 8;
+                    expr._returnType.type = (Expr.DataType)symbolTable.Current;
+                    expr._returnSize = (symbolTable.Current?.definitionType == Expr.Definition.DefinitionType.Primitive) ? ((Expr.Primitive)symbolTable.Current).size : 8;
                     symbolTable.SetContext(context);
                 }
                 else
@@ -218,36 +212,23 @@
 
                 if (instance)
                 {
-                    symbolTable.Current.self.size += 8;
+                    symbolTable.Current.size += 8;
                 }
 
                 for (int i = 0; i < expr.arity; i++)
                 {
                     Expr.Parameter paramExpr = expr.parameters[i];
-                    var context = symbolTable.Current;
 
-                    paramExpr.Accept(this);
-
-                    (paramExpr.stack.size, var definition) = symbolTable.Current.IsPrimitive() ? (((SymbolTable.Symbol.Primitive)symbolTable.Current).self.size, symbolTable.Current) : (8, symbolTable.Current);
-
-                    symbolTable.SetContext(context);
-
-                    paramExpr.stack.type = ((Expr.DataType)definition.self).type.type;
-
-                    symbolTable.Add(paramExpr, definition, i+Convert.ToInt16(instance), expr.arity);
+                    symbolTable.Add(paramExpr.name, paramExpr.stack, GetVariableDefinition(paramExpr.typeName, paramExpr.stack), i+Convert.ToInt16(instance), expr.arity);
                 }
 
-                expr.block.Accept(this);
-
-
-                symbolTable.RemoveUnderCurrent();
-                symbolTable.UpContext();
-
-                if (expr.constructor)
+                foreach (Expr blockExpr in expr.block)
                 {
-                    // Assumes a function is enclosed by a class (no nested functions)
-                    expr.block.Extend(((SymbolTable.Symbol.Class)symbolTable.Current).self.topLevelBlock);
+                    blockExpr.Accept(this);
                 }
+
+                symbolTable.RemoveBlock();
+                symbolTable.UpContext();
 
                 return null;
             }
@@ -264,30 +245,30 @@
 
                     while (expr.typeName.Count > 1)
                     {
-                        if (symbolTable.Current.IsPrimitive())
+                        if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Primitive)
                         {
                             throw new Errors.AnalyzerError("Primitive Field Access", "Primitive classes cannot contain fields");
                         }
 
-                        SymbolTable.Symbol.Variable variable;
+                        Expr.StackData variable;
 
                         if (expr.offsets.Length == expr.typeName.Count)
                         {
-                            variable = symbolTable.GetVariable(expr.typeName.Dequeue().lexeme, out isClassScoped);
+                            variable = symbolTable.GetVariable(expr.typeName.Dequeue(), out isClassScoped);
                         }
                         else 
                         {
-                            variable = symbolTable.GetVariable(expr.typeName.Dequeue().lexeme);
+                            variable = symbolTable.GetVariable(expr.typeName.Dequeue());
                         }
                             
 
-                        expr.offsets[expr.typeName.Count] = new(variable.self.stackOffset);
+                        expr.offsets[expr.typeName.Count] = new(variable.stackOffset);
 
-                        symbolTable.SetContext(variable.definition);
+                        symbolTable.SetContext(variable.type);
 
                         if (expr.typeName.Count == 0)
                         {
-                            expr.type = variable.self.type;
+                            expr.type = variable.type;
                         }
                     }
                 }
@@ -295,13 +276,13 @@
 
                 if (expr.typeName.Peek().lexeme == "this")
                 {
-                    expr.stack = new(((Expr.DataType)symbolTable.NearestEnclosingClass().self).type.type, false, 8, 8, false);
+                    expr.stack = new(symbolTable.NearestEnclosingClass(), false, 8, 8, false);
                 }
-                else if (symbolTable.TryGetVariable(expr.typeName.Peek().lexeme, out SymbolTable.Symbol.Variable symbol, out bool isClassScopedVar))
+                else if (symbolTable.TryGetVariable(expr.typeName.Peek(), out var symbol, out bool isClassScopedVar))
                 {
                     expr.typeName.Dequeue();
 
-                    expr.stack = new Expr.StackData(symbol.self.type, symbol.self.plus, symbol.self.size, symbol.self.stackOffset, (expr.offsets.Length == 1)? isClassScopedVar : isClassScoped);
+                    expr.stack = new Expr.StackData(symbol.type, symbol.plus, symbol.size, symbol.stackOffset, (expr.offsets.Length == 1)? isClassScopedVar : isClassScoped);
                 }
                 else
                 {
@@ -351,13 +332,11 @@
             {
                 var context = symbolTable.Current;
 
-                CurrentCalls();
-
                 expr.call.constructor = true;
 
                 expr.call.Accept(this);
 
-                expr.internalClass = ((SymbolTable.Symbol.Class)symbolTable.Current.enclosing).self;
+                expr.internalClass = (Expr.Class)symbolTable.Current.enclosing;
 
                 symbolTable.SetContext(context);
 
@@ -379,12 +358,7 @@
 
             public override object visitTypeReferenceExpr(Expr.TypeReference expr)
             {
-                symbolTable.SetContext(symbolTable.GetClassFullScope(expr.typeName.Dequeue().lexeme));
-
-                while (expr.typeName.Count > 0)
-                {
-                    symbolTable.SetContext(symbolTable.GetContainer(expr.typeName.Dequeue().lexeme));
-                }
+                HandleTypeNameReference(expr.typeName);
 
                 return null;
             }
@@ -395,23 +369,37 @@
 
                 while (expr.typeName.Count > 0)
                 {
-                    if (symbolTable.Current.IsPrimitive())
+                    if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Primitive)
                     {
                         throw new Errors.AnalyzerError("Primitive Field Access", "Primitive classes cannot contain fields");
                     }
 
-                    var variable = symbolTable.GetVariable(expr.typeName.Dequeue().lexeme);
+                    var variable = symbolTable.GetVariable(expr.typeName.Dequeue());
 
-                    expr.offsets[expr.typeName.Count] = new(variable.self.stackOffset);
+                    expr.offsets[expr.typeName.Count] = new(variable.stackOffset);
 
-                    symbolTable.SetContext(variable.definition);
+                    symbolTable.SetContext(variable.type);
 
                     if (expr.typeName.Count == 0)
                     {
-                        expr.type = variable.self.type;
+                        expr.type = variable.type;
                     }
                 }
                 return null;
+            }
+
+            private Expr.Definition GetVariableDefinition(Queue<Token> typeName, Expr.StackData stack)
+            {
+                var context = symbolTable.Current;
+
+                HandleTypeNameReference(typeName);
+
+                stack.size = (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Primitive) ? ((Expr.Primitive)symbolTable.Current).size : 8;
+                var definition = symbolTable.Current;
+
+                symbolTable.SetContext(context);
+
+                return definition;
             }
             
             private bool HandleThisCase(Expr.GetReference expr)
@@ -426,11 +414,21 @@
 
                     if (expr.typeName.Count == 0)
                     {
-                        expr.type = ((Expr.DataType)symbolTable.Current.self).type.type;
+                        expr.type = ((Expr.DataType)symbolTable.Current);
                     }
                     return true;
                 }
                 return false;
+            }
+
+            private void HandleTypeNameReference(Queue<Token> typeName)
+            {
+                symbolTable.SetContext(symbolTable.GetClassFullScope(typeName.Dequeue()));
+
+                while (typeName.Count > 0)
+                {
+                    symbolTable.SetContext(symbolTable.GetDefinition(typeName.Dequeue()));
+                }
             }
 
             private void HandleConditional(Expr.Conditional expr)
@@ -443,9 +441,9 @@
 
             private void CurrentCalls()
             {
-                if (symbolTable.Current.IsFunc())
+                if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Function)
                 {
-                    ((SymbolTable.Symbol.Function)symbolTable.Current).self.leaf = false;
+                    ((Expr.Function)symbolTable.Current).leaf = false;
                 }
             }
         }

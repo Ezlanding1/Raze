@@ -47,8 +47,8 @@ namespace Raze
 
             public virtual T visitClassExpr(Expr.Class expr)
             {
-                expr.topLevelBlock.Accept(this);
-                expr.block.Accept(this);
+                Expr.ListAccept(expr.declarations, this);
+                Expr.ListAccept(expr.definitions, this);
                 return default(T);
             }
 
@@ -62,11 +62,7 @@ namespace Raze
 
             public virtual T visitFunctionExpr(Expr.Function expr)
             {
-                foreach (Expr.Parameter paramExpr in expr.parameters)
-                {
-                    paramExpr.Accept(this);
-                }
-                expr.block.Accept(this);
+                Expr.ListAccept(expr.block, this);
                 return default(T);
             }
 
@@ -129,7 +125,7 @@ namespace Raze
 
             public virtual T visitPrimitiveExpr(Expr.Primitive expr)
             {
-                expr.block.Accept(this);
+                Expr.ListAccept(expr.definitions, this);
                 return default(T);
             }
 

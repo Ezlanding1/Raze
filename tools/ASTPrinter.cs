@@ -122,20 +122,26 @@ namespace Raze.Tools
 
         public object? visitClassExpr(Expr.Class expr)
         {
-            PrintAST(expr.name.ToString());
-            expr.topLevelBlock.Accept(this);
-            expr.block.Accept(this);
+            PrintAST(expr.ToString());
+            Expr.ListAccept(expr.declarations, this);
+            Expr.ListAccept(expr.definitions, this);
             return null;
         }
 
         public object? visitFunctionExpr(Expr.Function expr)
         {
-            PrintAST(expr.name.ToString());
-            foreach (Expr paramExpr in expr.parameters)
+            PrintAST(expr.ToString());
+
+            foreach (Expr.Parameter paramExpr in expr.parameters)
             {
-                PrintAST(paramExpr);
+                foreach (var type in paramExpr.typeName)
+                {
+                    PrintAST(type);
+                }
             }
-            expr.block.Accept(this);
+
+            Expr.ListAccept(expr.block, this);
+
             return null;
         }
 
@@ -185,7 +191,11 @@ namespace Raze.Tools
 
         public object? visitDeclareExpr(Expr.Declare expr)
         {
-            PrintAST(expr.type.ToString());
+            foreach (var type in expr.typeName)
+            {
+                PrintAST(type);
+            }
+
             PrintAST(expr.name);
 
             if (expr.value != null)
@@ -250,9 +260,9 @@ namespace Raze.Tools
 
         public object? visitPrimitiveExpr(Expr.Primitive expr)
         {
-            PrintAST(expr.name.ToString());
+            PrintAST(expr.ToString());
             PrintAST(expr.size.ToString());
-            PrintAST(expr.block);
+            Expr.ListAccept(expr.definitions, this);
             return null;
         }
 

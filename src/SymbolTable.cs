@@ -11,175 +11,241 @@ namespace Raze
     {
         internal class SymbolTable
         {
-            public TypeName global = new(null, null);
-
-            private Symbol.Class head;
-            private Symbol.Container current;
-            public Symbol.Container Current
-            {
-                get { return this.current; }
-                private set
-                {
-                    this.current = value;
-                }
-            }
-
-            private Block block;
+            private Expr.Definition? current = null;
+            public Expr.Definition? Current { get => current; private set => current = value; }
 
             public Expr.Function main = null;
 
-            public SymbolTable()
+            private List<Expr.Definition> globals = new();
+
+            private List<(Token, Expr.StackData)> locals = new();
+            Stack<int> framePointer = new();
+
+            public void SetContext(Expr.Definition? current)
             {
-                this.head = new Symbol.Class(null);
-                this.Current = this.head;
-                this.block = new(null);
+                this.current = current;
             }
 
-            public void Add(Expr.StackData v, Token name, Symbol.Container definition)
+
+            public void Add(Token name, Expr.StackData variable, Expr.Definition definition)
             {
-                block.keys.Add(name.lexeme);
-
-                var _ = new Symbol.Variable(v, name, definition);
-
-                Current.self.size += v.size;
-                v.stackOffset = Current.self.size;
-
-                Current.variables.Add(_.Name.lexeme, _);
+                current.size += variable.size;
+                variable.stackOffset = current.size;
+                variable.type = definition;
+                
+                if (current.definitionType == Expr.Definition.DefinitionType.Function)
+                {
+                    locals.Add(new(name, variable));
+                }
             }
 
-            public void Add(Expr.Class c)
+            public void Add(Token name, Expr.StackData parameter, Expr.Definition definition, int i, int arity)
             {
-                var _ = new Symbol.Class(c);
-                Current.containers.Add(_.Name.lexeme, _);
-                _.enclosing = Current;
-                Current = _;
-            }
-
-            public void Add(Expr.Primitive p)
-            {
-                var _ = new Symbol.Primitive(p);
-                Current.containers.Add(_.Name.lexeme, _);
-                _.enclosing = Current;
-                Current = _;
-            }
-
-            public void Add(Expr.Function f)
-            {
-                var _ = new Symbol.Function(f);
-                Current.containers.Add(_.Name.lexeme, _);
-                _.enclosing = Current;
-                Current = _;
-            }
-
-            public void Add(Expr.Parameter p, Symbol.Container definition, int i, int arity)
-            {
-                block.keys.Add(p.name.lexeme);
-
-                var _ = new Symbol.Variable(p.stack, p.name, definition);
-
                 if (i < InstructionInfo.paramRegister.Length)
                 {
-                    Current.self.size += p.stack.size;
-                    p.stack.stackOffset = Current.self.size;
+                    current.size += parameter.size;
+                    parameter.stackOffset = current.size;
                 }
                 else
                 {
-                    p.stack.plus = true;
-                    p.stack.stackOffset = (8 * ((arity - i))) + 8;
+                    parameter.plus = true;
+                    parameter.stackOffset = (8 * ((arity - i))) + 8;
                 }
 
-                Current.variables.Add(_.Name.lexeme, _);
+                parameter.type = definition;
+
+                if (current.definitionType == Expr.Definition.DefinitionType.Function)
+                {
+                    locals.Add(new(name, parameter));
+                }
             }
+
+            public void AddDefinition(Expr.Definition definition)
+            {
+                definition.enclosing = Current;
+                SetContext(definition);
+            }
+            public void AddDefinition(Expr.DataType definition)
+            {
+                foreach (var duplicate in definition.definitions.GroupBy(x => x).Where(x => x.Count() > 1).Select(x => x.Key))
+                {
+                    if (duplicate.definitionType == Expr.Definition.DefinitionType.Function)
+                    {
+                        if (duplicate.name.lexeme == "Main")
+                        {
+                            throw new Errors.AnalyzerError("Double Declaration", "A Program may have only one 'Main' method");
+                        }
+
+                        throw new Errors.AnalyzerError("Double Declaration", $"A function named '{duplicate.name.lexeme}' is already defined in this scope");
+                    }
+                    else
+                    {
+                        throw new Errors.AnalyzerError("Double Declaration", $"A class named '{duplicate.name.lexeme}' is already defined in this scope");
+                    }
+                }
+                AddDefinition((Expr.Definition)definition);
+            }
+            public void AddDefinition(Expr.Class definition)
+            {
+                foreach (var duplicate in (definition).declarations.GroupBy(x => x).Where(x => x.Count() > 1).Select(x => x.Key))
+                {
+                    throw new Errors.AnalyzerError("Double Declaration", $"A variable named '{duplicate.name.lexeme}' is already declared in this scope");
+                }
+                AddDefinition((Expr.DataType)definition);
+            }
+
+            public void CreateBlock() => framePointer.Push(locals.Count);
+
+            public void RemoveBlock() => locals.RemoveRange(framePointer.Peek(), locals.Count - framePointer.Pop());
 
             //public void Add(Expr.Define d)
             //{
             //    var _ = new Symbol.Define(d);
-            //    Current.variables.Add(_.Name.lexeme, _);
+            //    current.variables.Add(_.Name.lexeme, _);
             //}
 
             // 'Get' Methods:
 
-            public Symbol.Variable GetVariable(string key)
+            public Expr.StackData GetVariable(Token key)
             {
                 return GetVariable(key, out _);
             }
-            public Symbol.Variable GetVariable(string key, out bool isClassScoped)
-            {
-                if(Current.variables.TryGetValue(key, out var value))
-                {
-                    isClassScoped = Current.IsClass();
-                    return value;
-                }
 
-                if (Current.IsFunc() && (!((Symbol.Function)Current).self.modifiers["static"]))
+            public Expr.StackData GetVariable(Token key, out bool isClassScoped)
+            {
+                for (int i = locals.Count-1; i >= 0; i--)
                 {
-                    if (Current.enclosing.variables.TryGetValue(key, out var classValue))
+                    if (key.lexeme == locals[i].Item1.lexeme)
                     {
-                        isClassScoped = true;
-                        return classValue;
+                        isClassScoped = false;
+                        return locals[i].Item2;
                     }
                 }
+
+                if (!(current.definitionType == Expr.Definition.DefinitionType.Function && (((Expr.Function)current).modifiers["static"])))
+                {
+                    var x = NearestEnclosingClass();
+                    switch (x?.definitionType)
+                    {
+                        case Expr.Definition.DefinitionType.Class:
+                            {
+                                if (TryGetValue(((Expr.Class)x).declarations, key, out var value))
+                                {
+                                    isClassScoped = true;
+                                    return value.stack;
+                                }
+                            }
+                            break;
+                        case Expr.Definition.DefinitionType.Primitive:
+                            {
+                                if (key.lexeme == "this")
+                                {
+                                    isClassScoped = false;
+                                    return ((Expr.Primitive)x)._this;
+                                }
+                            }
+                            break;
+                        case null:
+                            break;
+                    }
+                }
+
                 throw new Errors.AnalyzerError("Undefined Reference", $"The variable '{key}' does not exist in the current context");
             }
-            public Symbol.Container GetContainer(string key, bool func = false)
+
+            public Expr.Definition GetDefinition(Token key, bool func = false)
             {
-                if (Current.containers.TryGetValue(key, out var value))
+                if (current == null)
+                {
+                    if (TryGetValue(globals, key, out var globalValue))
+                    {
+                        return globalValue;
+                    }
+                    throw new Errors.AnalyzerError("Undefined Reference", $"The {(func ? "function" : "class")} '{key}' does not exist in the current context");
+                }
+
+                if (current.definitionType == Expr.Definition.DefinitionType.Function)
+                {
+                    throw new Errors.ImpossibleError("Requested function's definitions");
+                }
+
+                if (TryGetValue(((Expr.DataType)current).definitions, key, out var value))
                 {
                     return value;
                 }
+
                 throw new Errors.AnalyzerError("Undefined Reference", $"The {(func ? "function" : "class")} '{key}' does not exist in the current context");
             }
-            public Symbol.Container GetClassFullScope(string key)
+
+            public Expr.DataType GetClassFullScope(Token key)
             {
-                var x = Current;
+                Expr.Definition? x = NearestEnclosingClass();
 
-                if (x.IsFunc())
+                while (x != null)
                 {
-                    x = x.enclosing;
-                }
-
-                while (!(x == head))
-                {
-
-                    if (x.Name.lexeme == key)
+                    if (x.name.lexeme == key.lexeme)
                     {
-                        return x;
+                        return (Expr.DataType)x;
                     }
-                    x = x.enclosing;
+                    x = (Expr.Definition)x.enclosing;
                 }
 
-                if (x.containers.TryGetValue(key, out Symbol.Container value))
+                if (TryGetValue(globals, key, out var value))
                 {
-                    if (value.IsFunc())
+                    if (value.definitionType == Expr.Definition.DefinitionType.Function)
                     {
                         throw new Errors.AnalyzerError("Undefined Reference", $"The class '{key}' does not exist in the current context");
                     }
-                    return value;
+                    return (Expr.DataType)value;
                 }
 
                 throw new Errors.AnalyzerError("Undefined Reference", $"The class '{key}' does not exist in the current context");
-
-
             }
 
             // 'TryGet' Methods:
 
-            public bool TryGetVariable(string key, out Symbol.Variable symbol, out bool isClassScoped, bool ignoreEnclosing = false)
+            public bool TryGetVariable(Token key, out Expr.StackData symbol, out bool isClassScoped, bool ignoreEnclosing = false)
             {
-                if (Current.variables.TryGetValue(key, out var value))
+                if (current?.definitionType == Expr.Definition.DefinitionType.Function)
                 {
-                    symbol = value;
-                    isClassScoped = Current.IsClass();
-                    return true;
+                    for (int i = locals.Count - 1; i >= 0; i--)
+                    {
+                        if (key.lexeme == locals[i].Item1.lexeme)
+                        {
+                            isClassScoped = false;
+                            symbol = locals[i].Item2;
+                            return true;
+                        }
+                    }
                 }
 
-                if (!ignoreEnclosing && Current.IsFunc() && (!((Symbol.Function)Current).self.modifiers["static"]))
+                if (!ignoreEnclosing && !(current.definitionType == Expr.Definition.DefinitionType.Function && (((Expr.Function)current).modifiers["static"])))
                 {
-                    if (Current.enclosing.variables.TryGetValue(key, out var classValue))
+                    var x = NearestEnclosingClass();
+                    switch (x?.definitionType)
                     {
-                        symbol = classValue;
-                        isClassScoped = true;
-                        return true;
+                        case Expr.Definition.DefinitionType.Class:
+                            {
+                                if (TryGetValue(((Expr.Class)x).declarations, key, out var value))
+                                {
+                                    isClassScoped = true;
+                                    symbol = value.stack;
+                                    return true;
+                                }
+                            }
+                            break;
+                        case Expr.Definition.DefinitionType.Primitive:
+                            {
+                                if (key.lexeme == "this")
+                                {
+                                    isClassScoped = false;
+                                    symbol = ((Expr.Primitive)x)._this;
+                                    return true;
+                                }
+                            }
+                            break;
+                        case null:
+                            break;
                     }
                 }
 
@@ -188,234 +254,72 @@ namespace Raze
                 return false;
             }
 
-            public bool TryGetContainer(string key, out Symbol.Container symbol)
+            public bool TryGetContainer(Token key, out Expr.Definition symbol)
             {
-                if (Current.containers.TryGetValue(key, out var value))
+                if (current == null)
                 {
-                    symbol = value;
-                    return true;
+                    return TryGetValue(globals, key, out symbol);
                 }
-                symbol = null;
-                return false;
+
+                if (current.definitionType == Expr.Definition.DefinitionType.Function)
+                {
+                    throw new Errors.ImpossibleError("Requested function's definitions");
+                }
+
+                return TryGetValue(((Expr.DataType)current).definitions, key, out symbol);
             }
 
 
-            public Symbol.Container NearestEnclosingClass()
+            public Expr.DataType? NearestEnclosingClass()
             {
                 // Assumes a function is enclosed by a class (no nested functions)
-                return Current.IsFunc() ? Current.enclosing : Current;
+                return (current.definitionType == Expr.Definition.DefinitionType.Function) ? (Expr.DataType)current.enclosing : (Expr.DataType)current;
             }
 
 
             public void UpContext()
             {
-                Current = Current.enclosing
-                    ?? throw new Errors.ImpossibleError("Up Context Called On 'GLOBAL' context (no enclosing)");
+                if (current == null)
+                    throw new Errors.ImpossibleError("Up Context Called On 'GLOBAL' context (no enclosing)");
+
+                current = (Expr.Definition)current.enclosing;
             }
 
-            public void CreateBlock()
+            public bool CurrentIsTop() => current == null;
+
+            public void AddGlobal(Expr.Definition definition)
             {
-                Block nBlock = new(block);
-                block = nBlock;
-            }
-
-            public void RemoveUnderCurrent()
-            {
-                foreach (var key in block.keys)
+                if (TryGetValue(globals, definition.name, out var duplicate))
                 {
-                    Current.variables.Remove(key);
-                }
-                block = block.enclosing;
-            }
-
-
-            public void TopContext() => Current = head;
-
-            public bool CurrentIsTop() => Current == head;
-
-            public void SetContext(Symbol.Container container) => Current = container;
-
-            class Block
-            {
-                public Block enclosing;
-                public List<string> keys;
-
-                public Block(Block enclosing)
-                {
-                    this.enclosing = enclosing;
-                    this.keys = new();
-                }
-            }
-
-            abstract internal class Symbol
-            {
-                public abstract Token Name { get; }
-
-                public enum SymbolType
-                {
-                    Class,
-                    Function,
-                    Primitive,
-                    Variable,
-                    Define
-                }
-
-                private SymbolType type;
-
-
-                public bool IsClass() => type == SymbolType.Class;
-                public bool IsFunc() => type == SymbolType.Function;
-                public bool IsPrimitive() => type == SymbolType.Primitive;
-                public bool IsVariable() => type == SymbolType.Variable;
-                public bool IsDefine() => type == SymbolType.Define;
-
-                public Symbol(SymbolType type)
-                {
-                    this.type = type;
-                }
-
-                abstract internal class Container : Symbol
-                {
-                    internal Container enclosing;
-
-                    internal abstract Dictionary<string, Variable> variables { get; }
-                    internal abstract Dictionary<string, Container> containers { get; }
-
-                    abstract internal Expr.Definition self
+                    if (duplicate.definitionType == Expr.Definition.DefinitionType.Function)
                     {
-                        get;
-                    }
-
-                    public Container(SymbolType type) : base(type)
-                    {
-                        this.enclosing = null;
-                    }
-                }
-
-                internal class Class : Container
-                {
-                    public override Token Name { get { return self.name.name; } }
-
-                    internal override Dictionary<string, Variable> variables
-                    {
-                        get => _variables;
-                    }
-                    internal override Dictionary<string, Container> containers
-                    {
-                        get => _containers;
-                    }
-
-                    internal Dictionary<string, Variable> _variables;
-                    internal Dictionary<string, Container> _containers;
-
-
-                    override internal Expr.Class self
-                    {
-                        get
+                        if (duplicate.name.lexeme == "Main")
                         {
-                            return _self;
+                            throw new Errors.AnalyzerError("Double Declaration", "A Program may have only one 'Main' method");
                         }
-                    }
-                    internal Expr.Class _self;
 
-                    public Class(Expr.Class _self) : base(SymbolType.Class)
+                        throw new Errors.AnalyzerError("Double Declaration", $"A function named '{duplicate.name.lexeme}' is already defined in this scope");
+                    }
+                    else
                     {
-                        this._variables = new();
-                        this._containers = new();
-                        this._self = _self;
+                        throw new Errors.AnalyzerError("Double Declaration", $"A class named '{duplicate.name.lexeme}' is already defined in this scope");
                     }
-
                 }
+                globals.Add(definition);
+            }
 
-                internal class Function : Container
+            private bool TryGetValue<T>(List<T> list, Token key, out T value)  where T : Expr.Named
+            {
+                foreach (var item in list)
                 {
-                    public override Token Name { get { return self.name.name; } }
-
-                    internal override Dictionary<string, Variable> variables
+                    if (item.name.lexeme == key.lexeme)
                     {
-                        get => _variables;
-                    }
-                    internal override Dictionary<string, Container> containers
-                    {
-                        get => throw new Errors.ImpossibleError("Requested Access of function's containers (null)");
-                    }
-
-                    internal Dictionary<string, Variable> _variables;
-
-                    override internal Expr.Function self
-                    {
-                        get
-                        {
-                            return _self;
-                        }
-                    }
-                    internal Expr.Function _self;
-
-                    public Function(Expr.Function _self) : base(SymbolType.Function)
-                    {
-                        this._variables = new();
-                        this._self = _self;
+                        value = item;
+                        return true;
                     }
                 }
-
-                internal class Primitive : Container
-                {
-                    public override Token Name { get { return self.name.name; } }
-
-                    internal override Dictionary<string, Container> containers
-                    {
-                        get => _containers;
-                    }
-                    internal override Dictionary<string, Variable> variables
-                    {
-                        get => throw new Errors.ImpossibleError("Requested Access of primitive's variables (null)");
-                    }
-
-                    internal Dictionary<string, Container> _containers;
-
-                    override internal Expr.Primitive self
-                    {
-                        get
-                        {
-                            return _self;
-                        }
-                    }
-                    internal Expr.Primitive _self;
-
-                    public Primitive(Expr.Primitive _self) : base(SymbolType.Primitive)
-                    {
-                        this._containers = new();
-                        this._self = _self;
-                    }
-                }
-
-                internal class Variable : Symbol
-                {
-                    private Token name;
-                    public override Token Name { get { return name; } }
-                    public Container definition;
-
-                    internal Expr.StackData self;
-
-                    public Variable(Expr.StackData self, Token name, Container definition) : base(SymbolType.Variable)
-                    {
-                        this.self = self;
-                        this.name = name;
-                        this.definition = definition;
-                    }
-                }
-
-                internal class Define : Symbol
-                {
-                    public override Token Name { get { return self.name; } }
-
-                    internal Expr.Define self;
-
-                    public Define(Expr.Define self) : base(SymbolType.Define)
-                    {
-                        this.self = self;
-                    }
-                }
+                value = null;
+                return false;
             }
         }
     }

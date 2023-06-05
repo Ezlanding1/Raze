@@ -9,34 +9,29 @@ namespace Raze
 {
     internal partial class Analyzer
     {
-        internal partial class TypeCheckPass : Pass<Analyzer.Type>
+        internal partial class TypeCheckPass : Pass<Expr.Type>
         {
-            List<(Analyzer.Type, bool, Expr.Return)> _return;
+            List<(Expr.Type, bool, Expr.Return)> _return;
             bool callReturn;
 
-            public static Analyzer.Type _voidType = new(new TypeName(new(Token.TokenType.RESERVED, "void")));
-            Func<Analyzer.Type, bool> isVoidType = (type) => { return type.name.name.lexeme == "void"; };
+            public static Expr.Type _voidType = new(new(Token.TokenType.RESERVED, "void"));
 
-            public static Dictionary<Token.TokenType, Analyzer.Type> literalTypes = new Dictionary<Token.TokenType, Analyzer.Type>()
+            public static Dictionary<Token.TokenType, Expr.Type> literalTypes = new Dictionary<Token.TokenType, Expr.Type>()
             {
-                { Parser.Literals[0], new(new(new Token(Parser.Literals[0]))) },
-                { Parser.Literals[1], new(new(new Token(Parser.Literals[1]))) },
-                { Parser.Literals[2], new(new(new Token(Parser.Literals[2]))) },
-                { Parser.Literals[3], new(new(new Token(Parser.Literals[3]))) },
-                { Parser.Literals[4], new(new(new Token(Parser.Literals[4]))) },
-                { Parser.Literals[5], new(new(new Token(Parser.Literals[5]))) },
+                { Parser.Literals[0], new(new Token(Parser.Literals[0])) },
+                { Parser.Literals[1], new(new Token(Parser.Literals[1])) },
+                { Parser.Literals[2], new(new Token(Parser.Literals[2])) },
+                { Parser.Literals[3], new(new Token(Parser.Literals[3])) },
+                { Parser.Literals[4], new(new Token(Parser.Literals[4])) },
+                { Parser.Literals[5], new(new Token(Parser.Literals[5])) },
             };
 
-            Dictionary<string, Analyzer.Type> keywordTypes = new Dictionary<string, Analyzer.Type>()
+            Dictionary<string, Expr.Type> keywordTypes = new Dictionary<string, Expr.Type>()
             {
                 { "true", literalTypes[Token.TokenType.BOOLEAN] },
                 { "false", literalTypes[Token.TokenType.BOOLEAN] },
                 { "null", null },
             };
-
-            
-
-            Func<Analyzer.Type, byte, bool> isLiteralType = (type, literal) => { return type.name.name.type == Parser.Literals[literal]; };
 
             public TypeCheckPass(List<Expr> expressions) : base(expressions)
             {
@@ -47,8 +42,8 @@ namespace Raze
             {
                 foreach (Expr expr in expressions)
                 {
-                    Analyzer.Type result = expr.Accept(this);
-                    if (!isVoidType(result) && !callReturn)
+                    Expr.Type result = expr.Accept(this);
+                    if (!IsVoidType(result) && !callReturn)
                     {
                         throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
                     }
@@ -61,10 +56,10 @@ namespace Raze
                 return expressions;
             }
 
-            public override Analyzer.Type visitBinaryExpr(Expr.Binary expr)
+            public override Expr.Type visitBinaryExpr(Expr.Binary expr)
             {
-                Analyzer.Type operand1 = expr.left.Accept(this);
-                Analyzer.Type operand2 = expr.right.Accept(this);
+                Expr.Type operand1 = expr.left.Accept(this);
+                Expr.Type operand2 = expr.right.Accept(this);
 
                 //if ((Primitives.PrimitiveOps(operand1))
                 //        ._operators.TryGetValue((expr.op.lexeme + " BIN", operand1, operand2), out string value))
@@ -78,17 +73,13 @@ namespace Raze
                 return null;
             }
 
-            public override Analyzer.Type visitBlockExpr(Expr.Block expr)
+            public override Expr.Type visitBlockExpr(Expr.Block expr)
             {
                 foreach (var blockExpr in expr.block)
                 {
-                    Analyzer.Type result = blockExpr.Accept(this);
-                    if (expr._classBlock && _return.Count != 0)
-                    {
-                        throw new Errors.AnalyzerError("Invalid Return", $"A class may not have a 'return'");
-                    }
+                    Expr.Type result = blockExpr.Accept(this);
 
-                    if (!isVoidType(result) && !callReturn)
+                    if (!IsVoidType(result) && !callReturn)
                     {
                         if (false)
                             throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
@@ -98,7 +89,7 @@ namespace Raze
                 return _voidType;
             }
 
-            public override Analyzer.Type visitCallExpr(Expr.Call expr)
+            public override Expr.Type visitCallExpr(Expr.Call expr)
             {
                 for (int i = 0; i < expr.internalFunction.arity; i++)
                 {
@@ -112,28 +103,35 @@ namespace Raze
                 return expr.internalFunction._returnType.type;
             }
 
-            public override Analyzer.Type visitClassExpr(Expr.Class expr)
+            public override Expr.Type visitClassExpr(Expr.Class expr)
             {
-                expr.topLevelBlock.Accept(this);
-                expr.block.Accept(this);
+                Expr.ListAccept(expr.declarations, this);
+                Expr.ListAccept(expr.definitions, this);
+                
                 return _voidType;
             }
 
-            public override Analyzer.Type visitDeclareExpr(Expr.Declare expr)
+            public override Expr.Type visitDeclareExpr(Expr.Declare expr)
             {
-                Analyzer.Type assignType = expr.value.Accept(this);
+                Expr.Type assignType = expr.value.Accept(this);
                 MustMatchType(expr.stack.type, assignType);
 
                 return _voidType;
             }
 
-            public override Analyzer.Type visitFunctionExpr(Expr.Function expr)
+            public override Expr.Type visitFunctionExpr(Expr.Function expr)
             {
-                foreach (Expr.Parameter paramExpr in expr.parameters)
+                foreach (var blockExpr in expr.block)
                 {
-                    paramExpr.Accept(this);
+                    Expr.Type result = blockExpr.Accept(this);
+
+                    if (!IsVoidType(result) && !callReturn)
+                    {
+                        if (false)
+                            throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
+                    }
+                    callReturn = false;
                 }
-                expr.block.Accept(this);
 
                 if (!expr.constructor)
                 {
@@ -149,7 +147,7 @@ namespace Raze
                             _returnCount++;
                         }
                     }
-                    if (_returnCount == 0 && !isVoidType(expr._returnType.type))
+                    if (_returnCount == 0 && !IsVoidType(expr._returnType.type))
                     {
                         if (!expr.modifiers["unsafe"])
                         {
@@ -175,22 +173,22 @@ namespace Raze
                 return _voidType;
             }
 
-            public override Analyzer.Type visitTypeReferenceExpr(Expr.TypeReference expr)
+            public override Expr.Type visitTypeReferenceExpr(Expr.TypeReference expr)
             {
                 return expr.type;
             }
 
-            public override Analyzer.Type visitGetReferenceExpr(Expr.GetReference expr)
+            public override Expr.Type visitGetReferenceExpr(Expr.GetReference expr)
             {
                 return expr.type;
             }
 
-            public override Analyzer.Type visitGroupingExpr(Expr.Grouping expr)
+            public override Expr.Type visitGroupingExpr(Expr.Grouping expr)
             {
                 return expr.expression.Accept(this);
             }
 
-            public override Analyzer.Type visitIfExpr(Expr.If expr)
+            public override Expr.Type visitIfExpr(Expr.If expr)
             {
                 TypeCheckConditional(expr.conditional);
 
@@ -201,24 +199,24 @@ namespace Raze
                 return _voidType;
             }
 
-            public override Analyzer.Type visitWhileExpr(Expr.While expr)
+            public override Expr.Type visitWhileExpr(Expr.While expr)
             {
                 TypeCheckConditional(expr.conditional);
 
                 return _voidType;
             }
 
-            public override Analyzer.Type visitForExpr(Expr.For expr)
+            public override Expr.Type visitForExpr(Expr.For expr)
             {
                 var result = expr.initExpr.Accept(this);
-                if (!isVoidType(result) && !callReturn)
+                if (!IsVoidType(result) && !callReturn)
                 {
                     throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
                 }
                 callReturn = false;
 
                 result = expr.updateExpr.Accept(this);
-                if (!isVoidType(result) && !callReturn)
+                if (!IsVoidType(result) && !callReturn)
                 {
                     throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
                 }
@@ -229,14 +227,14 @@ namespace Raze
                 return _voidType;
             }
 
-            public override Analyzer.Type visitLiteralExpr(Expr.Literal expr)
+            public override Expr.Type visitLiteralExpr(Expr.Literal expr)
             {
                 return literalTypes[expr.literal.type];
             }
 
-            public override Analyzer.Type visitUnaryExpr(Expr.Unary expr)
+            public override Expr.Type visitUnaryExpr(Expr.Unary expr)
             {
-                Analyzer.Type operand1 = expr.operand.Accept(this);
+                Expr.Type operand1 = expr.operand.Accept(this);
                 //if ((Primitives.PrimitiveOps(operand1))
                 //        ._operators.TryGetValue((expr.op.lexeme + " UN", operand1, ""), out string value))
                 //{
@@ -249,25 +247,25 @@ namespace Raze
                 return null;
             }
 
-            public override Analyzer.Type visitVariableExpr(Expr.Variable expr)
+            public override Expr.Type visitVariableExpr(Expr.Variable expr)
             {
                 return (expr.define.Item1)? expr.define.Item2.Accept(this): expr.stack.type;
             }
 
-            public override Analyzer.Type visitReturnExpr(Expr.Return expr)
+            public override Expr.Type visitReturnExpr(Expr.Return expr)
             { 
                 _return.Add((expr._void? _voidType : expr.value.Accept(this), false, expr));
 
                 return _voidType;
             }
 
-            public override Analyzer.Type visitAssignExpr(Expr.Assign expr)
+            public override Expr.Type visitAssignExpr(Expr.Assign expr)
             {
-                Analyzer.Type assignType = expr.value.Accept(this);
+                Expr.Type assignType = expr.value.Accept(this);
 
                 //if (expr.op != null)
                 //{
-                //    Analyzer.Type operand = expr.value.Accept(this);
+                //    Expr.Type operand = expr.value.Accept(this);
 
                 //    if (!(Primitives.PrimitiveOps(expr.member.stack.type.ToString()))
                 //            ._operators.ContainsKey((expr.op.lexeme + " BIN", expr.member.stack.type.ToString(), operand)))
@@ -285,40 +283,40 @@ namespace Raze
                 return _voidType;
             }
 
-            public override Analyzer.Type visitKeywordExpr(Expr.Keyword expr)
+            public override Expr.Type visitKeywordExpr(Expr.Keyword expr)
             {
                 return keywordTypes[expr.keyword]; 
             }
 
-            public override Analyzer.Type visitPrimitiveExpr(Expr.Primitive expr)
+            public override Expr.Type visitPrimitiveExpr(Expr.Primitive expr)
             {
-                expr.block.Accept(this);
+                Expr.ListAccept(expr.definitions, this);
                 return _voidType;
             }
 
-            public override Analyzer.Type visitNewExpr(Expr.New expr)
+            public override Expr.Type visitNewExpr(Expr.New expr)
             {
                 foreach (Expr argExpr in expr.call.arguments)
                 {
                     argExpr.Accept(this);
                 }
 
-                return expr.internalClass.type.type;
+                return expr.internalClass;
             }
 
-            public override Analyzer.Type visitDefineExpr(Expr.Define expr)
+            public override Expr.Type visitDefineExpr(Expr.Define expr)
             {
                 return _voidType;
             }
 
-            public override Analyzer.Type visitIsExpr(Expr.Is expr)
+            public override Expr.Type visitIsExpr(Expr.Is expr)
             {
                 expr.value = expr.right.Accept(this) == expr.right.type ? "1" : "0";
 
                 return literalTypes[Token.TokenType.BOOLEAN];
             }
 
-            public override Analyzer.Type visitAssemblyExpr(Expr.Assembly expr)
+            public override Expr.Type visitAssemblyExpr(Expr.Assembly expr)
             {
                 foreach (var variable in expr.variables.Keys)
                 {
@@ -328,12 +326,12 @@ namespace Raze
                 return _voidType;
             }
 
-            private bool MatchesType(Analyzer.Type type1, Analyzer.Type type2)
+            private bool MatchesType(Expr.Type type1, Expr.Type type2)
             {
                 return type2.Matches(type1);
             }
 
-            private void MustMatchType(Analyzer.Type type1, Analyzer.Type type2, string error= "You cannot assign type '{0}' to type '{1}'")
+            private void MustMatchType(Expr.Type type1, Expr.Type type2, string error= "You cannot assign type '{0}' to type '{1}'")
             {
                 if (!type2.Matches(type1))
                 {
@@ -360,6 +358,16 @@ namespace Raze
                         _return[i] = (_return[i].Item1, true, _return[i].Item3);
                     }
                 }
+            }
+
+            private bool IsVoidType(Expr.Type type)
+            { 
+                return type.name.lexeme == "void"; 
+            }
+
+            private bool IsLiteralType(Expr.Type type, byte literal)
+            {
+                return type.name.type == Parser.Literals[literal];
             }
         }
     }
