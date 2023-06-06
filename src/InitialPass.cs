@@ -194,7 +194,7 @@ namespace Raze
                     throw new Errors.AnalyzerError("Invalid Class Definition", "A primitive class definition may be only within another class");
                 }
 
-                if (symbolTable.TryGetContainer(expr.name, out _))
+                if (symbolTable.TryGetDefinition(expr.name, out _))
                 {
                     throw new Errors.AnalyzerError("Double Declaration", $"A primitive class named '{expr.name.lexeme}' is already defined in this scope");
                 }
@@ -230,7 +230,7 @@ namespace Raze
 
             private void GetConstructor()
             {
-                if (symbolTable.CurrentIsTop() || !symbolTable.TryGetContainer(symbolTable.Current.name, out var symbol))
+                if (!symbolTable.TryGetDefinition(symbolTable.Current.name, out var symbol))
                 {
                     throw new Errors.AnalyzerError("Class Without Constructor", "A Class must contain a constructor method");
                 }

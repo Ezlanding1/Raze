@@ -249,7 +249,7 @@ namespace Raze
 
             public override Expr.Type visitVariableExpr(Expr.Variable expr)
             {
-                return (expr.define.Item1)? expr.define.Item2.Accept(this): expr.stack.type;
+                return expr.stack.type;
             }
 
             public override Expr.Type visitReturnExpr(Expr.Return expr)

@@ -104,25 +104,23 @@ namespace Raze
             //    current.variables.Add(_.Name.lexeme, _);
             //}
 
-            // 'Get' Methods:
+            // 'GetVariable' Methods:
 
-            public Expr.StackData GetVariable(Token key)
+            private Expr.StackData? _GetVariable(Token key, out bool isClassScoped, bool ignoreEnclosing)
             {
-                return GetVariable(key, out _);
-            }
-
-            public Expr.StackData GetVariable(Token key, out bool isClassScoped)
-            {
-                for (int i = locals.Count-1; i >= 0; i--)
+                if (current.definitionType == Expr.Definition.DefinitionType.Function)
                 {
-                    if (key.lexeme == locals[i].Item1.lexeme)
+                    for (int i = locals.Count - 1; i >= 0; i--)
                     {
-                        isClassScoped = false;
-                        return locals[i].Item2;
+                        if (key.lexeme == locals[i].Item1.lexeme)
+                        {
+                            isClassScoped = false;
+                            return locals[i].Item2;
+                        }
                     }
                 }
 
-                if (!(current.definitionType == Expr.Definition.DefinitionType.Function && (((Expr.Function)current).modifiers["static"])))
+                if (!ignoreEnclosing && !(current.definitionType == Expr.Definition.DefinitionType.Function && (((Expr.Function)current).modifiers["static"])))
                 {
                     var x = NearestEnclosingClass();
                     switch (x?.definitionType)
@@ -134,6 +132,11 @@ namespace Raze
                                     isClassScoped = true;
                                     return value.stack;
                                 }
+                                if (key.lexeme == "this")
+                                {
+                                    isClassScoped = false;
+                                    return x._this;
+                                }
                             }
                             break;
                         case Expr.Definition.DefinitionType.Primitive:
@@ -141,7 +144,7 @@ namespace Raze
                                 if (key.lexeme == "this")
                                 {
                                     isClassScoped = false;
-                                    return ((Expr.Primitive)x)._this;
+                                    return x._this;
                                 }
                             }
                             break;
@@ -149,11 +152,27 @@ namespace Raze
                             break;
                     }
                 }
-
-                throw new Errors.AnalyzerError("Undefined Reference", $"The variable '{key}' does not exist in the current context");
+                isClassScoped = false;
+                return null;
             }
 
-            public Expr.Definition GetDefinition(Token key, bool func = false)
+            public Expr.StackData GetVariable(Token key, out bool isClassScoped, bool ignoreEnclosing=false)
+            {
+                return _GetVariable(key, out isClassScoped, ignoreEnclosing) ?? throw new Errors.AnalyzerError("Undefined Reference", $"The variable '{key.lexeme}' does not exist in the current context");
+            }
+            public Expr.StackData GetVariable(Token key)
+            {
+                return GetVariable(key, out _);
+            }
+            public bool TryGetVariable(Token key, out Expr.StackData symbol, out bool isClassScoped, bool ignoreEnclosing=false)
+            {
+                return (symbol = _GetVariable(key, out isClassScoped, ignoreEnclosing)) != null;
+            }
+
+
+            // 'GetDefinition' Methods:
+
+            private Expr.Definition? _GetDefinition(Token key, bool func)
             {
                 if (current == null)
                 {
@@ -161,7 +180,7 @@ namespace Raze
                     {
                         return globalValue;
                     }
-                    throw new Errors.AnalyzerError("Undefined Reference", $"The {(func ? "function" : "class")} '{key}' does not exist in the current context");
+                    return null;
                 }
 
                 if (current.definitionType == Expr.Definition.DefinitionType.Function)
@@ -174,7 +193,16 @@ namespace Raze
                     return value;
                 }
 
-                throw new Errors.AnalyzerError("Undefined Reference", $"The {(func ? "function" : "class")} '{key}' does not exist in the current context");
+                return null;
+            }
+
+            public Expr.Definition GetDefinition(Token key, bool func = false)
+            {
+                return _GetDefinition(key, func) ?? throw new Errors.AnalyzerError("Undefined Reference", $"The {(func ? "function" : "class")} '{key.lexeme}' does not exist in the current context");
+            }
+            public bool TryGetDefinition(Token key, out Expr.Definition symbol)
+            {
+                return (symbol = _GetDefinition(key, false)) != null;
             }
 
             public Expr.DataType GetClassFullScope(Token key)
@@ -194,86 +222,24 @@ namespace Raze
                 {
                     if (value.definitionType == Expr.Definition.DefinitionType.Function)
                     {
-                        throw new Errors.AnalyzerError("Undefined Reference", $"The class '{key}' does not exist in the current context");
+                        throw new Errors.AnalyzerError("Undefined Reference", $"The class '{key.lexeme}' does not exist in the current context");
                     }
                     return (Expr.DataType)value;
                 }
 
-                throw new Errors.AnalyzerError("Undefined Reference", $"The class '{key}' does not exist in the current context");
-            }
-
-            // 'TryGet' Methods:
-
-            public bool TryGetVariable(Token key, out Expr.StackData symbol, out bool isClassScoped, bool ignoreEnclosing = false)
-            {
-                if (current?.definitionType == Expr.Definition.DefinitionType.Function)
-                {
-                    for (int i = locals.Count - 1; i >= 0; i--)
-                    {
-                        if (key.lexeme == locals[i].Item1.lexeme)
-                        {
-                            isClassScoped = false;
-                            symbol = locals[i].Item2;
-                            return true;
-                        }
-                    }
-                }
-
-                if (!ignoreEnclosing && !(current.definitionType == Expr.Definition.DefinitionType.Function && (((Expr.Function)current).modifiers["static"])))
-                {
-                    var x = NearestEnclosingClass();
-                    switch (x?.definitionType)
-                    {
-                        case Expr.Definition.DefinitionType.Class:
-                            {
-                                if (TryGetValue(((Expr.Class)x).declarations, key, out var value))
-                                {
-                                    isClassScoped = true;
-                                    symbol = value.stack;
-                                    return true;
-                                }
-                            }
-                            break;
-                        case Expr.Definition.DefinitionType.Primitive:
-                            {
-                                if (key.lexeme == "this")
-                                {
-                                    isClassScoped = false;
-                                    symbol = ((Expr.Primitive)x)._this;
-                                    return true;
-                                }
-                            }
-                            break;
-                        case null:
-                            break;
-                    }
-                }
-
-                symbol = null;
-                isClassScoped = false;
-                return false;
-            }
-
-            public bool TryGetContainer(Token key, out Expr.Definition symbol)
-            {
-                if (current == null)
-                {
-                    return TryGetValue(globals, key, out symbol);
-                }
-
-                if (current.definitionType == Expr.Definition.DefinitionType.Function)
-                {
-                    throw new Errors.ImpossibleError("Requested function's definitions");
-                }
-
-                return TryGetValue(((Expr.DataType)current).definitions, key, out symbol);
+                throw new Errors.AnalyzerError("Undefined Reference", $"The class '{key.lexeme}' does not exist in the current context");
             }
 
 
-            public Expr.DataType? NearestEnclosingClass()
+
+            public Expr.DataType? NearestEnclosingClass(Expr.Definition definition)
             {
                 // Assumes a function is enclosed by a class (no nested functions)
-                return (current.definitionType == Expr.Definition.DefinitionType.Function) ? (Expr.DataType)current.enclosing : (Expr.DataType)current;
+                return (definition.definitionType == Expr.Definition.DefinitionType.Function) ? (Expr.DataType)definition.enclosing : (Expr.DataType)definition;
+            }
+            public Expr.DataType? NearestEnclosingClass()
+            {
+                return NearestEnclosingClass(current);
             }
 
 

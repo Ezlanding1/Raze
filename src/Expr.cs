@@ -351,8 +351,6 @@ namespace Raze
                 set => offsets[0] = value;
             }
 
-            public (bool, Literal) define;
-
             public Variable(Queue<Token> typeName) : base(typeName)
             {
             }

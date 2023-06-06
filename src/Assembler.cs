@@ -319,11 +319,6 @@ namespace Raze
                 emit(new Instruction.Binary("MOV", new Instruction.Register(CurrentRegister(), Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(((i == expr.offsets.Length-1) && !expr.stack.classScoped) ? Instruction.Register.RegisterName.RBP : CurrentRegister(), expr.offsets[i].stackOffset, 8)));
             }
 
-            if (expr.define.Item1)
-            {
-                return expr.define.Item2.Accept(this);
-            }
-
             return new Instruction.Pointer((expr.offsets.Length == 1 && !expr.stack.classScoped) ? Instruction.Register.RegisterName.RBP : NextRegister(), expr.stack.stackOffset, expr.stack.size, expr.stack.plus ? '+' : '-');
         }
 
