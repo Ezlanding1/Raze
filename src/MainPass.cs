@@ -57,10 +57,21 @@
                     {
                         this.visitTypeReferenceExpr(expr);
                     }
+                    symbolTable.SetContext(symbolTable.GetDefinition(expr.name, true));
                 }
-
-                symbolTable.SetContext(symbolTable.NearestEnclosingClass());
-                symbolTable.SetContext(symbolTable.GetDefinition(expr.name, true));
+                else
+                {
+                    symbolTable.SetContext(null);
+                    if (symbolTable.TryGetDefinition(expr.name, out var symbol))
+                    {
+                        symbolTable.SetContext(symbol);
+                    }
+                    else
+                    {
+                        symbolTable.SetContext(symbolTable.NearestEnclosingClass(context));
+                        symbolTable.SetContext(symbolTable.GetDefinition(expr.name, true));
+                    }
+                }
 
                 // 
                 if (symbolTable.Current.definitionType != Expr.Definition.DefinitionType.Function)
@@ -239,46 +250,36 @@
 
                 bool isClassScoped = false;
 
-                if (expr.typeName.Count > 1)
+                while (expr.typeName.Count > 1)
                 {
-                    isClassScoped = !HandleThisCase(expr);
-
-                    while (expr.typeName.Count > 1)
+                    if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Primitive)
                     {
-                        if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Primitive)
-                        {
-                            throw new Errors.AnalyzerError("Primitive Field Access", "Primitive classes cannot contain fields");
-                        }
+                        throw new Errors.AnalyzerError("Primitive Field Access", "Primitive classes cannot contain fields");
+                    }
 
-                        Expr.StackData variable;
+                    Expr.StackData variable;
 
-                        if (expr.offsets.Length == expr.typeName.Count)
-                        {
-                            variable = symbolTable.GetVariable(expr.typeName.Dequeue(), out isClassScoped);
-                        }
-                        else 
-                        {
-                            variable = symbolTable.GetVariable(expr.typeName.Dequeue());
-                        }
+                    if (expr.offsets.Length == expr.typeName.Count)
+                    {
+                        variable = symbolTable.GetVariable(expr.typeName.Dequeue(), out isClassScoped);
+                    }
+                    else 
+                    {
+                        variable = symbolTable.GetVariable(expr.typeName.Dequeue());
+                    }
                             
 
-                        expr.offsets[expr.typeName.Count] = new(variable.stackOffset);
+                    expr.offsets[expr.typeName.Count] = new(variable.stackOffset);
 
-                        symbolTable.SetContext(variable.type);
+                    symbolTable.SetContext(variable.type);
 
-                        if (expr.typeName.Count == 0)
-                        {
-                            expr.type = variable.type;
-                        }
+                    if (expr.typeName.Count == 0)
+                    {
+                        expr.type = variable.type;
                     }
                 }
                 
-
-                if (expr.typeName.Peek().lexeme == "this")
-                {
-                    expr.stack = new(symbolTable.NearestEnclosingClass(), false, 8, 8, false);
-                }
-                else if (symbolTable.TryGetVariable(expr.typeName.Peek(), out var symbol, out bool isClassScopedVar))
+                if (symbolTable.TryGetVariable(expr.typeName.Peek(), out var symbol, out bool isClassScopedVar))
                 {
                     expr.typeName.Dequeue();
 

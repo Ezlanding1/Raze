@@ -514,10 +514,13 @@ namespace Raze
 
             public List<Definition> definitions;
 
+            public StackData _this = new();
+
             public DataType(Token name, List<Definition> definitions, TypeReference superclass) : base(name)
             {
                 this.superclass = superclass;
                 this.definitions = definitions;
+                (_this.stackOffset, _this.size, _this.type) = (8, 8, this);
             }
 
             public DataType(Token name, List<Definition> definitions, int size, TypeReference superclass) : this(name, definitions, superclass)
@@ -544,12 +547,9 @@ namespace Raze
 
         public class Primitive : DataType
         {
-            public StackData _this = new();
-
             public Primitive(Token name, List<Definition> definitions, int size, TypeReference type) : base(name, definitions, size, type)
             {
                 this.definitionType = DefinitionType.Primitive;
-                (_this.stackOffset, _this.size, _this.type) = (8, 8, this);
             }
 
 
