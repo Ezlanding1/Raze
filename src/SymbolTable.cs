@@ -67,7 +67,8 @@ namespace Raze
             }
             public void AddDefinition(Expr.DataType definition)
             {
-                foreach (var duplicate in definition.definitions.GroupBy(x => x).Where(x => x.Count() > 1).Select(x => x.Key))
+                AddDefinition((Expr.Definition)definition);
+                foreach (var duplicate in definition.definitions.GroupBy(x => x.name.lexeme).Where(x => x.Count() > 1).Select(x => x.ElementAt(0)))
                 {
                     if (duplicate.definitionType == Expr.Definition.DefinitionType.Function)
                     {
@@ -83,15 +84,15 @@ namespace Raze
                         throw new Errors.AnalyzerError("Double Declaration", $"A class named '{duplicate.name.lexeme}' is already defined in this scope");
                     }
                 }
-                AddDefinition((Expr.Definition)definition);
+                
             }
             public void AddDefinition(Expr.Class definition)
             {
-                foreach (var duplicate in (definition).declarations.GroupBy(x => x).Where(x => x.Count() > 1).Select(x => x.Key))
+                AddDefinition((Expr.DataType)definition);
+                foreach (var duplicate in (definition).declarations.GroupBy(x => x.name.lexeme).Where(x => x.Count() > 1).Select(x => x.ElementAt(0)))
                 {
                     throw new Errors.AnalyzerError("Double Declaration", $"A variable named '{duplicate.name.lexeme}' is already declared in this scope");
                 }
-                AddDefinition((Expr.DataType)definition);
             }
 
             public void CreateBlock() => framePointer.Push(locals.Count);
