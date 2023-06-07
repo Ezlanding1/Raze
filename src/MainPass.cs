@@ -124,7 +124,7 @@
 
             public override object? visitClassExpr(Expr.Class expr)
             {
-                symbolTable.SetContext(symbolTable.GetDefinition(expr.name));
+                symbolTable.SetContext(expr);
 
                 Expr.ListAccept(expr.declarations, this);
                 Expr.ListAccept(expr.definitions, this);
@@ -157,7 +157,7 @@
 
             public override object? visitPrimitiveExpr(Expr.Primitive expr)
             {
-                symbolTable.SetContext(symbolTable.GetDefinition(expr.name));
+                symbolTable.SetContext(expr);
 
                 if (expr.superclass.typeName.Count != 0)
                 {
@@ -201,7 +201,7 @@
 
             public override object? visitFunctionExpr(Expr.Function expr)
             {
-                symbolTable.SetContext(symbolTable.GetDefinition(expr.name, true));
+                symbolTable.SetContext(expr);
 
                 if (expr._returnType.typeName.Peek().type != Token.TokenType.RESERVED && expr._returnType.typeName.Peek().lexeme != "void")
                 {
