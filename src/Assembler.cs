@@ -177,7 +177,7 @@ namespace Raze
 
         public Instruction.Value? visitFunctionExpr(Expr.Function expr)
         {
-            bool leafFunc = ((expr.leaf || expr.size == 0) && expr.size <= 128);
+            bool leafFunc = ((expr.leaf && ((expr.constructor) ? ((Expr.Definition)expr.enclosing).leaf : true)) || expr.size == 0) && expr.size <= 128;
             emit(new Instruction.Procedure(expr.ToString()));
 
 

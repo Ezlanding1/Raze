@@ -442,10 +442,7 @@
 
             private void CurrentCalls()
             {
-                if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Function)
-                {
-                    ((Expr.Function)symbolTable.Current).leaf = false;
-                }
+                symbolTable.Current.leaf = false;
             }
         }
     }

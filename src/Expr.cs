@@ -464,6 +464,7 @@ namespace Raze
             }
 
             public int size;
+            public bool leaf = true;
 
             public Definition(Token name) : base(name)
             {
@@ -488,7 +489,6 @@ namespace Raze
             {
                 get { return parameters.Count; }
             }
-            public bool leaf = true;
             public Dictionary<string, bool> modifiers;
             public bool constructor;
             public List<Expr> block;
