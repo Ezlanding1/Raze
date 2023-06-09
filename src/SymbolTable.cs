@@ -41,7 +41,7 @@ namespace Raze
 
             public void Add(Token name, Expr.StackData parameter, Expr.Definition definition, int i, int arity)
             {
-                if (i < InstructionInfo.paramRegister.Length)
+                if (i < InstructionUtils.paramRegister.Length)
                 {
                     current.size += parameter.size;
                     parameter.stackOffset = current.size;

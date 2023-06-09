@@ -52,11 +52,11 @@ namespace Raze
 
         public Instruction.Value? visitBinaryExpr(Expr.Binary expr)
         {
-            string instruction = InstructionInfo.ToType(expr.op.type);
+            string instruction = InstructionUtils.ToType(expr.op.type);
             Instruction.Value operand1 = expr.left.Accept(this);
             Instruction.Value operand2 = expr.right.Accept(this);
 
-            if (InstructionInfo.ConditionalJump.ContainsKey(expr.op.type)) 
+            if (InstructionUtils.ConditionalJump.ContainsKey(expr.op.type)) 
             {
                 lastJump = expr.op.type;
             }
@@ -90,9 +90,9 @@ namespace Raze
             for (int i = 0; i < expr.arguments.Count; i++)
             {
                 Instruction.Value arg = expr.arguments[i].Accept(this);
-                if (i + Convert.ToUInt16(instance) < InstructionInfo.paramRegister.Length)
+                if (i + Convert.ToUInt16(instance) < InstructionUtils.paramRegister.Length)
                 {
-                    emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.paramRegister[Convert.ToInt16(instance) + i], expr.internalFunction.parameters[i].stack.size), arg));
+                    emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionUtils.paramRegister[Convert.ToInt16(instance) + i], expr.internalFunction.parameters[i].stack.size), arg));
                 }
                 else
                 {
@@ -111,16 +111,16 @@ namespace Raze
                         {
                             emit(new Instruction.Binary("MOV", new Instruction.Register(CurrentRegister(), Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer((i == expr.offsets.Length - 1) ? Instruction.Register.RegisterName.RBP : CurrentRegister(), expr.offsets[i].stackOffset, 8)));
                         }
-                        emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.paramRegister[0], Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer((0 == expr.offsets.Length - 1) ? Instruction.Register.RegisterName.RBP : CurrentRegister(), expr.offsets[0].stackOffset, 8)));
+                        emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionUtils.paramRegister[0], Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer((0 == expr.offsets.Length - 1) ? Instruction.Register.RegisterName.RBP : CurrentRegister(), expr.offsets[0].stackOffset, 8)));
                     }
                     else
                     {
-                        emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.paramRegister[0], Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(8,8)));
+                        emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionUtils.paramRegister[0], Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(8,8)));
                     }
                 }
                 else
                 {
-                    emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionInfo.paramRegister[0], Instruction.Register.RegisterSize._64Bits), new Instruction.Register(Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits)));
+                    emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionUtils.paramRegister[0], Instruction.Register.RegisterSize._64Bits), new Instruction.Register(Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits)));
                 }
             }
 
@@ -129,13 +129,13 @@ namespace Raze
 
             emit(new Instruction.Unary("CALL", new Instruction.ProcedureRef(operand1)));
 
-            if (expr.arguments.Count > InstructionInfo.paramRegister.Length && footerType)
+            if (expr.arguments.Count > InstructionUtils.paramRegister.Length && footerType)
             {
-                emit(new Instruction.Binary("ADD", new Instruction.Register(Instruction.Register.RegisterName.RSP, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.Literals[0], ((expr.arguments.Count - InstructionInfo.paramRegister.Length) * 8).ToString())));
+                emit(new Instruction.Binary("ADD", new Instruction.Register(Instruction.Register.RegisterName.RSP, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.Literals[0], ((expr.arguments.Count - InstructionUtils.paramRegister.Length) * 8).ToString())));
             }
             
             //if (expr.get != null)
-            return new Instruction.Register(Instruction.Register.RegisterName.RAX, InstructionInfo.ToRegisterSize(expr.internalFunction._returnSize));
+            return new Instruction.Register(Instruction.Register.RegisterName.RAX, InstructionUtils.ToRegisterSize(expr.internalFunction._returnSize));
 
             //return this.visitGetReferenceExpr(expr.get);
         }
@@ -157,7 +157,7 @@ namespace Raze
 
             if (operand.IsPointer())
             {
-                var reg = new Instruction.Register((registerIdx == (checkRegisterAlloc+1))? InstructionInfo.storageRegisters[registerIdx - 1] : CurrentRegister(), ((Instruction.Pointer)operand).size);
+                var reg = new Instruction.Register((registerIdx == (checkRegisterAlloc+1))? InstructionUtils.storageRegisters[registerIdx - 1] : CurrentRegister(), ((Instruction.Pointer)operand).size);
                 emit(new Instruction.Binary("MOV", reg, operand));
                 operand = reg;
             }
@@ -204,14 +204,14 @@ namespace Raze
 
             if (!expr.modifiers["static"])
             {
-                emit(new Instruction.Binary("MOV", new Instruction.Pointer(8, 8), new Instruction.Register(InstructionInfo.paramRegister[0], 8)));
+                emit(new Instruction.Binary("MOV", new Instruction.Pointer(8, 8), new Instruction.Register(InstructionUtils.paramRegister[0], 8)));
                 count++;
             }
 
-            for (int i = 0, len = Math.Min(expr.arity, InstructionInfo.paramRegister.Length-count); i < len; i++)
+            for (int i = 0, len = Math.Min(expr.arity, InstructionUtils.paramRegister.Length-count); i < len; i++)
             {
                 var paramExpr = expr.parameters[i];
-                emit(new Instruction.Binary("MOV", new Instruction.Pointer(paramExpr.stack.stackOffset, paramExpr.stack.size), new Instruction.Register(InstructionInfo.paramRegister[i+count], paramExpr.stack.size)));
+                emit(new Instruction.Binary("MOV", new Instruction.Pointer(paramExpr.stack.stackOffset, paramExpr.stack.size), new Instruction.Register(InstructionUtils.paramRegister[i+count], paramExpr.stack.size)));
             }
 
             if (expr.constructor && expr.enclosing?.definitionType == Expr.Definition.DefinitionType.Class)
@@ -274,7 +274,7 @@ namespace Raze
             {
                 case Token.TokenType.STRING:
                     string name = DataLabel;
-                    emitData(new Instruction.Data(name, InstructionInfo.dataSize[1], expr.literal.lexeme + ", 0"));
+                    emitData(new Instruction.Data(name, InstructionUtils.dataSize[1], expr.literal.lexeme + ", 0"));
                     dataCount++;
                     return new Instruction.Literal(expr.literal.type, name);
                 case Token.TokenType.INTEGER:
@@ -291,7 +291,7 @@ namespace Raze
 
         public Instruction.Value? visitUnaryExpr(Expr.Unary expr)
         {
-            string instruction = InstructionInfo.ToType(expr.op.type, true);
+            string instruction = InstructionUtils.ToType(expr.op.type, true);
             Instruction.Value operand1 = expr.operand.Accept(this);
 
             if (operand1.IsRegister() || operand1.IsPointer())
@@ -325,7 +325,7 @@ namespace Raze
         public Instruction.Value? visitIfExpr(Expr.If expr)
         {
             expr.conditional.condition.Accept(this);
-            var fJump = new Instruction.Unary(InstructionInfo.ConditionalJumpReversed[lastJump], Instruction.Register.RegisterName.TMP);
+            var fJump = new Instruction.Unary(InstructionUtils.ConditionalJumpReversed[lastJump], Instruction.Register.RegisterName.TMP);
             emit(fJump);
 
             expr.conditional.block.Accept(this);
@@ -343,7 +343,7 @@ namespace Raze
 
                 elif.conditional.condition.Accept(this);
 
-                fJump = new Instruction.Unary(InstructionInfo.ConditionalJumpReversed[lastJump], Instruction.Register.RegisterName.TMP);
+                fJump = new Instruction.Unary(InstructionUtils.ConditionalJumpReversed[lastJump], Instruction.Register.RegisterName.TMP);
 
                 emit(fJump);
                 foreach (Expr blockExpr in elif.conditional.block.block)
@@ -385,7 +385,7 @@ namespace Raze
 
             emit(conditional);
             expr.conditional.condition.Accept(this);
-            emit(new Instruction.Unary(InstructionInfo.ConditionalJump[lastJump], new Instruction.ProcedureRef(ConditionalLabel)));
+            emit(new Instruction.Unary(InstructionUtils.ConditionalJump[lastJump], new Instruction.ProcedureRef(ConditionalLabel)));
             conditionalCount++;
 
             return null;
@@ -407,7 +407,7 @@ namespace Raze
 
             emit(conditional);
             expr.conditional.condition.Accept(this);
-            emit(new Instruction.Unary(InstructionInfo.ConditionalJump[lastJump], new Instruction.ProcedureRef(ConditionalLabel)));
+            emit(new Instruction.Unary(InstructionUtils.ConditionalJump[lastJump], new Instruction.ProcedureRef(ConditionalLabel)));
             conditionalCount++;
 
             return null;
@@ -441,7 +441,7 @@ namespace Raze
                 }
                 else
                 {
-                    emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, InstructionInfo.ToRegisterSize(expr.size)), operand));
+                    emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, InstructionUtils.ToRegisterSize(expr.size)), operand));
                 }
             }
             else
@@ -464,13 +464,13 @@ namespace Raze
 
             if (expr.op != null)
             {
-                instruction = InstructionInfo.ToType(expr.op.type);
+                instruction = InstructionUtils.ToType(expr.op.type);
             }
 
             if (operand2.IsPointer())
             {
                 Instruction.Register.RegisterName regName;
-                var reg = new Instruction.Register((registerIdx == (checkRegisterAlloc + 1)) ? InstructionInfo.storageRegisters[registerIdx - 1] : CurrentRegister(), ((Instruction.Pointer)operand2).size);
+                var reg = new Instruction.Register((registerIdx == (checkRegisterAlloc + 1)) ? InstructionUtils.storageRegisters[registerIdx - 1] : CurrentRegister(), ((Instruction.Pointer)operand2).size);
                 emit(new Instruction.Binary("MOV", reg, operand2));
                 operand2 = reg;
             }
@@ -538,7 +538,7 @@ namespace Raze
 
             emit(new Instruction.Binary("MOV", new Instruction.Register( Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits), new Instruction.Register( Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits)));
 
-            fncPushPreserved.Add(InstructionInfo.storageRegisters[1]);
+            fncPushPreserved.Add(InstructionUtils.storageRegisters[1]);
 
             expr.call.Accept(this);
 
@@ -590,18 +590,18 @@ namespace Raze
         {
             if (registerIdx != 0)
             {
-                fncPushPreserved.Add(InstructionInfo.storageRegisters[registerIdx]);
+                fncPushPreserved.Add(InstructionUtils.storageRegisters[registerIdx]);
             }
-            return InstructionInfo.storageRegisters[registerIdx++];
+            return InstructionUtils.storageRegisters[registerIdx++];
         }
 
         private Instruction.Register.RegisterName CurrentRegister()
         {
             if (registerIdx != 0)
             {
-                fncPushPreserved.Add(InstructionInfo.storageRegisters[registerIdx]);
+                fncPushPreserved.Add(InstructionUtils.storageRegisters[registerIdx]);
             }
-            return InstructionInfo.storageRegisters[registerIdx];
+            return InstructionUtils.storageRegisters[registerIdx];
         }
 
         

@@ -542,7 +542,7 @@ namespace Raze
 
                 var variable = GetGetter();
 
-                if (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this"))
+                if (TypeMatch(Token.TokenType.IDENTIFIER))
                 {
                     declare = Declare(variable);
                 }
@@ -725,7 +725,7 @@ namespace Raze
                         else
                         {
                             var identifier = previous();
-                            if (InstructionInfo.Registers.TryGetValue(identifier.lexeme, out var reg))
+                            if (InstructionUtils.Registers.TryGetValue(identifier.lexeme, out var reg))
                             {
                                 value = new Instruction.Register(reg.Item1, reg.Item2);
                             }
@@ -742,7 +742,7 @@ namespace Raze
                             if (TypeMatch(Token.TokenType.IDENTIFIER))
                             {
                                 var identifier = previous();
-                                if (InstructionInfo.Registers.TryGetValue(identifier.lexeme, out var reg))
+                                if (InstructionUtils.Registers.TryGetValue(identifier.lexeme, out var reg))
                                 {
                                     instructions.Add(new Instruction.Binary(op.lexeme, value, new Instruction.Register(reg.Item1, reg.Item2)));
                                 }

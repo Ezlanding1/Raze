@@ -86,7 +86,7 @@ namespace Raze
 
                 public string visitPointer(Instruction.Pointer instruction)
                 {
-                    return $"{InstructionInfo.wordSize[instruction.size]} [{instruction.register.Accept(this)} {instruction._operator} {instruction.offset}]";
+                    return $"{InstructionUtils.wordSize[instruction.size]} [{instruction.register.Accept(this)} {instruction._operator} {instruction.offset}]";
                 }
 
                 public string visitProcedureRef(Instruction.ProcedureRef instruction)

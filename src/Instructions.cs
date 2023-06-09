@@ -118,7 +118,7 @@ internal abstract class Instruction
         private protected Register(int registerType, RegisterName register, int size) : base(registerType)
         {
             this.name = register;
-            this.size = InstructionInfo.ToRegisterSize(size);
+            this.size = InstructionUtils.ToRegisterSize(size);
         }
         
         public Register(RegisterName register, RegisterSize size) : base(0)
@@ -130,7 +130,7 @@ internal abstract class Instruction
         public Register(RegisterName register, int size) : base(0)
         {
             this.name = register;
-            this.size = InstructionInfo.ToRegisterSize(size);
+            this.size = InstructionUtils.ToRegisterSize(size);
         }
 
         public override string Accept(IVisitor visitor)
@@ -148,7 +148,7 @@ internal abstract class Instruction
         public Pointer(Register.RegisterName register, int offset, int size, char _operator) : base(1)
         {
             this.register = new Register(register, Register.RegisterSize._64Bits);
-            this.size = InstructionInfo.ToRegisterSize(size);
+            this.size = InstructionUtils.ToRegisterSize(size);
             this.offset = offset;
             this._operator = _operator;
         }
@@ -337,7 +337,7 @@ internal abstract class Instruction
     }
 }
 
-internal class InstructionInfo
+internal class InstructionUtils
 {
     internal static string ToType(Token.TokenType input, bool unary=false)
     {
