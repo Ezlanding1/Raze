@@ -123,6 +123,7 @@ namespace Raze
             public Queue<Token> typeName;
 
             public StackData stack = new();
+            public bool classScoped;
 
             public Declare(Queue<Token> typeName, Token name, Expr value) : base(name)
             {
@@ -233,7 +234,7 @@ namespace Raze
             {
                 this.name = name;
                 this.callee = callee;
-                this.offsets = typeName != null ? new LimitedStackData[typeName.Count] : null;
+                this.offsets = typeName != null ? new StackData[typeName.Count] : null;
                 this.get = get;
                 this.arguments = arguments;
             }
@@ -265,13 +266,13 @@ namespace Raze
 
         public class GetReference : TypeReference
         {
-            public LimitedStackData[] offsets;
+            public StackData[] offsets;
 
             private protected GetReference() { }
 
             public GetReference(Queue<Token> typeName) : base(typeName)
             {
-                offsets = new LimitedStackData[typeName.Count];
+                offsets = new StackData[typeName.Count];
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -312,42 +313,28 @@ namespace Raze
             }
         }
 
-        public class LimitedStackData
+        public class StackData
         {
             public int stackOffset;
-
-            public LimitedStackData() { }
-
-            public LimitedStackData(int stackOffset)
-            {
-                this.stackOffset = stackOffset;
-            }
-        }
-
-        public class StackData : LimitedStackData
-        {
             public Expr.Definition type;
             public bool plus;
             public int size;
-            public bool classScoped;
 
             public StackData() { }
 
-            public StackData(int stackOffset) : base(stackOffset)
+            public StackData(Definition type, bool plus, int size, int stackOffset)
             {
-            }
-
-            public StackData(Definition type, bool plus, int size, int stackOffset, bool classScoped) : base(stackOffset)
-            {
-                (this.type, this.plus, this.size, this.classScoped) = (type, plus, size, classScoped);
+                (this.stackOffset, this.type, this.plus, this.size) = (stackOffset, type, plus, size);
             }
         }
 
         public class Variable : GetReference
         {
+            public bool classScoped;
+
             public StackData stack
             {
-                get => (StackData)offsets[0];
+                get => offsets[0];
                 set => offsets[0] = value;
             }
 

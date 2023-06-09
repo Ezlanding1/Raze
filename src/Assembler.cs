@@ -162,7 +162,7 @@ namespace Raze
                 operand = reg;
             }
 
-            if (expr.stack.classScoped)
+            if (expr.classScoped)
             {
                 emit(new Instruction.Binary("MOV", new Instruction.Register(CurrentRegister(), Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(Instruction.Register.RegisterName.RBP, 8, 8)));
                 emit(new Instruction.Binary("MOV", new Instruction.Pointer(CurrentRegister(), expr.stack.stackOffset, expr.stack.size), operand));
@@ -309,17 +309,17 @@ namespace Raze
 
         public Instruction.Value? visitVariableExpr(Expr.Variable expr)
         {
-            if (expr.stack.classScoped)
+            if (expr.classScoped)
             {
                 emit(new Instruction.Binary("MOV", new Instruction.Register(CurrentRegister(), Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(Instruction.Register.RegisterName.RBP, 8, 8)));
             }
 
             for (int i = expr.offsets.Length - 1; i >= 1; i--)
             {
-                emit(new Instruction.Binary("MOV", new Instruction.Register(CurrentRegister(), Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(((i == expr.offsets.Length-1) && !expr.stack.classScoped) ? Instruction.Register.RegisterName.RBP : CurrentRegister(), expr.offsets[i].stackOffset, 8)));
+                emit(new Instruction.Binary("MOV", new Instruction.Register(CurrentRegister(), Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(((i == expr.offsets.Length-1) && !expr.classScoped) ? Instruction.Register.RegisterName.RBP : CurrentRegister(), expr.offsets[i].stackOffset, 8)));
             }
 
-            return new Instruction.Pointer((expr.offsets.Length == 1 && !expr.stack.classScoped) ? Instruction.Register.RegisterName.RBP : NextRegister(), expr.stack.stackOffset, expr.stack.size, expr.stack.plus ? '+' : '-');
+            return new Instruction.Pointer((expr.offsets.Length == 1 && !expr.classScoped) ? Instruction.Register.RegisterName.RBP : NextRegister(), expr.stack.stackOffset, expr.stack.size, expr.stack.plus ? '+' : '-');
         }
 
         public Instruction.Value? visitIfExpr(Expr.If expr)
@@ -505,7 +505,7 @@ namespace Raze
         {
             foreach (var variable in expr.variables.Keys)
             {
-                expr.variables[variable].register.name = variable.stack.classScoped ? Instruction.Register.RegisterName.RAX : Instruction.Register.RegisterName.RBP;
+                expr.variables[variable].register.name = variable.classScoped ? Instruction.Register.RegisterName.RAX : Instruction.Register.RegisterName.RBP;
                 expr.variables[variable].offset = variable.stack.stackOffset;
                 expr.variables[variable].size = Enum.IsDefined(typeof(Instruction.Register.RegisterSize), variable.stack.size) ? ((Instruction.Register.RegisterSize)variable.stack.size) : throw new Errors.ImpossibleError($"Invalid Register Size ({variable.stack.size})");
             }
@@ -557,12 +557,14 @@ namespace Raze
 
         private void DoFooter()
         {
+            foreach (var registerName in fncPushPreserved)
+            {
+                emit(new Instruction.Unary("POP", registerName));
+            }
+
             if (footerType)
             {
-                foreach (var registerName in fncPushPreserved)
-                {
-                    emit(new Instruction.Unary("POP", registerName));
-                }
+                
 
                 emit(new Instruction.Unary("POP", Instruction.Register.RegisterName.RBP));
                 emit(new Instruction.Zero("RET"));

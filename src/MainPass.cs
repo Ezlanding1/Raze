@@ -145,7 +145,7 @@
 
                 if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Class)
                 {
-                    expr.stack.classScoped = true;
+                    expr.classScoped = true;
                 }
 
                 expr.value.Accept(this);
@@ -269,7 +269,7 @@
                     }
                             
 
-                    expr.offsets[expr.typeName.Count] = new(variable.stackOffset);
+                    expr.offsets[expr.typeName.Count] = variable;
 
                     symbolTable.SetContext(variable.type);
 
@@ -283,7 +283,8 @@
                 {
                     expr.typeName.Dequeue();
 
-                    expr.stack = new Expr.StackData(symbol.type, symbol.plus, symbol.size, symbol.stackOffset, (expr.offsets.Length == 1)? isClassScopedVar : isClassScoped);
+                    expr.stack = symbol;
+                    expr.classScoped = (expr.offsets.Length == 1) ? isClassScopedVar : isClassScoped;
                 }
                 else
                 {
@@ -366,8 +367,6 @@
 
             public override object? visitGetReferenceExpr(Expr.GetReference expr)
             {
-                HandleThisCase(expr);
-
                 while (expr.typeName.Count > 0)
                 {
                     if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Primitive)
@@ -377,7 +376,7 @@
 
                     var variable = symbolTable.GetVariable(expr.typeName.Dequeue());
 
-                    expr.offsets[expr.typeName.Count] = new(variable.stackOffset);
+                    expr.offsets[expr.typeName.Count] = variable;
 
                     symbolTable.SetContext(variable.type);
 
@@ -401,25 +400,6 @@
                 symbolTable.SetContext(context);
 
                 return definition;
-            }
-            
-            private bool HandleThisCase(Expr.GetReference expr)
-            {
-                if (expr.typeName.Peek().lexeme == "this")
-                {
-                    expr.typeName.Dequeue();
-
-                    expr.offsets[expr.offsets.Length - 1] = new(8);
-
-                    symbolTable.SetContext(symbolTable.NearestEnclosingClass());
-
-                    if (expr.typeName.Count == 0)
-                    {
-                        expr.type = ((Expr.DataType)symbolTable.Current);
-                    }
-                    return true;
-                }
-                return false;
             }
 
             private void HandleTypeNameReference(Queue<Token> typeName)
