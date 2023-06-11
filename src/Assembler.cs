@@ -99,7 +99,6 @@ namespace Raze
                     emit(new Instruction.Unary("PUSH", arg));
                 }
             }
-
             
             if (instance)
             {
@@ -124,10 +123,7 @@ namespace Raze
                 }
             }
 
-            string operand1 = expr.internalFunction.ToString();
-
-
-            emit(new Instruction.Unary("CALL", new Instruction.ProcedureRef(operand1)));
+            emit(new Instruction.Unary("CALL", new Instruction.ProcedureRef(ToMangedName(expr.internalFunction))));
 
             if (expr.arguments.Count > InstructionUtils.paramRegister.Length && footerType)
             {
@@ -178,7 +174,7 @@ namespace Raze
         public Instruction.Value? visitFunctionExpr(Expr.Function expr)
         {
             bool leafFunc = ((expr.leaf && ((expr.constructor) ? ((Expr.Definition)expr.enclosing).leaf : true)) || expr.size == 0) && expr.size <= 128;
-            emit(new Instruction.Procedure(expr.ToString()));
+            emit(new Instruction.Procedure(ToMangedName(expr)));
 
 
             Instruction.Binary? sub = null;
@@ -604,7 +600,27 @@ namespace Raze
             return InstructionUtils.storageRegisters[registerIdx];
         }
 
-        
+        public static string ToMangedName(Expr.Function function)
+        {
+            return (function.enclosing != null ?
+                        function.enclosing.ToString() + "." :
+                        "")
+                        + function.name.lexeme + getParameters();
+
+            string getParameters()
+            {
+                string res = "";
+                if (function.parameters.Count != 0 && function.parameters[0].typeName.Count == 0)
+                {
+                    foreach (var type in function.parameters)
+                    {
+                        res += (type.stack.type);
+                    }
+                }
+                return res;
+            }
+        }
+
 
         private int SizeOfLiteral(Token.TokenType type, string literal)
         { return 8; }

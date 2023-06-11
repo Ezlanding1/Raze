@@ -24,10 +24,8 @@ namespace Raze
                     expr.Accept(this);
                 }
 
-                if (SymbolTableSingleton.SymbolTable.main == null)
-                {
-                    throw new Errors.AnalyzerError("Entrypoint Not Found", "Program does not contain a Main method");
-                }
+                symbolTable.CheckGlobals();
+                
                 return expressions;
             }
 
@@ -42,12 +40,12 @@ namespace Raze
 
             public override object? visitFunctionExpr(Expr.Function expr)
             {
-                symbolTable.AddDefinition(expr);
-                
-                if (expr.enclosing == null)
+                if (symbolTable.Current == null)
                 {
                     symbolTable.AddGlobal(expr);
                 }
+
+                symbolTable.AddDefinition(expr);
 
                 if (expr.name.lexeme == "Main")
                 {
@@ -101,12 +99,12 @@ namespace Raze
                     throw new Errors.AnalyzerError("Invalid Class Definition", "A class definition may be only within another class");
                 }
                 
-                symbolTable.AddDefinition(expr);
-
-                if (expr.enclosing == null)
+                if (symbolTable.Current == null)
                 {
                     symbolTable.AddGlobal(expr);
                 }
+
+                symbolTable.AddDefinition(expr);
 
                 Expr.ListAccept(expr.declarations, this);
                 Expr.ListAccept(expr.definitions, this);
@@ -199,12 +197,12 @@ namespace Raze
                     throw new Errors.AnalyzerError("Double Declaration", $"A primitive class named '{expr.name.lexeme}' is already defined in this scope");
                 }
 
-                symbolTable.AddDefinition(expr);
-
-                if (expr.enclosing == null)
+                if (symbolTable.Current == null)
                 {
                     symbolTable.AddGlobal(expr);
                 }
+
+                symbolTable.AddDefinition(expr);
 
                 foreach (var blockExpr in expr.definitions)
                 {

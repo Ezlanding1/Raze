@@ -227,7 +227,11 @@ namespace Raze
             public Queue<Token> callee { get => typeName; set => typeName = value; } 
             public TypeReference get;
             public bool constructor;
-            public Function internalFunction;
+            public bool instanceCall = false;
+
+            public Definition funcEnclosing;
+            public Function internalFunction { get => (Function)funcEnclosing; set => funcEnclosing = value; }
+
             public List<Expr> arguments;
 
             public Call(Token name, Queue<Token> callee, GetReference get, List<Expr> arguments)
@@ -366,7 +370,7 @@ namespace Raze
         public class New : Expr
         {
             public Call call;
-            public Class internalClass;
+            public DataType internalClass;
 
             public New(Call call)
             {
@@ -487,6 +491,40 @@ namespace Raze
                 this._returnType = _returnType;
                 this.parameters = parameters;
                 this.block = block;
+            }
+
+            public override string ToString()
+            {
+                return (enclosing != null ?
+                            enclosing.ToString() + "." :
+                            "")
+                            + name.lexeme + "(" + getParameters() + ")";
+                string getParameters()
+                {
+                    if (parameters.Count == 0)
+                    {
+                        return "";
+                    }
+
+                    string res = "";
+
+                    foreach (Parameter parameter in parameters.SkipLast(1))
+                    {
+                        if (parameter.typeName.Count == 0)
+                        {
+                            res += (parameter.stack.type + ", ");
+                        }
+                        else
+                        {
+                            res += (string.Join(".", parameter.typeName.ToList().ConvertAll(x => x.lexeme)) + ", ");
+                        }
+                    }
+                    res += (parameters[parameters.Count - 1].typeName.Count == 0)? 
+                        parameters[parameters.Count - 1].stack.type :
+                        (string.Join(".", parameters[parameters.Count - 1].typeName.ToList().ConvertAll(x => x.lexeme)));
+
+                    return res;
+                }
             }
 
             public override T Accept<T>(IVisitor<T> visitor)

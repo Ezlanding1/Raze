@@ -44,12 +44,10 @@
 
                 var context = symbolTable.Current;
 
-                bool instanceCall = false;
-
                 if (expr.callee != null)
                 {
-                    instanceCall = symbolTable.TryGetVariable(expr.callee.Peek(), out var topSymbol_I, out _);
-                    if (instanceCall)
+                    expr.instanceCall = symbolTable.TryGetVariable(expr.callee.Peek(), out var topSymbol_I, out _);
+                    if (expr.instanceCall)
                     {
                         this.visitGetReferenceExpr(expr);
                     }
@@ -57,68 +55,14 @@
                     {
                         this.visitTypeReferenceExpr(expr);
                     }
-                    symbolTable.SetContext(symbolTable.GetDefinition(expr.name, true));
+                    expr.funcEnclosing = symbolTable.Current;
                 }
                 else
                 {
-                    symbolTable.SetContext(null);
-                    if (symbolTable.TryGetDefinition(expr.name, out var symbol))
-                    {
-                        symbolTable.SetContext(symbol);
-                    }
-                    else
-                    {
-                        symbolTable.SetContext(symbolTable.NearestEnclosingClass(context));
-                        symbolTable.SetContext(symbolTable.GetDefinition(expr.name, true));
-                    }
+                    expr.funcEnclosing = symbolTable.Current;
                 }
 
-                // 
-                if (symbolTable.Current.definitionType != Expr.Definition.DefinitionType.Function)
-                {
-                    throw new Exception();
-                }
-
-                var callee = ((Expr.Function)symbolTable.Current);
-
-                if (!expr.constructor && callee.constructor)
-                {
-                    throw new Errors.AnalyzerError("Constructor Called As Method", "A Constructor may not be called as a method of its class");
-                }
-                else if (expr.constructor && !callee.constructor)
-                {
-                    throw new Errors.AnalyzerError("Method Called As Constructor", "A Method may not be called as a constructor of its class");
-                }
-
-                if (expr.callee != null)
-                {
-                    if (instanceCall && callee.modifiers["static"])
-                    {
-                        throw new Errors.AnalyzerError("Static Method Called From Instance", "You cannot call a static method from an instance");
-                    }
-                    if (!instanceCall && !callee.modifiers["static"] && !expr.constructor)
-                    {
-                        throw new Errors.AnalyzerError("Instance Method Called From Static Context", "You cannot call an instance method from a static context");
-                    }
-                }
-
-                if (expr.arguments.Count != callee.arity)
-                {
-                    throw new Errors.BackendError("Arity Mismatch", $"Arity of call for {callee} ({expr.arguments.Count}) does not match the definition's arity ({callee.arity})");
-                }
-
-                expr.internalFunction = callee;
-
-                if (expr.get != null)
-                {
-                    expr.get.Accept(this);
-                }
-
-                if (!callee.constructor) 
-                { 
-                    symbolTable.SetContext(context); 
-                }
-
+                symbolTable.SetContext(context);
                 return null;
             }
 
@@ -149,8 +93,10 @@
                 }
 
                 expr.value.Accept(this);
-                
-                symbolTable.Add(name, expr.stack, GetVariableDefinition(expr.typeName, expr.stack));
+
+                GetVariableDefinition(expr.typeName, expr.stack);
+
+                symbolTable.Add(name, expr.stack);
 
                 return null;
             }
@@ -230,7 +176,13 @@
                 {
                     Expr.Parameter paramExpr = expr.parameters[i];
 
-                    symbolTable.Add(paramExpr.name, paramExpr.stack, GetVariableDefinition(paramExpr.typeName, paramExpr.stack), i+Convert.ToInt16(instance), expr.arity);
+                    GetVariableDefinition(paramExpr.typeName, paramExpr.stack);
+
+                    if (symbolTable.TryGetVariable(paramExpr.name, out _, out _, true))
+                    {
+                        throw new Errors.AnalyzerError("Double Declaration", $"A variable named '{paramExpr.name.lexeme}' is already declared in this scope");
+                    }
+                    symbolTable.Add(paramExpr.name, paramExpr.stack, i+Convert.ToInt16(instance), expr.arity);
                 }
 
                 foreach (Expr blockExpr in expr.block)
@@ -332,15 +284,11 @@
 
             public override object? visitNewExpr(Expr.New expr)
             {
-                var context = symbolTable.Current;
-
                 expr.call.constructor = true;
 
                 expr.call.Accept(this);
 
-                expr.internalClass = (Expr.Class)symbolTable.Current.enclosing;
-
-                symbolTable.SetContext(context);
+                expr.internalClass = (Expr.DataType)expr.call.funcEnclosing;
 
                 return null;
             }
@@ -388,18 +336,16 @@
                 return null;
             }
 
-            private Expr.Definition GetVariableDefinition(Queue<Token> typeName, Expr.StackData stack)
+            private void GetVariableDefinition(Queue<Token> typeName, Expr.StackData stack)
             {
                 var context = symbolTable.Current;
 
                 HandleTypeNameReference(typeName);
 
                 stack.size = (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Primitive) ? ((Expr.Primitive)symbolTable.Current).size : 8;
-                var definition = symbolTable.Current;
+                stack.type = symbolTable.Current;
 
                 symbolTable.SetContext(context);
-
-                return definition;
             }
 
             private void HandleTypeNameReference(Queue<Token> typeName)

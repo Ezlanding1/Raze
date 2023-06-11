@@ -11,6 +11,7 @@ namespace Raze
     {
         internal partial class TypeCheckPass : Pass<Expr.Type>
         {
+            SymbolTable symbolTable = SymbolTableSingleton.SymbolTable;
             List<(Expr.Type, bool, Expr.Return)> _return;
             bool callReturn;
 
@@ -91,23 +92,61 @@ namespace Raze
 
             public override Expr.Type visitCallExpr(Expr.Call expr)
             {
-                for (int i = 0; i < expr.internalFunction.arity; i++)
+                Expr.Type[] argumentTypes = new Expr.Type[expr.arguments.Count];
+
+                for (int i = 0; i < expr.arguments.Count; i++)
                 {
-                    Expr.Parameter paramExpr = expr.internalFunction.parameters[i];
-
-                    var assignType = expr.arguments[i].Accept(this);
-
-                    MustMatchType(paramExpr.stack.type, assignType);
+                    argumentTypes[i] = expr.arguments[i].Accept(this);
                 }
+
+                var context = symbolTable.Current;
+
+                symbolTable.SetContext(expr.funcEnclosing);
+                if (expr.callee != null)
+                {
+                    symbolTable.SetContext(symbolTable.GetFunction(expr.name, argumentTypes));
+                }
+                else
+                {
+                    symbolTable.SetContext(null);
+                    if (symbolTable.TryGetFunction(expr.name, argumentTypes, out var symbol))
+                    {
+                        symbolTable.SetContext(symbol);
+                    }
+                    else
+                    {
+                        symbolTable.SetContext(symbolTable.NearestEnclosingClass(context));
+                        symbolTable.SetContext(symbolTable.GetFunction(expr.name, argumentTypes));
+                    }
+                }
+
+                // 
+                if (symbolTable.Current.definitionType != Expr.Definition.DefinitionType.Function)
+                {
+                    throw new Exception();
+                }
+
+                var callee = ((Expr.Function)symbolTable.Current);
+
+                ValidateCall(expr, callee);
+
+                expr.internalFunction = callee;
+
+                symbolTable.SetContext(context);
+
                 callReturn = true;
                 return expr.internalFunction._returnType.type;
             }
 
             public override Expr.Type visitClassExpr(Expr.Class expr)
             {
+                symbolTable.SetContext(expr);
+
                 Expr.ListAccept(expr.declarations, this);
                 Expr.ListAccept(expr.definitions, this);
-                
+
+                symbolTable.UpContext();
+
                 return _voidType;
             }
 
@@ -121,6 +160,8 @@ namespace Raze
 
             public override Expr.Type visitFunctionExpr(Expr.Function expr)
             {
+                symbolTable.SetContext(expr);
+
                 foreach (var blockExpr in expr.block)
                 {
                     Expr.Type result = blockExpr.Accept(this);
@@ -170,6 +211,9 @@ namespace Raze
                         throw new Errors.AnalyzerError("Invalid Return", $"A constructor cannot have a 'return' expression");
                     }
                 }
+
+                symbolTable.UpContext();
+
                 return _voidType;
             }
 
@@ -290,16 +334,18 @@ namespace Raze
 
             public override Expr.Type visitPrimitiveExpr(Expr.Primitive expr)
             {
+                symbolTable.SetContext(expr);
+
                 Expr.ListAccept(expr.definitions, this);
+
+                symbolTable.UpContext();
+
                 return _voidType;
             }
 
             public override Expr.Type visitNewExpr(Expr.New expr)
             {
-                foreach (Expr argExpr in expr.call.arguments)
-                {
-                    argExpr.Accept(this);
-                }
+                expr.call.Accept(this);
 
                 return expr.internalClass;
             }
@@ -368,6 +414,35 @@ namespace Raze
             private bool IsLiteralType(Expr.Type type, byte literal)
             {
                 return type.name.type == Parser.Literals[literal];
+            }
+
+            private void ValidateCall(Expr.Call expr, Expr.Function callee)
+            {
+                if (!expr.constructor && callee.constructor)
+                {
+                    throw new Errors.AnalyzerError("Constructor Called As Method", "A Constructor may not be called as a method of its class");
+                }
+                else if (expr.constructor && !callee.constructor)
+                {
+                    throw new Errors.AnalyzerError("Method Called As Constructor", "A Method may not be called as a constructor of its class");
+                }
+
+                if (expr.callee != null)
+                {
+                    if (expr.instanceCall && callee.modifiers["static"])
+                    {
+                        throw new Errors.AnalyzerError("Static Method Called From Instance", "You cannot call a static method from an instance");
+                    }
+                    if (!expr.instanceCall && !callee.modifiers["static"] && !expr.constructor)
+                    {
+                        throw new Errors.AnalyzerError("Instance Method Called From Static Context", "You cannot call an instance method from a static context");
+                    }
+                }
+
+                if (expr.arguments.Count != callee.arity)
+                {
+                    throw new Errors.BackendError("Arity Mismatch", $"Arity of call for {callee} ({expr.arguments.Count}) does not match the definition's arity ({callee.arity})");
+                }
             }
         }
     }

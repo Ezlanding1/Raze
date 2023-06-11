@@ -21,11 +21,6 @@ namespace Raze
             Pass<object?> initialPass = new InitialPass(expressions);
             expressions = initialPass.Run();
 
-            if (SymbolTableSingleton.SymbolTable.main == null)
-            {
-                throw new Errors.AnalyzerError("Main Not Found", "No Main method for entrypoint found");
-            }
-
             Pass<object?> mainPass = new MainPass(expressions);
             expressions = mainPass.Run();
 
@@ -37,8 +32,13 @@ namespace Raze
             return expressions;
         }
 
-        private void CheckMain(Expr.Function main)
+        private void CheckMain(Expr.Function? main)
         {
+            if (main == null)
+            {
+                throw new Errors.AnalyzerError("Entrypoint Not Found", "Program does not contain a Main method");
+            }
+
             if (main._returnType.type.name.lexeme != "void" && !Analyzer.TypeCheckPass.literalTypes[Token.TokenType.INTEGER].Matches(main._returnType.type))
             {
                 throw new Errors.AnalyzerError("Main Invalid Return Type", $"Main can only return types 'number', and 'void'. Got '{main._returnType.type}'");

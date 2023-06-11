@@ -57,7 +57,7 @@ namespace Raze
         public class AnalyzerError : Errors
         {
             public AnalyzerError(string name, string details)
-                : base($"{ErrorType.AnalyzerException}\n{name}: {details}" + ((!SymbolTableSingleton.SymbolTable.CurrentIsTop()) ? ("\nat:\n\t" + SymbolTableSingleton.SymbolTable.Current?.ToString()) : ""))
+                : base($"{ErrorType.AnalyzerException}\n{name}: {details}" + ("\nat:\n\t" + SymbolTableSingleton.SymbolTable.Current?.ToString()))
             {
 
             }

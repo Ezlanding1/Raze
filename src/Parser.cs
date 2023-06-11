@@ -125,7 +125,6 @@ namespace Raze
                         }
                     }
 
-                    // make it back to (improved) old system. save Token name  (make sure it will still work with ToString)
                     return new Expr.Function(modifiers, _return, name, parameters, block);
                 }
                 else if (definitionType.lexeme == "class")
