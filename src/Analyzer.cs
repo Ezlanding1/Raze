@@ -39,16 +39,21 @@ namespace Raze
                 throw new Errors.AnalyzerError("Entrypoint Not Found", "Program does not contain a Main method");
             }
 
+            if (!main.modifiers["static"])
+            {
+                throw new Errors.AnalyzerError("Invalid Main Function", "The Main function must be marked 'static'");
+            }
+
             if (main._returnType.type.name.lexeme != "void" && !Analyzer.TypeCheckPass.literalTypes[Token.TokenType.INTEGER].Matches(main._returnType.type))
             {
-                throw new Errors.AnalyzerError("Main Invalid Return Type", $"Main can only return types 'number', and 'void'. Got '{main._returnType.type}'");
+                throw new Errors.AnalyzerError("Invalid Main Function", $"Main can only return types 'number', and 'void'. Got '{main._returnType.type}'");
             }
 
             foreach (var item in main.modifiers)
             {
                 if (item.Value && item.Key != "static")
                 {
-                    throw new Errors.AnalyzerError("Main Invalid Modifier", $"Main cannot have the '{item.Key}' modifier");
+                    throw new Errors.AnalyzerError("Invalid Main Function", $"Main cannot have the '{item.Key}' modifier");
                 }
             } 
         }

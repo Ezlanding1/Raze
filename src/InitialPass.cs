@@ -47,9 +47,12 @@ namespace Raze
 
                 symbolTable.AddDefinition(expr);
 
-                if (expr.name.lexeme == "Main")
+                if (expr.enclosing == null)
                 {
                     expr.modifiers["static"] = true;
+                }
+                if (expr.name.lexeme == "Main")
+                {
                     symbolTable.main = expr;
                 }
 
