@@ -145,19 +145,18 @@ internal abstract class Instruction
         public int offset;
         public char _operator;
 
-        public Pointer(Register.RegisterName register, int offset, int size, char _operator) : base(1)
+        public Pointer(Register register, int offset, int size, char _operator ='-') : base(1)
         {
-            this.register = new Register(register, Register.RegisterSize._64Bits);
+            this.register = register;
             this.size = InstructionUtils.ToRegisterSize(size);
             this.offset = offset;
             this._operator = _operator;
         }
-
-        public Pointer(int offset, int size) : this(Register.RegisterName.RBP, offset, size, '-')
+        public Pointer(Register.RegisterName register, int offset, int size, char _operator='-') : this(new Register(register, Register.RegisterSize._64Bits), offset, size, _operator)
         {
         }
 
-        public Pointer(Register.RegisterName register, int offset, int size) : this(register, offset, size, '-')
+        public Pointer(int offset, int size) : this(Register.RegisterName.RBP, offset, size, '-')
         {
         }
 
@@ -339,6 +338,8 @@ internal abstract class Instruction
 
 internal class InstructionUtils
 {
+    public const Instruction.Register.RegisterSize SYS_SIZE = Instruction.Register.RegisterSize._64Bits;
+
     internal static string ToType(Token.TokenType input, bool unary=false)
     {
         if (!unary)

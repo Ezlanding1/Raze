@@ -86,7 +86,11 @@ namespace Raze
 
                 public string visitPointer(Instruction.Pointer instruction)
                 {
-                    return $"{InstructionUtils.wordSize[instruction.size]} [{instruction.register.Accept(this)} {instruction._operator} {instruction.offset}]";
+                    if (instruction.register.name == Instruction.Register.RegisterName.TMP)
+                    {
+                        throw new Errors.ImpossibleError("TMP Register Cannot Be Emitted");
+                    }
+                    return $"{InstructionUtils.wordSize[instruction.size]} [{RegisterToString[(instruction.register.name, InstructionUtils.SYS_SIZE)]} {instruction._operator} {instruction.offset}]";
                 }
 
                 public string visitProcedureRef(Instruction.ProcedureRef instruction)
@@ -121,7 +125,11 @@ namespace Raze
 
                 private string PointerToString(Instruction.Pointer instruction)
                 {
-                    return $"[{instruction.register.Accept(this)} {instruction._operator} {instruction.offset}]";
+                    if (instruction.register.name == Instruction.Register.RegisterName.TMP)
+                    {
+                        throw new Errors.ImpossibleError("TMP Register Cannot Be Emitted");
+                    }
+                    return $"[{RegisterToString[(instruction.register.name, InstructionUtils.SYS_SIZE)]} {instruction._operator} {instruction.offset}]";
                 }
 
                 public string visitLiteral(Instruction.Literal instruction)
