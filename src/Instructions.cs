@@ -15,6 +15,8 @@ internal abstract class Instruction
         public string visitData(Data instruction);
         public string visitDataRef(DataRef instruction);
         public string visitProcedure(Procedure instruction);
+        public string visitLocalProcedure(LocalProcedure instruction);
+        public string visitLocalProcedureRef(LocalProcedureRef instruction);
         public string visitProcedureRef(ProcedureRef instruction);
         public string visitBinary(Binary instruction);
         public string visitUnary(Unary instruction);
@@ -230,6 +232,20 @@ internal abstract class Instruction
         }
     }
 
+    internal class LocalProcedure : Instruction
+    {
+        public string name;
+        public LocalProcedure(string name)
+        {
+            this.name = name;
+        }
+
+        public override string Accept(IVisitor visitor)
+        {
+            return visitor.visitLocalProcedure(this);
+        }
+    }
+
     internal class ProcedureRef : Instruction
     { 
         public string name;
@@ -242,6 +258,21 @@ internal abstract class Instruction
         public override string Accept(IVisitor visitor)
         {
             return visitor.visitProcedureRef(this);
+        }
+    }
+
+    internal class LocalProcedureRef : Instruction
+    {
+        public string name;
+
+        public LocalProcedureRef(string name)
+        {
+            this.name = name;
+        }
+
+        public override string Accept(IVisitor visitor)
+        {
+            return visitor.visitLocalProcedureRef(this);
         }
     }
 

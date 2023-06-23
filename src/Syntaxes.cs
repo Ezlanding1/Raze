@@ -79,6 +79,11 @@ namespace Raze
                     return $"{instruction.name}:";
                 }
 
+                public string visitLocalProcedure(Instruction.LocalProcedure instruction)
+                {
+                    return $".{instruction.name}:";
+                }
+
                 public string visitGlobal(Instruction.Global instruction)
                 {
                     return $"global {instruction.name}\n";
@@ -96,6 +101,11 @@ namespace Raze
                 public string visitProcedureRef(Instruction.ProcedureRef instruction)
                 {
                     return $"{instruction.name}";
+                }
+
+                public string visitLocalProcedureRef(Instruction.LocalProcedureRef instruction)
+                {
+                    return $".{instruction.name}";
                 }
 
                 public string visitRegister(Instruction.Register instruction)
@@ -281,6 +291,11 @@ namespace Raze
                     throw new NotImplementedException();
                 }
 
+                public string visitLocalProcedure(Instruction.LocalProcedure instruction)
+                {
+                    throw new NotImplementedException();
+                }
+
                 public string visitDataRef(Instruction.DataRef instruction)
                 {
                     throw new NotImplementedException();
@@ -327,6 +342,11 @@ namespace Raze
                 }
 
                 public string visitProcedureRef(Instruction.ProcedureRef instruction)
+                {
+                    throw new NotImplementedException();
+                }
+
+                public string visitLocalProcedureRef(Instruction.LocalProcedureRef instruction)
                 {
                     throw new NotImplementedException();
                 }

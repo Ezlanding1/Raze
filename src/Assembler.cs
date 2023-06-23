@@ -341,8 +341,8 @@ namespace Raze
 
             foreach (Expr.ElseIf elif in expr.ElseIfs)
             {
-                fJump.operand = new Instruction.ProcedureRef(ConditionalLabel);
-                emit(new Instruction.Procedure(ConditionalLabel));
+                fJump.operand = new Instruction.LocalProcedureRef(ConditionalLabel);
+                emit(new Instruction.LocalProcedure(ConditionalLabel));
                 conditionalCount++;
 
                 elif.conditional.condition.Accept(this);
@@ -358,8 +358,8 @@ namespace Raze
                 emit(tJump);
             }
 
-            fJump.operand = new Instruction.ProcedureRef(ConditionalLabel);
-            emit(new Instruction.Procedure(ConditionalLabel));
+            fJump.operand = new Instruction.LocalProcedureRef(ConditionalLabel);
+            emit(new Instruction.LocalProcedure(ConditionalLabel));
             conditionalCount++;
             if (expr._else != null)
             {
@@ -368,8 +368,8 @@ namespace Raze
                     blockExpr.Accept(this);
                 }
             }
-            emit(new Instruction.Procedure(ConditionalLabel));
-            tJump.operand = new Instruction.ProcedureRef(ConditionalLabel);
+            emit(new Instruction.LocalProcedure(ConditionalLabel));
+            tJump.operand = new Instruction.LocalProcedureRef(ConditionalLabel);
 
             conditionalCount++;
             return null;
@@ -377,19 +377,19 @@ namespace Raze
 
         public Instruction.Value? visitWhileExpr(Expr.While expr)
         {
-            emit(new Instruction.Unary("JMP", new Instruction.ProcedureRef(ConditionalLabel)));
+            emit(new Instruction.Unary("JMP", new Instruction.LocalProcedureRef(ConditionalLabel)));
 
-            var conditional = new Instruction.Procedure(ConditionalLabel);
+            var conditional = new Instruction.LocalProcedure(ConditionalLabel);
 
             conditionalCount++;
 
-            emit(new Instruction.Procedure(ConditionalLabel));
+            emit(new Instruction.LocalProcedure(ConditionalLabel));
 
             expr.conditional.block.Accept(this);
 
             emit(conditional);
             expr.conditional.condition.Accept(this);
-            emit(new Instruction.Unary(InstructionUtils.ConditionalJump[lastJump], new Instruction.ProcedureRef(ConditionalLabel)));
+            emit(new Instruction.Unary(InstructionUtils.ConditionalJump[lastJump], new Instruction.LocalProcedureRef(ConditionalLabel)));
             conditionalCount++;
 
             return null;
@@ -398,20 +398,20 @@ namespace Raze
         public Instruction.Value? visitForExpr(Expr.For expr)
         {
             expr.initExpr.Accept(this);
-            emit(new Instruction.Unary("JMP", new Instruction.ProcedureRef(ConditionalLabel)));
+            emit(new Instruction.Unary("JMP", new Instruction.LocalProcedureRef(ConditionalLabel)));
 
-            var conditional = new Instruction.Procedure(ConditionalLabel);
+            var conditional = new Instruction.LocalProcedure(ConditionalLabel);
 
             conditionalCount++;
 
-            emit(new Instruction.Procedure(ConditionalLabel));
+            emit(new Instruction.LocalProcedure(ConditionalLabel));
 
             expr.conditional.block.Accept(this);
             expr.updateExpr.Accept(this);
 
             emit(conditional);
             expr.conditional.condition.Accept(this);
-            emit(new Instruction.Unary(InstructionUtils.ConditionalJump[lastJump], new Instruction.ProcedureRef(ConditionalLabel)));
+            emit(new Instruction.Unary(InstructionUtils.ConditionalJump[lastJump], new Instruction.LocalProcedureRef(ConditionalLabel)));
             conditionalCount++;
 
             return null;
