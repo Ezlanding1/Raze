@@ -254,6 +254,7 @@
 
                 expr.ElseIfs.ForEach(x => HandleConditional(x.conditional));
 
+                if (expr._else != null)
                 HandleConditional(expr._else.conditional);
 
                 return null;

@@ -238,6 +238,7 @@ namespace Raze
 
                 expr.ElseIfs.ForEach(x => TypeCheckConditional(x.conditional));
 
+                if (expr._else != null)
                 TypeCheckConditional(expr._else.conditional);
 
                 return _voidType;

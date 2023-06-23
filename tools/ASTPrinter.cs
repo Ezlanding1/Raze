@@ -210,7 +210,8 @@ namespace Raze.Tools
 
             expr.ElseIfs.ForEach(x => PrintConditional(x.conditional, "else if"));
 
-            PrintConditional(expr._else.conditional, "else");
+            if (expr._else != null)
+                PrintConditional(expr._else.conditional, "else");
             return null;
         }
 
