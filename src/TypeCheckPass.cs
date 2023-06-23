@@ -67,7 +67,14 @@ namespace Raze
                 
                 var context = symbolTable.Current;
 
-                if (argumentTypes[0] is Expr.Definition)
+                var (arg0, arg1) = (IsLiteralType(argumentTypes[0]), IsLiteralType(argumentTypes[1]));
+
+                if (arg0.Item1 && arg1.Item1)
+                {
+                    return Primitives.Operation(expr.op, arg0.Item2, expr.left, arg1.Item2, expr.right);
+                }
+
+                if (!arg0.Item1)
                 {
                     symbolTable.SetContext((Expr.Definition)argumentTypes[0]);
 
@@ -77,7 +84,7 @@ namespace Raze
                     }
                 }
                 
-                if (expr.internalFunction == null && argumentTypes[1] is Expr.Definition) 
+                if (expr.internalFunction == null && !arg1.Item1) 
                 {
                     symbolTable.SetContext((Expr.Definition)argumentTypes[1]);
 
@@ -89,7 +96,7 @@ namespace Raze
 
                 if (expr.internalFunction == null)
                 {
-                    throw new Errors.AnalyzerError("Invalid Operator", $"Types '{argumentTypes[0]}' and '{argumentTypes[1]}' don't have a definition for '{SymbolToPrimitiveName(expr.op)}' ( '{expr.op.lexeme}' )");
+                    Primitives.InvalidOperation(expr.op, argumentTypes[0].ToString(), argumentTypes[1].ToString());
                 }
 
                 symbolTable.SetContext(context);
@@ -315,7 +322,14 @@ namespace Raze
 
                 var context = symbolTable.Current;
 
-                if (argumentTypes[0] is Expr.Definition)
+                var arg = IsLiteralType(argumentTypes[0]);
+
+                if (arg.Item1)
+                {
+                    return Primitives.Operation(expr.op, arg.Item2, expr.operand);
+                }
+
+                if (!arg.Item1)
                 {
                     symbolTable.SetContext((Expr.Definition)argumentTypes[0]);
 
@@ -327,7 +341,7 @@ namespace Raze
 
                 if (expr.internalFunction == null)
                 {
-                    throw new Errors.AnalyzerError("Invalid Operator", $"Type '{argumentTypes[0]}' doesn't not have a definition for '{SymbolToPrimitiveName(expr.op)}' ( '{expr.op.lexeme}' )");
+                    Primitives.InvalidOperation(expr.op, argumentTypes[0].ToString());
                 }
                 symbolTable.SetContext(context);
 
@@ -459,6 +473,17 @@ namespace Raze
                 return type.name.lexeme == "void"; 
             }
 
+            private (bool, int) IsLiteralType(Expr.Type type)
+            {
+                for (byte i = 0; i < Parser.Literals.Length; i++)
+                {
+                    if (IsLiteralType(type, i))
+                    {
+                        return (true, i);
+                    }
+                }
+                return (false, -1);
+            }
             private bool IsLiteralType(Expr.Type type, byte literal)
             {
                 return type.name.type == Parser.Literals[literal];
