@@ -33,6 +33,24 @@
                 return null;
             }
 
+            public override object? visitBinaryExpr(Expr.Binary expr)
+            {
+                base.visitBinaryExpr(expr);
+
+                expr.encSize = symbolTable.Current.size;
+
+                return null;
+            }
+
+            public override object visitUnaryExpr(Expr.Unary expr)
+            {
+                base.visitUnaryExpr(expr);
+
+                expr.encSize = symbolTable.Current.size;
+
+                return null;
+            }
+
             public override object? visitCallExpr(Expr.Call expr)
             {
                 for (int i = 0; i < expr.arguments.Count; i++)
@@ -40,9 +58,9 @@
                     expr.arguments[i].Accept(this);
                 }
 
-                CurrentCalls();
-
                 var context = symbolTable.Current;
+
+                expr.encSize = symbolTable.Current.size;
 
                 if (expr.callee != null)
                 {
@@ -162,7 +180,6 @@
                     expr._returnType.type = TypeCheckPass._voidType;
                 }
 
-
                 symbolTable.CreateBlock();
 
                 bool instance = !expr.modifiers["static"];
@@ -175,6 +192,8 @@
                 for (int i = 0; i < expr.arity; i++)
                 {
                     Expr.Parameter paramExpr = expr.parameters[i];
+
+                    paramExpr.stack = (expr.modifiers["inline"])? new Expr.StackRegister() : new Expr.StackData();
 
                     GetVariableDefinition(paramExpr.typeName, paramExpr.stack);
 
@@ -255,7 +274,7 @@
                 expr.ElseIfs.ForEach(x => HandleConditional(x.conditional));
 
                 if (expr._else != null)
-                HandleConditional(expr._else.conditional);
+                    HandleConditional(expr._else.conditional);
 
                 return null;
             }
@@ -365,11 +384,6 @@
                     expr.condition.Accept(this);
 
                 expr.block.Accept(this);
-            }
-
-            private void CurrentCalls()
-            {
-                symbolTable.Current.leaf = false;
             }
         }
     }

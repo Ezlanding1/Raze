@@ -52,6 +52,10 @@ namespace Raze
             public Token op;
             public Expr right;
 
+            public int encSize;
+
+            public Expr.Function internalFunction;
+
             public Binary(Expr left, Token op, Expr right)
             {
                 this.left = left;
@@ -65,11 +69,16 @@ namespace Raze
             }
 
         }
+
         public class Unary : Expr
         {
 
             public Token op;
             public Expr operand;
+
+            public Expr.Function internalFunction;
+
+            public int encSize;
 
             public Unary(Token op, Expr operand)
             {
@@ -234,6 +243,8 @@ namespace Raze
 
             public List<Expr> arguments;
 
+            public int encSize;
+
             public Call(Token name, Queue<Token> callee, GetReference get, List<Expr> arguments)
             {
                 this.name = name;
@@ -330,7 +341,7 @@ namespace Raze
                     AssignNone = 0,
                     AssignFirst = 1,
                     AssignSecond = 2
-        }
+                }
                 AssignType assignType;
 
                 Instruction.Binary instruction;
@@ -410,12 +421,24 @@ namespace Raze
             public Expr.Definition type;
             public bool plus;
             public int size;
+            public bool stackRegister;
 
             public StackData() { }
 
             public StackData(Definition type, bool plus, int size, int stackOffset)
             {
                 (this.stackOffset, this.type, this.plus, this.size) = (stackOffset, type, plus, size);
+            }
+        }
+
+        public class StackRegister : StackData
+        {
+            public Instruction.Register register;
+
+            public StackRegister() { }
+
+            public StackRegister(Definition type, bool plus, int size, int stackOffset) : base(type, plus, size, stackOffset)
+            {
             }
         }
 
@@ -475,7 +498,7 @@ namespace Raze
             public Queue<Token> typeName;
             public Token name;
 
-            public StackData stack = new();
+            public StackData stack;
 
             public Parameter(Queue<Token> typeName, Token name)
             {
@@ -542,7 +565,6 @@ namespace Raze
             }
 
             public int size;
-            public bool leaf = true;
 
             public Definition(Token name) : base(name)
             {

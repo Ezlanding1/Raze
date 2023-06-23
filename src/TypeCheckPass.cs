@@ -59,19 +59,47 @@ namespace Raze
 
             public override Expr.Type visitBinaryExpr(Expr.Binary expr)
             {
-                Expr.Type operand1 = expr.left.Accept(this);
-                Expr.Type operand2 = expr.right.Accept(this);
+                Expr.Type[] argumentTypes =
+                {
+                    expr.left.Accept(this),
+                    expr.right.Accept(this)
+                };
+                
+                var context = symbolTable.Current;
 
-                //if ((Primitives.PrimitiveOps(operand1))
-                //        ._operators.TryGetValue((expr.op.lexeme + " BIN", operand1, operand2), out string value))
-                //{
-                //    return value;
-                //}
-                //else
-                //{
-                //    throw new Errors.AnalyzerError("Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on types '{operand1}' and '{operand2}'");
-                //}
-                return null;
+                if (argumentTypes[0] is Expr.Definition)
+                {
+                    symbolTable.SetContext((Expr.Definition)argumentTypes[0]);
+
+                    if (symbolTable.TryGetFunction(SymbolToPrimitiveName(expr.op), argumentTypes, out var symbol))
+                    {
+                        expr.internalFunction = symbol;
+                    }
+                }
+                
+                if (expr.internalFunction == null && argumentTypes[1] is Expr.Definition) 
+                {
+                    symbolTable.SetContext((Expr.Definition)argumentTypes[1]);
+
+                    if (symbolTable.TryGetFunction(SymbolToPrimitiveName(expr.op), new Expr.Type[] { argumentTypes[1], argumentTypes[0] }, out var symbol))
+                    {
+                        expr.internalFunction = symbol;
+                    }
+                }
+
+                if (expr.internalFunction == null)
+                {
+                    throw new Errors.AnalyzerError("Invalid Operator", $"Types '{argumentTypes[0]}' and '{argumentTypes[1]}' don't have a definition for '{SymbolToPrimitiveName(expr.op)}' ( '{expr.op.lexeme}' )");
+                }
+
+                symbolTable.SetContext(context);
+
+                if (expr.internalFunction.modifiers["inline"])
+                {
+                    context.size = Math.Max(context.size, expr.encSize + expr.internalFunction.size);
+                }
+
+                return expr.internalFunction._returnType.type;
             }
 
             public override Expr.Type visitBlockExpr(Expr.Block expr)
@@ -82,8 +110,7 @@ namespace Raze
 
                     if (!IsVoidType(result) && !callReturn)
                     {
-                        if (false)
-                            throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
+                        throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
                     }
                     callReturn = false; 
                 }
@@ -104,19 +131,19 @@ namespace Raze
                 symbolTable.SetContext(expr.funcEnclosing);
                 if (expr.callee != null)
                 {
-                    symbolTable.SetContext(symbolTable.GetFunction(expr.name, argumentTypes));
+                    symbolTable.SetContext(symbolTable.GetFunction(expr.name.lexeme, argumentTypes));
                 }
                 else
                 {
                     symbolTable.SetContext(null);
-                    if (symbolTable.TryGetFunction(expr.name, argumentTypes, out var symbol))
+                    if (symbolTable.TryGetFunction(expr.name.lexeme, argumentTypes, out var symbol))
                     {
                         symbolTable.SetContext(symbol);
                     }
                     else
                     {
                         symbolTable.SetContext(symbolTable.NearestEnclosingClass(context));
-                        symbolTable.SetContext(symbolTable.GetFunction(expr.name, argumentTypes));
+                        symbolTable.SetContext(symbolTable.GetFunction(expr.name.lexeme, argumentTypes));
                     }
                 }
 
@@ -126,13 +153,16 @@ namespace Raze
                     throw new Exception();
                 }
 
-                var callee = ((Expr.Function)symbolTable.Current);
+                ValidateCall(expr, ((Expr.Function)symbolTable.Current));
 
-                ValidateCall(expr, callee);
-
-                expr.internalFunction = callee;
+                expr.internalFunction = ((Expr.Function)symbolTable.Current);
 
                 symbolTable.SetContext(context);
+
+                if (expr.internalFunction.modifiers["inline"])
+                {
+                    context.size = Math.Max(context.size, expr.encSize + expr.internalFunction.size);
+                }
 
                 callReturn = true;
                 return expr.internalFunction._returnType.type;
@@ -168,8 +198,7 @@ namespace Raze
 
                     if (!IsVoidType(result) && !callReturn)
                     {
-                        if (false)
-                            throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
+                        throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
                     }
                     callReturn = false;
                 }
@@ -239,7 +268,7 @@ namespace Raze
                 expr.ElseIfs.ForEach(x => TypeCheckConditional(x.conditional));
 
                 if (expr._else != null)
-                TypeCheckConditional(expr._else.conditional);
+                    TypeCheckConditional(expr._else.conditional);
 
                 return _voidType;
             }
@@ -279,17 +308,40 @@ namespace Raze
 
             public override Expr.Type visitUnaryExpr(Expr.Unary expr)
             {
-                Expr.Type operand1 = expr.operand.Accept(this);
-                //if ((Primitives.PrimitiveOps(operand1))
-                //        ._operators.TryGetValue((expr.op.lexeme + " UN", operand1, ""), out string value))
-                //{
-                //    return value;
-                //}
-                //else
-                //{
-                //    throw new Errors.AnalyzerError("Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on type '{operand1}'");
-                //}
-                return null;
+                Expr.Type[] argumentTypes =
+                {
+                    expr.operand.Accept(this)
+                };
+
+                var context = symbolTable.Current;
+
+                if (argumentTypes[0] is Expr.Definition)
+                {
+                    symbolTable.SetContext((Expr.Definition)argumentTypes[0]);
+
+                    if (symbolTable.TryGetFunction(SymbolToPrimitiveName(expr.op), argumentTypes, out var symbol))
+                    {
+                        expr.internalFunction = symbol;
+                    }
+                }
+
+                if (expr.internalFunction == null)
+                {
+                    throw new Errors.AnalyzerError("Invalid Operator", $"Type '{argumentTypes[0]}' doesn't not have a definition for '{SymbolToPrimitiveName(expr.op)}' ( '{expr.op.lexeme}' )");
+                }
+                symbolTable.SetContext(context);
+
+                if (expr.internalFunction.modifiers["inline"])
+                {
+                    context.size = Math.Max(context.size, expr.encSize + expr.internalFunction.size);
+                }
+
+                if (SymbolToPrimitiveName(expr.op) == "Increment")
+                {
+                    callReturn = true;
+                }
+
+                return expr.internalFunction._returnType.type;
             }
 
             public override Expr.Type visitVariableExpr(Expr.Variable expr)
@@ -308,23 +360,8 @@ namespace Raze
             {
                 Expr.Type assignType = expr.value.Accept(this);
 
-                //if (expr.op != null)
-                //{
-                //    Expr.Type operand = expr.value.Accept(this);
+                // TODO
 
-                //    if (!(Primitives.PrimitiveOps(expr.member.stack.type.ToString()))
-                //            ._operators.ContainsKey((expr.op.lexeme + " BIN", expr.member.stack.type.ToString(), operand)))
-                //    {
-                //        throw new Errors.AnalyzerError("Invalid Operator", $"You cannot apply operator '{expr.op.lexeme}' on types '{expr.member.stack.type}' and '{operand}'");
-                //    }
-                //}
-                //else
-                //{
-                //    if (!MatchesType(expr.member.stack.type, assignType))
-                //    {
-                //        throw new Errors.AnalyzerError("Type Mismatch", $"You cannot assign type '{assignType}' to type '{expr.member.stack.type.ToString()}'");
-                //    }
-                //}
                 return _voidType;
             }
 
@@ -365,7 +402,7 @@ namespace Raze
 
             public override Expr.Type visitAssemblyExpr(Expr.Assembly expr)
             {
-                foreach (var variable in expr.variables.Keys)
+                foreach (var variable in expr.variables)
                 {
                     variable.Accept(this);
                 }
@@ -407,6 +444,16 @@ namespace Raze
                 }
             }
 
+            public static string SymbolToPrimitiveName(Token op)
+            {
+                return op.type switch
+                {
+                    Token.TokenType.PLUS => "Add",
+                    Token.TokenType.MULTIPLY => "Multiply",
+                    Token.TokenType.PLUSPLUS => "Increment"
+                };
+            }
+
             private bool IsVoidType(Expr.Type type)
             { 
                 return type.name.lexeme == "void"; 
@@ -438,11 +485,6 @@ namespace Raze
                     {
                         throw new Errors.AnalyzerError("Instance Method Called From Static Context", "You cannot call an instance method from a static context");
                     }
-                }
-
-                if (expr.arguments.Count != callee.arity)
-                {
-                    throw new Errors.BackendError("Arity Mismatch", $"Arity of call for {callee} ({expr.arguments.Count}) does not match the definition's arity ({callee.arity})");
                 }
             }
         }

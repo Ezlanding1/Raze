@@ -50,7 +50,40 @@ namespace Raze
                 if (expr.enclosing == null)
                 {
                     expr.modifiers["static"] = true;
+
+                    if (expr.modifiers["operator"]) 
+                    {
+                        throw new Errors.AnalyzerError("Invalid Operator Definition", $"Top level operator function definitions are not allowed");
+                    }
                 }
+
+                if (expr.modifiers["operator"])
+                {
+                    expr.modifiers["static"] = true;
+                    switch (expr.name.lexeme)
+                    {
+                        // Binary
+
+                        case "Add":
+                        case "Multiply":
+                            if (expr.arity != 2)
+                            {
+                                throw new Errors.AnalyzerError("Invalid Operator Definition", $"The '{expr.name.lexeme}' operator must have an arity of 2");
+                            }
+                            break;
+                        // Unary
+
+                        case "Increment":
+                            if (expr.arity != 1)
+                            {
+                                throw new Errors.AnalyzerError("Invalid Operator Definition", $"The '{expr.name.lexeme}' operator must have an arity of 1");
+                            }
+                            break;
+                        default:
+                            throw new Errors.AnalyzerError("Invalid Operator Definition", $"'{expr.name.lexeme}' is not a recognized operator");
+                    }
+                }
+                
                 if (expr.name.lexeme == "Main")
                 {
                     symbolTable.main = expr;
@@ -165,7 +198,7 @@ namespace Raze
                     throw new Errors.AnalyzerError("Unsafe Code in Safe Function", "Mark a function with 'unsafe' to include unsafe code");
                 }
 
-                foreach (var variable in expr.variables.Keys)
+                foreach (var variable in expr.variables)
                 {
                     variable.Accept(this);
                 }
@@ -243,6 +276,10 @@ namespace Raze
                 if (constructor.modifiers["static"])
                 {
                     throw new Errors.AnalyzerError("Constructor Marked 'static'", "A constructor cannot have the 'static' modifier");
+                }
+                if (constructor.modifiers["operator"])
+                {
+                    throw new Errors.AnalyzerError("Constructor Marked 'operator'", "A constructor cannot have the 'operator' modifier");
                 }
             }
         }

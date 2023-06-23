@@ -229,7 +229,7 @@ namespace Raze
 
             // 'GetFunction' Methods:
 
-            private Expr.Function? _GetFunction(Token key, Expr.Type[] types)
+            private Expr.Function? _GetFunction(string key, Expr.Type[] types)
             {
                 if (current == null)
                 {
@@ -253,11 +253,11 @@ namespace Raze
                 return null;
             }
 
-            public Expr.Function GetFunction(Token key, Expr.Type[] types)
+            public Expr.Function GetFunction(string key, Expr.Type[] types)
             {
-                return _GetFunction(key, types) ?? throw new Errors.AnalyzerError("Undefined Reference", $"The function '{key.lexeme}({string.Join(", ", (object?[])types)})' does not exist in the current context");
+                return _GetFunction(key, types) ?? throw new Errors.AnalyzerError("Undefined Reference", $"The function '{key}({string.Join(", ", (object?[])types)})' does not exist in the current context");
             }
-            public bool TryGetFunction(Token key, Expr.Type[] types, out Expr.Function symbol)
+            public bool TryGetFunction(string key, Expr.Type[] types, out Expr.Function symbol)
             {
                 return (symbol = _GetFunction(key, types)) != null;
             }
@@ -321,12 +321,12 @@ namespace Raze
                 value = null;
                 return false;
             }
-            private bool TryGetFuncValue(List<Expr.Definition> list, Token key, Expr.Type[] types, out Expr.Function value)
+            private bool TryGetFuncValue(List<Expr.Definition> list, string key, Expr.Type[] types, out Expr.Function value)
             {
                 value = null;
                 foreach (var item in list)
                 {
-                    if (item.name.lexeme == key.lexeme)
+                    if (item.name.lexeme == key)
                     {
                         if (ParamMatch(types, (Expr.Function)item))
                         {

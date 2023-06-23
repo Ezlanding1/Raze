@@ -59,7 +59,7 @@ namespace Raze
                 expressions = analyzer.Analyze();
 
                 // Lower AST to ASM
-                Assembler assembler = new(expressions);
+                Assembler assembler = new InlinedAssembler(expressions);
                 var output = assembler.Assemble();
                 var instructions = output.Item1;
                 var data = output.Item2;

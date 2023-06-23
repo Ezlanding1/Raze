@@ -56,7 +56,9 @@ namespace Raze
                     Dictionary<string, bool> modifiers = new()
                     {
                         { "static", false },
-                        { "unsafe", false }
+                        { "unsafe", false },
+                        { "operator", false },
+                        { "inline", false }
                     };
 
                     Expr.TypeReference _return;
