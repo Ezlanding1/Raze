@@ -67,7 +67,7 @@ namespace Raze
                 
                 var context = symbolTable.Current;
 
-                var (arg0, arg1) = (IsLiteralType(argumentTypes[0]), IsLiteralType(argumentTypes[1]));
+                var (arg0, arg1) = (IsLiteralTypeOrVoid(argumentTypes[0]), IsLiteralTypeOrVoid(argumentTypes[1]));
 
                 if (arg0.Item1 && arg1.Item1)
                 {
@@ -322,7 +322,7 @@ namespace Raze
 
                 var context = symbolTable.Current;
 
-                var arg = IsLiteralType(argumentTypes[0]);
+                var arg = IsLiteralTypeOrVoid(argumentTypes[0]);
 
                 if (arg.Item1)
                 {
@@ -473,7 +473,7 @@ namespace Raze
                 return type.name.lexeme == "void"; 
             }
 
-            private (bool, int) IsLiteralType(Expr.Type type)
+            private (bool, int) IsLiteralTypeOrVoid(Expr.Type type)
             {
                 for (byte i = 0; i < Parser.Literals.Length; i++)
                 {
@@ -481,6 +481,10 @@ namespace Raze
                     {
                         return (true, i);
                     }
+                }
+                if (IsVoidType(type)) 
+                {
+                    return (true, -1);
                 }
                 return (false, -1);
             }
