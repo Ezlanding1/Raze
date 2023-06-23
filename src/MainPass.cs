@@ -275,7 +275,7 @@
 
             public override object visitAssemblyExpr(Expr.Assembly expr)
             {
-                foreach (var variable in expr.variables.Keys)
+                foreach (var variable in expr.variables)
                 {
                     variable.Accept(this);
                 }

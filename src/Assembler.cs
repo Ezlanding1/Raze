@@ -506,15 +506,10 @@ namespace Raze
 
         public Instruction.Value? visitAssemblyExpr(Expr.Assembly expr)
         {
-            foreach (var variable in expr.variables.Keys)
-            {
-                expr.variables[variable].register.name = variable.classScoped ? Instruction.Register.RegisterName.RAX : Instruction.Register.RegisterName.RBP;
-                expr.variables[variable].offset = variable.stack.stackOffset;
-                expr.variables[variable].size = Enum.IsDefined(typeof(Instruction.Register.RegisterSize), variable.stack.size) ? ((Instruction.Register.RegisterSize)variable.stack.size) : throw new Errors.ImpossibleError($"Invalid Register Size ({variable.stack.size})");
-            }
+            int count = 0;
             foreach (var instruction in expr.block)
             {
-                emit(instruction);
+                instruction.Assign(ref count, expr.variables, this);
             }
             return null;
         }
@@ -590,6 +585,29 @@ namespace Raze
         internal void emitData(Instruction.Data instruction)
         {
             data.Add(instruction);
+        }
+
+        public Instruction.Register HandleOperand(Instruction.Value operand1)
+        {
+            if (operand1.IsPointer())
+            {
+                if (((Instruction.Pointer)operand1).register.name == Instruction.Register.RegisterName.RBP)
+                {
+                    emit(new Instruction.Binary("MOV", alloc.CurrentRegister(((Instruction.Pointer)operand1).size), operand1));
+                    return alloc.NextRegister(((Instruction.Pointer)operand1).size);
+                }
+                else
+                {
+                    emit(new Instruction.Binary("MOV", ((Instruction.Pointer)operand1).register, operand1));
+                    return ((Instruction.Pointer)operand1).register;
+                }
+            }
+            else if (operand1.IsLiteral())
+            {
+                emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._32Bits), operand1));
+                return alloc.NextRegister(Instruction.Register.RegisterSize._32Bits);
+            }
+            return (Instruction.Register)operand1;
         }
 
         public static string ToMangedName(Expr.Function function)

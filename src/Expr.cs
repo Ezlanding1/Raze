@@ -302,10 +302,10 @@ namespace Raze
 
         public class Assembly : Expr
         {
-            public List<Instruction> block;
-            public Dictionary<Variable, Instruction.Pointer> variables;
+            public List<AssignableInstruction> block;
+            public List<Variable> variables;
 
-            public Assembly(List<Instruction> block,  Dictionary<Variable, Instruction.Pointer> variables)
+            public Assembly(List<AssignableInstruction> block, List<Variable> variables)
             {
                 this.block = block;
                 this.variables = variables;
@@ -314,6 +314,93 @@ namespace Raze
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.visitAssemblyExpr(this);
+            }
+
+
+            public abstract class AssignableInstruction
+            {
+                public abstract void Assign(ref int count, List<Expr.Variable> vars, Assembler assembler);
+            }
+
+            public class AssignableInstructionBin : AssignableInstruction
+            {
+                [Flags]
+                public enum AssignType
+                {
+                    AssignNone = 0,
+                    AssignFirst = 1,
+                    AssignSecond = 2
+        }
+                AssignType assignType;
+
+                Instruction.Binary instruction;
+
+                public AssignableInstructionBin(Instruction.Binary instruction, AssignType assignType)
+                {
+                    this.instruction = instruction;
+                    this.assignType = assignType;
+                }
+
+                public override void Assign(ref int count, List<Variable> vars, Assembler assembler)
+                {
+                    Instruction operand1 = assignType.HasFlag(AssignType.AssignFirst)? 
+                        assembler.HandleOperand(vars[count++].Accept(assembler)) : 
+                        instruction.operand1;
+
+                    Instruction operand2 = assignType.HasFlag(AssignType.AssignSecond)? 
+                        vars[count++].Accept(assembler) : 
+                        instruction.operand2;
+
+                    assembler.emit(new Instruction.Binary(this.instruction.instruction, operand1, operand2));
+
+                    if (assignType.HasFlag(AssignType.AssignFirst))
+                        assembler.alloc.FreeRegister((Instruction.Register)operand1);
+
+                    if (assignType.HasFlag(AssignType.AssignSecond))
+                        assembler.alloc.Free((Instruction.Value)operand2);
+                }
+            }
+            public class AssignableInstructionUn : AssignableInstruction
+            {
+                [Flags]
+                public enum AssignType
+                {
+                    AssignNone = 0,
+                    AssignFirst = 1
+                }
+                AssignType assignType;
+
+                Instruction.Unary instruction;
+
+                public AssignableInstructionUn(Instruction.Unary instruction, AssignType assignType)
+                {
+                    this.instruction = instruction;
+                    this.assignType = assignType;
+                }
+
+                public override void Assign(ref int count, List<Variable> vars, Assembler assembler)
+                {
+                    Instruction operand = assignType.HasFlag(AssignType.AssignFirst)? vars[count++].Accept(assembler) : instruction.operand;
+
+                    assembler.emit(new Instruction.Unary(this.instruction.instruction, operand));
+
+                    if (assignType.HasFlag(AssignType.AssignFirst))
+                        assembler.alloc.Free((Instruction.Value)operand);
+                }
+            }
+            public class AssignableInstructionZ : AssignableInstruction
+            {
+                public Instruction.Zero instruction;
+
+                public AssignableInstructionZ(Instruction.Zero instruction)
+                {
+                    this.instruction = instruction;
+                }
+
+                public override void Assign(ref int count, List<Variable> vars, Assembler assembler)
+                {
+                    assembler.emit(this.instruction);
+                }
             }
         }
 
