@@ -78,7 +78,7 @@ namespace Raze
                 {
                     symbolTable.SetContext((Expr.Definition)argumentTypes[0]);
 
-                    if (symbolTable.TryGetFunction(SymbolToPrimitiveName(expr.op), argumentTypes, out var symbol))
+                    if (symbolTable.TryGetFunction(Primitives.SymbolToPrimitiveName(expr.op), argumentTypes, out var symbol))
                     {
                         expr.internalFunction = symbol;
                     }
@@ -88,7 +88,7 @@ namespace Raze
                 {
                     symbolTable.SetContext((Expr.Definition)argumentTypes[1]);
 
-                    if (symbolTable.TryGetFunction(SymbolToPrimitiveName(expr.op), new Expr.Type[] { argumentTypes[1], argumentTypes[0] }, out var symbol))
+                    if (symbolTable.TryGetFunction(Primitives.SymbolToPrimitiveName(expr.op), new Expr.Type[] { argumentTypes[1], argumentTypes[0] }, out var symbol))
                     {
                         expr.internalFunction = symbol;
                     }
@@ -333,7 +333,7 @@ namespace Raze
                 {
                     symbolTable.SetContext((Expr.Definition)argumentTypes[0]);
 
-                    if (symbolTable.TryGetFunction(SymbolToPrimitiveName(expr.op), argumentTypes, out var symbol))
+                    if (symbolTable.TryGetFunction(Primitives.SymbolToPrimitiveName(expr.op), argumentTypes, out var symbol))
                     {
                         expr.internalFunction = symbol;
                     }
@@ -350,7 +350,7 @@ namespace Raze
                     context.size = Math.Max(context.size, expr.encSize + expr.internalFunction.size);
                 }
 
-                if (SymbolToPrimitiveName(expr.op) == "Increment")
+                if (Primitives.SymbolToPrimitiveName(expr.op) == "Increment")
                 {
                     callReturn = true;
                 }
@@ -456,16 +456,6 @@ namespace Raze
                         _return[i] = (_return[i].Item1, true, _return[i].Item3);
                     }
                 }
-            }
-
-            public static string SymbolToPrimitiveName(Token op)
-            {
-                return op.type switch
-                {
-                    Token.TokenType.PLUS => "Add",
-                    Token.TokenType.MULTIPLY => "Multiply",
-                    Token.TokenType.PLUSPLUS => "Increment"
-                };
             }
 
             private bool IsVoidType(Expr.Type type)

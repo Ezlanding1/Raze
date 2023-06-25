@@ -397,8 +397,20 @@ namespace Raze
 
         private Expr Comparison()
         {
-            Expr expr = Additive();
+            Expr expr = Shift();
             while (!isAtEnd() && TypeMatch(Token.TokenType.GREATEREQUAL, Token.TokenType.LESSEQUAL, Token.TokenType.GREATER, Token.TokenType.LESS))
+            {
+                Token op = previous();
+                Expr right = Shift();
+                expr = new Expr.Binary(expr, op, right);
+            }
+            return expr;
+        }
+
+        private Expr Shift()
+        {
+            Expr expr = Additive();
+            while (!isAtEnd() && TypeMatch(Token.TokenType.SHIFTRIGHT, Token.TokenType.SHIFTLEFT))
             {
                 Token op = previous();
                 Expr right = Additive();

@@ -65,7 +65,15 @@ namespace Raze
                         // Binary
 
                         case "Add":
+                        case "Subtract":
                         case "Multiply":
+                        case "Divide":
+                        case "Modulo":
+                        case "BitwiseAnd":
+                        case "BitwiseOr":
+                        case "BitwiseXor":
+                        case "BitwiseShiftLeft":
+                        case "BitwiseShiftRight":
                             if (expr.arity != 2)
                             {
                                 throw new Errors.AnalyzerError("Invalid Operator Definition", $"The '{expr.name.lexeme}' operator must have an arity of 2");
@@ -74,6 +82,8 @@ namespace Raze
                         // Unary
 
                         case "Increment":
+                        case "Decrement":
+                        case "Not":
                             if (expr.arity != 1)
                             {
                                 throw new Errors.AnalyzerError("Invalid Operator Definition", $"The '{expr.name.lexeme}' operator must have an arity of 1");
