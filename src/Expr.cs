@@ -311,12 +311,12 @@ namespace Raze
             }
         }
 
-        public class Assembly : Expr
+        public partial class Assembly : Expr
         {
-            public List<AssignableInstruction> block;
+            public List<ExprUtils.AssignableInstruction> block;
             public List<Variable> variables;
 
-            public Assembly(List<AssignableInstruction> block, List<Variable> variables)
+            public Assembly(List<ExprUtils.AssignableInstruction> block, List<Variable> variables)
             {
                 this.block = block;
                 this.variables = variables;
@@ -325,119 +325,6 @@ namespace Raze
             public override T Accept<T>(IVisitor<T> visitor)
             {
                 return visitor.visitAssemblyExpr(this);
-            }
-
-
-            public abstract class AssignableInstruction
-            {
-                public abstract void Assign(ref int count, List<Expr.Variable> vars, Assembler assembler);
-
-                private protected Instruction.Value FormatOperand2(Instruction.Value operand2, Instruction.Value operand1, Assembler assembler)
-                {
-                    if (operand1.IsPointer() && operand2.IsPointer())
-                    {
-                        assembler.emit(new Instruction.Binary("MOV", assembler.alloc.CurrentRegister(((Instruction.Pointer)operand2).size), operand2));
-                        return assembler.alloc.NextRegister(((Instruction.Pointer)operand2).size);
-                    }
-                    return operand2;
-                }
-                private protected void HandleInstruction(string instruction, ref Instruction operand1, Assembler assembler)
-                {
-                    switch (instruction)
-                    {
-                        case "IMUL":
-                            operand1 = assembler.PassByValue((Instruction.Value)operand1);
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            }
-
-            public class AssignableInstructionBin : AssignableInstruction
-            {
-                [Flags]
-                public enum AssignType
-                {
-                    AssignNone = 0,
-                    AssignFirst = 1,
-                    AssignSecond = 2
-                }
-                AssignType assignType;
-
-                Instruction.Binary instruction;
-
-                public AssignableInstructionBin(Instruction.Binary instruction, AssignType assignType)
-                {
-                    this.instruction = instruction;
-                    this.assignType = assignType;
-                }
-
-                public override void Assign(ref int count, List<Variable> vars, Assembler assembler)
-                {
-                    Instruction operand1 = assignType.HasFlag(AssignType.AssignFirst) ?
-                        assembler.FormatOperand1(vars[count++].Accept(assembler)) :
-                        instruction.operand1;
-
-                    HandleInstruction(instruction.instruction, ref operand1, assembler);
-
-                    Instruction operand2 = assignType.HasFlag(AssignType.AssignSecond) ?
-                        assignType.HasFlag(AssignType.AssignFirst) ?
-                            FormatOperand2(vars[count++].Accept(assembler), (Instruction.Value)operand1, assembler) :
-                            vars[count++].Accept(assembler) :
-                        instruction.operand2;
-
-
-                    assembler.emit(new Instruction.Binary(this.instruction.instruction, operand1, operand2));
-
-                    if (assignType.HasFlag(AssignType.AssignFirst))
-                        assembler.alloc.Free((Instruction.Value)operand1);
-
-                    if (assignType.HasFlag(AssignType.AssignSecond))
-                        assembler.alloc.Free((Instruction.Value)operand2);
-                }
-            }
-            public class AssignableInstructionUn : AssignableInstruction
-            {
-                [Flags]
-                public enum AssignType
-                {
-                    AssignNone = 0,
-                    AssignFirst = 1
-                }
-                AssignType assignType;
-
-                Instruction.Unary instruction;
-
-                public AssignableInstructionUn(Instruction.Unary instruction, AssignType assignType)
-                {
-                    this.instruction = instruction;
-                    this.assignType = assignType;
-                }
-
-                public override void Assign(ref int count, List<Variable> vars, Assembler assembler)
-                {
-                    Instruction operand = assignType.HasFlag(AssignType.AssignFirst) ? vars[count++].Accept(assembler) : instruction.operand;
-
-                    assembler.emit(new Instruction.Unary(this.instruction.instruction, operand));
-
-                    if (assignType.HasFlag(AssignType.AssignFirst))
-                        assembler.alloc.Free((Instruction.Value)operand);
-                }
-            }
-            public class AssignableInstructionZ : AssignableInstruction
-            {
-                public Instruction.Zero instruction;
-
-                public AssignableInstructionZ(Instruction.Zero instruction)
-                {
-                    this.instruction = instruction;
-                }
-
-                public override void Assign(ref int count, List<Variable> vars, Assembler assembler)
-                {
-                    assembler.emit(this.instruction);
-                }
             }
         }
 
@@ -617,11 +504,11 @@ namespace Raze
             {
                 get { return parameters.Count; }
             }
-            public Dictionary<string, bool> modifiers;
+            public ExprUtils.Modifiers modifiers;
             public bool constructor;
             public List<Expr> block;
 
-            public Function(Dictionary<string, bool> modifiers, TypeReference _returnType, Token name, List<Parameter> parameters, List<Expr> block) : base(name)
+            public Function(ExprUtils.Modifiers modifiers, TypeReference _returnType, Token name, List<Parameter> parameters, List<Expr> block) : base(name)
             {
                 this.definitionType = DefinitionType.Function;
                 this.modifiers = modifiers;

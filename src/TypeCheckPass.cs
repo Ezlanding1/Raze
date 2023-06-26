@@ -44,7 +44,7 @@ namespace Raze
                 foreach (Expr expr in expressions)
                 {
                     Expr.Type result = expr.Accept(this);
-                    if (!IsVoidType(result) && !callReturn)
+                    if (!Primitives.IsVoidType(result) && !callReturn)
                     {
                         throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
                     }
@@ -67,7 +67,7 @@ namespace Raze
                 
                 var context = symbolTable.Current;
 
-                var (arg0, arg1) = (IsLiteralTypeOrVoid(argumentTypes[0]), IsLiteralTypeOrVoid(argumentTypes[1]));
+                var (arg0, arg1) = (Primitives.IsLiteralTypeOrVoid(argumentTypes[0]), Primitives.IsLiteralTypeOrVoid(argumentTypes[1]));
 
                 if (arg0.Item1 && arg1.Item1)
                 {
@@ -115,7 +115,7 @@ namespace Raze
                 {
                     Expr.Type result = blockExpr.Accept(this);
 
-                    if (!IsVoidType(result) && !callReturn)
+                    if (!Primitives.IsVoidType(result) && !callReturn)
                     {
                         throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
                     }
@@ -203,7 +203,7 @@ namespace Raze
                 {
                     Expr.Type result = blockExpr.Accept(this);
 
-                    if (!IsVoidType(result) && !callReturn)
+                    if (!Primitives.IsVoidType(result) && !callReturn)
                     {
                         throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
                     }
@@ -224,7 +224,7 @@ namespace Raze
                             _returnCount++;
                         }
                     }
-                    if (_returnCount == 0 && !IsVoidType(expr._returnType.type))
+                    if (_returnCount == 0 && !Primitives.IsVoidType(expr._returnType.type))
                     {
                         if (!expr.modifiers["unsafe"])
                         {
@@ -290,14 +290,14 @@ namespace Raze
             public override Expr.Type visitForExpr(Expr.For expr)
             {
                 var result = expr.initExpr.Accept(this);
-                if (!IsVoidType(result) && !callReturn)
+                if (!Primitives.IsVoidType(result) && !callReturn)
                 {
                     throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
                 }
                 callReturn = false;
 
                 result = expr.updateExpr.Accept(this);
-                if (!IsVoidType(result) && !callReturn)
+                if (!Primitives.IsVoidType(result) && !callReturn)
                 {
                     throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
                 }
@@ -322,7 +322,7 @@ namespace Raze
 
                 var context = symbolTable.Current;
 
-                var arg = IsLiteralTypeOrVoid(argumentTypes[0]);
+                var arg = Primitives.IsLiteralTypeOrVoid(argumentTypes[0]);
 
                 if (arg.Item1)
                 {
@@ -455,31 +455,6 @@ namespace Raze
                         _return[i] = (_return[i].Item1, true, _return[i].Item3);
                     }
                 }
-            }
-
-            private bool IsVoidType(Expr.Type type)
-            { 
-                return type.name.lexeme == "void"; 
-            }
-
-            private (bool, int) IsLiteralTypeOrVoid(Expr.Type type)
-            {
-                for (byte i = 0; i < Parser.Literals.Length; i++)
-                {
-                    if (IsLiteralType(type, i))
-                    {
-                        return (true, i);
-                    }
-                }
-                if (IsVoidType(type)) 
-                {
-                    return (true, -1);
-                }
-                return (false, -1);
-            }
-            private bool IsLiteralType(Expr.Type type, byte literal)
-            {
-                return type.name.type == Parser.Literals[literal];
             }
 
             private void ValidateCall(Expr.Call expr, Expr.Function callee)

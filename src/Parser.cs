@@ -53,17 +53,16 @@ namespace Raze
                 Token definitionType = previous();
                 if (definitionType.lexeme == "function")
                 {
-                    Dictionary<string, bool> modifiers = new()
-                    {
-                        { "static", false },
-                        { "unsafe", false },
-                        { "operator", false },
-                        { "inline", false }
-                    };
+                    ExprUtils.Modifiers modifiers = new(
+                        "static",
+                        "unsafe",
+                        "operator",
+                        "inline"
+                    );
 
                     Expr.TypeReference _return;
 
-                    while (modifiers.ContainsKey(current.lexeme))
+                    while (modifiers.ContainsModifier(current.lexeme))
                     {
                         modifiers[current.lexeme] = true;
                         advance();
@@ -709,9 +708,9 @@ namespace Raze
             return bodyExprs;
         }
         
-        private (List<Expr.Assembly.AssignableInstruction>, List<Expr.Variable>) GetAsmInstructions()
+        private (List<ExprUtils.AssignableInstruction>, List<Expr.Variable>) GetAsmInstructions()
         {
-            List<Expr.Assembly.AssignableInstruction> instructions = new();
+            List<ExprUtils.AssignableInstruction> instructions = new();
             List<Expr.Variable> variables = new();
 
             Expect(Token.TokenType.LBRACE, "'{' before Assembly Block body");
@@ -756,7 +755,7 @@ namespace Raze
                                 var identifier = previous();
                                 if (InstructionUtils.Registers.TryGetValue(identifier.lexeme, out var reg))
                                 {
-                                    instructions.Add(new Expr.Assembly.AssignableInstructionBin(new Instruction.Binary(op.lexeme, value, new Instruction.Register(reg.Item1, reg.Item2)), Expr.Assembly.AssignableInstructionBin.AssignType.AssignNone));
+                                    instructions.Add(new ExprUtils.AssignableInstructionBin(new Instruction.Binary(op.lexeme, value, new Instruction.Register(reg.Item1, reg.Item2)), ExprUtils.AssignableInstructionBin.AssignType.AssignNone));
                                 }
                                 else
                                 {
@@ -765,7 +764,7 @@ namespace Raze
                             }
                             else if (TypeMatch(Token.TokenType.INTEGER, Token.TokenType.FLOATING, Token.TokenType.STRING, Token.TokenType.HEX, Token.TokenType.BINARY))
                             {
-                                instructions.Add(new Expr.Assembly.AssignableInstructionBin(new Instruction.Binary(op.lexeme, value, new Instruction.Literal(previous().type, previous().lexeme)), (value == null)? Expr.Assembly.AssignableInstructionBin.AssignType.AssignFirst : Expr.Assembly.AssignableInstructionBin.AssignType.AssignNone));
+                                instructions.Add(new ExprUtils.AssignableInstructionBin(new Instruction.Binary(op.lexeme, value, new Instruction.Literal(previous().type, previous().lexeme)), (value == null)? ExprUtils.AssignableInstructionBin.AssignType.AssignFirst : ExprUtils.AssignableInstructionBin.AssignType.AssignNone));
                             }
                             else if (TypeMatch(Token.TokenType.DOLLAR))
                             {
@@ -773,7 +772,7 @@ namespace Raze
                                 Queue<Token> queue = new();
                                 queue.Enqueue(previous());
                                 variables.Add(new Expr.Variable(queue));
-                                instructions.Add(new Expr.Assembly.AssignableInstructionBin(new Instruction.Binary(op.lexeme, value, null), (value == null)? (Expr.Assembly.AssignableInstructionBin.AssignType.AssignFirst | Expr.Assembly.AssignableInstructionBin.AssignType.AssignSecond) : Expr.Assembly.AssignableInstructionBin.AssignType.AssignSecond));
+                                instructions.Add(new ExprUtils.AssignableInstructionBin(new Instruction.Binary(op.lexeme, value, null), (value == null)? (ExprUtils.AssignableInstructionBin.AssignType.AssignFirst | ExprUtils.AssignableInstructionBin.AssignType.AssignSecond) : ExprUtils.AssignableInstructionBin.AssignType.AssignSecond));
                             }
                             else
                             {
@@ -782,13 +781,13 @@ namespace Raze
                         }
                         else
                         {
-                            instructions.Add(new Expr.Assembly.AssignableInstructionUn(new Instruction.Unary(op.lexeme, value), (value == null)? Expr.Assembly.AssignableInstructionUn.AssignType.AssignFirst : Expr.Assembly.AssignableInstructionUn.AssignType.AssignNone));
+                            instructions.Add(new ExprUtils.AssignableInstructionUn(new Instruction.Unary(op.lexeme, value), (value == null)? ExprUtils.AssignableInstructionUn.AssignType.AssignFirst : ExprUtils.AssignableInstructionUn.AssignType.AssignNone));
                         }
                     }
                     else
                     {
                         // Zero
-                        instructions.Add(new Expr.Assembly.AssignableInstructionZ(new Instruction.Zero(op.lexeme)));
+                        instructions.Add(new ExprUtils.AssignableInstructionZ(new Instruction.Zero(op.lexeme)));
                     }
                     Expect(Token.TokenType.SEMICOLON, "';' after Assembly statement");
                 }

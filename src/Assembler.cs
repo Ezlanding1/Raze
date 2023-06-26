@@ -264,8 +264,10 @@ namespace Raze
                 }
             }
 
-            DoFooter();
-            
+            if (Analyzer.Primitives.IsVoidType(expr._returnType.type) || expr.modifiers["unsafe"])
+            {
+                DoFooter();
+            }
             return null;
         }
 

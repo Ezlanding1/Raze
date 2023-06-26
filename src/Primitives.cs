@@ -32,6 +32,31 @@ namespace Raze
                 throw new Errors.AnalyzerError("Invalid Operator", $"Type '{t1}' doesn't not have a definition for '{SymbolToPrimitiveName(op)}' ( '{op.lexeme}' )");
             }
 
+            public static bool IsVoidType(Expr.Type type)
+            {
+                return type.name.lexeme == "void";
+            }
+
+            public static (bool, int) IsLiteralTypeOrVoid(Expr.Type type)
+            {
+                for (byte i = 0; i < Parser.Literals.Length; i++)
+                {
+                    if (IsLiteralType(type, i))
+                    {
+                        return (true, i);
+                    }
+                }
+                if (IsVoidType(type))
+                {
+                    return (true, -1);
+                }
+                return (false, -1);
+            }
+            public static bool IsLiteralType(Expr.Type type, byte literal)
+            {
+                return type.name.type == Parser.Literals[literal];
+            }
+
             public static string SymbolToPrimitiveName(Token op)
             {
                 return op.type switch

@@ -49,11 +49,11 @@ namespace Raze
                 throw new Errors.AnalyzerError("Invalid Main Function", $"Main can only return types 'number', and 'void'. Got '{main._returnType.type}'");
             }
 
-            foreach (var item in main.modifiers)
+            foreach (var item in main.modifiers.EnumerateTrueModifiers())
             {
-                if (item.Value && item.Key != "static")
+                if (item != "static")
                 {
-                    throw new Errors.AnalyzerError("Invalid Main Function", $"Main cannot have the '{item.Key}' modifier");
+                    throw new Errors.AnalyzerError("Invalid Main Function", $"Main cannot have the '{item}' modifier");
                 }
             } 
         }
