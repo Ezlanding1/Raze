@@ -341,19 +341,29 @@ namespace Raze
 
             for (int i = expr.offsets.Length - 1; i >= 1; i--)
             {
-                if (expr.offsets[i].stackRegister)
+                if (reg.IsRegister())
                 {
-                    if (i == 1)
+                    if (expr.offsets[i].stackRegister)
                     {
-                        return new Instruction.Pointer(reg, expr.stack.stackOffset, expr.stack.size, expr.stack.plus ? '+' : '-');
+                        if (i == 1)
+                        {
+                            return new Instruction.Pointer((Instruction.Register)reg, expr.stack.stackOffset, expr.stack.size, expr.stack.plus ? '+' : '-');
+                        }
+                        i--;
                     }
-                    i--;
+                    else
+                    {
+                        emit(new Instruction.Binary("MOV", reg, new Instruction.Pointer(((i == expr.offsets.Length - 1) && !expr.classScoped) ? new(Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._64Bits) : (Instruction.Register)reg, expr.offsets[i].stackOffset, 8)));
+                    }
                 }
-                else
+                else if (reg.IsPointer())
                 {
-                    emit(new Instruction.Binary("MOV", reg, new Instruction.Pointer(((i == expr.offsets.Length - 1) && !expr.classScoped) ? new(Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._64Bits) : reg, expr.offsets[i].stackOffset, 8)));
+                    emit(reg);
                 }
-
+                else if (reg.IsLiteral())
+                {
+                    throw new Errors.ImpossibleError("literal is stackRegister in variable");
+                }
             }
 
             if (expr.stack.stackRegister)
@@ -499,29 +509,30 @@ namespace Raze
 
         public Instruction.Value? visitAssignExpr(Expr.Assign expr)
         {
-            Instruction.Value operand2 = expr.value.Accept(this);
-            Instruction.Value operand1 = expr.member.Accept(this);
-
-            // Note: Defualt instruction is assignment
-            string instruction = "MOV";
-
-            if (expr.op != null)
+            if (!expr.binary)
             {
-                instruction = InstructionUtils.ToType(expr.op.type);
-            }
+                Instruction.Value operand2 = expr.value.Accept(this);
+                Instruction.Value operand1 = expr.member.Accept(this);
 
-            if (operand2.IsPointer())
+                if (operand2.IsPointer())
+                {
+                    Instruction.Register.RegisterName regName;
+                    var reg = alloc.NextRegister(((Instruction.Pointer)operand2).size);
+                    emit(new Instruction.Binary("MOV", reg, operand2));
+                    operand2 = reg;
+                }
+
+                emit(new Instruction.Binary("MOV", operand1, operand2));
+
+                alloc.Free(operand1);
+                alloc.Free(operand2);
+            }
+            else
             {
-                Instruction.Register.RegisterName regName;
-                var reg = alloc.NextRegister(((Instruction.Pointer)operand2).size);
-                emit(new Instruction.Binary("MOV", reg, operand2));
-                operand2 = reg;
+                ((Expr.Binary)expr.value).internalFunction.parameters[0]._ref = true;
+                expr.value.Accept(this);
+                ((Expr.Binary)expr.value).internalFunction.parameters[0]._ref = false;
             }
-
-            emit(new Instruction.Binary(instruction, operand1, operand2));
-
-            alloc.Free(operand1);
-            alloc.Free(operand2);
 
             return null;
         }
@@ -556,6 +567,29 @@ namespace Raze
                 instruction.Assign(ref count, expr.variables, this);
             }
             return null;
+        }
+
+        public virtual Instruction.SizedValue FormatOperand1(Instruction.Value operand)
+        {
+            if (operand.IsPointer())
+            {
+                if (((Instruction.Pointer)operand).register.name == Instruction.Register.RegisterName.RBP)
+                {
+                    emit(new Instruction.Binary("MOV", alloc.CurrentRegister(((Instruction.Pointer)operand).size), operand));
+                    return alloc.NextRegister(((Instruction.Pointer)operand).size);
+                }
+                else
+                {
+                    emit(new Instruction.Binary("MOV", ((Instruction.Pointer)operand).register, operand));
+                    return ((Instruction.Pointer)operand).register;
+                }
+            }
+            else
+            {
+                emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._32Bits), operand));
+                return alloc.NextRegister(Instruction.Register.RegisterSize._32Bits);
+            }
+            return (Instruction.Register)operand;
         }
 
         public Instruction.Value? visitNewExpr(Expr.New expr)
@@ -625,7 +659,6 @@ namespace Raze
             emit(instruction);
         }
 
-
         internal void emit(Instruction instruction)
         {
             instructions.Add(instruction);
@@ -640,27 +673,44 @@ namespace Raze
             data.Add(instruction);
         }
 
-        public Instruction.Register HandleOperand(Instruction.Value operand1)
+        public Instruction.Value PassByValue(Instruction.Value operand)
         {
-            if (operand1.IsPointer())
+            if (operand.IsPointer())
             {
-                if (((Instruction.Pointer)operand1).register.name == Instruction.Register.RegisterName.RBP)
+                if (((Instruction.Pointer)operand).register.name == Instruction.Register.RegisterName.RBP)
                 {
-                    emit(new Instruction.Binary("MOV", alloc.CurrentRegister(((Instruction.Pointer)operand1).size), operand1));
-                    return alloc.NextRegister(((Instruction.Pointer)operand1).size);
+                    emit(new Instruction.Binary("MOV", alloc.CurrentRegister(((Instruction.Pointer)operand).size), operand));
+                    return alloc.NextRegister(((Instruction.Pointer)operand).size);
                 }
                 else
                 {
-                    emit(new Instruction.Binary("MOV", ((Instruction.Pointer)operand1).register, operand1));
-                    return ((Instruction.Pointer)operand1).register;
+                    emit(new Instruction.Binary("MOV", ((Instruction.Pointer)operand).register, operand));
+                    return ((Instruction.Pointer)operand).register;
                 }
             }
-            else if (operand1.IsLiteral())
+            return operand;
+        }
+        public Instruction.Register MovToRegister(Instruction.Value operand)
+        {
+            if (operand.IsPointer())
             {
-                emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._32Bits), operand1));
+                if (((Instruction.Pointer)operand).register.name == Instruction.Register.RegisterName.RBP)
+                {
+                    emit(new Instruction.Binary("MOV", alloc.CurrentRegister(((Instruction.Pointer)operand).size), operand));
+                    return alloc.NextRegister(((Instruction.Pointer)operand).size);
+                }
+                else
+                {
+                    emit(new Instruction.Binary("MOV", ((Instruction.Pointer)operand).register, operand));
+                    return ((Instruction.Pointer)operand).register;
+                }
+            }
+            else if (operand.IsLiteral())
+            {
+                emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._32Bits), operand));
                 return alloc.NextRegister(Instruction.Register.RegisterSize._32Bits);
             }
-            return (Instruction.Register)operand1;
+            return (Instruction.Register)operand;
         }
 
         public static string ToMangedName(Expr.Function function)

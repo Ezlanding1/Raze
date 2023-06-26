@@ -288,8 +288,11 @@
 
             public override object? visitAssignExpr(Expr.Assign expr)
             {
-                expr.member.Accept(this);
-                base.visitAssignExpr(expr);
+                expr.value.Accept(this);
+                if (!expr.binary)
+                {
+                    expr.member.Accept(this);
+                }
                 return null;
             }
 

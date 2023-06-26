@@ -331,6 +331,27 @@ namespace Raze
             public abstract class AssignableInstruction
             {
                 public abstract void Assign(ref int count, List<Expr.Variable> vars, Assembler assembler);
+
+                private protected Instruction.Value FormatOperand2(Instruction.Value operand2, Instruction.Value operand1, Assembler assembler)
+                {
+                    if (operand1.IsPointer() && operand2.IsPointer())
+                    {
+                        assembler.emit(new Instruction.Binary("MOV", assembler.alloc.CurrentRegister(((Instruction.Pointer)operand2).size), operand2));
+                        return assembler.alloc.NextRegister(((Instruction.Pointer)operand2).size);
+                    }
+                    return operand2;
+                }
+                private protected void HandleInstruction(string instruction, ref Instruction operand1, Assembler assembler)
+                {
+                    switch (instruction)
+                    {
+                        case "IMUL":
+                            operand1 = assembler.PassByValue((Instruction.Value)operand1);
+                            break;
+                        default:
+                            break;
+                    }
+                }
             }
 
             public class AssignableInstructionBin : AssignableInstruction
@@ -354,18 +375,23 @@ namespace Raze
 
                 public override void Assign(ref int count, List<Variable> vars, Assembler assembler)
                 {
-                    Instruction operand1 = assignType.HasFlag(AssignType.AssignFirst)? 
-                        assembler.HandleOperand(vars[count++].Accept(assembler)) : 
+                    Instruction operand1 = assignType.HasFlag(AssignType.AssignFirst) ?
+                        assembler.FormatOperand1(vars[count++].Accept(assembler)) :
                         instruction.operand1;
 
-                    Instruction operand2 = assignType.HasFlag(AssignType.AssignSecond)? 
-                        vars[count++].Accept(assembler) : 
+                    HandleInstruction(instruction.instruction, ref operand1, assembler);
+
+                    Instruction operand2 = assignType.HasFlag(AssignType.AssignSecond) ?
+                        assignType.HasFlag(AssignType.AssignFirst) ?
+                            FormatOperand2(vars[count++].Accept(assembler), (Instruction.Value)operand1, assembler) :
+                            vars[count++].Accept(assembler) :
                         instruction.operand2;
+
 
                     assembler.emit(new Instruction.Binary(this.instruction.instruction, operand1, operand2));
 
                     if (assignType.HasFlag(AssignType.AssignFirst))
-                        assembler.alloc.FreeRegister((Instruction.Register)operand1);
+                        assembler.alloc.Free((Instruction.Value)operand1);
 
                     if (assignType.HasFlag(AssignType.AssignSecond))
                         assembler.alloc.Free((Instruction.Value)operand2);
@@ -391,7 +417,7 @@ namespace Raze
 
                 public override void Assign(ref int count, List<Variable> vars, Assembler assembler)
                 {
-                    Instruction operand = assignType.HasFlag(AssignType.AssignFirst)? vars[count++].Accept(assembler) : instruction.operand;
+                    Instruction operand = assignType.HasFlag(AssignType.AssignFirst) ? vars[count++].Accept(assembler) : instruction.operand;
 
                     assembler.emit(new Instruction.Unary(this.instruction.instruction, operand));
 
@@ -433,7 +459,7 @@ namespace Raze
 
         public class StackRegister : StackData
         {
-            public Instruction.Register register;
+            public Instruction.Value register;
 
             public StackRegister() { }
 
@@ -497,6 +523,8 @@ namespace Raze
         {
             public Queue<Token> typeName;
             public Token name;
+
+            public bool _ref;
 
             public StackData stack;
 
@@ -714,20 +742,20 @@ namespace Raze
         public class Assign : Expr
         {
             public Variable member;
-            public Token? op;
             public Expr value;
 
-            public Assign(Variable member, Token op, Expr value)
-            {
-                this.member = member;
-                this.op = op;
-                this.value = value;
-            }
+            public bool binary;
 
             public Assign(Variable member, Expr value)
             {
                 this.member = member;
                 this.value = value;
+            }
+            public Assign(Variable member, Expr.Binary value)
+            {
+                this.member = member;
+                this.value = value;
+                this.binary = true;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)

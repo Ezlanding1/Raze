@@ -14,7 +14,7 @@ namespace Raze
 
             public bool inline;
 
-            public InlineStateNoInline(InlineStateNoInline lastState, bool inline=false)
+            public InlineStateNoInline(InlineStateNoInline lastState, bool inline = false)
             {
                 this.lastState = lastState;
                 this.inline = inline;
@@ -61,8 +61,9 @@ namespace Raze
             }
 
             expr.internalFunction.parameters[0].stack.stackRegister = true;
-            ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = HandleOperand(operand);
-            alloc.Lock(((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register);
+            ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = PassByValue(operand);
+            if (operand.IsRegister())
+                alloc.Lock((Instruction.Register)((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register);
 
             foreach (var bodyExpr in expr.internalFunction.block)
             {
@@ -78,15 +79,15 @@ namespace Raze
 
             alloc.Free(operand, true);
 
-            Instruction.Register tmp2 = ((InlineStateInlined)inlineState).callee;
+            Instruction.Value tmp2 = ((InlineStateInlined)inlineState).callee;
 
             inlineState = inlineState.lastState;
 
             tmp2 = tmp2 ?? (expr.internalFunction.modifiers["unsafe"] ? ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register : null);
 
-            if (tmp2 != null)
+            if (tmp2 != null && tmp2.IsRegister())
             {
-                return alloc.GetRegister(alloc.NameToIdx(tmp2.name), tmp2.size);
+                return alloc.GetRegister(alloc.NameToIdx(((Instruction.Register)tmp2).name), ((Instruction.Register)tmp2).size);
             }
             return tmp2;
         }
@@ -115,12 +116,34 @@ namespace Raze
             }
 
             expr.internalFunction.parameters[0].stack.stackRegister = true;
-            ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = HandleOperand(operand1);
-            alloc.Lock(((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register);
+            operand1 = expr.internalFunction.parameters[0]._ref? operand1 : PassByValue(operand1);
+            ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = operand1;
+            if (operand1.IsRegister())
+                alloc.Lock((Instruction.Register)((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register);
+            else if (operand1.IsPointer())
+            {
+                var idx = alloc.NameToIdx(((Instruction.Pointer)operand1).register.name);
+                if (idx != -1)
+                {
+                    alloc.GetRegister(idx, ((Instruction.Pointer)operand1).size);
+                    alloc.Lock(((Instruction.Pointer)operand1).register);
+                }
+            }
 
             expr.internalFunction.parameters[1].stack.stackRegister = true;
-            ((Expr.StackRegister)expr.internalFunction.parameters[1].stack).register = HandleOperand(operand2);
-            alloc.Lock(((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register);
+            operand2 = expr.internalFunction.parameters[1]._ref ? operand2 : PassByValue(operand2);
+            ((Expr.StackRegister)expr.internalFunction.parameters[1].stack).register = operand2;
+            if (operand2.IsRegister())
+                alloc.Lock((Instruction.Register)((Expr.StackRegister)expr.internalFunction.parameters[1].stack).register);
+            else if (operand2.IsPointer())
+            {
+                var idx = alloc.NameToIdx(((Instruction.Pointer)operand2).register.name);
+                if (idx != -1)
+                {
+                    alloc.GetRegister(idx, ((Instruction.Pointer)operand2).size);
+                    alloc.Lock(((Instruction.Pointer)operand2).register);
+                }
+            }
 
             foreach (var bodyExpr in expr.internalFunction.block)
             {
@@ -137,15 +160,15 @@ namespace Raze
             alloc.Free(operand1, true);
             alloc.Free(operand2, true);
 
-            Instruction.Register tmp2 = ((InlineStateInlined)inlineState).callee;
+            Instruction.Value tmp2 = ((InlineStateInlined)inlineState).callee;
 
             inlineState = inlineState.lastState;
 
             tmp2 = tmp2 ?? (expr.internalFunction.modifiers["unsafe"] ? ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register : null);
 
-            if (tmp2 != null)
+            if (tmp2 != null && tmp2.IsRegister())
             {
-                return alloc.GetRegister(alloc.NameToIdx(tmp2.name), tmp2.size);
+                return alloc.GetRegister(alloc.NameToIdx(((Instruction.Register)tmp2).name), ((Instruction.Register)tmp2).size);
             }
             return tmp2;
         }
@@ -201,8 +224,19 @@ namespace Raze
                 args[i + Convert.ToInt16(instance)] = arg;
 
                 expr.internalFunction.parameters[i].stack.stackRegister = true;
-                ((Expr.StackRegister)expr.internalFunction.parameters[i].stack).register = HandleOperand(arg);
-                alloc.Lock(((Expr.StackRegister)expr.internalFunction.parameters[i].stack).register);
+                arg = PassByValue(arg);
+                ((Expr.StackRegister)expr.internalFunction.parameters[i].stack).register = arg;
+                if (arg.IsRegister())
+                    alloc.Lock((Instruction.Register)((Expr.StackRegister)expr.internalFunction.parameters[i].stack).register);
+                else if (arg.IsPointer())
+                {
+                    var idx = alloc.NameToIdx(((Instruction.Pointer)arg).register.name);
+                    if (idx != -1)
+                    {
+                        alloc.GetRegister(idx, ((Instruction.Pointer)arg).size);
+                        alloc.Lock(((Instruction.Pointer)arg).register);
+                    }
+                }
             }
 
             foreach (var bodyExpr in expr.internalFunction.block)
@@ -212,8 +246,7 @@ namespace Raze
 
             if (instance)
             {
-                alloc.Unlock((Instruction.Register)args[0]);
-                alloc.Free(args[0]);
+                alloc.Free(args[0], true);
             }
 
             for (int i = 0; i < expr.arguments.Count; i++)
@@ -228,15 +261,15 @@ namespace Raze
                 emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
             }
 
-            var tmp2 = ((InlineStateInlined)inlineState).callee;
+            Instruction.Value tmp2 = ((InlineStateInlined)inlineState).callee;
 
             inlineState = inlineState.lastState;
 
             tmp2 = tmp2 ?? (expr.internalFunction.modifiers["unsafe"] ? ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register : null);
 
-            if (tmp2 != null)
+            if (tmp2 != null && tmp2.IsRegister())
             {
-                return alloc.GetRegister(alloc.NameToIdx(tmp2.name), tmp2.size);
+                return alloc.GetRegister(alloc.NameToIdx(((Instruction.Register)tmp2).name), ((Instruction.Register)tmp2).size);
             }
             return tmp2;
         }
@@ -254,7 +287,7 @@ namespace Raze
 
                 if (((InlineStateInlined)inlineState).callee == null)
                 {
-                    ((InlineStateInlined)inlineState).callee = HandleOperand(operand);
+                    ((InlineStateInlined)inlineState).callee = MovToRegister(operand);
                 }
                 else
                 {
@@ -278,7 +311,7 @@ namespace Raze
             {
                 emit(new Instruction.Binary("MOV", ((InlineStateInlined)inlineState).callee, new Instruction.Literal(Parser.Literals[0], "0")));
             }
-            
+
             if (((InlineStateInlined)inlineState).inlineLabelIdx == -1)
             {
                 ((InlineStateInlined)inlineState).inlineLabelIdx = conditionalCount;
@@ -290,6 +323,21 @@ namespace Raze
             }
 
             return null;
+        }
+
+        public override Instruction.SizedValue FormatOperand1(Instruction.Value operand)
+        {
+            if (!inlineState.inline)
+            {
+                return base.FormatOperand1(operand);
+            }
+
+            if (operand.IsLiteral())
+            {
+                emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._32Bits), operand));
+                return alloc.NextRegister(Instruction.Register.RegisterSize._32Bits);
+            }
+            return (Instruction.SizedValue)operand;
         }
     }
 }

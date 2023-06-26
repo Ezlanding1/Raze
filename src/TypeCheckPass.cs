@@ -373,8 +373,7 @@ namespace Raze
             public override Expr.Type visitAssignExpr(Expr.Assign expr)
             {
                 Expr.Type assignType = expr.value.Accept(this);
-
-                // TODO
+                MustMatchType(expr.member.stack.type, assignType);
 
                 return _voidType;
             }

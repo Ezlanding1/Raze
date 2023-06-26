@@ -505,8 +505,8 @@ namespace Raze
                         {
                             throw new Errors.ParseError("Invalid Assign Statement", "Cannot assign to a non-variable");
                         }
-                        var sign = tokens[index - 2];
-                        expr = new Expr.Assign((Expr.Variable)variable.Item1, sign, NoSemicolon());
+                        var op = tokens[index - 2];
+                        expr = new Expr.Assign((Expr.Variable)variable.Item1, new Expr.Binary((Expr.Variable)variable.Item1, op, NoSemicolon()));
                     }
                     else if (TypeMatch(Token.TokenType.PLUSPLUS, Token.TokenType.MINUSMINUS))
                     {
