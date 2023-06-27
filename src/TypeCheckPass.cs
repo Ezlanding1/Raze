@@ -12,7 +12,7 @@ namespace Raze
         internal partial class TypeCheckPass : Pass<Expr.Type>
         {
             SymbolTable symbolTable = SymbolTableSingleton.SymbolTable;
-            List<(Expr.Type, bool, Expr.Return)> _return;
+            List<(Expr.Type?, bool, Expr.Return?)> _return;
             bool callReturn;
 
             public static Expr.Type _voidType = new(new(Token.TokenType.RESERVED, "void"));
@@ -215,27 +215,29 @@ namespace Raze
                     int _returnCount = 0;
                     foreach (var ret in _return)
                     {
-                        MustMatchType(expr._returnType.type, ret.Item1, "You cannot return type '{0}' from type '{1}'");
-
-                        ret.Item3.size = expr._returnSize;
-
                         if (!ret.Item2)
                         {
                             _returnCount++;
                         }
+
+                        if (ret.Item3 == null)
+                            continue;
+
+                        MustMatchType(expr._returnType.type, ret.Item1, "You cannot return type '{0}' from type '{1}'");
+
+                        ret.Item3.size = expr._returnSize;
+
+                        
                     }
                     if (_returnCount == 0 && !Primitives.IsVoidType(expr._returnType.type))
                     {
-                        if (!expr.modifiers["unsafe"])
+                        if (_return.Count == 0)
                         {
-                            if (_return.Count == 0)
-                            {
-                                throw new Errors.AnalyzerError("No Return", "A Function must have a 'return' expression");
-                            }
-                            else
-                            {
-                                throw new Errors.AnalyzerError("No Return", "A Function must have a 'return' expression from all code paths");
-                            }
+                            throw new Errors.AnalyzerError("No Return", "A Function must have a 'return' expression");
+                        }
+                        else
+                        {
+                            throw new Errors.AnalyzerError("No Return", "A Function must have a 'return' expression from all code paths");
                         }
                     }
                     _return.Clear();
@@ -418,6 +420,10 @@ namespace Raze
                 foreach (var variable in expr.variables)
                 {
                     variable.Accept(this);
+                }
+                if (expr.block.Any(x => x.HasReturn()))
+                {
+                    _return.Add((null, false, null));
                 }
 
                 return _voidType;

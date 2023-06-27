@@ -509,33 +509,23 @@ namespace Raze
             return null;
         }
 
-        public Instruction.Value? visitAssignExpr(Expr.Assign expr)
+        public virtual Instruction.Value? visitAssignExpr(Expr.Assign expr)
         {
-            if (!expr.binary)
+            Instruction.Value operand2 = expr.value.Accept(this);
+            Instruction.Value operand1 = expr.member.Accept(this);
+
+            if (operand2.IsPointer())
             {
-                Instruction.Value operand2 = expr.value.Accept(this);
-                Instruction.Value operand1 = expr.member.Accept(this);
-
-                if (operand2.IsPointer())
-                {
-                    Instruction.Register.RegisterName regName;
-                    var reg = alloc.NextRegister(((Instruction.Pointer)operand2).size);
-                    emit(new Instruction.Binary("MOV", reg, operand2));
-                    operand2 = reg;
-                }
-
-                emit(new Instruction.Binary("MOV", operand1, operand2));
-
-                alloc.Free(operand1);
-                alloc.Free(operand2);
-            }
-            else
-            {
-                ((Expr.Binary)expr.value).internalFunction.parameters[0]._ref = true;
-                expr.value.Accept(this);
-                ((Expr.Binary)expr.value).internalFunction.parameters[0]._ref = false;
+                Instruction.Register.RegisterName regName;
+                var reg = alloc.NextRegister(((Instruction.Pointer)operand2).size);
+                emit(new Instruction.Binary("MOV", reg, operand2));
+                operand2 = reg;
             }
 
+            emit(new Instruction.Binary("MOV", operand1, operand2));
+
+            alloc.Free(operand1);
+            alloc.Free(operand2);
             return null;
         }
 
@@ -586,7 +576,7 @@ namespace Raze
                     return ((Instruction.Pointer)operand).register;
                 }
             }
-            else
+            else if (operand.IsLiteral())
             {
                 emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._32Bits), operand));
                 return alloc.NextRegister(Instruction.Register.RegisterSize._32Bits);

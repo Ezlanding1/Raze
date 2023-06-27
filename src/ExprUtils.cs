@@ -11,6 +11,7 @@ namespace Raze
         public abstract class AssignableInstruction
         {
             public abstract void Assign(ref int count, List<Expr.Variable> vars, Assembler assembler);
+            public abstract bool HasReturn();
 
             private protected Instruction.Value FormatOperand2(Instruction.Value operand2, Instruction.Value operand1, Assembler assembler)
             {
@@ -21,7 +22,7 @@ namespace Raze
                 }
                 return operand2;
             }
-            private protected void HandleInstruction(string instruction, ref Instruction operand1, global::Raze.Assembler assembler)
+            private protected void HandleInstruction(string instruction, ref Instruction operand1, Assembler assembler)
             {
                 switch (instruction)
                 {
@@ -45,12 +46,21 @@ namespace Raze
             }
             AssignType assignType;
 
+            public enum ReturnType
+            {
+                ReturnNone = 0,
+                ReturnFirst = 1,
+                ReturnSecond = 2
+            }
+            ReturnType returnType;
+
             Instruction.Binary instruction;
 
-            public AssignableInstructionBin(Instruction.Binary instruction, AssignType assignType)
+            public AssignableInstructionBin(Instruction.Binary instruction, AssignType assignType, int returnType)
             {
                 this.instruction = instruction;
                 this.assignType = assignType;
+                this.returnType = (ReturnType)returnType;
             }
 
             public override void Assign(ref int count, List<Expr.Variable> vars, Assembler assembler)
@@ -67,6 +77,24 @@ namespace Raze
                         vars[count++].Accept(assembler) :
                     instruction.operand2;
 
+                if (returnType == ReturnType.ReturnFirst && assembler is InlinedAssembler)
+                {
+                    operand1 = assembler.FormatOperand1((Instruction.Value)operand1);
+                    if (((InlinedAssembler)assembler).inlineState.inline)
+                    {
+                        ((InlinedAssembler.InlineStateInlined)((InlinedAssembler)assembler).inlineState).callee = (Instruction.SizedValue)operand1;
+                        ((InlinedAssembler)assembler).LockOperand((Instruction.SizedValue)operand1);
+                    }
+                }
+                else if (returnType == ReturnType.ReturnSecond && assembler is InlinedAssembler)
+                {
+                    operand2 = assembler.FormatOperand1((Instruction.Value)operand2);
+                    if (((InlinedAssembler)assembler).inlineState.inline)
+                    {
+                        ((InlinedAssembler.InlineStateInlined)((InlinedAssembler)assembler).inlineState).callee = (Instruction.SizedValue)operand2;
+                    }
+                    ((InlinedAssembler)assembler).LockOperand((Instruction.SizedValue)operand2);
+                }
 
                 assembler.emit(new Instruction.Binary(this.instruction.instruction, operand1, operand2));
 
@@ -75,6 +103,11 @@ namespace Raze
 
                 if (assignType.HasFlag(AssignType.AssignSecond))
                     assembler.alloc.Free((Instruction.Value)operand2);
+            }
+
+            public override bool HasReturn()
+            {
+                return returnType != ReturnType.ReturnNone;
             }
         }
         public class AssignableInstructionUn : AssignableInstruction
@@ -87,12 +120,20 @@ namespace Raze
             }
             AssignType assignType;
 
+            public enum ReturnType
+            {
+                ReturnNone = 0,
+                ReturnFirst = 1,
+            }
+            ReturnType returnType;
+
             Instruction.Unary instruction;
 
-            public AssignableInstructionUn(Instruction.Unary instruction, AssignType assignType)
+            public AssignableInstructionUn(Instruction.Unary instruction, AssignType assignType, int returnType)
             {
                 this.instruction = instruction;
                 this.assignType = assignType;
+                this.returnType = (ReturnType)returnType;
             }
 
             public override void Assign(ref int count, List<Expr.Variable> vars, Assembler assembler)
@@ -101,8 +142,23 @@ namespace Raze
 
                 assembler.emit(new Instruction.Unary(this.instruction.instruction, operand));
 
+                if (returnType == ReturnType.ReturnFirst && assembler is InlinedAssembler)
+                {
+                    operand = assembler.FormatOperand1((Instruction.Value)operand);
+                    if (((InlinedAssembler)assembler).inlineState.inline)
+                    {
+                        ((InlinedAssembler.InlineStateInlined)((InlinedAssembler)assembler).inlineState).callee = (Instruction.SizedValue)operand;
+                        ((InlinedAssembler)assembler).LockOperand((Instruction.SizedValue)operand);
+                    }
+                }
+
                 if (assignType.HasFlag(AssignType.AssignFirst))
                     assembler.alloc.Free((Instruction.Value)operand);
+            }
+
+            public override bool HasReturn()
+            {
+                return returnType != ReturnType.ReturnNone;
             }
         }
         public class AssignableInstructionZ : AssignableInstruction
@@ -117,6 +173,11 @@ namespace Raze
             public override void Assign(ref int count, List<Expr.Variable> vars, Assembler assembler)
             {
                 assembler.emit(this.instruction);
+            }
+
+            public override bool HasReturn()
+            {
+                return false;
             }
         }
 
