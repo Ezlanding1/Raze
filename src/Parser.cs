@@ -589,7 +589,7 @@ namespace Raze
             }
             Expect(Token.TokenType.EQUALS, "'=' when declaring variable");
 
-            return new Expr.Declare(variable.Item1.typeName, name, NoSemicolon());
+            return new Expr.Declare(variable.Item1.typeName, name, ReservedValueMatch("ref"), NoSemicolon());
         }
 
         private (Expr.GetReference, bool) GetGetter()

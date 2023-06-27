@@ -189,21 +189,24 @@ namespace Raze
         {
             Instruction.Value operand = expr.value.Accept(this);
 
+            var _ref = expr.stack._ref;
+
             if (operand.IsPointer())
             {
-                var reg = alloc.CurrentRegister(((Instruction.Pointer)operand).size);
-                emit(new Instruction.Binary("MOV", reg, operand));
+                var reg = alloc.CurrentRegister(_ref? Instruction.Register.RegisterSize._64Bits : ((Instruction.Pointer)operand).size);
+                emit(new Instruction.Binary(_ref? "LEA" : "MOV", reg, operand));
+                _ref = false;
                 operand = reg;
             }
 
             if (expr.classScoped)
             {
-                emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(Instruction.Register.RegisterName.RBP, 8, 8)));
-                emit(new Instruction.Binary("MOV", new Instruction.Pointer(alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits), expr.stack.stackOffset, expr.stack.size), operand));
+                emit(new Instruction.Binary(_ref ? "LEA" : "MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(Instruction.Register.RegisterName.RBP, 8, 8)));
+                emit(new Instruction.Binary(_ref ? "LEA" : "MOV", new Instruction.Pointer(alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits), expr.stack.stackOffset, expr.stack._ref ? 8 : expr.stack.size), operand));
             }
             else
             {
-                emit(new Instruction.Binary("MOV", new Instruction.Pointer(expr.stack.stackOffset, expr.stack.size), operand));
+                emit(new Instruction.Binary(_ref ? "LEA" : "MOV", new Instruction.Pointer(expr.stack.stackOffset, expr.stack._ref ? 8 : expr.stack.size), operand));
             }
 
             alloc.Free(operand);

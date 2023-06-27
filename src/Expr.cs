@@ -134,9 +134,10 @@ namespace Raze
             public StackData stack = new();
             public bool classScoped;
 
-            public Declare(Queue<Token> typeName, Token name, Expr value) : base(name)
+            public Declare(Queue<Token> typeName, Token name, bool _ref, Expr value) : base(name)
             {
                 this.typeName = typeName;
+                this.stack._ref = _ref;
                 this.value = value;
             }
 

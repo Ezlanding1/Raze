@@ -29,7 +29,7 @@ namespace Raze
 
             public void Add(Token name, Expr.StackData variable)
             {
-                current.size += variable.size;
+                current.size += variable._ref ? 8 : variable.size;
                 variable.stackOffset = current.size;
                 
                 if (current.definitionType == Expr.Definition.DefinitionType.Function)
