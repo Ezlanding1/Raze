@@ -147,7 +147,7 @@ namespace Raze
         }
 
 
-        public void Free(Instruction.Value value, bool force=false) 
+        public void Free(Instruction.Value value, bool force = false)
         {
             if (value.IsPointer() && ((Instruction.Pointer)value).register.name != Instruction.Register.RegisterName.RBP)
             {
@@ -158,7 +158,7 @@ namespace Raze
                 FreeRegister((Instruction.Register)value, force);
             }
         }
-        public void FreeRegister(Instruction.Register register, bool force=false) => Free(NameToIdx(register.name), force);
+        public void FreeRegister(Instruction.Register register, bool force = false) => Free(NameToIdx(register.name), force);
         public void FreePtr(Instruction.Pointer ptr, bool force = false) => FreeRegister(ptr.register, force);
 
         private void Free(int idx, bool force=false)

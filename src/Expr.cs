@@ -333,14 +333,15 @@ namespace Raze
             public int stackOffset;
             public Expr.Definition type;
             public bool plus;
+            public bool _ref;
             public int size;
             public bool stackRegister;
 
             public StackData() { }
 
-            public StackData(Definition type, bool plus, int size, int stackOffset)
+            public StackData(Definition type, bool _ref, bool plus, int size, int stackOffset)
             {
-                (this.stackOffset, this.type, this.plus, this.size) = (stackOffset, type, plus, size);
+                (this.stackOffset, this.type, this._ref, this.plus, this.size) = (stackOffset, type, _ref, plus, size);
             }
         }
 
@@ -350,7 +351,7 @@ namespace Raze
 
             public StackRegister() { }
 
-            public StackRegister(Definition type, bool plus, int size, int stackOffset) : base(type, plus, size, stackOffset)
+            public StackRegister(Definition type, bool _ref, bool plus, int size, int stackOffset) : base(type, _ref, plus, size, stackOffset)
             {
             }
         }
@@ -411,14 +412,15 @@ namespace Raze
             public Queue<Token> typeName;
             public Token name;
 
-            public bool _ref;
+            public ExprUtils.Modifiers modifiers;
 
             public StackData stack;
 
-            public Parameter(Queue<Token> typeName, Token name)
+            public Parameter(Queue<Token> typeName, Token name, ExprUtils.Modifiers modifiers)
             {
                 this.typeName = typeName;
                 this.name = name;
+                this.modifiers = modifiers;
             }
         }
 

@@ -101,12 +101,29 @@ namespace Raze
 
                 if (i + Convert.ToUInt16(instance) < InstructionUtils.paramRegister.Length)
                 {
-                    emit(new Instruction.Binary("MOV", alloc.AllocParam(Convert.ToInt16(instance) + i, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[i].stack.size)), arg));
+                    if (expr.internalFunction.parameters[i].modifiers["ref"])
+                    {
+                        emit(new Instruction.Binary("LEA", alloc.AllocParam(Convert.ToInt16(instance) + i, Instruction.Register.RegisterSize._64Bits), arg));
+                    }
+                    else
+                    {
+                        emit(new Instruction.Binary("MOV", alloc.AllocParam(Convert.ToInt16(instance) + i, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[i].stack.size)), arg));
+                    }
                     localParams[Convert.ToInt16(instance) + i] = alloc.paramRegisters[Convert.ToInt16(instance) + i];
                 }
                 else
                 {
-                    emit(new Instruction.Unary("PUSH", arg));
+                    if (expr.internalFunction.parameters[i].modifiers["ref"])
+                    {
+                        Instruction.Register refRegister;
+                        emit(new Instruction.Binary("LEA", (refRegister = alloc.NextRegister(Instruction.Register.RegisterSize._64Bits)), arg));
+                        emit(new Instruction.Unary("PUSH", refRegister));
+                        alloc.FreeRegister(refRegister);
+                    }
+                    else
+                    {
+                        emit(new Instruction.Unary("PUSH", arg));
+                    }
                 }
 
                 alloc.Free(arg);
@@ -219,7 +236,15 @@ namespace Raze
             for (int i = 0, len = Math.Min(expr.arity, InstructionUtils.paramRegister.Length-count); i < len; i++)
             {
                 var paramExpr = expr.parameters[i];
-                emit(new Instruction.Binary("MOV", new Instruction.Pointer(paramExpr.stack.stackOffset, paramExpr.stack.size), new Instruction.Register(InstructionUtils.paramRegister[i+count], paramExpr.stack.size)));
+
+                if (paramExpr.modifiers["ref"])
+                {
+                    emit(new Instruction.Binary("MOV", new Instruction.Pointer(paramExpr.stack.stackOffset, 8), new Instruction.Register(InstructionUtils.paramRegister[i + count], 8)));
+                }
+                else
+                {
+                    emit(new Instruction.Binary("MOV", new Instruction.Pointer(paramExpr.stack.stackOffset, paramExpr.stack.size), new Instruction.Register(InstructionUtils.paramRegister[i+count], paramExpr.stack.size)));
+                }
             }
 
             if (expr.constructor && expr.enclosing?.definitionType == Expr.Definition.DefinitionType.Class)
@@ -372,7 +397,16 @@ namespace Raze
             {
                 return reg;
             }
-            return new Instruction.Pointer((expr.offsets.Length == 1 && !expr.classScoped) ? new(Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._64Bits) : alloc.NextRegister(InstructionUtils.ToRegisterSize(expr.stack.size)), expr.stack.stackOffset, expr.stack.size, expr.stack.plus ? '+' : '-');
+
+            if (!expr.stack._ref)
+            {
+                return new Instruction.Pointer((expr.offsets.Length == 1 && !expr.classScoped) ? new(Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._64Bits) : alloc.NextRegister(InstructionUtils.ToRegisterSize(expr.stack.size)), expr.stack.stackOffset, expr.stack.size, expr.stack.plus ? '+' : '-');
+            }
+            else
+            {
+                emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(new Instruction.Register(Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._64Bits), expr.stack.stackOffset, 8, expr.stack.plus? '+' : '-')));
+                return new Instruction.Pointer(alloc.NextRegister(Instruction.Register.RegisterSize._64Bits), 0, expr.stack.size);
+            }
         }
 
         public Instruction.Value? visitIfExpr(Expr.If expr)

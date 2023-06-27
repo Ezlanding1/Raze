@@ -93,7 +93,8 @@ namespace Raze
             "define",
             "is",
             "primitive",
-            "this"
+            "this",
+            "ref"
         };
 
         /*

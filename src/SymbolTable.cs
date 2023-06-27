@@ -42,7 +42,7 @@ namespace Raze
             {
                 if (i < InstructionUtils.paramRegister.Length)
                 {
-                    current.size += parameter.size;
+                    current.size += parameter._ref? 8 : parameter.size;
                     parameter.stackOffset = current.size;
                 }
                 else

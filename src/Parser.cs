@@ -91,13 +91,20 @@ namespace Raze
                     List<Expr.Parameter> parameters = new();
                     while (!TypeMatch(Token.TokenType.RPAREN))
                     {
+                        ExprUtils.Modifiers paramModifers = new("ref");
+
+                        if (ReservedValueMatch("ref"))
+                        {
+                            paramModifers["ref"] = true;
+                        }
+
                         Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter type");
                         var typeName = GetTypeGetter();
 
                         Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter");
                         Token variable = previous();
 
-                        parameters.Add(new Expr.Parameter(typeName, variable));
+                        parameters.Add(new Expr.Parameter(typeName, variable, paramModifers));
                         if (TypeMatch(Token.TokenType.RPAREN))
                         {
                             break;

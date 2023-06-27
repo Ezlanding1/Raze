@@ -201,6 +201,8 @@
                     {
                         throw new Errors.AnalyzerError("Double Declaration", $"A variable named '{paramExpr.name.lexeme}' is already declared in this scope");
                     }
+                    paramExpr.stack._ref = paramExpr.modifiers["ref"];
+
                     symbolTable.Add(paramExpr.name, paramExpr.stack, i+Convert.ToInt16(instance), expr.arity);
                 }
 
