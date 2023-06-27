@@ -183,7 +183,7 @@ namespace Raze
             raxNeeded = false;
             for (int i = 0; i < registers.Length; i++)
             {
-                Free(i);
+                Free(i, true);
             }
         }
     }

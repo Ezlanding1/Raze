@@ -262,7 +262,7 @@ namespace Raze
 
                 if (((InlineStateInlined)inlineState).callee == null)
                 {
-                    ((InlineStateInlined)inlineState).callee = FormatOperand1(operand);
+                    ((InlineStateInlined)inlineState).callee = FormatOperand1(operand, InstructionUtils.ToRegisterSize(expr.size));
                 }
                 else
                 {
@@ -300,17 +300,19 @@ namespace Raze
             return null;
         }
 
-        public override Instruction.SizedValue FormatOperand1(Instruction.Value operand)
+        public override Instruction.SizedValue FormatOperand1(Instruction.Value operand, Instruction.Register.RegisterSize? size)
         {
             if (!inlineState.inline)
             {
-                return base.FormatOperand1(operand);
+                return base.FormatOperand1(operand, size);
             }
 
             if (operand.IsLiteral())
             {
-                emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._32Bits), operand));
-                return alloc.NextRegister(Instruction.Register.RegisterSize._32Bits);
+                if (size == null) { throw new Errors.ImpossibleError("Null size in FormatOperand1 when operand is literal"); }
+
+                emit(new Instruction.Binary("MOV", alloc.CurrentRegister((Instruction.Register.RegisterSize)size), operand));
+                return alloc.NextRegister((Instruction.Register.RegisterSize)size);
             }
             return (Instruction.SizedValue)operand;
         }

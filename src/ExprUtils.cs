@@ -66,7 +66,7 @@ namespace Raze
             public override void Assign(ref int count, List<Expr.Variable> vars, Assembler assembler)
             {
                 Instruction operand1 = assignType.HasFlag(AssignType.AssignFirst) ?
-                    assembler.FormatOperand1(vars[count++].Accept(assembler)) :
+                    assembler.FormatOperand1(vars[count].Accept(assembler), InstructionUtils.ToRegisterSize(vars[count++].stack.size)) :
                     instruction.operand1;
 
                 HandleInstruction(instruction.instruction, ref operand1, assembler);
@@ -79,7 +79,7 @@ namespace Raze
 
                 if (returnType == ReturnType.ReturnFirst && assembler is InlinedAssembler)
                 {
-                    operand1 = assembler.FormatOperand1((Instruction.Value)operand1);
+                    operand1 = assembler.FormatOperand1((Instruction.Value)operand1, ((Instruction.Value)operand1).IsLiteral()? (assignType.HasFlag(AssignType.AssignFirst)? InstructionUtils.ToRegisterSize(vars[count-(assignType.HasFlag(AssignType.AssignSecond) ? 2 : 1)].stack.size) : throw new Errors.BackendError("Inavalid Assembly Block", "No size could be determined for the first operand")) : null);
                     if (((InlinedAssembler)assembler).inlineState.inline)
                     {
                         ((InlinedAssembler.InlineStateInlined)((InlinedAssembler)assembler).inlineState).callee = (Instruction.SizedValue)operand1;
@@ -88,7 +88,7 @@ namespace Raze
                 }
                 else if (returnType == ReturnType.ReturnSecond && assembler is InlinedAssembler)
                 {
-                    operand2 = assembler.FormatOperand1((Instruction.Value)operand2);
+                    operand2 = assembler.FormatOperand1((Instruction.Value)operand2, ((Instruction.Value)operand2).IsLiteral() ? (assignType.HasFlag(AssignType.AssignSecond) ? InstructionUtils.ToRegisterSize(vars[count - 1].stack.size) : throw new Errors.BackendError("Inavalid Assembly Block", "No size could be determined for the first operand")) : null);
                     if (((InlinedAssembler)assembler).inlineState.inline)
                     {
                         ((InlinedAssembler.InlineStateInlined)((InlinedAssembler)assembler).inlineState).callee = (Instruction.SizedValue)operand2;
@@ -144,7 +144,7 @@ namespace Raze
 
                 if (returnType == ReturnType.ReturnFirst && assembler is InlinedAssembler)
                 {
-                    operand = assembler.FormatOperand1((Instruction.Value)operand);
+                    operand = assembler.FormatOperand1((Instruction.Value)operand, ((Instruction.Value)operand).IsLiteral() ? (assignType.HasFlag(AssignType.AssignFirst) ? InstructionUtils.ToRegisterSize(vars[count - 1].stack.size) : throw new Errors.BackendError("Inavalid Assembly Block", "No size could be determined for the first operand")) : null);
                     if (((InlinedAssembler)assembler).inlineState.inline)
                     {
                         ((InlinedAssembler.InlineStateInlined)((InlinedAssembler)assembler).inlineState).callee = (Instruction.SizedValue)operand;

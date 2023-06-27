@@ -595,7 +595,7 @@ namespace Raze
             return null;
         }
 
-        public virtual Instruction.SizedValue FormatOperand1(Instruction.Value operand)
+        public virtual Instruction.SizedValue FormatOperand1(Instruction.Value operand, Instruction.Register.RegisterSize? size)
         {
             if (operand.IsPointer())
             {
@@ -612,8 +612,10 @@ namespace Raze
             }
             else if (operand.IsLiteral())
             {
-                emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._32Bits), operand));
-                return alloc.NextRegister(Instruction.Register.RegisterSize._32Bits);
+                if (size == null) { throw new Errors.ImpossibleError("Null size in FormatOperand1 when operand is literal"); }
+
+                emit(new Instruction.Binary("MOV", alloc.CurrentRegister((Instruction.Register.RegisterSize)size), operand));
+                return alloc.NextRegister((Instruction.Register.RegisterSize)size);
             }
             return (Instruction.Register)operand;
         }
