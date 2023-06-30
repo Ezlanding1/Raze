@@ -20,12 +20,13 @@ namespace Raze
         }
 
         bool[] used = new bool[6];
+        public bool raxNeeded;
         bool[] registerLocks = new bool[6];
+
         Instruction.Register?[] registers = new Instruction.Register[6];
 
         public Instruction.Register?[] paramRegisters = new Instruction.Register[6];
 
-        public bool raxNeeded;
 
         public bool[] fncPushPreserved = new bool[5];
 
@@ -50,9 +51,11 @@ namespace Raze
             {
                 fncPushPreserved[registerIdx - 1] = true;
             }
-
             return GetRegister(registerIdx, size);
         }
+        
+        // Makes all subsequent register requests for register[idx] pull from a new instance (while not modifying used[idx])
+        public void NullReg(int idx) => registers[idx] = null;
 
         public Instruction.Register CurrentRegister(Instruction.Register.RegisterSize size)
         {
@@ -63,31 +66,31 @@ namespace Raze
             return registers[registerIdx];
         }
 
-        public void ReserveRax(Assembler assembler)
+        public void ReserveRegister(Assembler assembler, int i = 0)
         {
-            if (!used[0])
+            if (!used[i])
             {
                 return;
             }
 
-            if (raxNeeded)
+            if (i == 0 && raxNeeded)
             {
-                registers[0].name = InstructionUtils.storageRegisters[registerIdx];
-                registerLocks[registerIdx] = registerLocks[0];
-                assembler.emit(new Instruction.Binary("MOV", NextRegister(registers[0].size), new Instruction.Register(Instruction.Register.RegisterName.RAX, registers[0].size)));
-                registers[0] = null;
-                registerLocks[0] = false;
-                used[0] = false;
+                registers[i].name = InstructionUtils.storageRegisters[registerIdx];
+                registerLocks[registerIdx] = registerLocks[i];
+                assembler.emit(new Instruction.Binary("MOV", NextRegister(registers[i].size), new Instruction.Register(Instruction.Register.RegisterName.RAX, registers[i].size)));
+                registers[i] = null;
+                registerLocks[i] = false;
+                used[i] = false;
             }
             else
             {
-                registers[registerIdx] = registers[0];
-                registerLocks[registerIdx] = registerLocks[0];
+                registers[registerIdx] = registers[i];
+                registerLocks[registerIdx] = registerLocks[i];
                 registers[registerIdx].name = InstructionUtils.storageRegisters[registerIdx];
                 used[registerIdx] = true;
-                registers[0] = null;
-                registerLocks[0] = false;
-                used[0] = false;
+                registers[i] = null;
+                registerLocks[i] = false;
+                used[i] = false;
             }
         }
 
@@ -161,8 +164,14 @@ namespace Raze
         public void FreeRegister(Instruction.Register register, bool force = false) => Free(NameToIdx(register.name), force);
         public void FreePtr(Instruction.Pointer ptr, bool force = false) => FreeRegister(ptr.register, force);
 
+        // Frees a register by allowing it to be alloc-ed elsewhere, and making the other uses pull from a new instance
         private void Free(int idx, bool force=false)
         {
+            if (idx == -1)
+            {
+                return;
+            }
+
             if (force)
             {
                 registerLocks[idx] = false;
@@ -174,16 +183,20 @@ namespace Raze
                     return;
                 }
             }
+            if (idx == 0) { raxNeeded = false; }
             registers[idx] = null;
             used[idx] = false;
         }
 
-        public void FreeAll()
+        public void FreeAll(bool force=true)
         {
-            raxNeeded = false;
+            if (!registerLocks[0])
+            {
+                raxNeeded = false;
+            }
             for (int i = 0; i < registers.Length; i++)
             {
-                Free(i, true);
+                Free(i, force);
             }
         }
     }

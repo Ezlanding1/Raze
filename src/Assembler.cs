@@ -34,6 +34,8 @@ namespace Raze
 
         public RegisterAlloc alloc;
 
+        AssemblyOps assemblyOps = null;
+
         public Assembler(List<Expr> expressions)
         {
             this.expressions = expressions;
@@ -77,7 +79,7 @@ namespace Raze
                 }
             }
 
-            alloc.ReserveRax(this);
+            alloc.ReserveRegister(this);
 
             if (InstructionUtils.ConditionalJump.ContainsKey(expr.op.type)) 
             {
@@ -160,7 +162,7 @@ namespace Raze
                 }
             }
 
-            alloc.ReserveRax(this);
+            alloc.ReserveRegister(this);
 
             emitCall(new Instruction.Unary("CALL", new Instruction.ProcedureRef(ToMangedName(expr.internalFunction))));
 
@@ -353,7 +355,7 @@ namespace Raze
                 alloc.FreeParameter(0, param, this);
             }
 
-            alloc.ReserveRax(this);
+            alloc.ReserveRegister(this);
 
             emitCall(new Instruction.Unary("CALL", new Instruction.ProcedureRef(ToMangedName(expr.internalFunction))));
 
@@ -590,11 +592,19 @@ namespace Raze
 
         public Instruction.Value? visitAssemblyExpr(Expr.Assembly expr)
         {
-            int count = 0;
+            assemblyOps ??= new(this);
+            var count = assemblyOps.count;
+            var variables = assemblyOps.vars;
+            assemblyOps.count = 0;
+            assemblyOps.vars = expr.variables;
+
             foreach (var instruction in expr.block)
             {
-                instruction.Assign(ref count, expr.variables, this);
+                instruction.Assign(assemblyOps);
             }
+
+            assemblyOps.count = count;
+            assemblyOps.vars = variables;
             return null;
         }
 

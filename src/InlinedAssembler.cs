@@ -66,6 +66,7 @@ namespace Raze
             foreach (var bodyExpr in expr.internalFunction.block)
             {
                 bodyExpr.Accept(this);
+                alloc.FreeAll(false);
             }
 
             expr.internalFunction.parameters[0].stack.stackRegister = false;
@@ -120,6 +121,7 @@ namespace Raze
             foreach (var bodyExpr in expr.internalFunction.block)
             {
                 bodyExpr.Accept(this);
+                alloc.FreeAll(false);
             }
 
             expr.internalFunction.parameters[0].stack.stackRegister = false;
@@ -198,6 +200,7 @@ namespace Raze
             foreach (var bodyExpr in expr.internalFunction.block)
             {
                 bodyExpr.Accept(this);
+                alloc.FreeAll(false);
             }
             
             var ret = ((InlineStateInlined)inlineState).callee;

@@ -726,21 +726,19 @@ namespace Raze
 
             while (!TypeMatch(Token.TokenType.RBRACE))
             {
+                bool localReturn = false;
+                if (ReservedValueMatch("return"))
+                {
+                    if (returned) { throw new Errors.ParseError("Invalid Assembly Block", "Only one return may appear in an assembly block"); }
+                    returned = true;
+                    localReturn = true;
+                }
                 if (TypeMatch(Token.TokenType.IDENTIFIER))
                 {
-                    int returnType = 0;
-
                     var op = previous();
 
-                    if (ReservedValueMatch("return"))
-                    {
-                        if (returned) { throw new Errors.ParseError("Invalid Assembly Block", "Only one return may appear in an assembly block"); }
-                        returned = true;
-                        returnType = 1;
-                    }
                     if (TypeMatch(Token.TokenType.IDENTIFIER, Token.TokenType.DOLLAR))
                     {
-
                         // Unary
                         Instruction.Value? value;
 
@@ -767,12 +765,6 @@ namespace Raze
 
                         if (TypeMatch(Token.TokenType.COMMA))
                         {
-                            if (ReservedValueMatch("return"))
-                            {
-                                if (returned) { throw new Errors.ParseError("Invalid Assembly Block", "Only one return may appear in an assembly block"); }
-                                returned = true;
-                                returnType = 2;
-                            }
                             // Binary
 
                             if (TypeMatch(Token.TokenType.IDENTIFIER))
@@ -780,7 +772,7 @@ namespace Raze
                                 var identifier = previous();
                                 if (InstructionUtils.Registers.TryGetValue(identifier.lexeme, out var reg))
                                 {
-                                    instructions.Add(new ExprUtils.AssignableInstructionBin(new Instruction.Binary(op.lexeme, value, new Instruction.Register(reg.Item1, reg.Item2)), ExprUtils.AssignableInstructionBin.AssignType.AssignNone, returnType));
+                                    instructions.Add(new ExprUtils.AssignableInstruction.Binary(new Instruction.Binary(op.lexeme, value, new Instruction.Register(reg.Item1, reg.Item2)), ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
                                 }
                                 else
                                 {
@@ -789,7 +781,7 @@ namespace Raze
                             }
                             else if (TypeMatch(Token.TokenType.INTEGER, Token.TokenType.FLOATING, Token.TokenType.STRING, Token.TokenType.HEX, Token.TokenType.BINARY))
                             {
-                                instructions.Add(new ExprUtils.AssignableInstructionBin(new Instruction.Binary(op.lexeme, value, new Instruction.Literal(previous().type, previous().lexeme)), (value == null)? ExprUtils.AssignableInstructionBin.AssignType.AssignFirst : ExprUtils.AssignableInstructionBin.AssignType.AssignNone, returnType));
+                                instructions.Add(new ExprUtils.AssignableInstruction.Binary(new Instruction.Binary(op.lexeme, value, new Instruction.Literal(previous().type, previous().lexeme)), (value == null)? ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst : ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
                             }
                             else if (TypeMatch(Token.TokenType.DOLLAR))
                             {
@@ -797,7 +789,7 @@ namespace Raze
                                 Queue<Token> queue = new();
                                 queue.Enqueue(previous());
                                 variables.Add(new Expr.Variable(queue));
-                                instructions.Add(new ExprUtils.AssignableInstructionBin(new Instruction.Binary(op.lexeme, value, null), (value == null)? (ExprUtils.AssignableInstructionBin.AssignType.AssignFirst | ExprUtils.AssignableInstructionBin.AssignType.AssignSecond) : ExprUtils.AssignableInstructionBin.AssignType.AssignSecond, returnType));
+                                instructions.Add(new ExprUtils.AssignableInstruction.Binary(new Instruction.Binary(op.lexeme, value, null), (value == null)? (ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst | ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond) : ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond, localReturn));
                             }
                             else
                             {
@@ -806,13 +798,14 @@ namespace Raze
                         }
                         else
                         {
-                            instructions.Add(new ExprUtils.AssignableInstructionUn(new Instruction.Unary(op.lexeme, value), (value == null)? ExprUtils.AssignableInstructionUn.AssignType.AssignFirst : ExprUtils.AssignableInstructionUn.AssignType.AssignNone, returnType));
+                            instructions.Add(new ExprUtils.AssignableInstruction.Unary(new Instruction.Unary(op.lexeme, value), (value == null)? ExprUtils.AssignableInstruction.Unary.AssignType.AssignFirst : ExprUtils.AssignableInstruction.Unary.AssignType.AssignNone, localReturn));
                         }
                     }
                     else
                     {
+                        if (localReturn) { throw new Errors.ParseError("Invalid Assembly Block", "Return on a zero instruction is not allowed"); }
                         // Zero
-                        instructions.Add(new ExprUtils.AssignableInstructionZ(new Instruction.Zero(op.lexeme)));
+                        instructions.Add(new ExprUtils.AssignableInstruction.AssignableInstructionZ(new Instruction.Zero(op.lexeme)));
                     }
                     Expect(Token.TokenType.SEMICOLON, "';' after Assembly statement");
                 }
