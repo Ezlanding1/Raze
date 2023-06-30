@@ -27,7 +27,6 @@ namespace Raze
 
         public Instruction.Register?[] paramRegisters = new Instruction.Register[6];
 
-
         public bool[] fncPushPreserved = new bool[5];
 
         public Instruction.Register GetRegister(int idx, Instruction.Register.RegisterSize size)
@@ -87,6 +86,7 @@ namespace Raze
                 registers[registerIdx] = registers[i];
                 registerLocks[registerIdx] = registerLocks[i];
                 registers[registerIdx].name = InstructionUtils.storageRegisters[registerIdx];
+                fncPushPreserved[registerIdx - 1] = true;
                 used[registerIdx] = true;
                 registers[i] = null;
                 registerLocks[i] = false;
@@ -117,6 +117,8 @@ namespace Raze
 
         public void Unlock(Instruction.Register register) => Unlock(NameToIdx(register.name));
         public void Unlock(int idx) => registerLocks[idx] = false;
+
+        public bool IsLocked(int idx) => registerLocks[idx];
 
         public void ListAccept<T, T2>(List<T> list, Expr.IVisitor<T2> visitor) where T : Expr
         {

@@ -163,10 +163,8 @@ namespace Raze
 
                         assemblyOps.assembler.emit(new Instruction.Binary("MOV", cl, operand2));
                         assemblyOps.assembler.emit(new Instruction.Binary(instruction.instruction.instruction, operand1, cl));
-                        goto DontEmit;
                     }
-                    
-                    if (operand2.IsRegister())
+                    else if (operand2.IsRegister() && !assemblyOps.assembler.alloc.IsLocked(assemblyOps.assembler.alloc.NameToIdx(((Instruction.Register)operand2).name)))
                     {
                         var reg = assemblyOps.assembler.alloc.NextRegister(assemblyOps.assembler.alloc.paramRegisters[3].size);
 
@@ -193,10 +191,6 @@ namespace Raze
                         assemblyOps.assembler.alloc.FreeRegister(reg);
                     }
                 }
-
-                assemblyOps.assembler.emit(new Instruction.Binary(instruction.instruction.instruction, operand1, operand2));
-
-                DontEmit:
 
                 if (instruction.returns && assemblyOps.assembler is InlinedAssembler)
                 {
