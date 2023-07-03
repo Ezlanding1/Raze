@@ -457,7 +457,18 @@ namespace Raze
                 Expr right = Unary();
                 return new Expr.Unary(op, right);
             }
-            return Is();
+            return Incrementative();
+        }
+
+        private Expr Incrementative()
+        {
+            Expr expr = Is();
+            while (!isAtEnd() && TypeMatch(Token.TokenType.PLUSPLUS, Token.TokenType.MINUSMINUS))
+            {
+                Token op = previous();
+                expr = new Expr.Unary(op, expr);
+            }
+            return expr;
         }
 
         private Expr Is()
@@ -513,14 +524,6 @@ namespace Raze
                         }
                         var op = tokens[index - 2];
                         expr = new Expr.Assign((Expr.Variable)variable.Item1, new Expr.Binary((Expr.Variable)variable.Item1, op, NoSemicolon()));
-                    }
-                    else if (TypeMatch(Token.TokenType.PLUSPLUS, Token.TokenType.MINUSMINUS))
-                    {
-                        if (variable.Item2)
-                        {
-                            throw new Errors.ParseError("Invalid Unary Operator", "Cannot assign to a non-variable");
-                        }
-                        expr = new Expr.Unary(previous(), (Expr.Variable)variable.Item1);
                     }
                     else
                     {

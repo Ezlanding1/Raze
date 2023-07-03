@@ -71,7 +71,7 @@ namespace Raze
 
                 if (arg0.Item1 && arg1.Item1)
                 {
-                    return Primitives.Operation(expr.op, arg0.Item2, expr.left, arg1.Item2, expr.right);
+                    return literalTypes[Primitives.OperationType(expr.op, arg0.Item2, arg1.Item2)];
                 }
 
                 if (!arg0.Item1)
@@ -96,7 +96,7 @@ namespace Raze
 
                 if (expr.internalFunction == null)
                 {
-                    Primitives.InvalidOperation(expr.op, argumentTypes[0].ToString(), argumentTypes[1].ToString());
+                    throw Primitives.InvalidOperation(expr.op, argumentTypes[0].ToString(), argumentTypes[1].ToString());
                 }
 
                 symbolTable.SetContext(context);
@@ -104,6 +104,15 @@ namespace Raze
                 if (expr.internalFunction.modifiers["inline"])
                 {
                     context.size = Math.Max(context.size, expr.encSize + expr.internalFunction.size);
+                }
+
+                if (expr.internalFunction.parameters[0].modifiers["ref"] && expr.left is not Expr.Variable)
+                {
+                    throw new Errors.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
+                }
+                if (expr.internalFunction.parameters[1].modifiers["ref"] && expr.right is not Expr.Variable)
+                {
+                    throw new Errors.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
                 }
 
                 return expr.internalFunction._returnType.type;
@@ -169,6 +178,14 @@ namespace Raze
                 if (expr.internalFunction.modifiers["inline"])
                 {
                     context.size = Math.Max(context.size, expr.encSize + expr.internalFunction.size);
+                }
+
+                for (int i = 0; i < expr.internalFunction.arity; i++)
+                {
+                    if (expr.internalFunction.parameters[i].modifiers["ref"] && expr.arguments[i] is not Expr.Variable)
+                    {
+                        throw new Errors.AnalyzerError("Invalid Function Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
+                    }
                 }
 
                 callReturn = true;
@@ -328,7 +345,7 @@ namespace Raze
 
                 if (arg.Item1)
                 {
-                    return Primitives.Operation(expr.op, arg.Item2, expr.operand);
+                    return literalTypes[Primitives.OperationType(expr.op, arg.Item2)];
                 }
 
                 if (!arg.Item1)
@@ -343,7 +360,7 @@ namespace Raze
 
                 if (expr.internalFunction == null)
                 {
-                    Primitives.InvalidOperation(expr.op, argumentTypes[0].ToString());
+                    throw Primitives.InvalidOperation(expr.op, argumentTypes[0].ToString());
                 }
                 symbolTable.SetContext(context);
 
@@ -355,6 +372,11 @@ namespace Raze
                 if (Primitives.SymbolToPrimitiveName(expr.op) == "Increment")
                 {
                     callReturn = true;
+                }
+
+                if (expr.internalFunction.parameters[0].modifiers["ref"] && expr.operand is not Expr.Variable)
+                {
+                    throw new Errors.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
                 }
 
                 return expr.internalFunction._returnType.type;

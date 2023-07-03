@@ -40,6 +40,11 @@ namespace Raze
 
         public override Instruction.Value? visitUnaryExpr(Expr.Unary expr)
         {
+            if (expr.internalFunction == null)
+            {
+                return Analyzer.Primitives.Operation(expr.op, (Instruction.Literal)expr.operand.Accept(this), this);
+            }
+
             if (!expr.internalFunction.modifiers["inline"])
             {
                 inlineState = new(inlineState);
@@ -91,6 +96,11 @@ namespace Raze
 
         public override Instruction.Value? visitBinaryExpr(Expr.Binary expr)
         {
+            if (expr.internalFunction == null)
+            {
+                return Analyzer.Primitives.Operation(expr.op, (Instruction.Literal)expr.left.Accept(this), (Instruction.Literal)expr.right.Accept(this), this);
+            }
+
             if (!expr.internalFunction.modifiers["inline"])
             {
                 inlineState = new(inlineState);

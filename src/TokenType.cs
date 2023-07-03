@@ -8,7 +8,7 @@ namespace Raze
 {
     internal partial class Token
     {
-        internal enum TokenType
+        internal enum TokenType : byte
         {
             BINARY,           
             HEX,            

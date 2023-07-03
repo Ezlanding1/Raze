@@ -11,7 +11,7 @@ namespace Raze
     internal class Assembler : Expr.IVisitor<Instruction.Value?>
     {
         List<Expr> expressions;
-        List<Instruction> data;
+        public List<Instruction> data;
         List<Instruction> instructions;
 
         bool leaf = true;
@@ -23,12 +23,12 @@ namespace Raze
         }
         private protected string CreateConditionalLabel(int i) => "L" + i;
 
-        int dataCount;
-        string DataLabel 
+        public int dataCount;
+        public string DataLabel 
         {
             get { return CreateDatalLabel(dataCount); } 
         }
-        string CreateDatalLabel(int i) => "LC" + i;
+        public string CreateDatalLabel(int i) => "LC" + i;
 
         private protected Token.TokenType lastJump;
 
