@@ -9,7 +9,7 @@ namespace Raze
 {
     internal partial class Analyzer
     {
-        internal partial class TypeCheckPass : Pass<Expr.Type>
+        internal class TypeCheckPass : Pass<Expr.Type>
         {
             SymbolTable symbolTable = SymbolTableSingleton.SymbolTable;
             List<(Expr.Type?, bool, Expr.Return?)> _return;

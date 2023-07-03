@@ -18,16 +18,23 @@ namespace Raze
         }
 
         internal List<Expr> Analyze(){
+
+            // Semantic Analysis Pass 1 
             Pass<object?> initialPass = new InitialPass(expressions);
             expressions = initialPass.Run();
 
+            // Semantic Analysis Pass 2
             Pass<object?> mainPass = new MainPass(expressions);
             expressions = mainPass.Run();
 
+            // Semantic Analysis Pass - Type Check Analysis
             Pass<Expr.Type> TypeChackPass = new TypeCheckPass(expressions);
             expressions = TypeChackPass.Run();
 
             CheckMain(SymbolTableSingleton.SymbolTable.main);
+
+            // AST Optimization Pass
+
 
             return expressions;
         }
