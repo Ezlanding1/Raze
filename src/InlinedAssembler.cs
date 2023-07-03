@@ -66,7 +66,7 @@ namespace Raze
             }
 
             expr.internalFunction.parameters[0].stack.stackRegister = true;
-            ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = LockOperand(expr.internalFunction.parameters[0].modifiers["ref"]? operand : PassByValue(operand));
+            ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = LockOperand(IsRefParameter(expr.internalFunction.parameters[0]) ? operand : PassByValue(operand));
 
             foreach (var bodyExpr in expr.internalFunction.block)
             {
@@ -123,10 +123,10 @@ namespace Raze
             }
 
             expr.internalFunction.parameters[0].stack.stackRegister = true;
-            ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = LockOperand(expr.internalFunction.parameters[0].modifiers["ref"]? operand1 : PassByValue(operand1));
+            ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = LockOperand(IsRefParameter(expr.internalFunction.parameters[0]) ? operand1 : PassByValue(operand1));
 
             expr.internalFunction.parameters[1].stack.stackRegister = true;
-            ((Expr.StackRegister)expr.internalFunction.parameters[1].stack).register = LockOperand(expr.internalFunction.parameters[1].modifiers["ref"]? operand2 : PassByValue(operand2));
+            ((Expr.StackRegister)expr.internalFunction.parameters[1].stack).register = LockOperand(IsRefParameter(expr.internalFunction.parameters[1]) ? operand2 : PassByValue(operand2));
 
             foreach (var bodyExpr in expr.internalFunction.block)
             {
@@ -204,7 +204,7 @@ namespace Raze
                 Instruction.Value arg = expr.arguments[i].Accept(this);
 
                 expr.internalFunction.parameters[i].stack.stackRegister = true;
-                ((Expr.StackRegister)expr.internalFunction.parameters[i].stack).register = LockOperand(expr.internalFunction.parameters[0].modifiers["ref"]? arg : PassByValue(arg));
+                ((Expr.StackRegister)expr.internalFunction.parameters[i].stack).register = LockOperand(IsRefParameter(expr.internalFunction.parameters[0]) ? arg : PassByValue(arg));
             }
 
             foreach (var bodyExpr in expr.internalFunction.block)
@@ -365,6 +365,11 @@ namespace Raze
                     alloc.Unlock(idx);
                 }
             }
+        }
+        
+        private bool IsRefParameter(Expr.Parameter parameter)
+        {
+            return parameter.modifiers["ref"] || parameter.modifiers["inlineRef"];
         }
     }
 }
