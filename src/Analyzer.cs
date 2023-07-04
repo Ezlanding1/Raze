@@ -34,7 +34,8 @@ namespace Raze
             CheckMain(SymbolTableSingleton.SymbolTable.main);
 
             // AST Optimization Pass
-
+            Pass<object?> optimizationPass = new OptimizationPass(expressions);
+            optimizationPass.Run();
 
             return expressions;
         }

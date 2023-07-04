@@ -94,8 +94,7 @@ namespace Raze
             "is",
             "primitive",
             "this",
-            "ref",
-            "inlineRef"
+            "ref"
         };
 
         /*

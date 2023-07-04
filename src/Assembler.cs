@@ -390,7 +390,14 @@ namespace Raze
                 }
                 else if (reg.IsPointer())
                 {
-                    emit(reg);
+                    if (((Instruction.Pointer)reg).register.name == Instruction.Register.RegisterName.RBP)
+                    {
+                        emit(new Instruction.Binary("MOV", alloc.CurrentRegister(((Instruction.Pointer)reg).size), reg));
+                    }
+                    else
+                    {
+                        emit(new Instruction.Binary("MOV", ((Instruction.Pointer)reg).register, reg));
+                    }
                 }
                 else if (reg.IsLiteral())
                 {
@@ -409,7 +416,7 @@ namespace Raze
             }
             else
             {
-                emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(new Instruction.Register(Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._64Bits), expr.stack.stackOffset, 8, expr.stack.plus? '+' : '-')));
+                emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(new Instruction.Register(Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._64Bits), expr.stack.stackOffset, 8, expr.stack.plus ? '+' : '-')));
                 return new Instruction.Pointer(alloc.NextRegister(Instruction.Register.RegisterSize._64Bits), 0, expr.stack.size);
             }
         }

@@ -97,10 +97,7 @@ namespace Raze
                         {
                             paramModifers["ref"] = true;
                         }
-                        else if (ReservedValueMatch("inlineRef"))
-                        {
-                            paramModifers["inlineRef"] = true;
-                        }
+                        paramModifers["inlineRef"] = true;
 
                         Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter type");
                         var typeName = GetTypeGetter();
