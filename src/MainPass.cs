@@ -58,29 +58,29 @@
                     expr.arguments[i].Accept(this);
                 }
 
-                var context = symbolTable.Current;
-
-                expr.encSize = symbolTable.Current.size;
-
-                if (expr.callee != null)
+                using (new SaveContext())
                 {
-                    expr.instanceCall = symbolTable.TryGetVariable(expr.callee.Peek(), out var topSymbol_I, out _);
-                    if (expr.instanceCall)
+                    expr.encSize = symbolTable.Current.size;
+
+                    if (expr.callee != null)
                     {
-                        this.visitGetReferenceExpr(expr);
+                        expr.instanceCall = symbolTable.TryGetVariable(expr.callee.Peek(), out var topSymbol_I, out _);
+                        if (expr.instanceCall)
+                        {
+                            this.visitGetReferenceExpr(expr);
+                        }
+                        else
+                        {
+                            this.visitTypeReferenceExpr(expr);
+                        }
+                        expr.funcEnclosing = symbolTable.Current;
                     }
                     else
                     {
-                        this.visitTypeReferenceExpr(expr);
+                        expr.funcEnclosing = symbolTable.Current;
                     }
-                    expr.funcEnclosing = symbolTable.Current;
-                }
-                else
-                {
-                    expr.funcEnclosing = symbolTable.Current;
                 }
 
-                symbolTable.SetContext(context);
                 return null;
             }
 
@@ -169,11 +169,12 @@
 
                 if (expr._returnType.typeName.Peek().type != Token.TokenType.RESERVED && expr._returnType.typeName.Peek().lexeme != "void")
                 {
-                    var context = symbolTable.Current;
-                    expr._returnType.Accept(this);
-                    expr._returnType.type = (Expr.DataType)symbolTable.Current;
-                    expr._returnSize = (symbolTable.Current?.definitionType == Expr.Definition.DefinitionType.Primitive) ? ((Expr.Primitive)symbolTable.Current).size : 8;
-                    symbolTable.SetContext(context);
+                    using (new SaveContext())
+                    {
+                        expr._returnType.Accept(this);
+                        expr._returnType.type = (Expr.DataType)symbolTable.Current;
+                        expr._returnSize = (symbolTable.Current?.definitionType == Expr.Definition.DefinitionType.Primitive) ? ((Expr.Primitive)symbolTable.Current).size : 8;
+                    }
                 }
                 else
                 {
@@ -322,11 +323,8 @@
             {
                 expr.left.Accept(this);
 
-                var context = symbolTable.Current;
-
-                expr.right.Accept(this);
-
-                symbolTable.SetContext(context);
+                using (new SaveContext())
+                    expr.right.Accept(this);
 
                 return null;
             }
@@ -363,14 +361,13 @@
 
             private void GetVariableDefinition(Queue<Token> typeName, Expr.StackData stack)
             {
-                var context = symbolTable.Current;
+                using (new SaveContext())
+                {
+                    HandleTypeNameReference(typeName);
 
-                HandleTypeNameReference(typeName);
-
-                stack.size = (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Primitive) ? ((Expr.Primitive)symbolTable.Current).size : 8;
-                stack.type = symbolTable.Current;
-
-                symbolTable.SetContext(context);
+                    stack.size = (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Primitive) ? ((Expr.Primitive)symbolTable.Current).size : 8;
+                    stack.type = symbolTable.Current;
+                }
             }
 
             private void HandleTypeNameReference(Queue<Token> typeName)

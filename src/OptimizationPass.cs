@@ -67,11 +67,8 @@ namespace Raze
             {
                 if (!handledDefs.Contains(expr.internalFunction))
                 {
-                    var context = symbolTable.Current;
-
-                    expr.internalFunction.Accept(this);
-
-                    symbolTable.SetContext(context);
+                    using (new SaveContext())
+                        expr.internalFunction.Accept(this);
                 }
 
                 if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Function && ((Expr.Function)symbolTable.Current).modifiers["inline"])
