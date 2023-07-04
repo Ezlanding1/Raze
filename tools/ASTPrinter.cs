@@ -4,298 +4,297 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Raze.Tools
+namespace Raze.Tools;
+
+internal class bASTPrinter
 {
-    internal class bASTPrinter
+    public static void PrintAST(List<Expr> exprs)
     {
-        public static void PrintAST(List<Expr> exprs)
+        
+        foreach (Expr expr in exprs)
         {
-            
-            foreach (Expr expr in exprs)
+            PrintAST(expr);
+            Console.WriteLine(" ");
+        }
+    }
+    static void PrintAST(Expr expr)
+    {
+        
+        if (expr is Expr.Grouping)
+        {
+            Console.Write("(");
+            PrintAST(((Expr.Grouping)expr).expression);
+            Console.Write(")");
+        }
+        else if (expr is Expr.Binary)
+        {
+            PrintAST(((Expr.Binary)expr).left);
+            PrintAST(((Expr.Binary)expr).op);
+            PrintAST(((Expr.Binary)expr).right);
+        }
+        else if (expr is Expr.Literal)
+        {
+            PrintAST(((Expr.Literal)expr).literal);
+        }
+        else if (expr is Expr.Variable)
+        {
+            //PrintAST(((Expr.Variable)expr).stack.type);
+            //PrintAST(((Expr.Variable)expr).name);
+        }
+        else if (expr is Expr.Unary)
+        {
+            PrintAST(((Expr.Unary)expr).operand);
+            PrintAST(((Expr.Unary)expr).op);
+        }
+
+    }
+    static void PrintAST(Token token)
+    {
+        Console.Write(token.lexeme);
+    }
+}
+internal class ASTPrinter : Expr.IVisitor<object?>
+{
+    string offset;
+    public ASTPrinter()
+    {
+        offset = "";
+    }
+
+    public void PrintAST(List<Expr> exprs, bool first=true)
+    {
+        foreach (Expr expr in exprs)
+        {
+            if (first)
             {
-                PrintAST(expr);
+                offset = "";
+            }
+            PrintAST(expr);
+            if (first)
+            {
                 Console.WriteLine(" ");
             }
         }
-        static void PrintAST(Expr expr)
-        {
-            
-            if (expr is Expr.Grouping)
-            {
-                Console.Write("(");
-                PrintAST(((Expr.Grouping)expr).expression);
-                Console.Write(")");
-            }
-            else if (expr is Expr.Binary)
-            {
-                PrintAST(((Expr.Binary)expr).left);
-                PrintAST(((Expr.Binary)expr).op);
-                PrintAST(((Expr.Binary)expr).right);
-            }
-            else if (expr is Expr.Literal)
-            {
-                PrintAST(((Expr.Literal)expr).literal);
-            }
-            else if (expr is Expr.Variable)
-            {
-                //PrintAST(((Expr.Variable)expr).stack.type);
-                //PrintAST(((Expr.Variable)expr).name);
-            }
-            else if (expr is Expr.Unary)
-            {
-                PrintAST(((Expr.Unary)expr).operand);
-                PrintAST(((Expr.Unary)expr).op);
-            }
+    }
 
-        }
-        static void PrintAST(Token token)
+    private void PrintAST(Expr expr)
+    {
+        if (expr != null)
         {
-            Console.Write(token.lexeme);
+            string tmp = offset;
+            Console.Write(offset);
+            Console.WriteLine("├─" + expr);
+            offset += "|  ";
+            expr.Accept(this);
+            offset = tmp;
         }
     }
-    internal class ASTPrinter : Expr.IVisitor<object?>
+
+    private void PrintAST(Token token)
     {
-        string offset;
-        public ASTPrinter()
-        {
-            offset = "";
-        }
-
-        public void PrintAST(List<Expr> exprs, bool first=true)
-        {
-            foreach (Expr expr in exprs)
-            {
-                if (first)
-                {
-                    offset = "";
-                }
-                PrintAST(expr);
-                if (first)
-                {
-                    Console.WriteLine(" ");
-                }
-            }
-        }
-
-        private void PrintAST(Expr expr)
-        {
-            if (expr != null)
-            {
-                string tmp = offset;
-                Console.Write(offset);
-                Console.WriteLine("├─" + expr);
-                offset += "|  ";
-                expr.Accept(this);
-                offset = tmp;
-            }
-        }
-
-        private void PrintAST(Token token)
-        {
-            if (token != null)
-            {
-                Console.Write(offset);
-                Console.WriteLine("├─'" + token.lexeme + "'");
-            }
-        }
-
-        private void PrintAST(string s)
+        if (token != null)
         {
             Console.Write(offset);
-            Console.WriteLine("├─'" + s + "'");
+            Console.WriteLine("├─'" + token.lexeme + "'");
         }
+    }
 
-        public object? visitBinaryExpr(Expr.Binary expr)
+    private void PrintAST(string s)
+    {
+        Console.Write(offset);
+        Console.WriteLine("├─'" + s + "'");
+    }
+
+    public object? visitBinaryExpr(Expr.Binary expr)
+    {
+        PrintAST(expr.left);
+        PrintAST(expr.op);
+        PrintAST(expr.right);
+        return null;
+    }
+
+    public object? visitCallExpr(Expr.Call expr)
+    {
+        this.visitTypeReferenceExpr(expr);
+        PrintAST(expr.arguments, false);
+        return null;
+    }
+
+    public object? visitClassExpr(Expr.Class expr)
+    {
+        PrintAST(expr.ToString());
+        Expr.ListAccept(expr.declarations, this);
+        Expr.ListAccept(expr.definitions, this);
+        return null;
+    }
+
+    public object? visitFunctionExpr(Expr.Function expr)
+    {
+        PrintAST(expr.ToString());
+
+        foreach (Expr.Parameter paramExpr in expr.parameters)
         {
-            PrintAST(expr.left);
-            PrintAST(expr.op);
-            PrintAST(expr.right);
-            return null;
-        }
-
-        public object? visitCallExpr(Expr.Call expr)
-        {
-            this.visitTypeReferenceExpr(expr);
-            PrintAST(expr.arguments, false);
-            return null;
-        }
-
-        public object? visitClassExpr(Expr.Class expr)
-        {
-            PrintAST(expr.ToString());
-            Expr.ListAccept(expr.declarations, this);
-            Expr.ListAccept(expr.definitions, this);
-            return null;
-        }
-
-        public object? visitFunctionExpr(Expr.Function expr)
-        {
-            PrintAST(expr.ToString());
-
-            foreach (Expr.Parameter paramExpr in expr.parameters)
-            {
-                foreach (var type in paramExpr.typeName)
-                {
-                    PrintAST(type);
-                }
-            }
-
-            Expr.ListAccept(expr.block, this);
-
-            return null;
-        }
-
-        public object? visitTypeReferenceExpr(Expr.TypeReference expr)
-        {
-            if (expr.typeName == null) return null;
-
-            foreach (var type in expr.typeName)
+            foreach (var type in paramExpr.typeName)
             {
                 PrintAST(type);
             }
-            return null;
         }
 
-        public object? visitGetReferenceExpr(Expr.GetReference expr)
-        {
-            return this.visitTypeReferenceExpr(expr);
-        }
+        Expr.ListAccept(expr.block, this);
 
-        public object? visitGroupingExpr(Expr.Grouping expr)
-        {
-            expr.expression.Accept(this);
-            return null;
-        }
+        return null;
+    }
 
-        public object? visitLiteralExpr(Expr.Literal expr)
-        {
-            PrintAST(expr.literal);
-            return null;
-        }
+    public object? visitTypeReferenceExpr(Expr.TypeReference expr)
+    {
+        if (expr.typeName == null) return null;
 
-        public object? visitUnaryExpr(Expr.Unary expr)
-        {
-            PrintAST(expr.operand);
-            PrintAST(expr.op);
-            return null;
-        }
-
-        public object? visitVariableExpr(Expr.Variable expr)
-        {
-            foreach (var type in expr.typeName)
-            {
-                PrintAST(type);
-            }
-            return null;
-        }
-
-        public object? visitDeclareExpr(Expr.Declare expr)
-        {
-            foreach (var type in expr.typeName)
-            {
-                PrintAST(type);
-            }
-
-            PrintAST(expr.name);
-
-            if (expr.value != null)
-                PrintAST(expr.value);
-
-            return null;
-        }
-
-        public object? visitIfExpr(Expr.If expr)
-        {
-            PrintConditional(expr.conditional, "if");
-
-            expr.ElseIfs.ForEach(x => PrintConditional(x.conditional, "else if"));
-
-            if (expr._else != null)
-                PrintConditional(expr._else.conditional, "else");
-            return null;
-        }
-
-        public object? visitWhileExpr(Expr.While expr)
-        {
-            PrintConditional(expr.conditional, "while");
-            return null;
-        }
-
-        public object? visitForExpr(Expr.For expr)
-        {
-            PrintConditional(expr.conditional, "for");
-            return null;
-        }
-
-        private void PrintConditional(Expr.Conditional expr, string type)
+        foreach (var type in expr.typeName)
         {
             PrintAST(type);
-            PrintAST(expr.condition);
-            PrintAST(expr.block);
+        }
+        return null;
+    }
+
+    public object? visitGetReferenceExpr(Expr.GetReference expr)
+    {
+        return this.visitTypeReferenceExpr(expr);
+    }
+
+    public object? visitGroupingExpr(Expr.Grouping expr)
+    {
+        expr.expression.Accept(this);
+        return null;
+    }
+
+    public object? visitLiteralExpr(Expr.Literal expr)
+    {
+        PrintAST(expr.literal);
+        return null;
+    }
+
+    public object? visitUnaryExpr(Expr.Unary expr)
+    {
+        PrintAST(expr.operand);
+        PrintAST(expr.op);
+        return null;
+    }
+
+    public object? visitVariableExpr(Expr.Variable expr)
+    {
+        foreach (var type in expr.typeName)
+        {
+            PrintAST(type);
+        }
+        return null;
+    }
+
+    public object? visitDeclareExpr(Expr.Declare expr)
+    {
+        foreach (var type in expr.typeName)
+        {
+            PrintAST(type);
         }
 
-        public object? visitBlockExpr(Expr.Block expr)
-        {
-            PrintAST(expr.block, false);
-            return null;
-        }
+        PrintAST(expr.name);
 
-        public object? visitReturnExpr(Expr.Return expr)
-        {
+        if (expr.value != null)
             PrintAST(expr.value);
-            return null;
-        }
 
-        public object? visitAssignExpr(Expr.Assign expr)
+        return null;
+    }
+
+    public object? visitIfExpr(Expr.If expr)
+    {
+        PrintConditional(expr.conditional, "if");
+
+        expr.ElseIfs.ForEach(x => PrintConditional(x.conditional, "else if"));
+
+        if (expr._else != null)
+            PrintConditional(expr._else.conditional, "else");
+        return null;
+    }
+
+    public object? visitWhileExpr(Expr.While expr)
+    {
+        PrintConditional(expr.conditional, "while");
+        return null;
+    }
+
+    public object? visitForExpr(Expr.For expr)
+    {
+        PrintConditional(expr.conditional, "for");
+        return null;
+    }
+
+    private void PrintConditional(Expr.Conditional expr, string type)
+    {
+        PrintAST(type);
+        PrintAST(expr.condition);
+        PrintAST(expr.block);
+    }
+
+    public object? visitBlockExpr(Expr.Block expr)
+    {
+        PrintAST(expr.block, false);
+        return null;
+    }
+
+    public object? visitReturnExpr(Expr.Return expr)
+    {
+        PrintAST(expr.value);
+        return null;
+    }
+
+    public object? visitAssignExpr(Expr.Assign expr)
+    {
+        PrintAST(expr.value);
+        PrintAST(expr.member);
+        return null;
+    }
+
+    public object? visitKeywordExpr(Expr.Keyword expr)
+    {
+        PrintAST(expr.keyword);
+        return null;
+    }
+
+    public object? visitPrimitiveExpr(Expr.Primitive expr)
+    {
+        PrintAST(expr.ToString());
+        PrintAST(expr.size.ToString());
+        Expr.ListAccept(expr.definitions, this);
+        return null;
+    }
+
+    public object? visitNewExpr(Expr.New expr)
+    {
+        expr.call.Accept(this);
+        return null;
+    }
+
+    public object? visitAssemblyExpr(Expr.Assembly expr)
+    {
+        foreach (var instruction in expr.block)
         {
-            PrintAST(expr.value);
-            PrintAST(expr.member);
-            return null;
+            PrintAST(instruction.ToString());
         }
 
-        public object? visitKeywordExpr(Expr.Keyword expr)
-        {
-            PrintAST(expr.keyword);
-            return null;
-        }
+        return null;
+    }
 
-        public object? visitPrimitiveExpr(Expr.Primitive expr)
-        {
-            PrintAST(expr.ToString());
-            PrintAST(expr.size.ToString());
-            Expr.ListAccept(expr.definitions, this);
-            return null;
-        }
+    public object? visitDefineExpr(Expr.Define expr)
+    {
+        PrintAST(expr.name);
+        PrintAST(expr.value);
+        return null;
+    }
 
-        public object? visitNewExpr(Expr.New expr)
-        {
-            expr.call.Accept(this);
-            return null;
-        }
-
-        public object? visitAssemblyExpr(Expr.Assembly expr)
-        {
-            foreach (var instruction in expr.block)
-            {
-                PrintAST(instruction.ToString());
-            }
-
-            return null;
-        }
-
-        public object? visitDefineExpr(Expr.Define expr)
-        {
-            PrintAST(expr.name);
-            PrintAST(expr.value);
-            return null;
-        }
-
-        public object? visitIsExpr(Expr.Is expr)
-        {
-            PrintAST(expr.left);
-            PrintAST("is");
-            PrintAST(expr.right);
-            return null;
-        }
+    public object? visitIsExpr(Expr.Is expr)
+    {
+        PrintAST(expr.left);
+        PrintAST("is");
+        PrintAST(expr.right);
+        return null;
     }
 }

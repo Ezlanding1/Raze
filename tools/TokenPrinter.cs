@@ -4,24 +4,23 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Raze.tools
+namespace Raze.Tools;
+
+internal class InputPrinter
 {
-    internal class InputPrinter
+    internal static void PrintInput(string input)
     {
-        internal static void PrintInput(string input)
-        {
-            Console.WriteLine(input);
-        }
+        Console.WriteLine(input);
     }
-    internal class TokenPrinter
+}
+internal class TokenPrinter
+{
+    internal static void PrintTokens(List<Token> tokens)
     {
-        internal static void PrintTokens(List<Token> tokens)
+        foreach (var item in tokens)
         {
-            foreach (var item in tokens)
-            {
-                string str = item.ToString();
-                Console.WriteLine(str);
-            }
+            string str = item.ToString();
+            Console.WriteLine(str);
         }
     }
 }
