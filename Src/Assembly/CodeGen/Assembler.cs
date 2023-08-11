@@ -738,7 +738,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         }
         return operand;
     }
-    public Instruction.Register MovToRegister(Instruction.Value operand)
+    public Instruction.Register MovToRegister(Instruction.Value operand, int? size)
     {
         if (operand.IsPointer())
         {
@@ -755,8 +755,11 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         }
         else if (operand.IsLiteral())
         {
-            emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._32Bits), operand));
-            return alloc.NextRegister(Instruction.Register.RegisterSize._32Bits);
+            if (size == null)
+                throw new Errors.ImpossibleError("null sized literal");
+
+            emit(new Instruction.Binary("MOV", alloc.CurrentRegister(InstructionUtils.ToRegisterSize((int)size)), operand));
+            return alloc.NextRegister(InstructionUtils.ToRegisterSize((int)size));
         }
         return (Instruction.Register)operand;
     }
