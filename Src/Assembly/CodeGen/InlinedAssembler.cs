@@ -66,7 +66,7 @@ internal class InlinedAssembler : Assembler
         }
 
         expr.internalFunction.parameters[0].stack.stackRegister = true;
-        ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = LockOperand(IsRefParameter(expr.internalFunction.parameters[0]) ? operand : PassByValue(operand));
+        ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = LockOperand(IsRefParameter(expr.internalFunction.parameters[0]) ? operand : MovToRegister(operand));
 
         foreach (var bodyExpr in expr.internalFunction.block)
         {
@@ -123,10 +123,10 @@ internal class InlinedAssembler : Assembler
         }
 
         expr.internalFunction.parameters[0].stack.stackRegister = true;
-        ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = LockOperand(IsRefParameter(expr.internalFunction.parameters[0]) ? operand1 : PassByValue(operand1));
+        ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = LockOperand(IsRefParameter(expr.internalFunction.parameters[0]) ? operand1 : MovToRegister(operand1));
 
         expr.internalFunction.parameters[1].stack.stackRegister = true;
-        ((Expr.StackRegister)expr.internalFunction.parameters[1].stack).register = LockOperand(IsRefParameter(expr.internalFunction.parameters[1]) ? operand2 : PassByValue(operand2));
+        ((Expr.StackRegister)expr.internalFunction.parameters[1].stack).register = LockOperand(IsRefParameter(expr.internalFunction.parameters[1]) ? operand2 : MovToRegister(operand2));
 
         foreach (var bodyExpr in expr.internalFunction.block)
         {
@@ -204,7 +204,7 @@ internal class InlinedAssembler : Assembler
             Instruction.Value arg = expr.arguments[i].Accept(this);
 
             expr.internalFunction.parameters[i].stack.stackRegister = true;
-            ((Expr.StackRegister)expr.internalFunction.parameters[i].stack).register = LockOperand(IsRefParameter(expr.internalFunction.parameters[0]) ? arg : PassByValue(arg));
+            ((Expr.StackRegister)expr.internalFunction.parameters[i].stack).register = LockOperand(IsRefParameter(expr.internalFunction.parameters[0]) ? arg : MovToRegister(arg));
         }
 
         foreach (var bodyExpr in expr.internalFunction.block)
