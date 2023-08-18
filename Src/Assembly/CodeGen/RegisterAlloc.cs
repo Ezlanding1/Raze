@@ -8,20 +8,18 @@ namespace Raze;
 
 internal class RegisterAlloc
 {
-    public int registerIdx {
+    private int RegisterIdx {
         get
         {
-            for (int i = 0; i < used.Length; i++)
+            for (int i = 0; i < registerStates.Length; i++)
             {
-                if (used[i] == false) { return i; }
+                if (registerStates[i].HasState(RegisterState.RegisterStates.Free)) { return i; }
             }
             throw new Errors.ImpossibleError("Requesting stack memory using the RegisterAlloc class is not implemented in this version of the compiler");
         }
     }
 
-    bool[] used = new bool[6];
-    public bool raxNeeded;
-    bool[] registerLocks = new bool[6];
+    RegisterState[] registerStates = { new(), new(), new(), new(), new(), new(), new(), new() };
 
     Instruction.Register?[] registers = new Instruction.Register[6];
 
@@ -39,68 +37,67 @@ internal class RegisterAlloc
         {
             registers[idx].size = size;
         }
-        used[idx] = true;
+        registerStates[idx].SetState(RegisterState.RegisterStates.Used);
 
         return registers[idx];
     }
 
     public Instruction.Register NextRegister(Instruction.Register.RegisterSize size)
     {
-        if (registerIdx != 0)
+        if (RegisterIdx != 0)
         {
-            fncPushPreserved[registerIdx - 1] = true;
+            fncPushPreserved[RegisterIdx - 1] = true;
         }
-        return GetRegister(registerIdx, size);
+        return GetRegister(RegisterIdx, size);
     }
-    
+
     // Makes all subsequent register requests for register[idx] pull from a new instance (while not modifying used[idx])
     public void NullReg(int idx) => registers[idx] = null;
 
     public Instruction.Register CurrentRegister(Instruction.Register.RegisterSize size)
     {
-        if (used[registerIdx] == false)
+        if (registerStates[RegisterIdx].HasState(RegisterState.RegisterStates.Free))
         {
-            registers[registerIdx] = new(InstructionUtils.storageRegisters[registerIdx], size);
+            registers[RegisterIdx] = new(InstructionUtils.storageRegisters[RegisterIdx], size);
         }
-        return registers[registerIdx];
+        return registers[RegisterIdx];
     }
 
     public void ReserveRegister(Assembler assembler, int i = 0)
     {
-        if (!used[i])
+        if (registerStates[i].HasState(RegisterState.RegisterStates.Free))
         {
             return;
         }
 
-        if (i == 0 && raxNeeded)
+        int newIdx = RegisterIdx;
+
+        if (registerStates[0].HasState(RegisterState.RegisterStates.Needed))
         {
-            registers[i].name = InstructionUtils.storageRegisters[registerIdx];
-            registerLocks[registerIdx] = registerLocks[i];
-            assembler.emit(new Instruction.Binary("MOV", NextRegister(registers[i].size), new Instruction.Register(Instruction.Register.RegisterName.RAX, registers[i].size)));
+            registers[i].name = InstructionUtils.storageRegisters[newIdx];
+            assembler.Emit(new Instruction.Binary("MOV", NextRegister(registers[i].size), new Instruction.Register(Instruction.Register.RegisterName.RAX, registers[i].size)));
             registers[i] = null;
-            registerLocks[i] = false;
-            used[i] = false;
         }
         else
         {
-            registers[registerIdx] = registers[i];
-            registerLocks[registerIdx] = registerLocks[i];
-            registers[registerIdx].name = InstructionUtils.storageRegisters[registerIdx];
-            fncPushPreserved[registerIdx - 1] = true;
-            used[registerIdx] = true;
+            registers[newIdx] = registers[i];
+            registers[newIdx].name = InstructionUtils.storageRegisters[newIdx];
+            fncPushPreserved[newIdx - 1] = true;
+            registerStates[newIdx].SetState(RegisterState.RegisterStates.Used);
             registers[i] = null;
-            registerLocks[i] = false;
-            used[i] = false;
         }
+
+        registerStates[newIdx].SetState(registerStates[i]);
+        registerStates[i].SetState(RegisterState.RegisterStates.Free);
     }
 
     public Instruction.Register AllocParam(int i, Instruction.Register.RegisterSize size)
     {
         if (paramRegisters[i] != null)
         {
-            paramRegisters[i].name = InstructionUtils.storageRegisters[registerIdx];
-            registers[registerIdx] = paramRegisters[i];
-            used[registerIdx] = true;
+            paramRegisters[i].name = InstructionUtils.storageRegisters[RegisterIdx];
+            registers[RegisterIdx] = paramRegisters[i];
+            registerStates[RegisterIdx].SetState(RegisterState.RegisterStates.Used);
         }
 
         return (paramRegisters[i] = new Instruction.Register(InstructionUtils.paramRegister[i], size));
@@ -108,17 +105,17 @@ internal class RegisterAlloc
 
     public Instruction.Register CallAlloc(Instruction.Register.RegisterSize size)
     {
-        raxNeeded = true;
+        registerStates[0].SetState(RegisterState.RegisterStates.Needed);
         return GetRegister(0, size);
     }
 
     public void Lock(Instruction.Register register) => Lock(NameToIdx(register.name));
-    public void Lock(int idx) => registerLocks[idx] = true;
+    public void Lock(int idx) => registerStates[idx].SetState(RegisterState.RegisterStates.Used, RegisterState.RegisterStates.Locked);
 
     public void Unlock(Instruction.Register register) => Unlock(NameToIdx(register.name));
-    public void Unlock(int idx) => registerLocks[idx] = false;
+    public void Unlock(int idx) => registerStates[idx].RemoveState(RegisterState.RegisterStates.Locked);
 
-    public bool IsLocked(int idx) => registerLocks[idx];
+    public bool IsLocked(int idx) => registerStates[idx].HasState(RegisterState.RegisterStates.Locked);
 
     public void ListAccept<T, T2>(List<T> list, Expr.IVisitor<T2> visitor) where T : Expr
     {
@@ -142,7 +139,7 @@ internal class RegisterAlloc
 
         if (allocIdx != -1)
         {
-            assembler.emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionUtils.paramRegister[i], param.size), param));
+            assembler.Emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionUtils.paramRegister[i], param.size), param));
             Free(allocIdx);
         }
         else
@@ -176,26 +173,21 @@ internal class RegisterAlloc
 
         if (force)
         {
-            registerLocks[idx] = false;
+            registerStates[idx].RemoveState(RegisterState.RegisterStates.Locked);
         }
         else
         {
-            if (registerLocks[idx])
+            if (registerStates[idx].HasState(RegisterState.RegisterStates.Locked))
             {
                 return;
             }
         }
-        if (idx == 0) { raxNeeded = false; }
         registers[idx] = null;
-        used[idx] = false;
+        registerStates[idx].SetState(RegisterState.RegisterStates.Free);
     }
 
     public void FreeAll(bool force=true)
     {
-        if (!registerLocks[0])
-        {
-            raxNeeded = false;
-        }
         for (int i = 0; i < registers.Length; i++)
         {
             Free(i, force);
