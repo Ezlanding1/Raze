@@ -6,21 +6,21 @@ internal abstract class Instruction
 
     public interface IVisitor
     {
-        public string visitGlobal(Global instruction);
-        public string visitSection(Section instruction);
-        public string visitRegister(Register instruction);
-        public string visitPointer(Pointer instruction);
-        public string visitLiteral(Literal instruction);
-        public string visitData(Data instruction);
-        public string visitDataRef(DataRef instruction);
-        public string visitProcedure(Procedure instruction);
-        public string visitLocalProcedure(LocalProcedure instruction);
-        public string visitLocalProcedureRef(LocalProcedureRef instruction);
-        public string visitProcedureRef(ProcedureRef instruction);
-        public string visitBinary(Binary instruction);
-        public string visitUnary(Unary instruction);
-        public string visitZero(Zero instruction);
-        public string visitComment(Comment instruction);
+        public string VisitGlobal(Global instruction);
+        public string VisitSection(Section instruction);
+        public string VisitRegister(Register instruction);
+        public string VisitPointer(Pointer instruction);
+        public string VisitLiteral(Literal instruction);
+        public string VisitData(Data instruction);
+        public string VisitDataRef(DataRef instruction);
+        public string VisitProcedure(Procedure instruction);
+        public string VisitLocalProcedure(LocalProcedure instruction);
+        public string VisitLocalProcedureRef(LocalProcedureRef instruction);
+        public string VisitProcedureRef(ProcedureRef instruction);
+        public string VisitBinary(Binary instruction);
+        public string VisitUnary(Unary instruction);
+        public string VisitZero(Zero instruction);
+        public string VisitComment(Comment instruction);
     }
 
     internal class Global : Instruction
@@ -33,7 +33,7 @@ internal abstract class Instruction
 
         public override string Accept(IVisitor visitor)
         {
-            return visitor.visitGlobal(this);
+            return visitor.VisitGlobal(this);
         }
     }
 
@@ -47,7 +47,7 @@ internal abstract class Instruction
 
         public override string Accept(IVisitor visitor)
         {
-            return visitor.visitSection(this);
+            return visitor.VisitSection(this);
         }
     }
 
@@ -136,7 +136,7 @@ internal abstract class Instruction
 
         public override string Accept(IVisitor visitor)
         {
-            return visitor.visitRegister(this);
+            return visitor.VisitRegister(this);
         }
     }
 
@@ -163,7 +163,7 @@ internal abstract class Instruction
 
         public override string Accept(IVisitor visitor)
         {
-            return visitor.visitPointer(this);
+            return visitor.VisitPointer(this);
         }
     }
 
@@ -180,7 +180,7 @@ internal abstract class Instruction
 
         public override string Accept(IVisitor visitor)
         {
-            return visitor.visitLiteral(this);
+            return visitor.VisitLiteral(this);
         }
     }
 
@@ -198,7 +198,7 @@ internal abstract class Instruction
 
         public override string Accept(IVisitor visitor)
         {
-            return visitor.visitData(this);
+            return visitor.VisitData(this);
         }
     }
 
@@ -213,7 +213,7 @@ internal abstract class Instruction
 
         public override string Accept(IVisitor visitor)
         {
-            return visitor.visitDataRef(this);
+            return visitor.VisitDataRef(this);
         }
     }
 
@@ -227,7 +227,7 @@ internal abstract class Instruction
 
         public override string Accept(IVisitor visitor)
         {
-            return visitor.visitProcedure(this);
+            return visitor.VisitProcedure(this);
         }
     }
 
@@ -241,7 +241,7 @@ internal abstract class Instruction
 
         public override string Accept(IVisitor visitor)
         {
-            return visitor.visitLocalProcedure(this);
+            return visitor.VisitLocalProcedure(this);
         }
     }
 
@@ -256,7 +256,7 @@ internal abstract class Instruction
 
         public override string Accept(IVisitor visitor)
         {
-            return visitor.visitProcedureRef(this);
+            return visitor.VisitProcedureRef(this);
         }
     }
 
@@ -271,7 +271,7 @@ internal abstract class Instruction
 
         public override string Accept(IVisitor visitor)
         {
-            return visitor.visitLocalProcedureRef(this);
+            return visitor.VisitLocalProcedureRef(this);
         }
     }
 
@@ -294,7 +294,7 @@ internal abstract class Instruction
 
         public override string Accept(IVisitor visitor)
         {
-            return visitor.visitBinary(this);
+            return visitor.VisitBinary(this);
         }
     }
 
@@ -312,7 +312,7 @@ internal abstract class Instruction
 
         public override string Accept(IVisitor visitor)
         {
-            return visitor.visitBinary(this);
+            return visitor.VisitBinary(this);
         }
     }
 
@@ -333,7 +333,7 @@ internal abstract class Instruction
 
         public override string Accept(IVisitor visitor)
         {
-            return visitor.visitUnary(this);
+            return visitor.VisitUnary(this);
         }
     }
 
@@ -347,7 +347,7 @@ internal abstract class Instruction
 
         public override string Accept(IVisitor visitor)
         {
-            return visitor.visitZero(this);
+            return visitor.VisitZero(this);
         }
     }
 
@@ -361,7 +361,7 @@ internal abstract class Instruction
 
         public override string Accept(IVisitor visitor)
         {
-            return visitor.visitComment(this);
+            return visitor.VisitComment(this);
         }
     }
 }

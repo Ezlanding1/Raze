@@ -38,7 +38,7 @@ internal class InlinedAssembler : Assembler
     {
     }
 
-    public override Instruction.Value? visitUnaryExpr(Expr.Unary expr)
+    public override Instruction.Value? VisitUnaryExpr(Expr.Unary expr)
     {
         if (expr.internalFunction == null)
         {
@@ -49,7 +49,7 @@ internal class InlinedAssembler : Assembler
         {
             inlineState = new(inlineState);
 
-            var tmp = base.visitUnaryExpr(expr);
+            var tmp = base.VisitUnaryExpr(expr);
 
             inlineState = inlineState.lastState;
 
@@ -79,7 +79,7 @@ internal class InlinedAssembler : Assembler
 
         if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
         {
-            emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
+            Emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
         }
 
         var ret = ((InlineStateInlined)inlineState).callee;
@@ -94,7 +94,7 @@ internal class InlinedAssembler : Assembler
         return ret;
     }
 
-    public override Instruction.Value? visitBinaryExpr(Expr.Binary expr)
+    public override Instruction.Value? VisitBinaryExpr(Expr.Binary expr)
     {
         if (expr.internalFunction == null)
         {
@@ -105,7 +105,7 @@ internal class InlinedAssembler : Assembler
         {
             inlineState = new(inlineState);
 
-            var tmp = base.visitBinaryExpr(expr);
+            var tmp = base.VisitBinaryExpr(expr);
 
             inlineState = inlineState.lastState;
 
@@ -149,7 +149,7 @@ internal class InlinedAssembler : Assembler
 
         if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
         {
-            emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
+            Emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
         }
 
         inlineState = inlineState.lastState;
@@ -157,13 +157,13 @@ internal class InlinedAssembler : Assembler
         return ret;
     }
 
-    public override Instruction.Value? visitCallExpr(Expr.Call expr)
+    public override Instruction.Value? VisitCallExpr(Expr.Call expr)
     {
         if (!expr.internalFunction.modifiers["inline"])
         {
             inlineState = new(inlineState);
 
-            var tmp = base.visitCallExpr(expr);
+            var tmp = base.VisitCallExpr(expr);
 
             inlineState = inlineState.lastState;
 
@@ -183,18 +183,18 @@ internal class InlinedAssembler : Assembler
                 {
                     for (int i = expr.offsets.Length - 1; i >= 1; i--)
                     {
-                        emit(new Instruction.Binary("MOV", instanceArg, new Instruction.Pointer(((i == expr.offsets.Length - 1) ? new(Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._64Bits) : alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits)), expr.offsets[i].stackOffset, 8)));
+                        Emit(new Instruction.Binary("MOV", instanceArg, new Instruction.Pointer(((i == expr.offsets.Length - 1) ? new(Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._64Bits) : alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits)), expr.offsets[i].stackOffset, 8)));
                     }
-                    emit(new Instruction.Binary("MOV", instanceArg, new Instruction.Pointer((0 == expr.offsets.Length - 1) ? new(Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._64Bits) : alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits), expr.offsets[0].stackOffset, 8)));
+                    Emit(new Instruction.Binary("MOV", instanceArg, new Instruction.Pointer((0 == expr.offsets.Length - 1) ? new(Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._64Bits) : alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits), expr.offsets[0].stackOffset, 8)));
                 }
                 else
                 {
-                    emit(new Instruction.Binary("MOV", instanceArg, new Instruction.Pointer(8, 8)));
+                    Emit(new Instruction.Binary("MOV", instanceArg, new Instruction.Pointer(8, 8)));
                 }
             }
             else
             {
-                emit(new Instruction.Binary("MOV", instanceArg, new Instruction.Register(Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits)));
+                Emit(new Instruction.Binary("MOV", instanceArg, new Instruction.Register(Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits)));
             }
         }
 
@@ -233,7 +233,7 @@ internal class InlinedAssembler : Assembler
 
         if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
         {
-            emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
+            Emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
         }
 
         inlineState = inlineState.lastState;
@@ -241,20 +241,20 @@ internal class InlinedAssembler : Assembler
         return ret;
     }
 
-    public override Instruction.Value? visitAssignExpr(Expr.Assign expr)
+    public override Instruction.Value? VisitAssignExpr(Expr.Assign expr)
     {
         if (!expr.binary || !((Expr.Binary)expr.value).internalFunction.modifiers["inline"])
         {
-            return base.visitAssignExpr(expr);
+            return base.VisitAssignExpr(expr);
         }
 
         Instruction.Value operand2;
 
         if (((Expr.Binary)expr.value).internalFunction.parameters[0].modifiers["ref"] == false)
         {
-        ((Expr.Binary)expr.value).internalFunction.parameters[0].modifiers["ref"] = true;
+            ((Expr.Binary)expr.value).internalFunction.parameters[0].modifiers["ref"] = true;
             operand2 = expr.value.Accept(this);
-        ((Expr.Binary)expr.value).internalFunction.parameters[0].modifiers["ref"] = false;
+            ((Expr.Binary)expr.value).internalFunction.parameters[0].modifiers["ref"] = false;
         }
         else
         {
@@ -263,7 +263,7 @@ internal class InlinedAssembler : Assembler
 
         if (((Expr.StackRegister)((Expr.Binary)expr.value).internalFunction.parameters[0].stack).register != operand2)
         {
-            emit(new Instruction.Binary("MOV", ((Expr.StackRegister)((Expr.Binary)expr.value).internalFunction.parameters[0].stack).register, operand2));
+            Emit(new Instruction.Binary("MOV", ((Expr.StackRegister)((Expr.Binary)expr.value).internalFunction.parameters[0].stack).register, operand2));
         }
 
         alloc.Free(operand2);
@@ -271,11 +271,11 @@ internal class InlinedAssembler : Assembler
         return null;
     }
 
-    public override Instruction.Value? visitReturnExpr(Expr.Return expr)
+    public override Instruction.Value? VisitReturnExpr(Expr.Return expr)
     {
         if (!inlineState.inline)
         {
-            return base.visitReturnExpr(expr);
+            return base.VisitReturnExpr(expr);
         }
 
         if (!expr._void)
@@ -292,31 +292,31 @@ internal class InlinedAssembler : Assembler
                 {
                     var op = (Instruction.Register)operand;
                     if (op.name != ((Instruction.Register)((InlineStateInlined)inlineState).callee).name)
-                        emit(new Instruction.Binary("MOV", new Instruction.Register(((Instruction.Register)((InlineStateInlined)inlineState).callee).name, op.size), operand));
+                        Emit(new Instruction.Binary("MOV", new Instruction.Register(((Instruction.Register)((InlineStateInlined)inlineState).callee).name, op.size), operand));
                 }
                 else if (operand.IsPointer())
                 {
-                    emit(new Instruction.Binary("MOV", ((InlineStateInlined)inlineState).callee, operand));
+                    Emit(new Instruction.Binary("MOV", ((InlineStateInlined)inlineState).callee, operand));
                 }
                 else
                 {
-                    emit(new Instruction.Binary("MOV", ((InlineStateInlined)inlineState).callee, operand));
+                    Emit(new Instruction.Binary("MOV", ((InlineStateInlined)inlineState).callee, operand));
                 }
             }
         }
         else
         {
-            emit(new Instruction.Binary("MOV", ((InlineStateInlined)inlineState).callee, new Instruction.Literal(Parser.Literals[0], "0")));
+            Emit(new Instruction.Binary("MOV", ((InlineStateInlined)inlineState).callee, new Instruction.Literal(Parser.Literals[0], "0")));
         }
 
         if (((InlineStateInlined)inlineState).inlineLabelIdx == -1)
         {
             ((InlineStateInlined)inlineState).inlineLabelIdx = conditionalCount;
-            emit(new Instruction.Unary("JMP", new Instruction.LocalProcedureRef(CreateConditionalLabel(conditionalCount++))));
+            Emit(new Instruction.Unary("JMP", new Instruction.LocalProcedureRef(CreateConditionalLabel(conditionalCount++))));
         }
         else
         {
-            emit(new Instruction.Unary("JMP", new Instruction.LocalProcedureRef(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))));
+            Emit(new Instruction.Unary("JMP", new Instruction.LocalProcedureRef(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))));
         }
 
         return null;
@@ -333,7 +333,7 @@ internal class InlinedAssembler : Assembler
         {
             if (size == null) { throw new Errors.ImpossibleError("Null size in FormatOperand1 when operand is literal"); }
 
-            emit(new Instruction.Binary("MOV", alloc.CurrentRegister((Instruction.Register.RegisterSize)size), operand));
+            Emit(new Instruction.Binary("MOV", alloc.CurrentRegister((Instruction.Register.RegisterSize)size), operand));
             return alloc.NextRegister((Instruction.Register.RegisterSize)size);
         }
         return (Instruction.SizedValue)operand;

@@ -103,7 +103,6 @@ internal partial class Analyzer
                 default:
                     throw new Errors.ImpossibleError($"Unrecognized literal operation");
             }
-            return 0;
         }
 
         public static Token.TokenType OperationType(Token op, sbyte type1)
@@ -139,7 +138,6 @@ internal partial class Analyzer
                 default:
                     throw new Errors.ImpossibleError($"Unrecognized literal operation");
             }
-            return 0;
         }
 
         public static Instruction.Literal Operation(Token op, Instruction.Literal a, Instruction.Literal b, Assembler assembler)
@@ -190,7 +188,7 @@ internal partial class Analyzer
                 i++;
             }
 
-            assembler.emitData(new Instruction.Data(assembler.DataLabel, InstructionUtils.dataSize[1], aData[..^4] + bData[1..]));
+            assembler.EmitData(new Instruction.Data(assembler.DataLabel, InstructionUtils.dataSize[1], aData[..^4] + bData[1..]));
 
             return assembler.CreateDatalLabel(assembler.dataCount++);
         }
@@ -256,24 +254,21 @@ internal partial class Analyzer
             return type.name.type == Parser.Literals[literal];
         }
 
-        public static string SymbolToPrimitiveName(Token op)
+        public static string SymbolToPrimitiveName(Token op) => op.type switch
         {
-            return op.type switch
-            {
-                Token.TokenType.PLUS => "Add",
-                Token.TokenType.MINUS => "Subtract",
-                Token.TokenType.MULTIPLY => "Multiply",
-                Token.TokenType.MODULO => "Modulo",
-                Token.TokenType.DIVIDE => "Divide",
-                Token.TokenType.B_AND => "BitwiseAnd",
-                Token.TokenType.B_OR => "BitwiseOr",
-                Token.TokenType.B_XOR => "BitwiseXor",
-                Token.TokenType.SHIFTLEFT => "BitwiseShiftLeft",
-                Token.TokenType.SHIFTRIGHT => "BitwiseShiftRight",
-                Token.TokenType.PLUSPLUS => "Increment",
-                Token.TokenType.MINUSMINUS => "Decrement",
-                Token.TokenType.NOT => "Not"
-            };
-        }
+            Token.TokenType.PLUS => "Add",
+            Token.TokenType.MINUS => "Subtract",
+            Token.TokenType.MULTIPLY => "Multiply",
+            Token.TokenType.MODULO => "Modulo",
+            Token.TokenType.DIVIDE => "Divide",
+            Token.TokenType.B_AND => "BitwiseAnd",
+            Token.TokenType.B_OR => "BitwiseOr",
+            Token.TokenType.B_XOR => "BitwiseXor",
+            Token.TokenType.SHIFTLEFT => "BitwiseShiftLeft",
+            Token.TokenType.SHIFTRIGHT => "BitwiseShiftRight",
+            Token.TokenType.PLUSPLUS => "Increment",
+            Token.TokenType.MINUSMINUS => "Decrement",
+            Token.TokenType.NOT => "Not"
+        };
     }
 }

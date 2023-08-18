@@ -13,11 +13,7 @@ internal class SymbolTableSingleton
     {
         get
         {
-            if (symbolTable == null)
-            {
-                symbolTable = new();
-            }
-            return symbolTable;
+            return symbolTable ??= new();
         }
     }
 }

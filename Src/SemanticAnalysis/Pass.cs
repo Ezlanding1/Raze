@@ -19,159 +19,138 @@ internal partial class Analyzer
 
         internal abstract List<Expr> Run();
 
-        public virtual T visitBinaryExpr(Expr.Binary expr)
+        public virtual T VisitBinaryExpr(Expr.Binary expr)
         {
             expr.left.Accept(this);
             expr.right.Accept(this);
-            return default(T);
+            return default;
         }
 
-        public virtual T visitBlockExpr(Expr.Block expr)
+        public virtual T VisitBlockExpr(Expr.Block expr)
         {
             foreach (var blockExpr in expr.block)
             {
                 blockExpr.Accept(this);
             }
-            return default(T);
+            return default;
         }
 
-        public virtual T visitCallExpr(Expr.Call expr)
+        public virtual T VisitCallExpr(Expr.Call expr)
         {
             foreach (Expr argExpr in expr.arguments)
             {
                 argExpr.Accept(this);
             }
 
-            return default(T);
+            return default;
         }
 
-        public virtual T visitClassExpr(Expr.Class expr)
+        public virtual T VisitClassExpr(Expr.Class expr)
         {
             Expr.ListAccept(expr.declarations, this);
             Expr.ListAccept(expr.definitions, this);
-            return default(T);
+            return default;
         }
 
-        public virtual T visitDeclareExpr(Expr.Declare expr)
+        public virtual T VisitDeclareExpr(Expr.Declare expr)
         {
             if (expr.value != null)
                 expr.value.Accept(this);
 
-            return default(T);
+            return default;
         }
 
-        public virtual T visitFunctionExpr(Expr.Function expr)
+        public virtual T VisitFunctionExpr(Expr.Function expr)
         {
             Expr.ListAccept(expr.block, this);
-            return default(T);
+            return default;
         }
 
-        public virtual T visitTypeReferenceExpr(Expr.TypeReference expr)
-        {
-            return default(T);
-        }
+        public virtual T VisitTypeReferenceExpr(Expr.TypeReference expr) => default;
 
-        public virtual T visitGetReferenceExpr(Expr.GetReference expr)
-        {
-            return default(T);
-        }
+        public virtual T VisitGetReferenceExpr(Expr.GetReference expr) => default;
 
-        public virtual T visitGroupingExpr(Expr.Grouping expr)
+        public virtual T VisitGroupingExpr(Expr.Grouping expr)
         {
             expr.expression.Accept(this);
-            return default(T);
+            return default;
         }
 
-        public virtual T visitIfExpr(Expr.If expr)
+        public virtual T VisitIfExpr(Expr.If expr)
         {
             expr.conditional.condition.Accept(this);
 
             expr.conditional.block.Accept(this);
-            return default(T);
+            return default;
         }
 
-        public virtual T visitLiteralExpr(Expr.Literal expr)
-        {
-            return default(T);
-        }
+        public virtual T VisitLiteralExpr(Expr.Literal expr) => default;
 
-        public virtual T visitUnaryExpr(Expr.Unary expr)
+        public virtual T VisitUnaryExpr(Expr.Unary expr)
         {
             expr.operand.Accept(this);
-            return default(T);
+            return default;
         }
 
-        public virtual T visitVariableExpr(Expr.Variable expr)
-        {
-            return default(T);
-        }
+        public virtual T VisitVariableExpr(Expr.Variable expr) => default;
 
-        public virtual T visitReturnExpr(Expr.Return expr)
+        public virtual T VisitReturnExpr(Expr.Return expr)
         {
             expr.value.Accept(this);
-            return default(T);
+            return default;
         }
 
-        public virtual T visitAssignExpr(Expr.Assign expr)
+        public virtual T VisitAssignExpr(Expr.Assign expr)
         {
             expr.value.Accept(this);
-            return default(T);
+            return default;
         }
 
-        public virtual T visitKeywordExpr(Expr.Keyword expr)
-        {
-            return default(T);
-        }
+        public virtual T VisitKeywordExpr(Expr.Keyword expr) => default;
 
-        public virtual T visitPrimitiveExpr(Expr.Primitive expr)
+        public virtual T VisitPrimitiveExpr(Expr.Primitive expr)
         {
             Expr.ListAccept(expr.definitions, this);
-            return default(T);
+            return default;
         }
 
-        public virtual T visitAssemblyExpr(Expr.Assembly expr)
-        {
-            return default(T);
-        }
+        public virtual T VisitAssemblyExpr(Expr.Assembly expr) => default;
 
-        public virtual T visitNewExpr(Expr.New expr)
+        public virtual T VisitNewExpr(Expr.New expr)
         {
             foreach (Expr argExpr in expr.call.arguments)
             {
                 argExpr.Accept(this);
             }
 
-            return default(T);
+            return default;
         }
 
-        public virtual T visitDefineExpr(Expr.Define expr)
-        {
-            return default(T);
-        }
+        public virtual T VisitDefineExpr(Expr.Define expr) => default;
 
-        public virtual T visitIsExpr(Expr.Is expr)
+        public virtual T VisitIsExpr(Expr.Is expr)
         {
             expr.left.Accept(this);
             expr.right.Accept(this);
-            return default(T);
+            return default;
         }
 
-        public virtual T visitWhileExpr(Expr.While expr)
+        public virtual T VisitWhileExpr(Expr.While expr)
         {
             expr.conditional.condition.Accept(this);
 
             expr.conditional.block.Accept(this);
-            return default(T);
+            return default;
         }
 
-        public virtual T visitForExpr(Expr.For expr)
+        public virtual T VisitForExpr(Expr.For expr)
         {
             expr.initExpr.Accept(this);
             expr.conditional.condition.Accept(this);
             expr.updateExpr.Accept(this);
 
             expr.conditional.block.Accept(this);
-            return default(T);
+            return default;
         }
     }
 }

@@ -29,12 +29,12 @@ internal class Parser
         this.tokens = tokens;
         this.expressions = new();
         this.index = -1;
-        advance();
+        Advance();
     }
 
     internal List<Expr> Parse()
     {
-        while (!isAtEnd())
+        while (!IsAtEnd())
         {
             expressions.Add(Start());
         }
@@ -48,9 +48,9 @@ internal class Parser
 
     private Expr.Definition _Definition()
     {
-        if (!isAtEnd() && ReservedValueMatch("function", "class", "primitive"))
+        if (ReservedValueMatch("function", "class", "primitive"))
         {
-            Token definitionType = previous();
+            Token definitionType = Previous();
             if (definitionType.lexeme == "function")
             {
                 ExprUtils.Modifiers modifiers = new(
@@ -62,17 +62,22 @@ internal class Parser
 
                 Expr.TypeReference _return;
 
+                if (IsAtEnd())
+                {
+                    throw End();
+                }
+
                 while (modifiers.ContainsModifier(current.lexeme))
                 {
                     modifiers[current.lexeme] = true;
-                    advance();
+                    Advance();
                 }
 
-                if (peek().type == Token.TokenType.IDENTIFIER)
+                if (Peek().type == Token.TokenType.IDENTIFIER)
                 {
                     Expect(Token.TokenType.IDENTIFIER, "function return type");
                     _return = new(new());
-                    _return.typeName.Enqueue(previous());
+                    _return.typeName.Enqueue(Previous());
 
                     if (TypeMatch(Token.TokenType.DOT))
                     {
@@ -86,24 +91,22 @@ internal class Parser
                 }
 
                 Expect(Token.TokenType.IDENTIFIER, definitionType.type + " name");
-                Token name = previous();
+                Token name = Previous();
                 Expect(Token.TokenType.LPAREN, "'(' after function name");
                 List<Expr.Parameter> parameters = new();
                 while (!TypeMatch(Token.TokenType.RPAREN))
                 {
                     ExprUtils.Modifiers paramModifers = new("ref", "inlineRef");
 
-                    if (ReservedValueMatch("ref"))
-                    {
-                        paramModifers["ref"] = true;
-                    }
+                    
+                    paramModifers["ref"] = ReservedValueMatch("ref");
                     paramModifers["inlineRef"] = true;
 
                     Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter type");
                     var typeName = GetTypeGetter();
 
                     Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter");
-                    Token variable = previous();
+                    Token variable = Previous();
 
                     parameters.Add(new Expr.Parameter(typeName, variable, paramModifers));
                     if (TypeMatch(Token.TokenType.RPAREN))
@@ -111,7 +114,7 @@ internal class Parser
                         break;
                     }
                     Expect(Token.TokenType.COMMA, "',' between parameters");
-                    if (isAtEnd())
+                    if (IsAtEnd())
                     {
                         throw new Errors.ParseError("Unexpected End In Function Parameters", $"Function '{name.lexeme}' reached an unexpected end during it's parameters");
                     }
@@ -124,7 +127,7 @@ internal class Parser
                 {
                     block.Add(Start());
 
-                    if (isAtEnd())
+                    if (IsAtEnd())
                     {
                         Expect(Token.TokenType.RBRACE, "'}' after block");
                     }
@@ -139,7 +142,7 @@ internal class Parser
             else if (definitionType.lexeme == "class")
             {
                 Expect(Token.TokenType.IDENTIFIER, definitionType.type + " name");
-                Token name = previous();
+                Token name = Previous();
 
                 if (Literals.Contains(name.type))
                 {
@@ -166,11 +169,11 @@ internal class Parser
                         }
                         else
                         {
-                            throw new Errors.ParseError("Invalid Class Definition", $"A class may only contain declarations and definitions. Got '{previous().lexeme}'");
+                            throw new Errors.ParseError("Invalid Class Definition", $"A class may only contain declarations and definitions. Got '{Previous().lexeme}'");
                         }
                     }
 
-                    if (isAtEnd())
+                    if (IsAtEnd())
                     {
                         Expect(Token.TokenType.RBRACE, "'}' after block");
                     }
@@ -182,7 +185,7 @@ internal class Parser
             {
                 ExpectValue(Token.TokenType.RESERVED, "class", "'class' keyword");
                 Expect(Token.TokenType.IDENTIFIER, "name of primitive type");
-                var name = previous();
+                var name = Previous();
 
                 if (Literals.Contains(name.type))
                 {
@@ -191,7 +194,7 @@ internal class Parser
 
                 ExpectValue(Token.TokenType.IDENTIFIER, "sizeof", "'sizeof' keyword");
                 Expect(Token.TokenType.INTEGER, "size (in bytes) of primitive");
-                Token size = previous();
+                Token size = Previous();
 
                 if (!new List<string>() { "8", "4", "2", "1" }.Contains(size.lexeme))
                 {
@@ -204,12 +207,12 @@ internal class Parser
                 {
                     Expect(Token.TokenType.IDENTIFIER, "superclass of primitive type");
                     type = new(new());
-                    type.typeName.Enqueue(previous());
+                    type.typeName.Enqueue(Previous());
 
 
-                    if (!Enum.TryParse<Token.TokenType>(previous().lexeme, out var literalEnum) || !Literals.Contains(literalEnum))
+                    if (!Enum.TryParse<Token.TokenType>(Previous().lexeme, out var literalEnum) || !Literals.Contains(literalEnum))
                     {
-                        throw new Errors.ParseError("Invalid Primitive", $"The superclass of a primitive must be a valid literal ({string.Join(", ", Literals)}). Got '{previous().lexeme}'");
+                        throw new Errors.ParseError("Invalid Primitive", $"The superclass of a primitive must be a valid literal ({string.Join(", ", Literals)}). Got '{Previous().lexeme}'");
                     }
                 }
 
@@ -224,10 +227,10 @@ internal class Parser
                     }
                     else
                     {
-                        throw new Errors.ParseError("Invalid Class Definition", $"A class may only contain declarations and definitions. Got '{previous().lexeme}'");
+                        throw new Errors.ParseError("Invalid Class Definition", $"A class may only contain declarations and definitions. Got '{Previous().lexeme}'");
                     }
 
-                    if (isAtEnd())
+                    if (IsAtEnd())
                     {
                         Expect(Token.TokenType.RBRACE, "'}' after block");
                     }
@@ -246,9 +249,9 @@ internal class Parser
 
     private Expr Entity()
     {
-        if (!isAtEnd() && ReservedValueMatch("asm", "define"))
+        if (ReservedValueMatch("asm", "define"))
         {
-            Token definitionType = previous();
+            Token definitionType = Previous();
             if (definitionType.lexeme == "asm")
             {
                 var instructions = GetAsmInstructions();
@@ -257,7 +260,7 @@ internal class Parser
             else if (definitionType.lexeme == "define")
             {
                 Expect(Token.TokenType.IDENTIFIER, "name of 'Define'");
-                var name = previous();
+                var name = Previous();
 
                 return new Expr.Define(name, Literal()
                     ?? throw new Errors.ParseError("Invalid Define", "The value of 'Define' should be a literal"));
@@ -268,9 +271,9 @@ internal class Parser
 
     private Expr Conditional()
     {
-        if (!isAtEnd() && ReservedValueMatch("if", "else", "while", "for"))
+        if (ReservedValueMatch("if", "else", "while", "for"))
         {
-            Token conditionalType = previous();
+            Token conditionalType = Previous();
             Expr.Block block;
 
             switch (conditionalType.lexeme)
@@ -369,9 +372,9 @@ internal class Parser
     private Expr Logical()
     {
         Expr expr = Bitwise();
-        while (!isAtEnd() && TypeMatch(Token.TokenType.AND, Token.TokenType.OR))
+        while (TypeMatch(Token.TokenType.AND, Token.TokenType.OR))
         {
-            Token op = previous();
+            Token op = Previous();
             Expr right = Bitwise();
             expr = new Expr.Binary(expr, op, right);
         }
@@ -381,9 +384,9 @@ internal class Parser
     private Expr Bitwise()
     {
         Expr expr = Equality();
-        while (!isAtEnd() && TypeMatch(Token.TokenType.B_OR, Token.TokenType.B_AND, Token.TokenType.B_XOR, Token.TokenType.B_NOT))
+        while (TypeMatch(Token.TokenType.B_OR, Token.TokenType.B_AND, Token.TokenType.B_XOR, Token.TokenType.B_NOT))
         {
-            Token op = previous();
+            Token op = Previous();
             Expr right = Equality();
             expr = new Expr.Binary(expr, op, right);
         }
@@ -393,9 +396,9 @@ internal class Parser
     private Expr Equality()
     {
         Expr expr = Comparison();
-        while (!isAtEnd() && TypeMatch(Token.TokenType.EQUALTO, Token.TokenType.NOTEQUALTO))
+        while (TypeMatch(Token.TokenType.EQUALTO, Token.TokenType.NOTEQUALTO))
         {
-            Token op = previous();
+            Token op = Previous();
             Expr right = Comparison();
             expr = new Expr.Binary(expr, op, right);
         }
@@ -405,9 +408,9 @@ internal class Parser
     private Expr Comparison()
     {
         Expr expr = Shift();
-        while (!isAtEnd() && TypeMatch(Token.TokenType.GREATEREQUAL, Token.TokenType.LESSEQUAL, Token.TokenType.GREATER, Token.TokenType.LESS))
+        while (TypeMatch(Token.TokenType.GREATEREQUAL, Token.TokenType.LESSEQUAL, Token.TokenType.GREATER, Token.TokenType.LESS))
         {
-            Token op = previous();
+            Token op = Previous();
             Expr right = Shift();
             expr = new Expr.Binary(expr, op, right);
         }
@@ -417,9 +420,9 @@ internal class Parser
     private Expr Shift()
     {
         Expr expr = Additive();
-        while (!isAtEnd() && TypeMatch(Token.TokenType.SHIFTRIGHT, Token.TokenType.SHIFTLEFT))
+        while (TypeMatch(Token.TokenType.SHIFTRIGHT, Token.TokenType.SHIFTLEFT))
         {
-            Token op = previous();
+            Token op = Previous();
             Expr right = Additive();
             expr = new Expr.Binary(expr, op, right);
         }
@@ -429,9 +432,9 @@ internal class Parser
     private Expr Additive()
     {
         Expr expr = Multiplicative();
-        while (!isAtEnd() && TypeMatch(Token.TokenType.PLUS, Token.TokenType.MINUS))
+        while (TypeMatch(Token.TokenType.PLUS, Token.TokenType.MINUS))
         {
-            Token op = previous();
+            Token op = Previous();
             Expr right = Multiplicative();
             expr = new Expr.Binary(expr, op, right);
         }
@@ -441,9 +444,9 @@ internal class Parser
     private Expr Multiplicative()
     {
         Expr expr = Unary();
-        while (!isAtEnd() && TypeMatch(Token.TokenType.MULTIPLY, Token.TokenType.DIVIDE, Token.TokenType.MODULO))
+        while (TypeMatch(Token.TokenType.MULTIPLY, Token.TokenType.DIVIDE, Token.TokenType.MODULO))
         {
-            Token op = previous();
+            Token op = Previous();
             Expr right = Unary();
             expr = new Expr.Binary(expr, op, right);
         }
@@ -452,9 +455,9 @@ internal class Parser
 
     private Expr Unary()
     {
-        while (!isAtEnd() && TypeMatch(Token.TokenType.NOT, Token.TokenType.MINUS))
+        while (TypeMatch(Token.TokenType.NOT, Token.TokenType.MINUS))
         {
-            Token op = previous();
+            Token op = Previous();
             Expr right = Unary();
             return new Expr.Unary(op, right);
         }
@@ -464,9 +467,9 @@ internal class Parser
     private Expr Incrementative()
     {
         Expr expr = Is();
-        while (!isAtEnd() && TypeMatch(Token.TokenType.PLUSPLUS, Token.TokenType.MINUSMINUS))
+        while (TypeMatch(Token.TokenType.PLUSPLUS, Token.TokenType.MINUSMINUS))
         {
-            Token op = previous();
+            Token op = Previous();
             expr = new Expr.Unary(op, expr);
         }
         return expr;
@@ -475,7 +478,7 @@ internal class Parser
     private Expr Is()
     {
         Expr expr = Primary();
-        while (!isAtEnd() && ReservedValueMatch("is"))
+        while (ReservedValueMatch("is"))
         {
             Expect(Token.TokenType.IDENTIFIER, "type after 'is' operator");
             expr = new Expr.Is(expr, new Expr.TypeReference(GetTypeGetter()));
@@ -485,7 +488,7 @@ internal class Parser
 
     private Expr Primary()
     {
-        if (!isAtEnd())
+        if (!IsAtEnd())
         {
             Expr? expr = Literal();
 
@@ -536,7 +539,7 @@ internal class Parser
 
             if (ReservedValueMatch("null", "true", "false"))
             {
-                return new Expr.Keyword(previous().lexeme);
+                return new Expr.Keyword(Previous().lexeme);
             }
 
             if (ReservedValueMatch("new"))
@@ -552,7 +555,7 @@ internal class Parser
     {
         if (TypeMatch(Literals))
         {
-            return new Expr.Literal(previous());
+            return new Expr.Literal(Previous());
         }
         return null;
     }
@@ -561,7 +564,7 @@ internal class Parser
     {
         if (TypeMatch(Token.TokenType.IDENTIFIER))
         {
-            Expr.Declare declare = null;
+            Expr.Declare declare;
 
             var variable = GetGetter();
 
@@ -586,7 +589,7 @@ internal class Parser
             throw new Errors.ParseError("Invalid Assign Statement", "Cannot assign to a non-variable");
         }
 
-        var name = previous();
+        var name = Previous();
         if (name.lexeme == "this")
         {
             throw new Errors.ParseError("Invalid 'This' Keyword", "The 'this' keyword may only be used in a member to reference the enclosing class");
@@ -598,10 +601,10 @@ internal class Parser
 
     private (Expr.GetReference, bool) GetGetter()
     {
-        Queue<Token> typeName = new Queue<Token>();
-        typeName.Enqueue(previous());
+        Queue<Token> typeName = new();
+        typeName.Enqueue(Previous());
 
-        if (peek().type != Token.TokenType.DOT && TypeMatch(Token.TokenType.LPAREN))
+        if (Peek().type != Token.TokenType.DOT && TypeMatch(Token.TokenType.LPAREN))
         {
             return (new Expr.Call(typeName.Dequeue(), null, null, GetArgs()), true);
         }
@@ -609,12 +612,12 @@ internal class Parser
         while (TypeMatch(Token.TokenType.DOT))
         {
             Expect(Token.TokenType.IDENTIFIER, "variable name after '.'");
-            var variable = previous();
+            var variable = Previous();
 
             if (TypeMatch(Token.TokenType.LPAREN))
             {
                 var args = GetArgs();
-                return (new Expr.Call(variable, typeName, (peek().type != Token.TokenType.DOT) ? null : GetGetter().Item1, args), true);
+                return (new Expr.Call(variable, typeName, (Peek().type != Token.TokenType.DOT) ? null : GetGetter().Item1, args), true);
             }
             else
             {
@@ -627,10 +630,10 @@ internal class Parser
 
     private Expr.Call GetNewGetter()
     {
-        Queue<Token> typeName = new Queue<Token>();
-        typeName.Enqueue(previous());
+        Queue<Token> typeName = new();
+        typeName.Enqueue(Previous());
 
-        if (peek().type != Token.TokenType.DOT && TypeMatch(Token.TokenType.LPAREN))
+        if (Peek().type != Token.TokenType.DOT && TypeMatch(Token.TokenType.LPAREN))
         {
             return new Expr.Call(typeName.Dequeue(), null, null, GetArgs());
         }
@@ -641,11 +644,11 @@ internal class Parser
 
             if (TypeMatch(Token.TokenType.LPAREN))
             {
-                return new Expr.Call(previous(2), typeName, null, GetArgs());
+                return new Expr.Call(Previous(2), typeName, null, GetArgs());
             }
             else
             {
-                typeName.Enqueue(previous());
+                typeName.Enqueue(Previous());
             }
         }
 
@@ -654,13 +657,13 @@ internal class Parser
 
     private Queue<Token> GetTypeGetter()
     {
-        Queue<Token> typeName = new Queue<Token>();
-        typeName.Enqueue(previous());
+        Queue<Token> typeName = new();
+        typeName.Enqueue(Previous());
 
         while (TypeMatch(Token.TokenType.DOT))
         {
             Expect(Token.TokenType.IDENTIFIER, "variable name after '.'");
-            typeName.Enqueue(previous());
+            typeName.Enqueue(Previous());
         }
 
         return typeName;
@@ -669,7 +672,7 @@ internal class Parser
 
     private Exception End()
     {
-        return new Errors.ParseError("Expression Reached Unexpected End", $"Expression '{((previous() != null)? previous().lexeme : "")}' reached an unexpected end");
+        return new Errors.ParseError("Expression Reached Unexpected End", $"Expression '{((Previous() != null)? Previous().lexeme : "")}' reached an unexpected end");
     }
 
     private List<Expr> GetArgs()
@@ -707,7 +710,7 @@ internal class Parser
         while (!TypeMatch(Token.TokenType.RBRACE))
         {
             bodyExprs.Add(Start());
-            if (isAtEnd())
+            if (IsAtEnd())
             {
                 Expect(Token.TokenType.RBRACE, "'}' after block");
             }
@@ -739,24 +742,24 @@ internal class Parser
             }
             if (TypeMatch(Token.TokenType.IDENTIFIER))
             {
-                var op = previous();
+                var op = Previous();
 
                 if (TypeMatch(Token.TokenType.IDENTIFIER, Token.TokenType.DOLLAR))
                 {
                     // Unary
                     Instruction.Value? value;
 
-                    if (previous().type == Token.TokenType.DOLLAR)
+                    if (Previous().type == Token.TokenType.DOLLAR)
                     {
                         Expect(Token.TokenType.IDENTIFIER, "after escape '$'");
                         Queue<Token> queue = new();
-                        queue.Enqueue(previous());
+                        queue.Enqueue(Previous());
                         value = null;
                         variables.Add(new Expr.Variable(queue));
                     }
                     else
                     {
-                        var identifier = previous();
+                        var identifier = Previous();
                         if (InstructionUtils.Registers.TryGetValue(identifier.lexeme, out var reg))
                         {
                             value = new Instruction.Register(reg.Item1, reg.Item2);
@@ -773,7 +776,7 @@ internal class Parser
 
                         if (TypeMatch(Token.TokenType.IDENTIFIER))
                         {
-                            var identifier = previous();
+                            var identifier = Previous();
                             if (InstructionUtils.Registers.TryGetValue(identifier.lexeme, out var reg))
                             {
                                 instructions.Add(new ExprUtils.AssignableInstruction.Binary(new Instruction.Binary(op.lexeme, value, new Instruction.Register(reg.Item1, reg.Item2)), ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
@@ -785,13 +788,13 @@ internal class Parser
                         }
                         else if (TypeMatch(Token.TokenType.INTEGER, Token.TokenType.FLOATING, Token.TokenType.STRING, Token.TokenType.HEX, Token.TokenType.BINARY))
                         {
-                            instructions.Add(new ExprUtils.AssignableInstruction.Binary(new Instruction.Binary(op.lexeme, value, new Instruction.Literal(previous().type, previous().lexeme)), (value == null)? ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst : ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
+                            instructions.Add(new ExprUtils.AssignableInstruction.Binary(new Instruction.Binary(op.lexeme, value, new Instruction.Literal(Previous().type, Previous().lexeme)), (value == null)? ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst : ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
                         }
                         else if (TypeMatch(Token.TokenType.DOLLAR))
                         {
                             Expect(Token.TokenType.IDENTIFIER, "after escape '$'");
                             Queue<Token> queue = new();
-                            queue.Enqueue(previous());
+                            queue.Enqueue(Previous());
                             variables.Add(new Expr.Variable(queue));
                             instructions.Add(new ExprUtils.AssignableInstruction.Binary(new Instruction.Binary(op.lexeme, value, null), (value == null)? (ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst | ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond) : ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond, localReturn));
                         }
@@ -818,7 +821,7 @@ internal class Parser
                 throw new Errors.ParseError("Invalid Assembly Statement", $"'{current.lexeme}' is invalid in an assembly block");
             }
 
-            if (isAtEnd())
+            if (IsAtEnd())
             {
                 Expect(Token.TokenType.RBRACE, "'}' after Assembly Block");
             }
@@ -840,7 +843,7 @@ internal class Parser
         {
             if (current.type == type)
             {
-                advance();
+                Advance();
                 return true;
             }
         }
@@ -857,7 +860,7 @@ internal class Parser
         {
             if (current.lexeme == type)
             {
-                advance();
+                Advance();
                 return true;
             }
         }
@@ -876,7 +879,7 @@ internal class Parser
         {
             if (current.lexeme == type)
             {
-                advance();
+                Advance();
                 return true;
             }
         }
@@ -894,7 +897,7 @@ internal class Parser
         {
             if (current.type == type)
             {
-                advance();
+                Advance();
                 t++;
                 break;
             }
@@ -903,13 +906,13 @@ internal class Parser
         {
             if (current.type == type)
             {
-                advance();
+                Advance();
                 t++;
                 break;
             }
         }
         if (t == 1)
-            back();
+            current = tokens[--index];
         return (t == 2);
     }
 
@@ -917,7 +920,7 @@ internal class Parser
     {
         if (current != null && current.type == type)
         {
-            advance();
+            Advance();
             return;
         }
         throw Expected(type.ToString(), errorMessage);
@@ -927,7 +930,7 @@ internal class Parser
     {
         if (current != null && current.type == type && current.lexeme == value)
         {
-            advance();
+            Advance();
             return;
         }
         throw Expected(type + " : " + value, errorMessage);
@@ -938,28 +941,28 @@ internal class Parser
         return new Errors.ParseError($"{type}", "Expected " + errorMessage + $"{((current != null) ? "\nGot: '" + current.lexeme + "' Instead" : "")}");
     }
 
-    private Token? previous(int sub=1)
+    private Token Previous(int sub=1)
     {
-        if (!isAtEnd(index - sub))
+        if (!IsAtEnd(index - sub))
         {
             return tokens[index - sub];
         }
-        return null;
+        throw new Errors.ImpossibleError("Requested the token before the first token");
     }
 
-    private Token? peek()
+    private Token Peek()
     {
-        if (!isAtEnd(index + 1))
+        if (!IsAtEnd(index + 1))
         {
             return tokens[index + 1];
         }
-        return null;
+        throw End();
     }
 
-    private void advance()
+    private void Advance()
     {
         index++;
-        if (!isAtEnd())
+        if (!IsAtEnd())
         {
             current = tokens[index];
             return;
@@ -967,22 +970,11 @@ internal class Parser
         current = null;
     }
 
-    private void back()
-    {
-        index--;
-        if (!isAtEnd(index - 1))
-        {
-            current = tokens[index];
-            return;
-        }
-        current = null;
-    }
-
-    private bool isAtEnd()
+    private bool IsAtEnd()
     {
         return (index >= tokens.Count || index < 0);
     }
-    private bool isAtEnd(int idx)
+    private bool IsAtEnd(int idx)
     {
         return (idx >= tokens.Count || idx < 0);
     }

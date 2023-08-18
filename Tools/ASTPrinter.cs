@@ -6,53 +6,6 @@ using System.Threading.Tasks;
 
 namespace Raze.Tools;
 
-internal class bASTPrinter
-{
-    public static void PrintAST(List<Expr> exprs)
-    {
-        
-        foreach (Expr expr in exprs)
-        {
-            PrintAST(expr);
-            Console.WriteLine(" ");
-        }
-    }
-    static void PrintAST(Expr expr)
-    {
-        
-        if (expr is Expr.Grouping)
-        {
-            Console.Write("(");
-            PrintAST(((Expr.Grouping)expr).expression);
-            Console.Write(")");
-        }
-        else if (expr is Expr.Binary)
-        {
-            PrintAST(((Expr.Binary)expr).left);
-            PrintAST(((Expr.Binary)expr).op);
-            PrintAST(((Expr.Binary)expr).right);
-        }
-        else if (expr is Expr.Literal)
-        {
-            PrintAST(((Expr.Literal)expr).literal);
-        }
-        else if (expr is Expr.Variable)
-        {
-            //PrintAST(((Expr.Variable)expr).stack.type);
-            //PrintAST(((Expr.Variable)expr).name);
-        }
-        else if (expr is Expr.Unary)
-        {
-            PrintAST(((Expr.Unary)expr).operand);
-            PrintAST(((Expr.Unary)expr).op);
-        }
-
-    }
-    static void PrintAST(Token token)
-    {
-        Console.Write(token.lexeme);
-    }
-}
 internal class ASTPrinter : Expr.IVisitor<object?>
 {
     string offset;
@@ -105,7 +58,7 @@ internal class ASTPrinter : Expr.IVisitor<object?>
         Console.WriteLine("├─'" + s + "'");
     }
 
-    public object? visitBinaryExpr(Expr.Binary expr)
+    public object? VisitBinaryExpr(Expr.Binary expr)
     {
         PrintAST(expr.left);
         PrintAST(expr.op);
@@ -113,14 +66,14 @@ internal class ASTPrinter : Expr.IVisitor<object?>
         return null;
     }
 
-    public object? visitCallExpr(Expr.Call expr)
+    public object? VisitCallExpr(Expr.Call expr)
     {
-        this.visitTypeReferenceExpr(expr);
+        this.VisitTypeReferenceExpr(expr);
         PrintAST(expr.arguments, false);
         return null;
     }
 
-    public object? visitClassExpr(Expr.Class expr)
+    public object? VisitClassExpr(Expr.Class expr)
     {
         PrintAST(expr.ToString());
         Expr.ListAccept(expr.declarations, this);
@@ -128,7 +81,7 @@ internal class ASTPrinter : Expr.IVisitor<object?>
         return null;
     }
 
-    public object? visitFunctionExpr(Expr.Function expr)
+    public object? VisitFunctionExpr(Expr.Function expr)
     {
         PrintAST(expr.ToString());
 
@@ -145,7 +98,7 @@ internal class ASTPrinter : Expr.IVisitor<object?>
         return null;
     }
 
-    public object? visitTypeReferenceExpr(Expr.TypeReference expr)
+    public object? VisitTypeReferenceExpr(Expr.TypeReference expr)
     {
         if (expr.typeName == null) return null;
 
@@ -156,31 +109,31 @@ internal class ASTPrinter : Expr.IVisitor<object?>
         return null;
     }
 
-    public object? visitGetReferenceExpr(Expr.GetReference expr)
+    public object? VisitGetReferenceExpr(Expr.GetReference expr)
     {
-        return this.visitTypeReferenceExpr(expr);
+        return this.VisitTypeReferenceExpr(expr);
     }
 
-    public object? visitGroupingExpr(Expr.Grouping expr)
+    public object? VisitGroupingExpr(Expr.Grouping expr)
     {
         expr.expression.Accept(this);
         return null;
     }
 
-    public object? visitLiteralExpr(Expr.Literal expr)
+    public object? VisitLiteralExpr(Expr.Literal expr)
     {
         PrintAST(expr.literal);
         return null;
     }
 
-    public object? visitUnaryExpr(Expr.Unary expr)
+    public object? VisitUnaryExpr(Expr.Unary expr)
     {
         PrintAST(expr.operand);
         PrintAST(expr.op);
         return null;
     }
 
-    public object? visitVariableExpr(Expr.Variable expr)
+    public object? VisitVariableExpr(Expr.Variable expr)
     {
         foreach (var type in expr.typeName)
         {
@@ -189,7 +142,7 @@ internal class ASTPrinter : Expr.IVisitor<object?>
         return null;
     }
 
-    public object? visitDeclareExpr(Expr.Declare expr)
+    public object? VisitDeclareExpr(Expr.Declare expr)
     {
         foreach (var type in expr.typeName)
         {
@@ -204,7 +157,7 @@ internal class ASTPrinter : Expr.IVisitor<object?>
         return null;
     }
 
-    public object? visitIfExpr(Expr.If expr)
+    public object? VisitIfExpr(Expr.If expr)
     {
         PrintConditional(expr.conditional, "if");
 
@@ -215,13 +168,13 @@ internal class ASTPrinter : Expr.IVisitor<object?>
         return null;
     }
 
-    public object? visitWhileExpr(Expr.While expr)
+    public object? VisitWhileExpr(Expr.While expr)
     {
         PrintConditional(expr.conditional, "while");
         return null;
     }
 
-    public object? visitForExpr(Expr.For expr)
+    public object? VisitForExpr(Expr.For expr)
     {
         PrintConditional(expr.conditional, "for");
         return null;
@@ -234,32 +187,32 @@ internal class ASTPrinter : Expr.IVisitor<object?>
         PrintAST(expr.block);
     }
 
-    public object? visitBlockExpr(Expr.Block expr)
+    public object? VisitBlockExpr(Expr.Block expr)
     {
         PrintAST(expr.block, false);
         return null;
     }
 
-    public object? visitReturnExpr(Expr.Return expr)
+    public object? VisitReturnExpr(Expr.Return expr)
     {
         PrintAST(expr.value);
         return null;
     }
 
-    public object? visitAssignExpr(Expr.Assign expr)
+    public object? VisitAssignExpr(Expr.Assign expr)
     {
         PrintAST(expr.value);
         PrintAST(expr.member);
         return null;
     }
 
-    public object? visitKeywordExpr(Expr.Keyword expr)
+    public object? VisitKeywordExpr(Expr.Keyword expr)
     {
         PrintAST(expr.keyword);
         return null;
     }
 
-    public object? visitPrimitiveExpr(Expr.Primitive expr)
+    public object? VisitPrimitiveExpr(Expr.Primitive expr)
     {
         PrintAST(expr.ToString());
         PrintAST(expr.size.ToString());
@@ -267,13 +220,13 @@ internal class ASTPrinter : Expr.IVisitor<object?>
         return null;
     }
 
-    public object? visitNewExpr(Expr.New expr)
+    public object? VisitNewExpr(Expr.New expr)
     {
         expr.call.Accept(this);
         return null;
     }
 
-    public object? visitAssemblyExpr(Expr.Assembly expr)
+    public object? VisitAssemblyExpr(Expr.Assembly expr)
     {
         foreach (var instruction in expr.block)
         {
@@ -283,14 +236,14 @@ internal class ASTPrinter : Expr.IVisitor<object?>
         return null;
     }
 
-    public object? visitDefineExpr(Expr.Define expr)
+    public object? VisitDefineExpr(Expr.Define expr)
     {
         PrintAST(expr.name);
         PrintAST(expr.value);
         return null;
     }
 
-    public object? visitIsExpr(Expr.Is expr)
+    public object? VisitIsExpr(Expr.Is expr)
     {
         PrintAST(expr.left);
         PrintAST("is");

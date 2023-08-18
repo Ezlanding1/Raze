@@ -347,7 +347,7 @@ internal partial class Analyzer
 
         private bool ParamMatch(Expr.Type[] a, Expr.Function b)
         {
-            if (a.Length != b.arity)
+            if (a.Length != b.Arity)
             {
                 return false;
             }

@@ -19,7 +19,7 @@ internal partial class Analyzer
             return expressions;
         }
 
-        public override object? visitBlockExpr(Expr.Block expr)
+        public override object? VisitBlockExpr(Expr.Block expr)
         {
             symbolTable.CreateBlock();
             
@@ -33,25 +33,25 @@ internal partial class Analyzer
             return null;
         }
 
-        public override object? visitBinaryExpr(Expr.Binary expr)
+        public override object? VisitBinaryExpr(Expr.Binary expr)
         {
-            base.visitBinaryExpr(expr);
+            base.VisitBinaryExpr(expr);
 
             expr.encSize = symbolTable.Current.size;
 
             return null;
         }
 
-        public override object visitUnaryExpr(Expr.Unary expr)
+        public override object VisitUnaryExpr(Expr.Unary expr)
         {
-            base.visitUnaryExpr(expr);
+            base.VisitUnaryExpr(expr);
 
             expr.encSize = symbolTable.Current.size;
 
             return null;
         }
 
-        public override object? visitCallExpr(Expr.Call expr)
+        public override object? VisitCallExpr(Expr.Call expr)
         {
             for (int i = 0; i < expr.arguments.Count; i++)
             {
@@ -67,11 +67,11 @@ internal partial class Analyzer
                     expr.instanceCall = symbolTable.TryGetVariable(expr.callee.Peek(), out var topSymbol_I, out _);
                     if (expr.instanceCall)
                     {
-                        this.visitGetReferenceExpr(expr);
+                        this.VisitGetReferenceExpr(expr);
                     }
                     else
                     {
-                        this.visitTypeReferenceExpr(expr);
+                        this.VisitTypeReferenceExpr(expr);
                     }
                     expr.funcEnclosing = symbolTable.Current;
                 }
@@ -84,7 +84,7 @@ internal partial class Analyzer
             return null;
         }
 
-        public override object? visitClassExpr(Expr.Class expr)
+        public override object? VisitClassExpr(Expr.Class expr)
         {
             symbolTable.SetContext(expr);
 
@@ -96,7 +96,7 @@ internal partial class Analyzer
             return null;
         }
 
-        public override object? visitDeclareExpr(Expr.Declare expr)
+        public override object? VisitDeclareExpr(Expr.Declare expr)
         {
             var name = expr.name;
 
@@ -119,7 +119,7 @@ internal partial class Analyzer
             return null;
         }
 
-        public override object? visitPrimitiveExpr(Expr.Primitive expr)
+        public override object? VisitPrimitiveExpr(Expr.Primitive expr)
         {
             symbolTable.SetContext(expr);
 
@@ -163,7 +163,7 @@ internal partial class Analyzer
             return null;
         }
 
-        public override object? visitFunctionExpr(Expr.Function expr)
+        public override object? VisitFunctionExpr(Expr.Function expr)
         {
             symbolTable.SetContext(expr);
 
@@ -190,7 +190,7 @@ internal partial class Analyzer
                 symbolTable.Current.size += 8;
             }
 
-            for (int i = 0; i < expr.arity; i++)
+            for (int i = 0; i < expr.Arity; i++)
             {
                 Expr.Parameter paramExpr = expr.parameters[i];
 
@@ -204,7 +204,7 @@ internal partial class Analyzer
                 }
                 paramExpr.stack._ref = paramExpr.modifiers["ref"];
 
-                symbolTable.Add(paramExpr.name, paramExpr.stack, i+Convert.ToInt16(instance), expr.arity);
+                symbolTable.Add(paramExpr.name, paramExpr.stack, i+Convert.ToInt16(instance), expr.Arity);
             }
 
             foreach (Expr blockExpr in expr.block)
@@ -218,7 +218,7 @@ internal partial class Analyzer
             return null;
         }
 
-        public override object? visitVariableExpr(Expr.Variable expr)
+        public override object? VisitVariableExpr(Expr.Variable expr)
         {
             var context = symbolTable.Current;
 
@@ -257,7 +257,7 @@ internal partial class Analyzer
             {
                 expr.typeName.Dequeue();
 
-                expr.stack = symbol;
+                expr.Stack = symbol;
                 expr.classScoped = (expr.offsets.Length == 1) ? isClassScopedVar : isClassScoped;
             }
             else
@@ -270,7 +270,7 @@ internal partial class Analyzer
             return null;
         }
 
-        public override object visitIfExpr(Expr.If expr)
+        public override object VisitIfExpr(Expr.If expr)
         {
             HandleConditional(expr.conditional);
 
@@ -289,7 +289,7 @@ internal partial class Analyzer
         //    //return null;
         //}
 
-        public override object? visitAssignExpr(Expr.Assign expr)
+        public override object? VisitAssignExpr(Expr.Assign expr)
         {
             expr.value.Accept(this);
             if (!expr.binary)
@@ -299,7 +299,7 @@ internal partial class Analyzer
             return null;
         }
 
-        public override object visitAssemblyExpr(Expr.Assembly expr)
+        public override object VisitAssemblyExpr(Expr.Assembly expr)
         {
             foreach (var variable in expr.variables)
             {
@@ -308,7 +308,7 @@ internal partial class Analyzer
             return null;
         }
 
-        public override object? visitNewExpr(Expr.New expr)
+        public override object? VisitNewExpr(Expr.New expr)
         {
             expr.call.constructor = true;
 
@@ -319,7 +319,7 @@ internal partial class Analyzer
             return null;
         }
 
-        public override object visitIsExpr(Expr.Is expr)
+        public override object VisitIsExpr(Expr.Is expr)
         {
             expr.left.Accept(this);
 
@@ -329,14 +329,14 @@ internal partial class Analyzer
             return null;
         }
 
-        public override object visitTypeReferenceExpr(Expr.TypeReference expr)
+        public override object VisitTypeReferenceExpr(Expr.TypeReference expr)
         {
             HandleTypeNameReference(expr.typeName);
 
             return null;
         }
 
-        public override object? visitGetReferenceExpr(Expr.GetReference expr)
+        public override object? VisitGetReferenceExpr(Expr.GetReference expr)
         {
             while (expr.typeName.Count > 0)
             {

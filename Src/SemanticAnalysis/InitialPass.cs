@@ -29,7 +29,7 @@ internal partial class Analyzer
             return expressions;
         }
 
-        public override object? visitBlockExpr(Expr.Block expr)
+        public override object? VisitBlockExpr(Expr.Block expr)
         {
             foreach (var blockExpr in expr.block)
             {
@@ -38,7 +38,7 @@ internal partial class Analyzer
             return null;
         }
 
-        public override object? visitFunctionExpr(Expr.Function expr)
+        public override object? VisitFunctionExpr(Expr.Function expr)
         {
             if (symbolTable.Current == null)
             {
@@ -74,7 +74,7 @@ internal partial class Analyzer
                     case "BitwiseXor":
                     case "BitwiseShiftLeft":
                     case "BitwiseShiftRight":
-                        if (expr.arity != 2)
+                        if (expr.Arity != 2)
                         {
                             throw new Errors.AnalyzerError("Invalid Operator Definition", $"The '{expr.name.lexeme}' operator must have an arity of 2");
                         }
@@ -84,7 +84,7 @@ internal partial class Analyzer
                     case "Increment":
                     case "Decrement":
                     case "Not":
-                        if (expr.arity != 1)
+                        if (expr.Arity != 1)
                         {
                             throw new Errors.AnalyzerError("Invalid Operator Definition", $"The '{expr.name.lexeme}' operator must have an arity of 1");
                         }
@@ -109,7 +109,7 @@ internal partial class Analyzer
             return null;
         }
 
-        public override object? visitCallExpr(Expr.Call expr)
+        public override object? VisitCallExpr(Expr.Call expr)
         {
             if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
 
@@ -126,7 +126,7 @@ internal partial class Analyzer
             return null;
         }
 
-        public override object? visitDeclareExpr(Expr.Declare expr)
+        public override object? VisitDeclareExpr(Expr.Declare expr)
         {
             if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
 
@@ -135,10 +135,10 @@ internal partial class Analyzer
                 throw new Errors.AnalyzerError("Invalid Variable Declaration", "A variable may not be declared within a primitive definition");
             }
 
-            return base.visitDeclareExpr(expr);
+            return base.VisitDeclareExpr(expr);
         }
 
-        public override object? visitClassExpr(Expr.Class expr)
+        public override object? VisitClassExpr(Expr.Class expr)
         {
             if (symbolTable.Current?.definitionType == Expr.Definition.DefinitionType.Function)
             {
@@ -161,28 +161,28 @@ internal partial class Analyzer
             return null;
         }
 
-        public override object? visitIfExpr(Expr.If expr)
+        public override object? VisitIfExpr(Expr.If expr)
         {
             if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
 
-            return base.visitIfExpr(expr);
+            return base.VisitIfExpr(expr);
         }
 
-        public override object visitWhileExpr(Expr.While expr)
+        public override object VisitWhileExpr(Expr.While expr)
         {
             if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
 
-            return base.visitWhileExpr(expr);
+            return base.VisitWhileExpr(expr);
         }
 
-        public override object visitForExpr(Expr.For expr)
+        public override object VisitForExpr(Expr.For expr)
         {
             if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
 
-            return base.visitForExpr(expr);
+            return base.VisitForExpr(expr);
         }
 
-        public override object? visitNewExpr(Expr.New expr)
+        public override object? VisitNewExpr(Expr.New expr)
         {
             if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
 
@@ -192,7 +192,7 @@ internal partial class Analyzer
             return null;
         }
 
-        public override object? visitAssemblyExpr(Expr.Assembly expr)
+        public override object? VisitAssemblyExpr(Expr.Assembly expr)
         {
             if (symbolTable.CurrentIsTop())
             {
@@ -213,25 +213,25 @@ internal partial class Analyzer
                 variable.Accept(this);
             }
 
-            return base.visitAssemblyExpr(expr);
+            return base.VisitAssemblyExpr(expr);
         }
 
-        public override object? visitVariableExpr(Expr.Variable expr)
+        public override object? VisitVariableExpr(Expr.Variable expr)
         {
             if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
 
             return null;
         }
 
-        public override object visitAssignExpr(Expr.Assign expr)
+        public override object VisitAssignExpr(Expr.Assign expr)
         {
             if (expr.member.typeName.Peek().lexeme == "this" && expr.member.typeName.Count == 1 && (symbolTable.NearestEnclosingClass()?.definitionType != Expr.Definition.DefinitionType.Primitive)) { throw new Errors.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword cannot be assigned to");  }
 
             expr.member.Accept(this);
-            return base.visitAssignExpr(expr);
+            return base.VisitAssignExpr(expr);
         }
 
-        public override object visitPrimitiveExpr(Expr.Primitive expr)
+        public override object VisitPrimitiveExpr(Expr.Primitive expr)
         {
             if (symbolTable.Current?.definitionType == Expr.Definition.DefinitionType.Function)
             {
@@ -261,7 +261,7 @@ internal partial class Analyzer
             return null;
         }
 
-        public override object? visitIsExpr(Expr.Is expr)
+        public override object? VisitIsExpr(Expr.Is expr)
         {
             if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
 

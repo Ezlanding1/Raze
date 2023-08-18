@@ -45,7 +45,7 @@ partial class Syntaxes
                 Output.AppendLine(instruction.Accept(this));
             }
 
-            public string visitBinary(Instruction.Binary instruction)
+            public string VisitBinary(Instruction.Binary instruction)
             {
                 if (instruction is Instruction.StackAlloc)
                     if (instruction.operand2 is Instruction.Literal)
@@ -59,37 +59,37 @@ partial class Syntaxes
                 return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, {instruction.operand2.Accept(this)}";
             }
 
-            public string visitComment(Instruction.Comment instruction)
+            public string VisitComment(Instruction.Comment instruction)
             {
                 return $"; {instruction.comment}";
             }
 
-            public string visitData(Instruction.Data instruction)
+            public string VisitData(Instruction.Data instruction)
             {
                 return $"{instruction.name}: {instruction.size} {instruction.value}";
             }
 
-            public string visitDataRef(Instruction.DataRef instruction)
+            public string VisitDataRef(Instruction.DataRef instruction)
             {
                 return $"{instruction.dataName}";
             }
 
-            public string visitProcedure(Instruction.Procedure instruction)
+            public string VisitProcedure(Instruction.Procedure instruction)
             {
                 return $"{instruction.name}:";
             }
 
-            public string visitLocalProcedure(Instruction.LocalProcedure instruction)
+            public string VisitLocalProcedure(Instruction.LocalProcedure instruction)
             {
                 return $".{instruction.name}:";
             }
 
-            public string visitGlobal(Instruction.Global instruction)
+            public string VisitGlobal(Instruction.Global instruction)
             {
                 return $"global {instruction.name}\n";
             }
 
-            public string visitPointer(Instruction.Pointer instruction)
+            public string VisitPointer(Instruction.Pointer instruction)
             {
                 if (instruction.register.name == Instruction.Register.RegisterName.TMP)
                 {
@@ -98,17 +98,17 @@ partial class Syntaxes
                 return $"{InstructionUtils.wordSize[instruction.size]} [{RegisterToString[(instruction.register.name, InstructionUtils.SYS_SIZE)]} {instruction._operator} {instruction.offset}]";
             }
 
-            public string visitProcedureRef(Instruction.ProcedureRef instruction)
+            public string VisitProcedureRef(Instruction.ProcedureRef instruction)
             {
                 return $"{instruction.name}";
             }
 
-            public string visitLocalProcedureRef(Instruction.LocalProcedureRef instruction)
+            public string VisitLocalProcedureRef(Instruction.LocalProcedureRef instruction)
             {
                 return $".{instruction.name}";
             }
 
-            public string visitRegister(Instruction.Register instruction)
+            public string VisitRegister(Instruction.Register instruction)
             {
                 if (instruction.name == Instruction.Register.RegisterName.TMP)
                 {
@@ -118,17 +118,17 @@ partial class Syntaxes
                 return $"{RegisterToString[(instruction.name, instruction.size)]}";
             }
 
-            public string visitSection(Instruction.Section instruction)
+            public string VisitSection(Instruction.Section instruction)
             {
                 return $"section .{instruction.name}\n";
             }
 
-            public string visitUnary(Instruction.Unary instruction)
+            public string VisitUnary(Instruction.Unary instruction)
             {
                 return $"{instruction.instruction}\t{instruction.operand.Accept(this)}";
             }
 
-            public string visitZero(Instruction.Zero instruction)
+            public string VisitZero(Instruction.Zero instruction)
             {
                 return $"{instruction.instruction}";
             }
@@ -142,7 +142,7 @@ partial class Syntaxes
                 return $"[{RegisterToString[(instruction.register.name, InstructionUtils.SYS_SIZE)]} {instruction._operator} {instruction.offset}]";
             }
 
-            public string visitLiteral(Instruction.Literal instruction)
+            public string VisitLiteral(Instruction.Literal instruction)
             {
                 return $"{instruction.value}";
             }
@@ -281,77 +281,77 @@ partial class Syntaxes
                 instruction.Accept(this);
             }
 
-            public string visitBinary(Instruction.Binary instruction)
+            public string VisitBinary(Instruction.Binary instruction)
             {
                 throw new NotImplementedException();
             }
 
-            public string visitProcedure(Instruction.Procedure instruction)
+            public string VisitProcedure(Instruction.Procedure instruction)
             {
                 throw new NotImplementedException();
             }
 
-            public string visitLocalProcedure(Instruction.LocalProcedure instruction)
+            public string VisitLocalProcedure(Instruction.LocalProcedure instruction)
             {
                 throw new NotImplementedException();
             }
 
-            public string visitDataRef(Instruction.DataRef instruction)
+            public string VisitDataRef(Instruction.DataRef instruction)
             {
                 throw new NotImplementedException();
             }
 
-            public string visitComment(Instruction.Comment instruction)
+            public string VisitComment(Instruction.Comment instruction)
             {
                 throw new NotImplementedException();
             }
 
-            public string visitData(Instruction.Data instruction)
+            public string VisitData(Instruction.Data instruction)
             {
                 throw new NotImplementedException();
             }
 
-            public string visitGlobal(Instruction.Global instruction)
+            public string VisitGlobal(Instruction.Global instruction)
             {
                 throw new NotImplementedException();
             }
 
-            public string visitPointer(Instruction.Pointer instruction)
+            public string VisitPointer(Instruction.Pointer instruction)
             {
                 throw new NotImplementedException();
             }
 
-            public string visitRegister(Instruction.Register instruction)
+            public string VisitRegister(Instruction.Register instruction)
             {
                 throw new NotImplementedException();
             }
 
-            public string visitSection(Instruction.Section instruction)
+            public string VisitSection(Instruction.Section instruction)
             {
                 throw new NotImplementedException();
             }
 
-            public string visitUnary(Instruction.Unary instruction)
+            public string VisitUnary(Instruction.Unary instruction)
             {
                 throw new NotImplementedException();
             }
 
-            public string visitZero(Instruction.Zero instruction)
+            public string VisitZero(Instruction.Zero instruction)
             {
                 throw new NotImplementedException();
             }
 
-            public string visitProcedureRef(Instruction.ProcedureRef instruction)
+            public string VisitProcedureRef(Instruction.ProcedureRef instruction)
             {
                 throw new NotImplementedException();
             }
 
-            public string visitLocalProcedureRef(Instruction.LocalProcedureRef instruction)
+            public string VisitLocalProcedureRef(Instruction.LocalProcedureRef instruction)
             {
                 throw new NotImplementedException();
             }
 
-            public string visitLiteral(Instruction.Literal instruction)
+            public string VisitLiteral(Instruction.Literal instruction)
             {
                 throw new NotImplementedException();
             }

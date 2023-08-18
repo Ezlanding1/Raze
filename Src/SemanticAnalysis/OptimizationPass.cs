@@ -28,42 +28,42 @@ internal partial class Analyzer
             return expressions;
         }
 
-        public override object? visitFunctionExpr(Expr.Function expr)
+        public override object? VisitFunctionExpr(Expr.Function expr)
         {
             handledDefs.Add(expr);
 
             symbolTable.SetContext(expr);
 
-            base.visitFunctionExpr(expr);
+            base.VisitFunctionExpr(expr);
 
             symbolTable.UpContext();
 
             return null;
         }
 
-        public override object? visitClassExpr(Expr.Class expr)
+        public override object? VisitClassExpr(Expr.Class expr)
         {
             symbolTable.SetContext(expr);
 
-            base.visitClassExpr(expr);
+            base.VisitClassExpr(expr);
 
             symbolTable.UpContext();
 
             return null;
         }
 
-        public override object? visitPrimitiveExpr(Expr.Primitive expr)
+        public override object? VisitPrimitiveExpr(Expr.Primitive expr)
         {
             symbolTable.SetContext(expr);
 
-            base.visitPrimitiveExpr(expr);
+            base.VisitPrimitiveExpr(expr);
 
             symbolTable.UpContext();
 
             return null;
         }
 
-        public override object visitCallExpr(Expr.Call expr)
+        public override object VisitCallExpr(Expr.Call expr)
         {
             if (!handledDefs.Contains(expr.internalFunction))
             {
@@ -73,7 +73,7 @@ internal partial class Analyzer
 
             if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Function && ((Expr.Function)symbolTable.Current).modifiers["inline"])
             {
-                for (int i = 0; i < expr.internalFunction.arity; i++)
+                for (int i = 0; i < expr.internalFunction.Arity; i++)
                 {
                     if (expr.internalFunction.parameters[i].modifiers["ref"] && !expr.internalFunction.parameters[i].modifiers["inlineRef"])
                     {
@@ -84,11 +84,11 @@ internal partial class Analyzer
             return null;
         }
 
-        public override object? visitAssignExpr(Expr.Assign expr)
+        public override object? VisitAssignExpr(Expr.Assign expr)
         {
-            base.visitAssignExpr(expr);
+            base.VisitAssignExpr(expr);
 
-            SetInlineRef(expr.member.stack);
+            SetInlineRef(expr.member.Stack);
 
             return null;
         }

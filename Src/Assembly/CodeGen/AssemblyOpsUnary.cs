@@ -18,7 +18,7 @@ internal partial class AssemblyOps
             }
             if (assignType == ExprUtils.AssignableInstruction.Unary.AssignType.AssignFirst)
             {
-                return InstructionUtils.ToRegisterSize(vars[count - 1].stack.size);
+                return InstructionUtils.ToRegisterSize(vars[count - 1].Stack.size);
             }
             return null;
         }
@@ -42,7 +42,7 @@ internal partial class AssemblyOps
                 ReturnOp(ref operand, assemblyOps.assembler, instruction.assignType, assemblyOps.vars, assemblyOps.count);
             }
 
-            assemblyOps.assembler.emit(new Instruction.Unary(instruction.instruction.instruction, operand));
+            assemblyOps.assembler.Emit(new Instruction.Unary(instruction.instruction.instruction, operand));
 
             if (instruction.assignType == ExprUtils.AssignableInstruction.Unary.AssignType.AssignFirst)
                 assemblyOps.assembler.alloc.Free(operand);

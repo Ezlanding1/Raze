@@ -57,7 +57,7 @@ internal partial class Analyzer
             return expressions;
         }
 
-        public override Expr.Type visitBinaryExpr(Expr.Binary expr)
+        public override Expr.Type VisitBinaryExpr(Expr.Binary expr)
         {
             Expr.Type[] argumentTypes =
             {
@@ -118,7 +118,7 @@ internal partial class Analyzer
             return expr.internalFunction._returnType.type;
         }
 
-        public override Expr.Type visitBlockExpr(Expr.Block expr)
+        public override Expr.Type VisitBlockExpr(Expr.Block expr)
         {
             foreach (var blockExpr in expr.block)
             {
@@ -133,7 +133,7 @@ internal partial class Analyzer
             return _voidType;
         }
 
-        public override Expr.Type visitCallExpr(Expr.Call expr)
+        public override Expr.Type VisitCallExpr(Expr.Call expr)
         {
             Expr.Type[] argumentTypes = new Expr.Type[expr.arguments.Count];
 
@@ -180,7 +180,7 @@ internal partial class Analyzer
                 context.size = Math.Max(context.size, expr.encSize + expr.internalFunction.size);
             }
 
-            for (int i = 0; i < expr.internalFunction.arity; i++)
+            for (int i = 0; i < expr.internalFunction.Arity; i++)
             {
                 if (expr.internalFunction.parameters[i].modifiers["ref"] && expr.arguments[i] is not Expr.Variable)
                 {
@@ -192,7 +192,7 @@ internal partial class Analyzer
             return expr.internalFunction._returnType.type;
         }
 
-        public override Expr.Type visitClassExpr(Expr.Class expr)
+        public override Expr.Type VisitClassExpr(Expr.Class expr)
         {
             symbolTable.SetContext(expr);
 
@@ -204,7 +204,7 @@ internal partial class Analyzer
             return _voidType;
         }
 
-        public override Expr.Type visitDeclareExpr(Expr.Declare expr)
+        public override Expr.Type VisitDeclareExpr(Expr.Declare expr)
         {
             Expr.Type assignType = expr.value.Accept(this);
             MustMatchType(expr.stack.type, assignType);
@@ -212,7 +212,7 @@ internal partial class Analyzer
             return _voidType;
         }
 
-        public override Expr.Type visitFunctionExpr(Expr.Function expr)
+        public override Expr.Type VisitFunctionExpr(Expr.Function expr)
         {
             symbolTable.SetContext(expr);
 
@@ -272,22 +272,22 @@ internal partial class Analyzer
             return _voidType;
         }
 
-        public override Expr.Type visitTypeReferenceExpr(Expr.TypeReference expr)
+        public override Expr.Type VisitTypeReferenceExpr(Expr.TypeReference expr)
         {
             return expr.type;
         }
 
-        public override Expr.Type visitGetReferenceExpr(Expr.GetReference expr)
+        public override Expr.Type VisitGetReferenceExpr(Expr.GetReference expr)
         {
             return expr.type;
         }
 
-        public override Expr.Type visitGroupingExpr(Expr.Grouping expr)
+        public override Expr.Type VisitGroupingExpr(Expr.Grouping expr)
         {
             return expr.expression.Accept(this);
         }
 
-        public override Expr.Type visitIfExpr(Expr.If expr)
+        public override Expr.Type VisitIfExpr(Expr.If expr)
         {
             TypeCheckConditional(expr.conditional);
 
@@ -299,14 +299,14 @@ internal partial class Analyzer
             return _voidType;
         }
 
-        public override Expr.Type visitWhileExpr(Expr.While expr)
+        public override Expr.Type VisitWhileExpr(Expr.While expr)
         {
             TypeCheckConditional(expr.conditional);
 
             return _voidType;
         }
 
-        public override Expr.Type visitForExpr(Expr.For expr)
+        public override Expr.Type VisitForExpr(Expr.For expr)
         {
             var result = expr.initExpr.Accept(this);
             if (!Primitives.IsVoidType(result) && !callReturn)
@@ -327,12 +327,12 @@ internal partial class Analyzer
             return _voidType;
         }
 
-        public override Expr.Type visitLiteralExpr(Expr.Literal expr)
+        public override Expr.Type VisitLiteralExpr(Expr.Literal expr)
         {
             return literalTypes[expr.literal.type];
         }
 
-        public override Expr.Type visitUnaryExpr(Expr.Unary expr)
+        public override Expr.Type VisitUnaryExpr(Expr.Unary expr)
         {
             Expr.Type[] argumentTypes =
             {
@@ -382,32 +382,32 @@ internal partial class Analyzer
             return expr.internalFunction._returnType.type;
         }
 
-        public override Expr.Type visitVariableExpr(Expr.Variable expr)
+        public override Expr.Type VisitVariableExpr(Expr.Variable expr)
         {
-            return expr.stack.type;
+            return expr.Stack.type;
         }
 
-        public override Expr.Type visitReturnExpr(Expr.Return expr)
+        public override Expr.Type VisitReturnExpr(Expr.Return expr)
         { 
             _return.Add((expr._void? _voidType : expr.value.Accept(this), false, expr));
 
             return _voidType;
         }
 
-        public override Expr.Type visitAssignExpr(Expr.Assign expr)
+        public override Expr.Type VisitAssignExpr(Expr.Assign expr)
         {
             Expr.Type assignType = expr.value.Accept(this);
-            MustMatchType(expr.member.stack.type, assignType);
+            MustMatchType(expr.member.Stack.type, assignType);
 
             return _voidType;
         }
 
-        public override Expr.Type visitKeywordExpr(Expr.Keyword expr)
+        public override Expr.Type VisitKeywordExpr(Expr.Keyword expr)
         {
             return keywordTypes[expr.keyword]; 
         }
 
-        public override Expr.Type visitPrimitiveExpr(Expr.Primitive expr)
+        public override Expr.Type VisitPrimitiveExpr(Expr.Primitive expr)
         {
             symbolTable.SetContext(expr);
 
@@ -418,26 +418,26 @@ internal partial class Analyzer
             return _voidType;
         }
 
-        public override Expr.Type visitNewExpr(Expr.New expr)
+        public override Expr.Type VisitNewExpr(Expr.New expr)
         {
             expr.call.Accept(this);
 
             return expr.internalClass;
         }
 
-        public override Expr.Type visitDefineExpr(Expr.Define expr)
+        public override Expr.Type VisitDefineExpr(Expr.Define expr)
         {
             return _voidType;
         }
 
-        public override Expr.Type visitIsExpr(Expr.Is expr)
+        public override Expr.Type VisitIsExpr(Expr.Is expr)
         {
             expr.value = expr.right.Accept(this) == expr.right.type ? "1" : "0";
 
             return literalTypes[Token.TokenType.BOOLEAN];
         }
 
-        public override Expr.Type visitAssemblyExpr(Expr.Assembly expr)
+        public override Expr.Type VisitAssemblyExpr(Expr.Assembly expr)
         {
             foreach (var variable in expr.variables)
             {
@@ -449,11 +449,6 @@ internal partial class Analyzer
             }
 
             return _voidType;
-        }
-
-        private bool MatchesType(Expr.Type type1, Expr.Type type2)
-        {
-            return type2.Matches(type1);
         }
 
         private void MustMatchType(Expr.Type type1, Expr.Type type2, string error= "You cannot assign type '{0}' to type '{1}'")

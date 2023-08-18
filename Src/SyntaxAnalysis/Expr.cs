@@ -21,29 +21,29 @@ internal abstract class Expr
 
     public interface IVisitor<T>
     {
-        public T visitBinaryExpr(Binary expr);
-        public T visitUnaryExpr(Unary expr);
-        public T visitGroupingExpr(Grouping expr);
-        public T visitLiteralExpr(Literal expr);
-        public T visitDeclareExpr(Declare expr);
-        public T visitIfExpr(If expr);
-        public T visitForExpr(For expr);
-        public T visitWhileExpr(While expr);
-        public T visitCallExpr(Call expr);
-        public T visitTypeReferenceExpr(TypeReference expr);
-        public T visitGetReferenceExpr(GetReference expr);
-        public T visitBlockExpr(Block expr);
-        public T visitAssemblyExpr(Assembly expr);
-        public T visitVariableExpr(Variable expr);
-        public T visitFunctionExpr(Function expr);
-        public T visitClassExpr(Class expr);
-        public T visitReturnExpr(Return expr);
-        public T visitAssignExpr(Assign expr);
-        public T visitPrimitiveExpr(Primitive expr);
-        public T visitKeywordExpr(Keyword expr);
-        public T visitNewExpr(New expr);
-        public T visitDefineExpr(Define expr);
-        public T visitIsExpr(Is expr);
+        public T VisitBinaryExpr(Binary expr);
+        public T VisitUnaryExpr(Unary expr);
+        public T VisitGroupingExpr(Grouping expr);
+        public T VisitLiteralExpr(Literal expr);
+        public T VisitDeclareExpr(Declare expr);
+        public T VisitIfExpr(If expr);
+        public T VisitForExpr(For expr);
+        public T VisitWhileExpr(While expr);
+        public T VisitCallExpr(Call expr);
+        public T VisitTypeReferenceExpr(TypeReference expr);
+        public T VisitGetReferenceExpr(GetReference expr);
+        public T VisitBlockExpr(Block expr);
+        public T VisitAssemblyExpr(Assembly expr);
+        public T VisitVariableExpr(Variable expr);
+        public T VisitFunctionExpr(Function expr);
+        public T VisitClassExpr(Class expr);
+        public T VisitReturnExpr(Return expr);
+        public T VisitAssignExpr(Assign expr);
+        public T VisitPrimitiveExpr(Primitive expr);
+        public T VisitKeywordExpr(Keyword expr);
+        public T VisitNewExpr(New expr);
+        public T VisitDefineExpr(Define expr);
+        public T VisitIsExpr(Is expr);
     }
 
     public class Binary : Expr
@@ -65,7 +65,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitBinaryExpr(this);
+            return visitor.VisitBinaryExpr(this);
         }
 
     }
@@ -88,7 +88,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitUnaryExpr(this);
+            return visitor.VisitUnaryExpr(this);
         }
     }
 
@@ -104,7 +104,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitGroupingExpr(this);
+            return visitor.VisitGroupingExpr(this);
         }
 
     }
@@ -120,7 +120,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitLiteralExpr(this);
+            return visitor.VisitLiteralExpr(this);
         }
 
     }
@@ -143,7 +143,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitDeclareExpr(this);
+            return visitor.VisitDeclareExpr(this);
         }
 
     }
@@ -174,7 +174,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitIfExpr(this);
+            return visitor.VisitIfExpr(this);
         }
     }
     public class ElseIf
@@ -207,7 +207,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitWhileExpr(this);
+            return visitor.VisitWhileExpr(this);
         }
     }
 
@@ -227,7 +227,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitForExpr(this);
+            return visitor.VisitForExpr(this);
         }
     }
 
@@ -257,7 +257,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitCallExpr(this);
+            return visitor.VisitCallExpr(this);
         }
 
     }
@@ -276,7 +276,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitTypeReferenceExpr(this);
+            return visitor.VisitTypeReferenceExpr(this);
         }
     }
 
@@ -293,7 +293,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitGetReferenceExpr(this);
+            return visitor.VisitGetReferenceExpr(this);
         }
     }
 
@@ -308,7 +308,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitBlockExpr(this);
+            return visitor.VisitBlockExpr(this);
         }
     }
 
@@ -325,7 +325,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitAssemblyExpr(this);
+            return visitor.VisitAssemblyExpr(this);
         }
     }
 
@@ -361,7 +361,7 @@ internal abstract class Expr
     {
         public bool classScoped;
 
-        public StackData stack
+        public StackData Stack
         {
             get => offsets[0];
             set => offsets[0] = value;
@@ -373,7 +373,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitVariableExpr(this);
+            return visitor.VisitVariableExpr(this);
         }
     }
 
@@ -388,7 +388,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitKeywordExpr(this);
+            return visitor.VisitKeywordExpr(this);
         }
     }
 
@@ -404,7 +404,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitNewExpr(this);
+            return visitor.VisitNewExpr(this);
         }
     }
 
@@ -459,7 +459,7 @@ internal abstract class Expr
 
         public bool Matches(Type type)
         {
-            return type._Matches(this) || ((enclosing != null) ? enclosing.Matches(type) : false);
+            return type._Matches(this) || ((enclosing != null) && enclosing.Matches(type));
         }
 
         public override string ToString()
@@ -503,7 +503,7 @@ internal abstract class Expr
         public List<Parameter> parameters;
         public TypeReference _returnType;
         public int _returnSize;
-        public int arity
+        public int Arity
         {
             get { return parameters.Count; }
         }
@@ -546,9 +546,9 @@ internal abstract class Expr
                         res += (string.Join(".", parameter.typeName.ToList().ConvertAll(x => x.lexeme)) + ", ");
                     }
                 }
-                res += (parameters[parameters.Count - 1].typeName.Count == 0)? 
-                    parameters[parameters.Count - 1].stack.type :
-                    (string.Join(".", parameters[parameters.Count - 1].typeName.ToList().ConvertAll(x => x.lexeme)));
+                res += (parameters[^1].typeName.Count == 0) ?
+                    parameters[^1].stack.type :
+                    (string.Join(".", parameters[^1].typeName.ToList().ConvertAll(x => x.lexeme)));
 
                 return res;
             }
@@ -556,7 +556,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitFunctionExpr(this);
+            return visitor.VisitFunctionExpr(this);
         }
     }
 
@@ -593,7 +593,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitClassExpr(this);
+            return visitor.VisitClassExpr(this);
         }
     }
 
@@ -607,7 +607,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitPrimitiveExpr(this);
+            return visitor.VisitPrimitiveExpr(this);
         }
     }
 
@@ -625,7 +625,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitReturnExpr(this);
+            return visitor.VisitReturnExpr(this);
         }
     }
 
@@ -650,7 +650,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitAssignExpr(this);
+            return visitor.VisitAssignExpr(this);
         }
     }
 
@@ -667,7 +667,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitDefineExpr(this);
+            return visitor.VisitDefineExpr(this);
         }
     }
 
@@ -686,7 +686,7 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.visitIsExpr(this);
+            return visitor.VisitIsExpr(this);
         }
     }
 }
