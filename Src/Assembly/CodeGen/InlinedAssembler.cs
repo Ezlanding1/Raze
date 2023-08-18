@@ -248,9 +248,18 @@ internal class InlinedAssembler : Assembler
             return base.visitAssignExpr(expr);
         }
 
+        Instruction.Value operand2;
+
+        if (((Expr.Binary)expr.value).internalFunction.parameters[0].modifiers["ref"] == false)
+        {
         ((Expr.Binary)expr.value).internalFunction.parameters[0].modifiers["ref"] = true;
-        var operand2 = expr.value.Accept(this);
+            operand2 = expr.value.Accept(this);
         ((Expr.Binary)expr.value).internalFunction.parameters[0].modifiers["ref"] = false;
+        }
+        else
+        {
+            operand2 = expr.value.Accept(this);
+        }
 
         if (((Expr.StackRegister)((Expr.Binary)expr.value).internalFunction.parameters[0].stack).register != operand2)
         {
