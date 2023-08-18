@@ -66,7 +66,7 @@ internal class InlinedAssembler : Assembler
         }
 
         expr.internalFunction.parameters[0].stack.stackRegister = true;
-        ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = LockOperand(IsRefParameter(expr.internalFunction.parameters[0]) ? operand : MovToRegister(operand, expr.internalFunction.parameters[0].stack.size));
+        ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = LockOperand(HandleParameterRegister(expr.internalFunction.parameters[0], operand));
 
         foreach (var bodyExpr in expr.internalFunction.block)
         {
@@ -123,10 +123,10 @@ internal class InlinedAssembler : Assembler
         }
 
         expr.internalFunction.parameters[0].stack.stackRegister = true;
-        ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = LockOperand(IsRefParameter(expr.internalFunction.parameters[0]) ? operand1 : MovToRegister(operand1, expr.internalFunction.parameters[0].stack.size));
+        ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = LockOperand(HandleParameterRegister(expr.internalFunction.parameters[0], operand1));
 
         expr.internalFunction.parameters[1].stack.stackRegister = true;
-        ((Expr.StackRegister)expr.internalFunction.parameters[1].stack).register = LockOperand(IsRefParameter(expr.internalFunction.parameters[1]) ? operand2 : MovToRegister(operand2, expr.internalFunction.parameters[1].stack.size));
+        ((Expr.StackRegister)expr.internalFunction.parameters[1].stack).register = LockOperand(HandleParameterRegister(expr.internalFunction.parameters[1], operand2));
 
         foreach (var bodyExpr in expr.internalFunction.block)
         {
@@ -204,7 +204,7 @@ internal class InlinedAssembler : Assembler
             Instruction.Value arg = expr.arguments[i].Accept(this);
 
             expr.internalFunction.parameters[i].stack.stackRegister = true;
-            ((Expr.StackRegister)expr.internalFunction.parameters[i].stack).register = LockOperand(IsRefParameter(expr.internalFunction.parameters[i]) ? arg : MovToRegister(arg, expr.internalFunction.parameters[i].stack.size));
+            ((Expr.StackRegister)expr.internalFunction.parameters[i].stack).register = LockOperand(HandleParameterRegister(expr.internalFunction.parameters[i], arg));
         }
 
         foreach (var bodyExpr in expr.internalFunction.block)
@@ -376,8 +376,12 @@ internal class InlinedAssembler : Assembler
         }
     }
     
-    private bool IsRefParameter(Expr.Parameter parameter)
+    private Instruction.Value HandleParameterRegister(Expr.Parameter parameter, Instruction.Value arg)
     {
-        return parameter.modifiers["ref"] || parameter.modifiers["inlineRef"];
+        return IsRefParameter(parameter, arg) ? arg : MovToRegister(arg, parameter.stack.size);
+    }
+    private bool IsRefParameter(Expr.Parameter parameter, Instruction.Value val)
+    {
+        return parameter.modifiers["ref"] || (parameter.modifiers["inlineRef"] && !val.IsPointer());
     }
 }

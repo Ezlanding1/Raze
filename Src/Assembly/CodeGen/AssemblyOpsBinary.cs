@@ -206,13 +206,13 @@ internal partial class AssemblyOps
 
         public static void IDIV_DIV_IMOD_MOD(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
+            assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler);
+
             var operand1 = (Instruction.Value)(instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst) ?
-                    assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler) :
+                    assemblyOps.assembler.MovToRegister(assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler), assemblyOps.vars[assemblyOps.count-1].stack.size) :
                     instruction.instruction.operand1);
 
             var operand2 = HandleOperand1(instruction, assemblyOps);
-
-            assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler);
 
             string emitOp = "";
             switch (instruction.instruction.instruction)
@@ -228,12 +228,12 @@ internal partial class AssemblyOps
                     emitOp = "IDIV";
                     break;
             }
-            assemblyOps.assembler.alloc.raxNeeded = true;
 
             var size = GetOpSize(operand1, instruction.assignType, assemblyOps.vars, assemblyOps.count, true) ?? throw new Errors.BackendError("Inavalid Assembly Block", "No size could be determined for the first operand");
             
-            var rax = assemblyOps.assembler.alloc.GetRegister(0, size);
+            var rax = assemblyOps.assembler.alloc.CallAlloc(size);
             var rdx = new Instruction.Register(Instruction.Register.RegisterName.RDX, size);
+            
             Instruction.Register paramStoreReg = null;
 
             if (assemblyOps.assembler.alloc.paramRegisters[2] == null)
