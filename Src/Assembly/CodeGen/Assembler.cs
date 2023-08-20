@@ -597,31 +597,6 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         return null;
     }
 
-    public virtual Instruction.SizedValue FormatOperand1(Instruction.Value operand, Instruction.Register.RegisterSize? size)
-    {
-        if (operand.IsPointer())
-        {
-            if (((Instruction.Pointer)operand).register.name == Instruction.Register.RegisterName.RBP)
-            {
-                Emit(new Instruction.Binary("MOV", alloc.CurrentRegister(((Instruction.Pointer)operand).size), operand));
-                return alloc.NextRegister(((Instruction.Pointer)operand).size);
-            }
-            else
-            {
-                Emit(new Instruction.Binary("MOV", ((Instruction.Pointer)operand).register, operand));
-                return ((Instruction.Pointer)operand).register;
-            }
-        }
-        else if (operand.IsLiteral())
-        {
-            if (size == null) { throw new Errors.ImpossibleError("Null size in FormatOperand1 when operand is literal"); }
-
-            Emit(new Instruction.Binary("MOV", alloc.CurrentRegister((Instruction.Register.RegisterSize)size), operand));
-            return alloc.NextRegister((Instruction.Register.RegisterSize)size);
-        }
-        return (Instruction.Register)operand;
-    }
-
     public Instruction.Value? VisitNewExpr(Expr.New expr)
     {
         // either dealloc on exit (handled by OS), require manual delete, or implement GC
@@ -703,7 +678,8 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         data.Add(instruction);
     }
 
-    public Instruction.Value PassByValue(Instruction.Value operand)
+    public Instruction.Register MovToRegister(Instruction.Value operand, Instruction.Register.RegisterSize? size) => (Instruction.Register)(NonLiteral(NonPointer(operand), size));
+    public Instruction.Value NonPointer(Instruction.Value operand)
     {
         if (operand.IsPointer())
         {
@@ -720,30 +696,16 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         }
         return operand;
     }
-    public Instruction.Register MovToRegister(Instruction.Value operand, int? size)
+    public Instruction.SizedValue NonLiteral(Instruction.Value operand, Instruction.Register.RegisterSize? size)
     {
-        if (operand.IsPointer())
+        if (operand.IsLiteral())
         {
-            if (((Instruction.Pointer)operand).register.name == Instruction.Register.RegisterName.RBP)
-            {
-                Emit(new Instruction.Binary("MOV", alloc.CurrentRegister(((Instruction.Pointer)operand).size), operand));
-                return alloc.NextRegister(((Instruction.Pointer)operand).size);
-            }
-            else
-            {
-                Emit(new Instruction.Binary("MOV", ((Instruction.Pointer)operand).register, operand));
-                return ((Instruction.Pointer)operand).register;
-            }
-        }
-        else if (operand.IsLiteral())
-        {
-            if (size == null)
-                throw new Errors.ImpossibleError("null sized literal");
+            if (size == null) { throw new Errors.ImpossibleError("Null size in NonLiteral when operand is literal"); }
 
-            Emit(new Instruction.Binary("MOV", alloc.CurrentRegister(InstructionUtils.ToRegisterSize((int)size)), operand));
-            return alloc.NextRegister(InstructionUtils.ToRegisterSize((int)size));
+            Emit(new Instruction.Binary("MOV", alloc.CurrentRegister((Instruction.Register.RegisterSize)size), operand));
+            return alloc.NextRegister((Instruction.Register.RegisterSize)size);
         }
-        return (Instruction.Register)operand;
+        return (Instruction.SizedValue)operand;
     }
 
     public static string ToMangedName(Expr.Function function)

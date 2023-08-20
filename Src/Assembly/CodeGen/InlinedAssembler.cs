@@ -284,7 +284,7 @@ internal class InlinedAssembler : Assembler
 
             if (((InlineStateInlined)inlineState).callee == null)
             {
-                ((InlineStateInlined)inlineState).callee = FormatOperand1(operand, InstructionUtils.ToRegisterSize(expr.size));
+                ((InlineStateInlined)inlineState).callee = NonLiteral(operand, InstructionUtils.ToRegisterSize(expr.size));
             }
             else
             {
@@ -320,23 +320,6 @@ internal class InlinedAssembler : Assembler
         }
 
         return null;
-    }
-
-    public override Instruction.SizedValue FormatOperand1(Instruction.Value operand, Instruction.Register.RegisterSize? size)
-    {
-        if (!inlineState.inline)
-        {
-            return base.FormatOperand1(operand, size);
-        }
-
-        if (operand.IsLiteral())
-        {
-            if (size == null) { throw new Errors.ImpossibleError("Null size in FormatOperand1 when operand is literal"); }
-
-            Emit(new Instruction.Binary("MOV", alloc.CurrentRegister((Instruction.Register.RegisterSize)size), operand));
-            return alloc.NextRegister((Instruction.Register.RegisterSize)size);
-        }
-        return (Instruction.SizedValue)operand;
     }
 
     public Instruction.Value LockOperand(Instruction.Value operand) 
@@ -378,7 +361,7 @@ internal class InlinedAssembler : Assembler
     
     private Instruction.Value HandleParameterRegister(Expr.Parameter parameter, Instruction.Value arg)
     {
-        return IsRefParameter(parameter, arg) ? arg : MovToRegister(arg, parameter.stack.size);
+        return IsRefParameter(parameter, arg) ? arg : MovToRegister(arg, InstructionUtils.ToRegisterSize(parameter.stack.size));
     }
     private bool IsRefParameter(Expr.Parameter parameter, Instruction.Value val)
     {

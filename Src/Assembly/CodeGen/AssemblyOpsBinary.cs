@@ -19,63 +19,53 @@ internal partial class AssemblyOps
 
     internal static class Binary
     {
-        public static Instruction.Register.RegisterSize? GetOpSize(Instruction.Value operand, ExprUtils.AssignableInstruction.Binary.AssignType assignType, List<Expr.Variable> vars, int count, bool first)
+        public static Instruction.Register.RegisterSize GetOpSize(Instruction.Value operand, ExprUtils.AssignableInstruction.Binary.AssignType assignType, List<Expr.Variable> vars, int count, bool first)
         {
             if (operand.IsRegister() || operand.IsPointer())
             {
                 return ((Instruction.SizedValue)operand).size;
             }
-            if (first)
-            {
-                int cOff = 0;
-                cOff += assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst) ? 1 : 0;
-                cOff += assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond) ? 1 : 0;
 
-                if (cOff != 0)
-                {
-                    return InstructionUtils.ToRegisterSize(vars[count - cOff].Stack.size);
-                }
-            }
-            else
+            int cOff = Convert.ToInt32(assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst)) 
+                + Convert.ToInt32(assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond));
+
+            cOff += Convert.ToInt32(!first);
+
+            if (cOff != 0)
             {
-                if (assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))
-                {
-                    return InstructionUtils.ToRegisterSize(vars[count - 1].Stack.size);
-                }
+                return InstructionUtils.ToRegisterSize(vars[count - cOff].Stack.size);
             }
-            return null;
+
+            throw new Errors.BackendError("Inavalid Assembly Block", $"No size could be determined for the { (first? "first" : "second") } operand");
         }
+
         public static void ReturnOp(ref Instruction.Value operand, ExprUtils.AssignableInstruction.Binary.AssignType assignType, AssemblyOps assemblyOps, bool first)
         {
-            operand = assemblyOps.assembler.FormatOperand1(operand, GetOpSize(operand, assignType, assemblyOps.vars, assemblyOps.count, first) ?? throw new Errors.BackendError("Inavalid Assembly Block", "No size could be determined for the first operand"));
+            operand = assemblyOps.assembler.NonLiteral(operand, GetOpSize(operand, assignType, assemblyOps.vars, assemblyOps.count, first));
             if (((InlinedAssembler)assemblyOps.assembler).inlineState.inline)
             {
                 ((InlinedAssembler.InlineStateInlined)((InlinedAssembler)assemblyOps.assembler).inlineState).callee = (Instruction.SizedValue)operand;
                 ((InlinedAssembler)assemblyOps.assembler).LockOperand((Instruction.SizedValue)operand);
             }
         }
+
         public static Instruction.Value HandleOperand1(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
-            return (Instruction.Value)(instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst) ?
-                    assemblyOps.assembler.FormatOperand1(assemblyOps.vars[assemblyOps.count].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count++].Stack.size)) :
-                    instruction.instruction.operand1);
-        }
-        public static Instruction.Value FormatOperand2(Instruction.Value operand2, Instruction.Value operand1, Assembler assembler)
-        {
-            if (operand1.IsPointer() && operand2.IsPointer())
+            if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst))
             {
-                assembler.Emit(new Instruction.Binary("MOV", assembler.alloc.CurrentRegister(((Instruction.Pointer)operand2).size), operand2));
-                return assembler.alloc.NextRegister(((Instruction.Pointer)operand2).size);
+                return assemblyOps.assembler.NonLiteral(assemblyOps.vars[assemblyOps.count].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count++].Stack.size));
             }
-            return operand2;
+            return (Instruction.Value)instruction.instruction.operand1;
         }
         public static Instruction.Value HandleOperand2(ExprUtils.AssignableInstruction.Binary instruction, Instruction.Value operand1, AssemblyOps assemblyOps)
         {
-            return (Instruction.Value)(instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond) ?
-                    instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst) ?
-                        FormatOperand2(assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler), operand1, assemblyOps.assembler) :
-                        assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler) :
-                    instruction.instruction.operand2);
+            if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))
+            {
+                var asmVar = assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler);
+
+                return operand1.IsPointer() ? assemblyOps.assembler.NonPointer(asmVar) : asmVar;
+            }
+            return (Instruction.Value)instruction.instruction.operand2;     
         }
 
         public static void DefaultBinOp(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
@@ -99,9 +89,7 @@ internal partial class AssemblyOps
 
         public static void IMUL(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
-            var operand1 = HandleOperand1(instruction, assemblyOps);
-
-            operand1 = assemblyOps.assembler.PassByValue(operand1);
+            var operand1 = assemblyOps.assembler.NonPointer(HandleOperand1(instruction, assemblyOps));
 
             var operand2 = HandleOperand2(instruction, operand1, assemblyOps);
 
@@ -183,7 +171,7 @@ internal partial class AssemblyOps
             assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler);
 
             var operand1 = (Instruction.Value)(instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst) ?
-                    assemblyOps.assembler.MovToRegister(assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler), assemblyOps.vars[assemblyOps.count-1].Stack.size) :
+                    assemblyOps.assembler.MovToRegister(assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count-1].Stack.size)) :
                     instruction.instruction.operand1);
 
             var operand2 = HandleOperand1(instruction, assemblyOps);
@@ -203,7 +191,7 @@ internal partial class AssemblyOps
                     break;
             }
 
-            var size = GetOpSize(operand1, instruction.assignType, assemblyOps.vars, assemblyOps.count, true) ?? throw new Errors.BackendError("Inavalid Assembly Block", "No size could be determined for the first operand");
+            var size = GetOpSize(operand1, instruction.assignType, assemblyOps.vars, assemblyOps.count, true);
             
             var rax = assemblyOps.assembler.alloc.CallAlloc(size);
             var rdx = new Instruction.Register(Instruction.Register.RegisterName.RDX, size);

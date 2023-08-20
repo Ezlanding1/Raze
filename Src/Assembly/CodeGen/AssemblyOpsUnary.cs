@@ -25,7 +25,7 @@ internal partial class AssemblyOps
 
         public static void ReturnOp(ref Instruction.Value operand, Assembler assembler, ExprUtils.AssignableInstruction.Unary.AssignType assignType, List<Expr.Variable> vars, int count)
         {
-            operand = assembler.FormatOperand1(operand, GetOpSize(operand, assignType, vars, count) ?? throw new Errors.BackendError("Inavalid Assembly Block", "No size could be determined for the first operand"));
+            operand = assembler.NonLiteral(operand, GetOpSize(operand, assignType, vars, count) ?? throw new Errors.BackendError("Inavalid Assembly Block", "No size could be determined for the first operand"));
             if (((InlinedAssembler)assembler).inlineState.inline)
             {
                 ((InlinedAssembler.InlineStateInlined)((InlinedAssembler)assembler).inlineState).callee = (Instruction.SizedValue)operand;
