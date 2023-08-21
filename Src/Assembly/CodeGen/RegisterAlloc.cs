@@ -52,6 +52,7 @@ internal class RegisterAlloc
     }
 
     // Makes all subsequent register requests for register[idx] pull from a new instance (while not modifying used[idx])
+    public void NullReg() => registers[RegisterIdx] = null;
     public void NullReg(int idx) => registers[idx] = null;
 
     public Instruction.Register CurrentRegister(Instruction.Register.RegisterSize size)

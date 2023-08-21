@@ -413,7 +413,8 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         else
         {
             Emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(new Instruction.Register(Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._64Bits), expr.Stack.stackOffset, 8, expr.Stack.plus ? '+' : '-')));
-            return new Instruction.Pointer(alloc.NextRegister(Instruction.Register.RegisterSize._64Bits), 0, expr.Stack.size);
+            alloc.NullReg();
+            return new Instruction.Pointer(alloc.NextRegister(InstructionUtils.ToRegisterSize(expr.Stack.size)), 0, expr.Stack.size);
         }
     }
 

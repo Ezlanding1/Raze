@@ -95,6 +95,11 @@ partial class Syntaxes
                 {
                     throw new Errors.ImpossibleError("TMP Register Cannot Be Emitted");
                 }
+
+                if (instruction.offset == 0)
+                {
+                    return $"{InstructionUtils.wordSize[instruction.size]} [{RegisterToString[(instruction.register.name, InstructionUtils.SYS_SIZE)]}]";
+                }
                 return $"{InstructionUtils.wordSize[instruction.size]} [{RegisterToString[(instruction.register.name, InstructionUtils.SYS_SIZE)]} {instruction._operator} {instruction.offset}]";
             }
 
@@ -138,6 +143,11 @@ partial class Syntaxes
                 if (instruction.register.name == Instruction.Register.RegisterName.TMP)
                 {
                     throw new Errors.ImpossibleError("TMP Register Cannot Be Emitted");
+                }
+
+                if (instruction.offset == 0)
+                {
+                    return $"[{RegisterToString[(instruction.register.name, InstructionUtils.SYS_SIZE)]}]";
                 }
                 return $"[{RegisterToString[(instruction.register.name, InstructionUtils.SYS_SIZE)]} {instruction._operator} {instruction.offset}]";
             }
