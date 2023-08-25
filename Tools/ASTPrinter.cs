@@ -159,12 +159,19 @@ internal class ASTPrinter : Expr.IVisitor<object?>
 
     public object? VisitIfExpr(Expr.If expr)
     {
-        PrintConditional(expr.conditional, "if");
+        PrintConditional(expr.conditionals[0], "if");
 
-        expr.ElseIfs.ForEach(x => PrintConditional(x.conditional, "else if"));
+        for (int i = 1; i < expr.conditionals.Count; i++)
+        {
+            PrintConditional(expr.conditionals[i], "else if");
+        }
 
         if (expr._else != null)
-            PrintConditional(expr._else.conditional, "else");
+        {
+            PrintAST("else");
+            PrintAST(expr._else);
+        }
+
         return null;
     }
 

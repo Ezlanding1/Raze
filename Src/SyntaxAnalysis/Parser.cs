@@ -280,21 +280,17 @@ internal class Parser
             {
                 case "if":
                 {
-                    Expr condition = GetCondition();
-                    block = GetBlock(conditionalType.lexeme);
-                    var expr = new Expr.If(condition, block);
+                    var expr = new Expr.If(new(GetCondition(), GetBlock(conditionalType.lexeme)));
+
                     while (ReservedValueMatch("else"))
                     {
                         if (ReservedValueMatch("if"))
                         {
-                            condition = GetCondition();
-                            block = GetBlock("if else");
-                            expr.ElseIfs.Add(new Expr.ElseIf(condition, block));
+                            expr.conditionals.Add(new Expr.Conditional(GetCondition(), GetBlock("else if")));
                         }
                         else
                         {
-                            block = GetBlock("else");
-                            expr._else = new Expr.Else(block);
+                            expr._else = GetBlock("else");
                         }
                     }
                     return expr;

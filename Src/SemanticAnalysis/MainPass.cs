@@ -272,12 +272,10 @@ internal partial class Analyzer
 
         public override object VisitIfExpr(Expr.If expr)
         {
-            HandleConditional(expr.conditional);
-
-            expr.ElseIfs.ForEach(x => HandleConditional(x.conditional));
+            expr.conditionals.ForEach(x => HandleConditional(x));
 
             if (expr._else != null)
-                HandleConditional(expr._else.conditional);
+                expr._else.Accept(this);
 
             return null;
         }
@@ -382,9 +380,7 @@ internal partial class Analyzer
 
         private void HandleConditional(Expr.Conditional expr)
         {
-            if (expr.condition != null)
-                expr.condition.Accept(this);
-
+            expr.condition.Accept(this);
             expr.block.Accept(this);
         }
     }

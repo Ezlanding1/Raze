@@ -413,56 +413,24 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
     public Instruction.Value? VisitIfExpr(Expr.If expr)
     {
-        var conditionalOp = expr.conditional.condition.Accept(this);
-
-        string cmpType = HandleConditionalCmpType(conditionalOp);
-
-        var fJump = new Instruction.Unary(InstructionUtils.ConditionalJumpReversed[cmpType], Instruction.Register.RegisterName.TMP);
         Instruction.Unary tJump = new Instruction.Unary("JMP", Instruction.Register.RegisterName.TMP);
 
-        bool litOpCond = true;
-
-        if (conditionalOp.IsLiteral())
+        for (int i = 0; i < expr.conditionals.Count; i++)
         {
-            if (((Instruction.Literal)conditionalOp).value == "1")
-            {
-                expr.conditional.block.Accept(this);
-                return null;
-            }
-            else
-            {
-                if (expr.ElseIfs.Count == 0 && expr._else != null)
+            var condition = expr.conditionals[i].condition.Accept(this);
+
+            string cmpType = HandleConditionalCmpType(condition);
+
+            if (condition.IsLiteral())
+        {
+                if (((Instruction.Literal)condition).value == "1")
                 {
-                    foreach (Expr blockExpr in expr._else.conditional.block.block)
-                    {
-                        blockExpr.Accept(this);
-                    }
-                    return null;
-                }
-            }
-        }
-        else
-        {
-        Emit(fJump);
+                    expr.conditionals[i].block.Accept(this);
 
-        expr.conditional.block.Accept(this);
+                    Emit(new Instruction.LocalProcedure(ConditionalLabel));
+                    tJump.operand = new Instruction.LocalProcedureRef(ConditionalLabel);
 
-            Emit(tJump);
-
-            litOpCond = false;
-        }
-
-
-        foreach (Expr.ElseIf elif in expr.ElseIfs)
-        {
-
-            var elifConditionalOp = elif.conditional.condition.Accept(this);
-
-            if (elifConditionalOp.IsLiteral())
-            {
-                if (((Instruction.Literal)elifConditionalOp).value == "1")
-                {
-                    elif.conditional.block.Accept(this);
+                    conditionalCount++;
                     return null;
                 }
                 else
@@ -470,41 +438,15 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
                     continue;
                 }
             }
-            else
-            {
-                litOpCond = false;
-            }
+            Emit(new Instruction.Unary(InstructionUtils.ConditionalJumpReversed[cmpType], new Instruction.LocalProcedureRef(CreateConditionalLabel(conditionalCount))));
 
-            fJump.operand = new Instruction.LocalProcedureRef(ConditionalLabel);
+            expr.conditionals[i].block.Accept(this);
+            Emit(tJump);
+
             Emit(new Instruction.LocalProcedure(ConditionalLabel));
             conditionalCount++;
-
-            fJump = new Instruction.Unary(InstructionUtils.ConditionalJumpReversed[cmpType], Instruction.Register.RegisterName.TMP);
-
-            Emit(fJump);
-            foreach (Expr blockExpr in elif.conditional.block.block)
-            {
-                blockExpr.Accept(this);
-            }
-
-            Emit(tJump);
         }
 
-        if (litOpCond)
-        {
-            if (expr._else != null)
-            {
-                foreach (Expr blockExpr in expr._else.block)
-                {
-                    blockExpr.Accept(this);
-                }
-            }
-            return null;
-        }
-
-        fJump.operand = new Instruction.LocalProcedureRef(ConditionalLabel);
-        Emit(new Instruction.LocalProcedure(ConditionalLabel));
-        conditionalCount++;
         if (expr._else != null)
         {
             foreach (Expr blockExpr in expr._else.block)
@@ -516,6 +458,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         tJump.operand = new Instruction.LocalProcedureRef(ConditionalLabel);
 
         conditionalCount++;
+
         return null;
     }
 
@@ -550,7 +493,6 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         conditionalCount++;
 
         Emit(new Instruction.LocalProcedure(ConditionalLabel));
-
 
         var cmpType = HandleConditionalCmpType(expr.conditional.block.Accept(this));
 

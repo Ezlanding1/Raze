@@ -162,37 +162,18 @@ internal abstract class Expr
 
     public class If : Expr
     {
-        public Conditional conditional;
+        public List<Conditional> conditionals = new();
 
-        public List<ElseIf> ElseIfs;
-        public Else _else;
-        public If(Expr condition, Block block)
+        public Block? _else = null;
+
+        public If(Conditional _if)
         {
-            this.conditional = new(condition, block);
-            this.ElseIfs = new();
+            conditionals.Add(_if);
         }
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitIfExpr(this);
-        }
-    }
-    public class ElseIf
-    {
-        public Conditional conditional;
-
-        public ElseIf(Expr condition, Block block)
-        {
-            this.conditional = new(condition, block);
-        }
-    }
-    public class Else
-    {
-        public Conditional conditional;
-
-        public Else(Block block)
-        {
-            this.conditional = new(null, block);
         }
     }
 

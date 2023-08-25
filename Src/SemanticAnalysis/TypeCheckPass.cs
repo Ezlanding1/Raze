@@ -289,19 +289,17 @@ internal partial class Analyzer
 
         public override Expr.Type VisitIfExpr(Expr.If expr)
         {
-            TypeCheckConditional(expr.conditional);
-
-            expr.ElseIfs.ForEach(x => TypeCheckConditional(x.conditional));
+            expr.conditionals.ForEach(x => TypeCheckConditional(x.condition, x.block));
 
             if (expr._else != null)
-                TypeCheckConditional(expr._else.conditional);
+                TypeCheckConditional(null, expr._else);
 
             return _voidType;
         }
 
         public override Expr.Type VisitWhileExpr(Expr.While expr)
         {
-            TypeCheckConditional(expr.conditional);
+            TypeCheckConditional(expr.conditional.condition, expr.conditional.block);
 
             return _voidType;
         }
@@ -322,7 +320,7 @@ internal partial class Analyzer
             }
             callReturn = false;
 
-            TypeCheckConditional(expr.conditional);
+            TypeCheckConditional(expr.conditional.condition, expr.conditional.block);
 
             return _voidType;
         }
@@ -459,19 +457,19 @@ internal partial class Analyzer
             }
         }
 
-        private void TypeCheckConditional(Expr.Conditional expr, bool _else=false)
+        private void TypeCheckConditional(Expr? condition, Expr.Block block)
         {
             int _returnCount = _return.Count;
-            if (expr.condition != null)
+            if (condition != null)
             {
-                if (!expr.condition.Accept(this).Matches(literalTypes[Token.TokenType.BOOLEAN]))
+                if (!literalTypes[Token.TokenType.BOOLEAN].Matches(condition.Accept(this)))
                 {
-                    throw new Errors.AnalyzerError("Type Mismatch", $"'if' expects condition to return 'BOOLEAN'. Got '{expr.condition.Accept(this)}'");
+                    throw new Errors.AnalyzerError("Type Mismatch", $"'if' expects condition to return 'BOOLEAN'. Got '{condition.Accept(this)}'");
                 }
             }
-            expr.block.Accept(this);
+            block.Accept(this);
 
-            if (!_else)
+            if (condition != null)
             {
                 for (int i = _returnCount; i < _return.Count; i++)
                 {

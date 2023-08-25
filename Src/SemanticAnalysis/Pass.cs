@@ -78,9 +78,9 @@ internal partial class Analyzer
 
         public virtual T VisitIfExpr(Expr.If expr)
         {
-            expr.conditional.condition.Accept(this);
+            expr.conditionals[0].condition.Accept(this);
+            expr.conditionals[0].block.Accept(this);
 
-            expr.conditional.block.Accept(this);
             return default;
         }
 

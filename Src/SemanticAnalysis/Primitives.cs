@@ -54,7 +54,7 @@ internal partial class Analyzer
             Token.TokenType t2 = (Token.TokenType)type2;
 
             string pName = SymbolToPrimitiveName(op);
-            
+
             // Note: All cases where an operator's return type for two given literals is not correctly expressed in the switch should be handled individually, here
 
             if (t1 == STRING && t2 == STRING && pName == "Add")
@@ -77,8 +77,8 @@ internal partial class Analyzer
                 }
                 else
                 {
-                throw InvalidOperation(op, t1, t2);
-            }
+                    throw InvalidOperation(op, t1, t2);
+                }
             }
 
 
