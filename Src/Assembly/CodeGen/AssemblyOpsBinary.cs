@@ -61,9 +61,9 @@ internal partial class AssemblyOps
         {
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))
             {
-                var asmVar = assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler);
+                var operand2 = assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler);
 
-                return operand1.IsPointer() ? assemblyOps.assembler.NonPointer(asmVar) : asmVar;
+                return (operand1.IsPointer() && operand2.IsPointer()) ? assemblyOps.assembler.NonPointer(operand2) : operand2;
             }
             return (Instruction.Value)instruction.instruction.operand2;     
         }
@@ -261,6 +261,50 @@ internal partial class AssemblyOps
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))
                 assemblyOps.assembler.alloc.Free(operand2);
 
+        }
+
+        public static void CMP(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
+        {
+            var operand1 = HandleOperand1(instruction, assemblyOps);
+            var operand2 = HandleOperand2(instruction, operand1, assemblyOps);
+
+            assemblyOps.assembler.Emit(new Instruction.Binary("CMP", operand1, operand2));
+
+            if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst))
+                assemblyOps.assembler.alloc.Free(operand1);
+
+            if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))
+                assemblyOps.assembler.alloc.Free(operand2);
+
+            Instruction.Value reg = assemblyOps.assembler.alloc.NextRegister(Instruction.Register.RegisterSize._8Bits);
+
+            switch (instruction.instruction.instruction)
+            {
+                case "E_CMP":
+                case "CMP":
+                    assemblyOps.assembler.Emit(new Instruction.Unary("SETE", reg));
+                    break;
+                case "NE_CMP":
+                    assemblyOps.assembler.Emit(new Instruction.Unary("SETNE", reg));
+                    break;
+                case "G_CMP":
+                    assemblyOps.assembler.Emit(new Instruction.Unary("SETG", reg));
+                    break;
+                case "GE_CMP":
+                    assemblyOps.assembler.Emit(new Instruction.Unary("SETGE", reg));
+                    break;
+                case "L_CMP":
+                    assemblyOps.assembler.Emit(new Instruction.Unary("SETL", reg));
+                    break;
+                case "LE_CMP":
+                    assemblyOps.assembler.Emit(new Instruction.Unary("SETLE", reg));
+                    break;
+            }
+
+            if (instruction.returns && assemblyOps.assembler is InlinedAssembler)
+            {
+                ReturnOp(ref reg, instruction.assignType, assemblyOps, true);
+            }
         }
     }
 }

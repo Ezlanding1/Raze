@@ -410,23 +410,23 @@ internal class InstructionUtils
         { Token.TokenType.MINUS,  "NEG" },
     };
 
-    internal readonly static Dictionary<Token.TokenType, string> ConditionalJump = new()
+    internal readonly static Dictionary<string, string> ConditionalJump = new()
     {
-        { Token.TokenType.EQUALTO , "JE" },
-        { Token.TokenType.NOTEQUALTO , "JNE" },
-        { Token.TokenType.GREATER , "JG" },
-        { Token.TokenType.LESS , "JE" },
-        { Token.TokenType.GREATEREQUAL , "JGE" },
-        { Token.TokenType.LESSEQUAL , "JLE" },
+        { "SETE" , "JE" },
+        { "SETNE" , "JNE" },
+        { "SETG" , "JG" },
+        { "SETL" , "JL" },
+        { "SETGE" , "JGE" },
+        { "SETLE" , "JLE" },
     };
-    internal readonly static Dictionary<Token.TokenType, string> ConditionalJumpReversed = new()
+    internal readonly static Dictionary<string, string> ConditionalJumpReversed = new()
     {
-        { Token.TokenType.EQUALTO , "JNE" },
-        { Token.TokenType.NOTEQUALTO , "JE" },
-        { Token.TokenType.GREATER , "JLE" },
-        { Token.TokenType.LESS , "JGE" },
-        { Token.TokenType.GREATEREQUAL , "JE" },
-        { Token.TokenType.LESSEQUAL , "JG" },
+        { "SETE" , "JNE" },
+        { "SETNE" , "JE" },
+        { "SETG" , "JLE" },
+        { "SETL" , "JGE" },
+        { "SETGE" , "JE" },
+        { "SETLE" , "JG" },
     };
 
     internal readonly static Instruction.Register.RegisterName[] paramRegister = new Instruction.Register.RegisterName[] 

@@ -74,6 +74,12 @@ internal partial class Analyzer
                     case "BitwiseXor":
                     case "BitwiseShiftLeft":
                     case "BitwiseShiftRight":
+                    case "EqualTo":
+                    case "NotEqualTo":
+                    case "GreaterThan":
+                    case "LessThan":
+                    case "GreaterThanOrEqualTo":
+                    case "LessThanOrEqualTo":
                         if (expr.Arity != 2)
                         {
                             throw new Errors.AnalyzerError("Invalid Operator Definition", $"The '{expr.name.lexeme}' operator must have an arity of 2");

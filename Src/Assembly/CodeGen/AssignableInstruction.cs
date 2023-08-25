@@ -58,6 +58,15 @@ internal abstract partial class ExprUtils
                     case "MOD":
                         AssemblyOps.Binary.IDIV_DIV_IMOD_MOD(this, assemblyOps);
                         return;
+                    case "E_CMP":
+                    case "CMP":
+                    case "NE_CMP":
+                    case "G_CMP":
+                    case "GE_CMP":
+                    case "L_CMP":
+                    case "LE_CMP":
+                        AssemblyOps.Binary.CMP(this, assemblyOps);
+                        return;
                     default:
                         throw new Errors.BackendError("Invalid Assembly Block", $"Instruction '{instruction.instruction}' not supported");
                 }

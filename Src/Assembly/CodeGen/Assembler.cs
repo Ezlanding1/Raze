@@ -30,8 +30,6 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
     }
     public string CreateDatalLabel(int i) => "LC" + i;
 
-    private protected Token.TokenType lastJump;
-
     public RegisterAlloc alloc = new();
 
     AssemblyOps assemblyOps;
@@ -77,12 +75,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
         alloc.ReserveRegister(this);
 
-        if (InstructionUtils.ConditionalJump.ContainsKey(expr.op.type)) 
-        {
-            lastJump = expr.op.type;
-        }
-
-        EmitCall(new Instruction.Unary("CALL", new Instruction.ProcedureRef(ToMangedName(expr.internalFunction))));
+        EmitCall(new Instruction.Unary("CALL", new Instruction.ProcedureRef(ToMangledName(expr.internalFunction))));
 
         return alloc.CallAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnSize));
     }
@@ -160,7 +153,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
         alloc.ReserveRegister(this);
 
-        EmitCall(new Instruction.Unary("CALL", new Instruction.ProcedureRef(ToMangedName(expr.internalFunction))));
+        EmitCall(new Instruction.Unary("CALL", new Instruction.ProcedureRef(ToMangledName(expr.internalFunction))));
 
         if (expr.arguments.Count > InstructionUtils.paramRegister.Length && leaf)
         {
@@ -221,7 +214,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
         leaf = true;
 
-        Emit(new Instruction.Procedure(ToMangedName(expr)));
+        Emit(new Instruction.Procedure(ToMangledName(expr)));
 
         alloc.fncPushPreserved = new bool[5];
         int fncStartIdx = instructions.Count;
@@ -353,7 +346,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
         alloc.ReserveRegister(this);
 
-        EmitCall(new Instruction.Unary("CALL", new Instruction.ProcedureRef(ToMangedName(expr.internalFunction))));
+        EmitCall(new Instruction.Unary("CALL", new Instruction.ProcedureRef(ToMangledName(expr.internalFunction))));
 
         return alloc.CallAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnSize));
     }
@@ -420,26 +413,73 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
     public Instruction.Value? VisitIfExpr(Expr.If expr)
     {
-        expr.conditional.condition.Accept(this);
-        var fJump = new Instruction.Unary(InstructionUtils.ConditionalJumpReversed[lastJump], Instruction.Register.RegisterName.TMP);
+        var conditionalOp = expr.conditional.condition.Accept(this);
+
+        string cmpType = HandleConditionalCmpType(conditionalOp);
+
+        var fJump = new Instruction.Unary(InstructionUtils.ConditionalJumpReversed[cmpType], Instruction.Register.RegisterName.TMP);
+        Instruction.Unary tJump = new Instruction.Unary("JMP", Instruction.Register.RegisterName.TMP);
+
+        bool litOpCond = true;
+
+        if (conditionalOp.IsLiteral())
+        {
+            if (((Instruction.Literal)conditionalOp).value == "1")
+            {
+                expr.conditional.block.Accept(this);
+                return null;
+            }
+            else
+            {
+                if (expr.ElseIfs.Count == 0 && expr._else != null)
+                {
+                    foreach (Expr blockExpr in expr._else.conditional.block.block)
+                    {
+                        blockExpr.Accept(this);
+                    }
+                    return null;
+                }
+            }
+        }
+        else
+        {
         Emit(fJump);
 
         expr.conditional.block.Accept(this);
 
+            Emit(tJump);
 
-        var tJump = new Instruction.Unary("JMP", Instruction.Register.RegisterName.TMP);
-        Emit(tJump);
+            litOpCond = false;
+        }
 
 
         foreach (Expr.ElseIf elif in expr.ElseIfs)
         {
+
+            var elifConditionalOp = elif.conditional.condition.Accept(this);
+
+            if (elifConditionalOp.IsLiteral())
+            {
+                if (((Instruction.Literal)elifConditionalOp).value == "1")
+                {
+                    elif.conditional.block.Accept(this);
+                    return null;
+                }
+                else
+                {
+                    continue;
+                }
+            }
+            else
+            {
+                litOpCond = false;
+            }
+
             fJump.operand = new Instruction.LocalProcedureRef(ConditionalLabel);
             Emit(new Instruction.LocalProcedure(ConditionalLabel));
             conditionalCount++;
 
-            elif.conditional.condition.Accept(this);
-
-            fJump = new Instruction.Unary(InstructionUtils.ConditionalJumpReversed[lastJump], Instruction.Register.RegisterName.TMP);
+            fJump = new Instruction.Unary(InstructionUtils.ConditionalJumpReversed[cmpType], Instruction.Register.RegisterName.TMP);
 
             Emit(fJump);
             foreach (Expr blockExpr in elif.conditional.block.block)
@@ -450,12 +490,24 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             Emit(tJump);
         }
 
+        if (litOpCond)
+        {
+            if (expr._else != null)
+            {
+                foreach (Expr blockExpr in expr._else.block)
+                {
+                    blockExpr.Accept(this);
+                }
+            }
+            return null;
+        }
+
         fJump.operand = new Instruction.LocalProcedureRef(ConditionalLabel);
         Emit(new Instruction.LocalProcedure(ConditionalLabel));
         conditionalCount++;
         if (expr._else != null)
         {
-            foreach (Expr blockExpr in expr._else.conditional.block.block)
+            foreach (Expr blockExpr in expr._else.block)
             {
                 blockExpr.Accept(this);
             }
@@ -480,8 +532,9 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         expr.conditional.block.Accept(this);
 
         Emit(conditional);
-        expr.conditional.condition.Accept(this);
-        Emit(new Instruction.Unary(InstructionUtils.ConditionalJump[lastJump], new Instruction.LocalProcedureRef(ConditionalLabel)));
+
+        Emit(new Instruction.Unary(InstructionUtils.ConditionalJump[HandleConditionalCmpType(expr.conditional.condition.Accept(this))],
+            new Instruction.LocalProcedureRef(ConditionalLabel)));
         conditionalCount++;
 
         return null;
@@ -498,12 +551,14 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
         Emit(new Instruction.LocalProcedure(ConditionalLabel));
 
-        expr.conditional.block.Accept(this);
+
+        var cmpType = HandleConditionalCmpType(expr.conditional.block.Accept(this));
+
         expr.updateExpr.Accept(this);
 
         Emit(conditional);
         expr.conditional.condition.Accept(this);
-        Emit(new Instruction.Unary(InstructionUtils.ConditionalJump[lastJump], new Instruction.LocalProcedureRef(ConditionalLabel)));
+        Emit(new Instruction.Unary(InstructionUtils.ConditionalJump[cmpType], new Instruction.LocalProcedureRef(ConditionalLabel)));
         conditionalCount++;
 
         return null;
@@ -665,18 +720,33 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         Emit(instruction);
     }
 
-    internal void Emit(Instruction instruction)
+    internal string HandleConditionalCmpType(Instruction.Value conditional)
     {
-        instructions.Add(instruction);
+        if (conditional.IsRegister() && SafeGetCmpTypeRaw((Instruction.Register)conditional, out var res))
+    {
+            return res;
     }
-    internal void EmitAt(Instruction instruction, int idx)
+        else if (!conditional.IsLiteral())
     {
-        instructions.Insert(idx, instruction);
+            Emit(new Instruction.Binary("CMP", conditional, new Instruction.Literal(Token.TokenType.BOOLEAN, "1")));
+        }
+
+        return "SETE";
     }
 
-    internal void EmitData(Instruction.Data instruction)
+    internal bool SafeGetCmpTypeRaw(Instruction.Register register, out string? res)
     {
-        data.Add(instruction);
+        if (instructions[^1] is Instruction.Unary instruction)
+        {
+            if (instruction.instruction[..3] == "SET" && instruction.operand == register)
+    {
+                instructions.RemoveAt(instructions.Count - 1);
+                res = instruction.instruction;
+                return true;
+            }
+        }
+        res = null;
+        return false;
     }
 
     public Instruction.Register MovToRegister(Instruction.Value operand, Instruction.Register.RegisterSize? size) => (Instruction.Register)(NonLiteral(NonPointer(operand), size));
@@ -709,7 +779,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         return (Instruction.SizedValue)operand;
     }
 
-    public static string ToMangedName(Expr.Function function)
+    public static string ToMangledName(Expr.Function function)
     {
         return (function.enclosing != null ?
                     function.enclosing.ToString() + "." :

@@ -25,7 +25,7 @@ partial class Syntaxes
                     { new Instruction.Global("_start") },
                     { new Instruction.Section("text") },
                     { new Instruction.Procedure("_start") },
-                    { new Instruction.Unary("CALL", new Instruction.ProcedureRef(Assembler.ToMangedName(main))) },
+                    { new Instruction.Unary("CALL", new Instruction.ProcedureRef(Assembler.ToMangledName(main))) },
                     { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), (Analyzer.TypeCheckPass.literalTypes[Parser.Literals[0]].Matches(main._returnType.type)) ? new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits) : new Instruction.Literal(Parser.Literals[0], "0")) },
                     { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.Literals[0], "60")) },
                     { new Instruction.Zero("SYSCALL") }
@@ -270,7 +270,7 @@ partial class Syntaxes
                     { new Instruction.Global("_start") },
                     { new Instruction.Section("text") },
                     { new Instruction.Procedure("_start") },
-                    { new Instruction.Unary("CALL", new Instruction.ProcedureRef(Assembler.ToMangedName(main))) },
+                    { new Instruction.Unary("CALL", new Instruction.ProcedureRef(Assembler.ToMangledName(main))) },
                     { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), (Analyzer.TypeCheckPass.literalTypes[Parser.Literals[0]].Matches(main._returnType.type)) ? new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits) : new Instruction.Literal(Parser.Literals[0], "0")) },
                     { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.Literals[0], "60")) },
                     { new Instruction.Zero("SYSCALL") }

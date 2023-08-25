@@ -36,7 +36,7 @@ internal partial class Analyzer
             Token.TokenType.STRING => literal.value,
             Token.TokenType.BINARY => Convert.ToInt32(literal.value, 2),
             Token.TokenType.HEX => Convert.ToInt32(literal.value, 16),
-            Token.TokenType.BOOLEAN => int.Parse(literal.value)
+            Token.TokenType.BOOLEAN => byte.Parse(literal.value)
         };
 
         public static Token.TokenType OperationType(Token op, sbyte type1, sbyte type2)
@@ -65,9 +65,20 @@ internal partial class Analyzer
             {
                 throw InvalidOperation(op, t1, t2);
             }
-            if ((t1 == BOOLEAN || t2 == BOOLEAN) && (pName != "BitwiseAnd" || pName != "BitwiseOr" || pName != "BitwiseXor"))
+            if (pName == "EqualTo" || pName == "NotEqualTo" || pName == "GreaterThan" || pName == "LessThan" || pName == "GreaterThanOrEqualTo" || pName == "LessThanOrEqualTo")
             {
+                return Token.TokenType.BOOLEAN;
+            }
+            if (t1 == BOOLEAN || t2 == BOOLEAN)
+            {
+                if (pName == "BitwiseAnd" || pName == "BitwiseOr" || pName == "BitwiseXor")
+                {
+                    return Token.TokenType.BOOLEAN;
+                }
+                else
+                {
                 throw InvalidOperation(op, t1, t2);
+            }
             }
 
 
@@ -158,6 +169,12 @@ internal partial class Analyzer
                         "BitwiseXor" => ToType(a, a.type) ^ ToType(b, b.type),
                         "BitwiseShiftLeft" => ToType(a, a.type) << ToType(b, b.type),
                         "BitwiseShiftRight" => ToType(a, a.type) >> ToType(b, b.type),
+                        "EqualTo" => Convert.ToByte(ToType(a, a.type) == ToType(b, b.type)),
+                        "NotEqualTo" => Convert.ToByte(ToType(a, a.type) != ToType(b, b.type)),
+                        "GreaterThan" => Convert.ToByte(ToType(a, a.type) > ToType(b, b.type)),
+                        "LessThan" => Convert.ToByte(ToType(a, a.type) < ToType(b, b.type)),
+                        "GreaterThanOrEqualTo" => Convert.ToByte(ToType(a, a.type) >= ToType(b, b.type)),
+                        "LessThanOrEqualTo" => Convert.ToByte(ToType(a, a.type) <= ToType(b, b.type)),
                         _ => throw InvalidOperation(op, a.type, b.type)
                     }
                 ).ToString();
@@ -213,7 +230,8 @@ internal partial class Analyzer
                     {
                         "Increment" => ToType(a, a.type) + 1,
                         "Decrement" => ToType(a, a.type) - 1,
-                        "Not" => ~ToType(a, a.type)
+                        "Not" => ~ToType(a, a.type),
+                        "Subtract" => -ToType(a, a.type)
                     }
                 ).ToString();
 
@@ -268,7 +286,13 @@ internal partial class Analyzer
             Token.TokenType.SHIFTRIGHT => "BitwiseShiftRight",
             Token.TokenType.PLUSPLUS => "Increment",
             Token.TokenType.MINUSMINUS => "Decrement",
-            Token.TokenType.NOT => "Not"
+            Token.TokenType.NOT => "Not",
+            Token.TokenType.EQUALTO => "EqualTo",
+            Token.TokenType.NOTEQUALTO => "NotEqualTo",
+            Token.TokenType.GREATER => "GreaterThan",
+            Token.TokenType.LESS => "LessThan",
+            Token.TokenType.GREATEREQUAL => "GreaterThanOrEqualTo",
+            Token.TokenType.LESSEQUAL => "LessThanOrEqualTo",
         };
     }
 }

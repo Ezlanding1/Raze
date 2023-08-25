@@ -60,11 +60,6 @@ internal class InlinedAssembler : Assembler
 
         Instruction.Value operand = expr.operand.Accept(this);
 
-        if (InstructionUtils.ConditionalJump.ContainsKey(expr.op.type))
-        {
-            lastJump = expr.op.type;
-        }
-
         expr.internalFunction.parameters[0].stack.stackRegister = true;
         ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = LockOperand(HandleParameterRegister(expr.internalFunction.parameters[0], operand));
 
@@ -116,11 +111,6 @@ internal class InlinedAssembler : Assembler
 
         Instruction.Value operand1 = expr.left.Accept(this);
         Instruction.Value operand2 = expr.right.Accept(this);
-
-        if (InstructionUtils.ConditionalJump.ContainsKey(expr.op.type))
-        {
-            lastJump = expr.op.type;
-        }
 
         expr.internalFunction.parameters[0].stack.stackRegister = true;
         ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = LockOperand(HandleParameterRegister(expr.internalFunction.parameters[0], operand1));
@@ -361,10 +351,10 @@ internal class InlinedAssembler : Assembler
     
     private Instruction.Value HandleParameterRegister(Expr.Parameter parameter, Instruction.Value arg)
     {
-        return IsRefParameter(parameter, arg) ? arg : MovToRegister(arg, InstructionUtils.ToRegisterSize(parameter.stack.size));
+        return IsRefParameter(parameter) ? arg : MovToRegister(arg, InstructionUtils.ToRegisterSize(parameter.stack.size));
     }
-    private bool IsRefParameter(Expr.Parameter parameter, Instruction.Value val)
+    private bool IsRefParameter(Expr.Parameter parameter)
     {
-        return parameter.modifiers["ref"] || (parameter.modifiers["inlineRef"] && !val.IsPointer());
+        return parameter.modifiers["ref"] || parameter.modifiers["inlineRef"];
     }
 }
