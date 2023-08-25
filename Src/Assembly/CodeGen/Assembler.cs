@@ -14,8 +14,6 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
     public List<Instruction> data = new();
     List<Instruction> instructions = new();
 
-    bool leaf = true;
-
     private protected int conditionalCount;
     private protected string ConditionalLabel
     {
@@ -155,7 +153,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
         EmitCall(new Instruction.Unary("CALL", new Instruction.ProcedureRef(ToMangledName(expr.internalFunction))));
 
-        if (expr.arguments.Count > InstructionUtils.paramRegister.Length && leaf)
+        if (expr.arguments.Count > InstructionUtils.paramRegister.Length && alloc.fncPushPreserved.leaf)
         {
             Emit(new Instruction.Binary("ADD", new Instruction.Register(Instruction.Register.RegisterName.RSP, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.Literals[0], ((expr.arguments.Count - InstructionUtils.paramRegister.Length) * 8).ToString())));
         }
@@ -212,12 +210,9 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             return null;
         }
 
-        leaf = true;
-
         Emit(new Instruction.Procedure(ToMangledName(expr)));
 
-        alloc.fncPushPreserved = new bool[5];
-        int fncStartIdx = instructions.Count;
+        Emit(alloc.fncPushPreserved = new(expr.size));
 
         int count = 0;
 
@@ -250,37 +245,6 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         {
             blockExpr.Accept(this);
             alloc.FreeAll();
-        }
-        
-        bool leafFunc = (leaf || expr.size == 0) && expr.size <= 128;
-
-        if (!leafFunc)
-        {
-            EmitAt(new Instruction.Unary("PUSH", Instruction.Register.RegisterName.RBP), fncStartIdx++);
-            EmitAt(new Instruction.Binary("MOV", Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterName.RSP), fncStartIdx++);
-
-            if (expr.size > 128)
-            {
-                EmitAt(new Instruction.StackAlloc("SUB", new Instruction.Register(Instruction.Register.RegisterName.RSP, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.Literals[0], (expr.size - 128).ToString())), fncStartIdx);
-            }
-            else
-            {
-                EmitAt(new Instruction.StackAlloc("SUB", new Instruction.Register(Instruction.Register.RegisterName.RSP, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.Literals[0], expr.size.ToString())), fncStartIdx++);
-            }
-        }
-        else
-        {
-            EmitAt(new Instruction.Unary("PUSH", Instruction.Register.RegisterName.RBP), fncStartIdx++);
-            EmitAt(new Instruction.Binary("MOV", Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterName.RSP), fncStartIdx++);
-        }
-        leaf = leafFunc;
-
-        for (int i = 0; i < alloc.fncPushPreserved.Length; i++)
-        {
-            if (alloc.fncPushPreserved[i] == true)
-            {
-                EmitAt(new Instruction.Unary("PUSH", InstructionUtils.storageRegisters[i+1]), fncStartIdx);
-            }
         }
 
         if (Analyzer.Primitives.IsVoidType(expr._returnType.type) || expr.modifiers["unsafe"])
@@ -422,7 +386,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             string cmpType = HandleConditionalCmpType(condition);
 
             if (condition.IsLiteral())
-        {
+            {
                 if (((Instruction.Literal)condition).value == "1")
                 {
                     expr.conditionals[i].block.Accept(this);
@@ -636,40 +600,33 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
     private void DoFooter()
     {
-        for (int i = 0; i < alloc.fncPushPreserved.Length; i++)
-        {
-            if (alloc.fncPushPreserved[i] == true)
-            {
-                Emit(new Instruction.Unary("POP", InstructionUtils.storageRegisters[i+1]));
-            }
-        }
-
-        if (leaf)
-        {
-            Emit(new Instruction.Unary("POP", Instruction.Register.RegisterName.RBP));
-            Emit(new Instruction.Zero("RET"));
-        }
-        else
-        {
-            Emit(new Instruction.Zero("LEAVE"));
-            Emit(new Instruction.Zero("RET"));
-        }
+        Emit(alloc.fncPushPreserved);
     }
 
     internal void EmitCall(Instruction instruction)
     {
-        leaf = false;
+        alloc.fncPushPreserved.leaf = false;
         Emit(instruction);
+    }
+
+    internal void Emit(Instruction instruction)
+    {
+        instructions.Add(instruction);
+    }
+
+    internal void EmitData(Instruction.Data instruction)
+    {
+        data.Add(instruction);
     }
 
     internal string HandleConditionalCmpType(Instruction.Value conditional)
     {
         if (conditional.IsRegister() && SafeGetCmpTypeRaw((Instruction.Register)conditional, out var res))
-    {
+        {
             return res;
-    }
+        }
         else if (!conditional.IsLiteral())
-    {
+        {
             Emit(new Instruction.Binary("CMP", conditional, new Instruction.Literal(Token.TokenType.BOOLEAN, "1")));
         }
 
@@ -681,7 +638,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         if (instructions[^1] is Instruction.Unary instruction)
         {
             if (instruction.instruction[..3] == "SET" && instruction.operand == register)
-    {
+            {
                 instructions.RemoveAt(instructions.Count - 1);
                 res = instruction.instruction;
                 return true;

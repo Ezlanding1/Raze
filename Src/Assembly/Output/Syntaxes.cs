@@ -42,17 +42,16 @@ partial class Syntaxes
 
             public override void Run(Instruction instruction)
             {
-                Output.AppendLine(instruction.Accept(this));
+                var res = instruction.Accept(this);
+
+                if (!string.IsNullOrEmpty(res))
+                {
+                    Output.AppendLine(res);
+                }
             }
 
             public string VisitBinary(Instruction.Binary instruction)
             {
-                if (instruction is Instruction.StackAlloc)
-                    if (instruction.operand2 is Instruction.Literal)
-                        return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, {AlignTo16((Instruction.Literal)instruction.operand2)}";
-                    else
-                        //
-                        throw new Exception();
                 if (instruction.operand2 is Instruction.Pointer)
                     return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, {PointerToString((Instruction.Pointer)instruction.operand2)}";
 

@@ -298,24 +298,6 @@ internal abstract class Instruction
         }
     }
 
-    internal class StackAlloc : Binary
-    {
-        public StackAlloc(string instruction, Instruction operand1, Instruction operand2)
-            : base (instruction, operand1, operand2)
-        {
-        }
-
-        public StackAlloc(string instruction, Instruction.Register.RegisterName operand1, Instruction.Register.RegisterName operand2)
-            : base(instruction, operand1, operand2)
-        {
-        }
-
-        public override string Accept(IVisitor visitor)
-        {
-            return visitor.VisitBinary(this);
-        }
-    }
-
     internal class Unary : Instruction
     {
         public Instruction operand;
@@ -363,6 +345,16 @@ internal abstract class Instruction
         {
             return visitor.VisitComment(this);
         }
+    }
+
+    internal abstract class CustomInstruction : Instruction
+    {
+        public override string Accept(IVisitor visitor)
+        {
+            return GetInstruction(visitor);
+        }
+
+        public abstract string GetInstruction(IVisitor visitor);
     }
 }
 

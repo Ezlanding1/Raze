@@ -25,7 +25,7 @@ internal class RegisterAlloc
 
     public Instruction.Register?[] paramRegisters = new Instruction.Register[6];
 
-    public bool[] fncPushPreserved = new bool[5];
+    public CustomInstructions.FunctionPushPreserved fncPushPreserved;
 
     public Instruction.Register GetRegister(int idx, Instruction.Register.RegisterSize size)
     {
@@ -46,7 +46,7 @@ internal class RegisterAlloc
     {
         if (RegisterIdx != 0)
         {
-            fncPushPreserved[RegisterIdx - 1] = true;
+            fncPushPreserved.IncludeRegister(RegisterIdx);
         }
         return GetRegister(RegisterIdx, size);
     }
@@ -83,7 +83,7 @@ internal class RegisterAlloc
         {
             registers[newIdx] = registers[i];
             registers[newIdx].name = InstructionUtils.storageRegisters[newIdx];
-            fncPushPreserved[newIdx - 1] = true;
+            fncPushPreserved.IncludeRegister(newIdx);
             registerStates[newIdx].SetState(RegisterState.RegisterStates.Used);
             registers[i] = null;
         }
