@@ -12,7 +12,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 {
     List<Expr> expressions;
     public List<Instruction> data = new();
-    List<Instruction> instructions = new();
+    private protected List<Instruction> instructions = new();
 
     private protected int conditionalCount;
     private protected string ConditionalLabel
@@ -96,7 +96,12 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
                 }
                 else
                 {
-                    Emit(new Instruction.Binary("MOV", alloc.AllocParam(Convert.ToInt16(instance) + i, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[i].stack.size)), arg));
+                    var paramReg = alloc.AllocParam(Convert.ToInt16(instance) + i, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[i].stack.size));
+
+                    if (!(arg.IsRegister() && HandleSeteOptimization((Instruction.Register)arg, paramReg)))
+                    {
+                        Emit(new Instruction.Binary("MOV", paramReg, arg));
+                    }
                 }
                 localParams[Convert.ToInt16(instance) + i] = alloc.paramRegisters[Convert.ToInt16(instance) + i];
             }
@@ -186,6 +191,22 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             Emit(new Instruction.Binary(_ref? "LEA" : "MOV", reg, operand));
             _ref = false;
             operand = reg;
+
+        }
+        else if (operand.IsRegister() && SafeGetCmpTypeRaw((Instruction.Register)operand, out var instruction))
+        {
+            alloc.Free((Instruction.Value)instruction.operand);
+
+            if (expr.classScoped)
+            {
+                Emit(new Instruction.Binary(_ref ? "LEA" : "MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(Instruction.Register.RegisterName.RBP, 8, 8)));
+                instruction.operand = new Instruction.Pointer(alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits), expr.stack.stackOffset, expr.stack._ref ? 8 : expr.stack.size);
+            }
+            else
+            {
+                instruction.operand = new Instruction.Pointer(expr.stack.stackOffset, expr.stack._ref ? 8 : expr.stack.size);
+            }
+            return null;
         }
 
         if (expr.classScoped)
@@ -524,6 +545,10 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             Emit(new Instruction.Binary("MOV", reg, operand2));
             operand2 = reg;
         }
+        else if (operand2.IsRegister() && HandleSeteOptimization((Instruction.Register)operand2, operand1))
+        {
+            return null;
+        }
 
         Emit(new Instruction.Binary("MOV", operand1, operand2));
 
@@ -623,7 +648,8 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
     {
         if (conditional.IsRegister() && SafeGetCmpTypeRaw((Instruction.Register)conditional, out var res))
         {
-            return res;
+            instructions.RemoveAt(instructions.Count - 1);
+            return res.instruction;
         }
         else if (!conditional.IsLiteral())
         {
@@ -633,14 +659,26 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         return "SETE";
     }
 
-    internal bool SafeGetCmpTypeRaw(Instruction.Register register, out string? res)
+    internal bool HandleSeteOptimization(Instruction.Register register, Instruction.Value newValue)
+    {
+        if (SafeGetCmpTypeRaw(register, out var instruction))
+        {
+            alloc.Free((Instruction.Value)instruction.operand);
+
+            instruction.operand = newValue;
+
+            return true;
+        }
+        return false;
+    }
+
+    internal bool SafeGetCmpTypeRaw(Instruction.Register register, out Instruction.Unary? res)
     {
         if (instructions[^1] is Instruction.Unary instruction)
         {
             if (instruction.instruction[..3] == "SET" && instruction.operand == register)
             {
-                instructions.RemoveAt(instructions.Count - 1);
-                res = instruction.instruction;
+                res = instruction;
                 return true;
             }
         }

@@ -24,6 +24,7 @@ internal class InlinedAssembler : Assembler
     public class InlineStateInlined : InlineStateNoInline
     {
         public int inlineLabelIdx = -1;
+        public bool secondJump = false;
 
         public Instruction.SizedValue? callee;
 
@@ -72,7 +73,17 @@ internal class InlinedAssembler : Assembler
         expr.internalFunction.parameters[0].stack.stackRegister = false;
         alloc.Free(((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register, true);
 
-        if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
+        if (instructions[^1] is Instruction.Unary jmpInstruction && jmpInstruction.instruction == "JMP"
+            && jmpInstruction.operand is Instruction.LocalProcedureRef procRef && procRef.name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
+        {
+            instructions.RemoveAt(instructions.Count - 1);
+
+            if (((InlineStateInlined)inlineState).secondJump)
+            {
+                Emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
+            }
+        }
+        else if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
         {
             Emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
         }
@@ -137,7 +148,17 @@ internal class InlinedAssembler : Assembler
 
         UnlockOperand(ret);
 
-        if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
+        if (instructions[^1] is Instruction.Unary jmpInstruction && jmpInstruction.instruction == "JMP"
+            && jmpInstruction.operand is Instruction.LocalProcedureRef procRef && procRef.name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
+        {
+            instructions.RemoveAt(instructions.Count - 1);
+
+            if (((InlineStateInlined)inlineState).secondJump)
+            {
+                Emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
+            }
+        }
+        else if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
         {
             Emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
         }
@@ -221,7 +242,17 @@ internal class InlinedAssembler : Assembler
 
         UnlockOperand(ret);
 
-        if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
+        if (instructions[^1] is Instruction.Unary jmpInstruction && jmpInstruction.instruction == "JMP"
+            && jmpInstruction.operand is Instruction.LocalProcedureRef procRef && procRef.name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
+        {
+            instructions.RemoveAt(instructions.Count - 1);
+
+            if (((InlineStateInlined)inlineState).secondJump)
+            {
+                Emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
+            }
+        }
+        else if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
         {
             Emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
         }
@@ -282,7 +313,12 @@ internal class InlinedAssembler : Assembler
                 {
                     var op = (Instruction.Register)operand;
                     if (op.name != ((Instruction.Register)((InlineStateInlined)inlineState).callee).name)
-                        Emit(new Instruction.Binary("MOV", new Instruction.Register(((Instruction.Register)((InlineStateInlined)inlineState).callee).name, op.size), operand));
+                    {
+                        if (!(HandleSeteOptimization((Instruction.Register)operand, ((InlineStateInlined)inlineState).callee)))
+                        {
+                            Emit(new Instruction.Binary("MOV", new Instruction.Register(((Instruction.Register)((InlineStateInlined)inlineState).callee).name, op.size), operand));
+                        }
+                    }
                 }
                 else if (operand.IsPointer())
                 {
@@ -306,6 +342,7 @@ internal class InlinedAssembler : Assembler
         }
         else
         {
+            ((InlineStateInlined)inlineState).secondJump = true;
             Emit(new Instruction.Unary("JMP", new Instruction.LocalProcedureRef(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))));
         }
 
