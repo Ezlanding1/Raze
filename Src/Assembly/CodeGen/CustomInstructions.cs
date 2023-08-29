@@ -17,12 +17,17 @@ internal abstract class CustomInstructions
 
         public StackAlloc(int allocSize)
         {
-            literal = new(Token.TokenType.INTEGER, allocSize.ToString());
+            literal = new(Token.TokenType.INTEGER, AlignTo16(allocSize).ToString());
         }
 
         public override string GetInstruction(IVisitor visitor)
         {
             return new Binary("SUB", new Register(Register.RegisterName.RSP, Register.RegisterSize._64Bits), literal).Accept(visitor);
+        }
+
+        private string AlignTo16(int i)
+        {
+            return (((int)Math.Ceiling(i / 16f)) * 16).ToString();
         }
     }
 
