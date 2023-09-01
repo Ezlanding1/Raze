@@ -289,6 +289,117 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         return null;
     }
 
+    public Instruction.Value? VisitLogicalExpr(Expr.Logical expr)
+    {
+        var operand1 = expr.left.Accept(this);
+
+        if (operand1.IsLiteral())
+        {
+            if ((expr.op.type == Token.TokenType.AND) ^ (((Instruction.Literal)operand1).value == "1"))
+            {
+                return operand1;
+            }
+            else
+            {
+                return expr.right.Accept(this);
+            }
+        }
+        else if (operand1.IsPointer())
+        {
+            Emit(new Instruction.Binary("CMP", operand1, new Instruction.Literal(Token.TokenType.INTEGER, "0")));
+
+            Emit(new Instruction.Unary((expr.op.type == Token.TokenType.AND) ? "JE" : "JNE", new Instruction.LocalProcedureRef(ConditionalLabel)));
+        }
+        else
+        {
+            if (SafeGetCmpTypeRaw((Instruction.Register)operand1, out Instruction.Unary instruction))
+            {
+                alloc.Free((Instruction.Value)instruction.operand);
+                instructions.RemoveAt(instructions.Count - 1);
+
+                Emit(new Instruction.Unary(
+                    (expr.op.type == Token.TokenType.AND) ? 
+                        InstructionUtils.ConditionalJumpReversed[instruction.instruction] : 
+                        InstructionUtils.ConditionalJump[instruction.instruction], 
+                    new Instruction.LocalProcedureRef(ConditionalLabel)));
+            }
+            else
+            {
+                Emit(new Instruction.Binary("TEST", operand1, operand1));
+
+                Emit(new Instruction.Unary((expr.op.type == Token.TokenType.AND) ? "JE" : "JNE", new Instruction.LocalProcedureRef(ConditionalLabel)));
+            }
+        }
+
+        alloc.Free(operand1);
+
+        var operand2 = expr.right.Accept(this);
+
+        if (operand2.IsLiteral())
+        {
+            instructions.RemoveRange(instructions.Count-2, 2);
+
+            if ((expr.op.type == Token.TokenType.AND) ^ (((Instruction.Literal)operand2).value == "1"))
+            {
+                return operand2;
+            }
+            else
+            {
+                return operand1;
+            }
+        }
+        else
+        {
+            string cLabel = CreateConditionalLabel((expr.op.type == Token.TokenType.AND) ? conditionalCount : conditionalCount + 1);
+
+
+            if (operand1.IsPointer())
+            {
+                Emit(new Instruction.Binary("CMP", operand1, new Instruction.Literal(Token.TokenType.INTEGER, "0")));
+
+                Emit(new Instruction.Unary("JE", new Instruction.LocalProcedureRef(cLabel)));
+            }
+            else if (SafeGetCmpTypeRaw((Instruction.Register)operand2, out Instruction.Unary instruction))
+            {
+                alloc.Free((Instruction.Value)instruction.operand);
+                instructions.RemoveAt(instructions.Count - 1);
+
+                Emit(new Instruction.Unary(InstructionUtils.ConditionalJumpReversed[instruction.instruction], new Instruction.LocalProcedureRef(cLabel)));
+            }
+            else
+            {
+                Emit(new Instruction.Binary("TEST", operand2, operand2));
+
+                Emit(new Instruction.Unary("JE", new Instruction.LocalProcedureRef(cLabel)));
+            }
+        }
+
+        alloc.Free(operand2);
+
+        if (expr.op.type == Token.TokenType.OR)
+        {
+            Emit(new Instruction.LocalProcedure(ConditionalLabel));
+
+            conditionalCount++;
+        }
+
+        conditionalCount++;
+
+        Emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._8Bits), new Instruction.Literal(Token.TokenType.INTEGER, "1")));
+       
+        Emit(new Instruction.Unary("JMP", new Instruction.LocalProcedureRef(ConditionalLabel)));
+
+        Emit(new Instruction.LocalProcedure(CreateConditionalLabel(conditionalCount-1)));
+
+        Emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._8Bits), new Instruction.Literal(Token.TokenType.INTEGER, "0")));
+
+        Emit(new Instruction.LocalProcedure(ConditionalLabel));
+        conditionalCount++;
+        
+
+        return alloc.NextRegister(Instruction.Register.RegisterSize._8Bits);
+    }
+
     public Instruction.Value? VisitGroupingExpr(Expr.Grouping expr)
     {
         return expr.expression.Accept(this);

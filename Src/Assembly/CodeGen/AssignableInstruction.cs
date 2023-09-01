@@ -43,6 +43,9 @@ internal abstract partial class ExprUtils
                     case "MOV":
                     case "ADD":
                     case "SUB":
+                    case "AND":
+                    case "OR":
+                    case "XOR":
                         AssemblyOps.Binary.DefaultBinOp(this, assemblyOps);
                         return;
                     case "IMUL":

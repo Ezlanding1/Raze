@@ -114,6 +114,14 @@ internal class ASTPrinter : Expr.IVisitor<object?>
         return this.VisitTypeReferenceExpr(expr);
     }
 
+    public object? VisitLogicalExpr(Expr.Logical expr)
+    {
+        PrintAST(expr.left);
+        PrintAST(expr.op);
+        PrintAST(expr.right);
+        return null;
+    }
+
     public object? VisitGroupingExpr(Expr.Grouping expr)
     {
         expr.expression.Accept(this);

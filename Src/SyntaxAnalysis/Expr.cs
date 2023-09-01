@@ -32,6 +32,7 @@ internal abstract class Expr
         public T VisitCallExpr(Call expr);
         public T VisitTypeReferenceExpr(TypeReference expr);
         public T VisitGetReferenceExpr(GetReference expr);
+        public T VisitLogicalExpr(Logical epxr);
         public T VisitBlockExpr(Block expr);
         public T VisitAssemblyExpr(Assembly expr);
         public T VisitVariableExpr(Variable expr);
@@ -274,6 +275,25 @@ internal abstract class Expr
         public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitGetReferenceExpr(this);
+        }
+    }
+
+    public class Logical : Expr
+    {
+        public Expr left;
+        public Token op;
+        public Expr right;
+
+        public Logical(Expr left, Token op, Expr right)
+        {
+            this.left = left;
+            this.op = op;
+            this.right = right;
+        }
+
+        public override T Accept<T>(IVisitor<T> visitor)
+        {
+            return visitor.VisitLogicalExpr(this);
         }
     }
 

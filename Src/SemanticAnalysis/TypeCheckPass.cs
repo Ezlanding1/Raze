@@ -282,6 +282,21 @@ internal partial class Analyzer
             return expr.type;
         }
 
+        public override Expr.Type VisitLogicalExpr(Expr.Logical expr)
+        {
+            Expr.Type[] argumentTypes =
+            {
+                expr.left.Accept(this),
+                expr.right.Accept(this)
+            };
+
+            MustMatchType(argumentTypes[0], literalTypes[Token.TokenType.BOOLEAN]);
+
+            MustMatchType(argumentTypes[1], literalTypes[Token.TokenType.BOOLEAN]);
+
+            return literalTypes[Token.TokenType.BOOLEAN];
+        }
+
         public override Expr.Type VisitGroupingExpr(Expr.Grouping expr)
         {
             return expr.expression.Accept(this);

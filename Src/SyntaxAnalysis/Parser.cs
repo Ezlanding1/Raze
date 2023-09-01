@@ -250,10 +250,10 @@ internal class Parser
     private Expr Entity()
     {
         if (ReservedValueMatch("asm"))
-            {
-                var instructions = GetAsmInstructions();
-                return new Expr.Assembly(instructions.Item1, instructions.Item2);
-            }
+        {
+            var instructions = GetAsmInstructions();
+            return new Expr.Assembly(instructions.Item1, instructions.Item2);
+        }
         return Conditional();
     }
 
@@ -360,7 +360,7 @@ internal class Parser
         {
             Token op = Previous();
             Expr right = Bitwise();
-            expr = new Expr.Binary(expr, op, right);
+            expr = new Expr.Logical(expr, op, right);
         }
         return expr;
     }
