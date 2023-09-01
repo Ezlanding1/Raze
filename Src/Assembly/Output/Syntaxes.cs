@@ -156,19 +156,6 @@ partial class Syntaxes
                 return $"{instruction.value}";
             }
 
-            private string AlignTo16(Instruction.Literal instruction)
-            {
-                if (int.TryParse(instruction.value, out var value))
-                {
-                    string name = (((int)Math.Ceiling(value / 16f)) * 16).ToString();
-                    return new Instruction.Literal(instruction.type, name).Accept(this);
-                }
-                else
-                {
-                    throw new Errors.ImpossibleError("Size of aligned literal is not numeric");
-                }
-            }
-
             private static Dictionary<(Instruction.Register.RegisterName, Instruction.Register.RegisterSize?), string> RegisterToString = new()
             {
                 { (Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), "RAX" }, // 64-Bits 

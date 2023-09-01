@@ -423,11 +423,6 @@ internal partial class Analyzer
             return expr.internalClass;
         }
 
-        public override Expr.Type VisitDefineExpr(Expr.Define expr)
-        {
-            return _voidType;
-        }
-
         public override Expr.Type VisitIsExpr(Expr.Is expr)
         {
             expr.value = expr.right.Accept(this) == expr.right.type ? "1" : "0";

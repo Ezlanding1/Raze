@@ -280,13 +280,6 @@ internal partial class Analyzer
             return null;
         }
 
-
-        //public override object? visitDefineExpr(Expr.Define expr)
-        //{
-        //    //symbolTable.Add(expr);
-        //    //return null;
-        //}
-
         public override object? VisitAssignExpr(Expr.Assign expr)
         {
             expr.value.Accept(this);

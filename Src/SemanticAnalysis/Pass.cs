@@ -70,6 +70,13 @@ internal partial class Analyzer
 
         public virtual T VisitGetReferenceExpr(Expr.GetReference expr) => default;
 
+        public virtual T VisitLogicalExpr(Expr.Logical expr)
+        {
+            expr.left.Accept(this);
+            expr.right.Accept(this);
+            return default;
+        }
+
         public virtual T VisitGroupingExpr(Expr.Grouping expr)
         {
             expr.expression.Accept(this);
@@ -125,8 +132,6 @@ internal partial class Analyzer
 
             return default;
         }
-
-        public virtual T VisitDefineExpr(Expr.Define expr) => default;
 
         public virtual T VisitIsExpr(Expr.Is expr)
         {

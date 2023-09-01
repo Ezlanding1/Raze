@@ -243,13 +243,6 @@ internal class ASTPrinter : Expr.IVisitor<object?>
         return null;
     }
 
-    public object? VisitDefineExpr(Expr.Define expr)
-    {
-        PrintAST(expr.name);
-        PrintAST(expr.value);
-        return null;
-    }
-
     public object? VisitIsExpr(Expr.Is expr)
     {
         PrintAST(expr.left);

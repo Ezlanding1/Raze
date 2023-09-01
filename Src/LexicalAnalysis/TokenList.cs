@@ -90,7 +90,6 @@ internal class TokenList
         "function",
         "new",
         "asm",
-        "define",
         "is",
         "primitive",
         "this",

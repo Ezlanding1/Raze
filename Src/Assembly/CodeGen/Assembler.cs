@@ -423,7 +423,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
                     continue;
                 }
             }
-            Emit(new Instruction.Unary(InstructionUtils.ConditionalJumpReversed[cmpType], new Instruction.LocalProcedureRef(CreateConditionalLabel(conditionalCount))));
+            Emit(new Instruction.Unary(InstructionUtils.ConditionalJumpReversed[cmpType], new Instruction.LocalProcedureRef(ConditionalLabel)));
 
             expr.conditionals[i].block.Accept(this);
             Emit(tJump);
@@ -611,11 +611,6 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         alloc.FreeRegister(rax);
         expr.call.Accept(this);
         return new Instruction.Register( Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits);
-    }
-
-    public Instruction.Value? VisitDefineExpr(Expr.Define expr)
-    {
-        return null;
     }
 
     public Instruction.Value? VisitIsExpr(Expr.Is expr)

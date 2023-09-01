@@ -73,10 +73,10 @@ internal class RegisterAlloc
 
         int newIdx = RegisterIdx;
 
-        if (registerStates[0].HasState(RegisterState.RegisterStates.Needed))
+        if (registerStates[i].HasState(RegisterState.RegisterStates.Needed))
         {
             registers[i].name = InstructionUtils.storageRegisters[newIdx];
-            assembler.Emit(new Instruction.Binary("MOV", NextRegister(registers[i].size), new Instruction.Register(Instruction.Register.RegisterName.RAX, registers[i].size)));
+            assembler.Emit(new Instruction.Binary("MOV", NextRegister(registers[i].size), new Instruction.Register(InstructionUtils.storageRegisters[i], registers[i].size)));
             registers[i] = null;
         }
         else

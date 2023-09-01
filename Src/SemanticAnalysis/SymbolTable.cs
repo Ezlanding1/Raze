@@ -95,12 +95,6 @@ internal partial class Analyzer
 
         public void RemoveBlock() => locals.RemoveRange(framePointer.Peek(), locals.Count - framePointer.Pop());
 
-        //public void Add(Expr.Define d)
-        //{
-        //    var _ = new Symbol.Define(d);
-        //    current.variables.Add(_.Name.lexeme, _);
-        //}
-
         // 'GetVariable' Methods:
 
         private Expr.StackData? _GetVariable(Token key, out bool isClassScoped, bool ignoreEnclosing)

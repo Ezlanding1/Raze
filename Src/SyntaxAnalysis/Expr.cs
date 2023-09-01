@@ -42,7 +42,6 @@ internal abstract class Expr
         public T VisitPrimitiveExpr(Primitive expr);
         public T VisitKeywordExpr(Keyword expr);
         public T VisitNewExpr(New expr);
-        public T VisitDefineExpr(Define expr);
         public T VisitIsExpr(Is expr);
     }
 
@@ -632,23 +631,6 @@ internal abstract class Expr
         public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitAssignExpr(this);
-        }
-    }
-
-    public class Define : Expr
-    {
-        public Token name;
-        public Literal value;
-
-        public Define(Token name, Literal value)
-        {
-            this.name = name;
-            this.value = value;
-        }
-
-        public override T Accept<T>(IVisitor<T> visitor)
-        {
-            return visitor.VisitDefineExpr(this);
         }
     }
 

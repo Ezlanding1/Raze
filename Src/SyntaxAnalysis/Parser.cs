@@ -249,23 +249,11 @@ internal class Parser
 
     private Expr Entity()
     {
-        if (ReservedValueMatch("asm", "define"))
-        {
-            Token definitionType = Previous();
-            if (definitionType.lexeme == "asm")
+        if (ReservedValueMatch("asm"))
             {
                 var instructions = GetAsmInstructions();
                 return new Expr.Assembly(instructions.Item1, instructions.Item2);
             }
-            else if (definitionType.lexeme == "define")
-            {
-                Expect(Token.TokenType.IDENTIFIER, "name of 'Define'");
-                var name = Previous();
-
-                return new Expr.Define(name, Literal()
-                    ?? throw new Errors.ParseError("Invalid Define", "The value of 'Define' should be a literal"));
-            }
-        }
         return Conditional();
     }
 
