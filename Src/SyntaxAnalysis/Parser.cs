@@ -81,7 +81,7 @@ internal class Parser
 
                     if (TypeMatch(Token.TokenType.DOT))
                     {
-                        _return = new Expr.TypeReference(GetTypeGetter());
+                        _return = new Expr.TypeReference(GetTypeReference());
                     }
                 }
                 else
@@ -103,7 +103,7 @@ internal class Parser
                     paramModifers["inlineRef"] = true;
 
                     Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter type");
-                    var typeName = GetTypeGetter();
+                    var typeName = GetTypeReference();
 
                     Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter");
                     Token variable = Previous();
@@ -227,7 +227,7 @@ internal class Parser
                     }
                     else
                     {
-                        throw new Errors.ParseError("Invalid Class Definition", $"A class may only contain declarations and definitions. Got '{Previous().lexeme}'");
+                        throw new Errors.ParseError("Invalid Class Definition", $"A primitive class may only contain definitions. Got '{Previous().lexeme}'");
                     }
 
                     if (IsAtEnd())
@@ -465,7 +465,7 @@ internal class Parser
         while (ReservedValueMatch("is"))
         {
             Expect(Token.TokenType.IDENTIFIER, "type after 'is' operator");
-            expr = new Expr.Is(expr, new Expr.TypeReference(GetTypeGetter()));
+            expr = new Expr.Is(expr, new Expr.TypeReference(GetTypeReference()));
         }
         return expr;
     }
@@ -490,7 +490,7 @@ internal class Parser
 
             if (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this"))
             {
-                var variable = GetGetter();
+                var variable = GetReference();
 
                 if (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this"))
                 {
@@ -498,24 +498,24 @@ internal class Parser
                 }
                 else if (TypeMatch(Token.TokenType.EQUALS))
                 {
-                    if (variable.Item2)
+                    if (variable.IsMethod())
                     {
                         throw new Errors.ParseError("Invalid Assign Statement", "Cannot assign to a non-variable");
                     }
-                    expr = new Expr.Assign((Expr.Variable)variable.Item1, NoSemicolon());
+                    expr = new Expr.Assign(variable, NoSemicolon());
                 }
                 else if (TypeMatch(new[] { Token.TokenType.PLUS, Token.TokenType.MINUS, Token.TokenType.MULTIPLY, Token.TokenType.DIVIDE, Token.TokenType.MODULO }, new[] { Token.TokenType.EQUALS }))
                 {
-                    if (variable.Item2)
+                    if (variable.IsMethod())
                     {
                         throw new Errors.ParseError("Invalid Assign Statement", "Cannot assign to a non-variable");
                     }
                     var op = tokens[index - 2];
-                    expr = new Expr.Assign((Expr.Variable)variable.Item1, new Expr.Binary((Expr.Variable)variable.Item1, op, NoSemicolon()));
+                    expr = new Expr.Assign(variable, new Expr.Binary(variable, op, NoSemicolon()));
                 }
                 else
                 {
-                    expr = variable.Item1;
+                    expr = variable;
                 }
 
                 return expr;
@@ -550,7 +550,7 @@ internal class Parser
         {
             Expr.Declare declare;
 
-            var variable = GetGetter();
+            var variable = GetReference();
 
             if (TypeMatch(Token.TokenType.IDENTIFIER))
             {
@@ -566,11 +566,11 @@ internal class Parser
         return null;
     }
 
-    private Expr.Declare Declare((Expr.GetReference, bool) variable)
+    private Expr.Declare Declare(Expr.GetReference variable)
     {
-        if (variable.Item2)
+        if (variable.HasMethod())
         {
-            throw new Errors.ParseError("Invalid Assign Statement", "Cannot assign to a non-variable");
+            throw new Errors.ParseError("Invalid Declare Statement", "Cannot declare to a non-type value");
         }
 
         var name = Previous();
@@ -580,68 +580,55 @@ internal class Parser
         }
         Expect(Token.TokenType.EQUALS, "'=' when declaring variable");
 
-        return new Expr.Declare(variable.Item1.typeName, name, ReservedValueMatch("ref"), NoSemicolon());
+        return new Expr.Declare(variable.ToTypeReference().typeName, name, ReservedValueMatch("ref"), NoSemicolon());
     }
 
-    private (Expr.GetReference, bool) GetGetter()
+    private Expr.GetReference GetReference()
     {
-        Queue<Token> typeName = new();
-        typeName.Enqueue(Previous());
+        List<Expr.Getter> getters = new();
+        Expr.TypeReference callee = new(GetTypeReference());
 
-        if (Peek().type != Token.TokenType.DOT && TypeMatch(Token.TokenType.LPAREN))
+        if (TypeMatch(Token.TokenType.LPAREN))
         {
-            return (new Expr.Call(typeName.Dequeue(), null, null, GetArgs()), true);
+            getters.Add(new Expr.Call(callee.typeName.StackPop(), GetArgs(), (callee.typeName.Count == 0) ? new(null) : callee, false));
+        }
+        else
+        {
+            return callee.ToGetReference();
         }
 
         while (TypeMatch(Token.TokenType.DOT))
         {
             Expect(Token.TokenType.IDENTIFIER, "variable name after '.'");
-            var variable = Previous();
 
             if (TypeMatch(Token.TokenType.LPAREN))
             {
-                var args = GetArgs();
-                return (new Expr.Call(variable, typeName, (Peek().type != Token.TokenType.DOT) ? null : GetGetter().Item1, args), true);
+                getters.Add(new Expr.Call(Previous(2), GetArgs(), new(null), true));
             }
             else
             {
-                typeName.Enqueue(variable);
+                getters.Add(new Expr.Get(Previous()));
             }
         }
 
-        return (new Expr.Variable(typeName), false);
+        return new Expr.GetReference(getters, callee.typeName != null || (callee.typeName == null && getters.Count == 0));
     }
 
     private Expr.Call GetNewGetter()
     {
-        Queue<Token> typeName = new();
-        typeName.Enqueue(Previous());
+        Expr.TypeReference callee = new(GetTypeReference());
 
-        if (Peek().type != Token.TokenType.DOT && TypeMatch(Token.TokenType.LPAREN))
+        if (TypeMatch(Token.TokenType.LPAREN))
         {
-            return new Expr.Call(typeName.Dequeue(), null, null, GetArgs());
-        }
-
-        while (TypeMatch(Token.TokenType.DOT))
-        {
-            Expect(Token.TokenType.IDENTIFIER, "variable name after '.'");
-
-            if (TypeMatch(Token.TokenType.LPAREN))
-            {
-                return new Expr.Call(Previous(2), typeName, null, GetArgs());
-            }
-            else
-            {
-                typeName.Enqueue(Previous());
-            }
+            return new Expr.Call(callee.typeName.StackPop(), GetArgs(), (callee.typeName.Count == 0) ? new(null) : callee, false);
         }
 
         throw Expected(Token.TokenType.LPAREN.ToString(), "'(' after type in new expression");
     }
 
-    private Queue<Token> GetTypeGetter()
+    private ExprUtils.QueueList<Token> GetTypeReference()
     {
-        Queue<Token> typeName = new();
+        ExprUtils.QueueList<Token> typeName = new();
         typeName.Enqueue(Previous());
 
         while (TypeMatch(Token.TokenType.DOT))
@@ -706,10 +693,10 @@ internal class Parser
         return bodyExprs;
     }
     
-    private (List<ExprUtils.AssignableInstruction>, List<Expr.Variable>) GetAsmInstructions()
+    private (List<ExprUtils.AssignableInstruction>, List<Expr.GetReference>) GetAsmInstructions()
     {
         List<ExprUtils.AssignableInstruction> instructions = new();
-        List<Expr.Variable> variables = new();
+        List<Expr.GetReference> variables = new();
 
         Expect(Token.TokenType.LBRACE, "'{' before Assembly Block body");
 
@@ -736,10 +723,8 @@ internal class Parser
                     if (Previous().type == Token.TokenType.DOLLAR)
                     {
                         Expect(Token.TokenType.IDENTIFIER, "after escape '$'");
-                        Queue<Token> queue = new();
-                        queue.Enqueue(Previous());
                         value = null;
-                        variables.Add(new Expr.Variable(queue));
+                        variables.Add(new Expr.GetReference(new(){ new Expr.Get(Previous()) }));
                     }
                     else
                     {
@@ -777,9 +762,7 @@ internal class Parser
                         else if (TypeMatch(Token.TokenType.DOLLAR))
                         {
                             Expect(Token.TokenType.IDENTIFIER, "after escape '$'");
-                            Queue<Token> queue = new();
-                            queue.Enqueue(Previous());
-                            variables.Add(new Expr.Variable(queue));
+                            variables.Add(new Expr.GetReference(new() { new Expr.Get(Previous()) }));
                             instructions.Add(new ExprUtils.AssignableInstruction.Binary(new Instruction.Binary(op.lexeme, value, null), (value == null)? (ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst | ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond) : ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond, localReturn));
                         }
                         else

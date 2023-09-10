@@ -10,7 +10,7 @@ internal partial class AssemblyOps
 {
     internal class Unary
     {
-        public static Instruction.Register.RegisterSize? GetOpSize(Instruction.Value operand, ExprUtils.AssignableInstruction.Unary.AssignType assignType, List<Expr.Variable> vars, int count)
+        public static Instruction.Register.RegisterSize? GetOpSize(Instruction.Value operand, ExprUtils.AssignableInstruction.Unary.AssignType assignType, List<Expr.GetReference> vars, int count)
         {
             if (operand.IsRegister() || operand.IsPointer())
             {
@@ -18,12 +18,12 @@ internal partial class AssemblyOps
             }
             if (assignType == ExprUtils.AssignableInstruction.Unary.AssignType.AssignFirst)
             {
-                return InstructionUtils.ToRegisterSize(vars[count - 1].Stack.size);
+                return InstructionUtils.ToRegisterSize(((Expr.Get)vars[count - 1].getters[^1]).data.size);
             }
             return null;
         }
 
-        public static void ReturnOp(ref Instruction.Value operand, Assembler assembler, ExprUtils.AssignableInstruction.Unary.AssignType assignType, List<Expr.Variable> vars, int count)
+        public static void ReturnOp(ref Instruction.Value operand, Assembler assembler, ExprUtils.AssignableInstruction.Unary.AssignType assignType, List<Expr.GetReference> vars, int count)
         {
             operand = assembler.NonLiteral(operand, GetOpSize(operand, assignType, vars, count) ?? throw new Errors.BackendError("Inavalid Assembly Block", "No size could be determined for the first operand"));
             if (((InlinedAssembler)assembler).inlineState.inline)

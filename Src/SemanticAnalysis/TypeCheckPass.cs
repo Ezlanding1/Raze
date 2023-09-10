@@ -106,11 +106,11 @@ internal partial class Analyzer
                 context.size = Math.Max(context.size, expr.encSize + expr.internalFunction.size);
             }
 
-            if (expr.internalFunction.parameters[0].modifiers["ref"] && expr.left is not Expr.Variable)
+            if (expr.internalFunction.parameters[0].modifiers["ref"] && CannotBeRef(expr.left))
             {
                 throw new Errors.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
             }
-            if (expr.internalFunction.parameters[1].modifiers["ref"] && expr.right is not Expr.Variable)
+            if (expr.internalFunction.parameters[1].modifiers["ref"] && CannotBeRef(expr.right))
             {
                 throw new Errors.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
             }
@@ -144,9 +144,9 @@ internal partial class Analyzer
 
             var context = symbolTable.Current;
 
-            symbolTable.SetContext(expr.funcEnclosing);
-            if (expr.callee != null)
+            if (context != expr.funcEnclosing)
             {
+                symbolTable.SetContext(expr.funcEnclosing);
                 symbolTable.SetContext(symbolTable.GetFunction(expr.name.lexeme, argumentTypes));
             }
             else
@@ -182,7 +182,7 @@ internal partial class Analyzer
 
             for (int i = 0; i < expr.internalFunction.Arity; i++)
             {
-                if (expr.internalFunction.parameters[i].modifiers["ref"] && expr.arguments[i] is not Expr.Variable)
+                if (expr.internalFunction.parameters[i].modifiers["ref"] && CannotBeRef(expr.arguments[i]))
                 {
                     throw new Errors.AnalyzerError("Invalid Function Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
                 }
@@ -279,7 +279,25 @@ internal partial class Analyzer
 
         public override Expr.Type VisitGetReferenceExpr(Expr.GetReference expr)
         {
-            return expr.type;
+            for (int i = 0; i < expr.getters.Count-1; i++)
+            {
+                expr.getters[i].Accept(this);
+            }
+
+            var res = expr.getters[^1].Accept(this);
+
+            if (expr.ambiguousCall)
+            {
+                ((Expr.Call)expr.getters[0]).instanceCall = !((Expr.Call)expr.getters[0]).internalFunction.modifiers["static"];
+                expr.ambiguousCall = false;
+            }
+
+            return res;
+        }
+
+        public override Expr.Type VisitGetExpr(Expr.Get expr)
+        {
+            return expr.data.type;
         }
 
         public override Expr.Type VisitLogicalExpr(Expr.Logical expr)
@@ -387,17 +405,12 @@ internal partial class Analyzer
                 callReturn = true;
             }
 
-            if (expr.internalFunction.parameters[0].modifiers["ref"] && expr.operand is not Expr.Variable)
+            if (expr.internalFunction.parameters[0].modifiers["ref"] && CannotBeRef(expr.operand))
             {
                 throw new Errors.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
             }
 
             return expr.internalFunction._returnType.type;
-        }
-
-        public override Expr.Type VisitVariableExpr(Expr.Variable expr)
-        {
-            return expr.Stack.type;
         }
 
         public override Expr.Type VisitReturnExpr(Expr.Return expr)
@@ -410,7 +423,7 @@ internal partial class Analyzer
         public override Expr.Type VisitAssignExpr(Expr.Assign expr)
         {
             Expr.Type assignType = expr.value.Accept(this);
-            MustMatchType(expr.member.Stack.type, assignType);
+            MustMatchType(((Expr.Get)expr.member.getters[^1]).data.type, assignType);
 
             return _voidType;
         }
@@ -466,6 +479,8 @@ internal partial class Analyzer
                 throw new Errors.AnalyzerError("Type Mismatch", string.Format(error, type2, type1));
             }
         }
+
+        private bool CannotBeRef(Expr expr) => expr is not Expr.GetReference || (expr is Expr.GetReference getRef && getRef.IsMethod());
 
         private void TypeCheckConditional(Expr? condition, Expr.Block block)
         {

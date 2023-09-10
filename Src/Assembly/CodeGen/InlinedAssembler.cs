@@ -190,25 +190,13 @@ internal class InlinedAssembler : Assembler
             alloc.Lock((Instruction.Register)(instanceArg = alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits)));
             if (!expr.constructor)
             {
-                if (expr.callee != null)
-                {
-                    for (int i = expr.offsets.Length - 1; i >= 1; i--)
-                    {
-                        Emit(new Instruction.Binary("MOV", instanceArg, new Instruction.Pointer(((i == expr.offsets.Length - 1) ? new(Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._64Bits) : alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits)), expr.offsets[i].stackOffset, 8)));
-                    }
-                    Emit(new Instruction.Binary("MOV", instanceArg, new Instruction.Pointer((0 == expr.offsets.Length - 1) ? new(Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._64Bits) : alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits), expr.offsets[0].stackOffset, 8)));
-                }
-                else
-                {
-                    Emit(new Instruction.Binary("MOV", instanceArg, new Instruction.Pointer(8, 8)));
-                }
+                ((Instruction.Binary)instructions[^1]).operand1 = instanceArg;
             }
             else
             {
                 Emit(new Instruction.Binary("MOV", instanceArg, new Instruction.Register(Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits)));
             }
         }
-
 
         for (int i = 0; i < expr.arguments.Count; i++)
         {

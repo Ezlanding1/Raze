@@ -58,27 +58,19 @@ internal partial class Analyzer
                 expr.arguments[i].Accept(this);
             }
 
-            using (new SaveContext())
-            {
-                expr.encSize = symbolTable.Current.size;
+            expr.encSize = symbolTable.Current.size;
 
-                if (expr.callee != null)
+            if (expr.callee.typeName != null)
+            {
+                using (new SaveContext())
                 {
-                    expr.instanceCall = symbolTable.TryGetVariable(expr.callee.Peek(), out var topSymbol_I, out _);
-                    if (expr.instanceCall)
-                    {
-                        this.VisitGetReferenceExpr(expr);
-                    }
-                    else
-                    {
-                        this.VisitTypeReferenceExpr(expr);
-                    }
+                    expr.callee.Accept(this);
                     expr.funcEnclosing = symbolTable.Current;
                 }
-                else
-                {
-                    expr.funcEnclosing = symbolTable.Current;
-                }
+            }
+            else
+            {
+                expr.funcEnclosing = symbolTable.Current;
             }
 
             return null;
@@ -218,58 +210,6 @@ internal partial class Analyzer
             return null;
         }
 
-        public override object? VisitVariableExpr(Expr.Variable expr)
-        {
-            var context = symbolTable.Current;
-
-            bool isClassScoped = false;
-
-            while (expr.typeName.Count > 1)
-            {
-                if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Primitive)
-                {
-                    throw new Errors.AnalyzerError("Primitive Field Access", "Primitive classes cannot contain fields");
-                }
-
-                Expr.StackData variable;
-
-                if (expr.offsets.Length == expr.typeName.Count)
-                {
-                    variable = symbolTable.GetVariable(expr.typeName.Dequeue(), out isClassScoped);
-                }
-                else 
-                {
-                    variable = symbolTable.GetVariable(expr.typeName.Dequeue());
-                }
-                        
-
-                expr.offsets[expr.typeName.Count] = variable;
-
-                symbolTable.SetContext(variable.type);
-
-                if (expr.typeName.Count == 0)
-                {
-                    expr.type = variable.type;
-                }
-            }
-            
-            if (symbolTable.TryGetVariable(expr.typeName.Peek(), out var symbol, out bool isClassScopedVar))
-            {
-                expr.typeName.Dequeue();
-
-                expr.Stack = symbol;
-                expr.classScoped = (expr.offsets.Length == 1) ? isClassScopedVar : isClassScoped;
-            }
-            else
-            {
-                throw new Errors.AnalyzerError("Undefined Reference", $"The variable '{expr.typeName.Dequeue().lexeme}' does not exist in the current context");
-            }
-
-            symbolTable.SetContext(context);
-
-            return null;
-        }
-
         public override object VisitIfExpr(Expr.If expr)
         {
             expr.conditionals.ForEach(x => HandleConditional(x));
@@ -322,35 +262,63 @@ internal partial class Analyzer
 
         public override object VisitTypeReferenceExpr(Expr.TypeReference expr)
         {
-            HandleTypeNameReference(expr.typeName);
+            if (expr.typeName.Count != 0)
+            {
+                HandleTypeNameReference(expr.typeName);
+            }
 
             return null;
         }
 
         public override object? VisitGetReferenceExpr(Expr.GetReference expr)
         {
-            while (expr.typeName.Count > 0)
+            if (expr.ambiguousCall)
             {
-                if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Primitive)
+                var call = (Expr.Call)expr.getters[0];
+
+                if (call.callee.typeName != null)
                 {
-                    throw new Errors.AnalyzerError("Primitive Field Access", "Primitive classes cannot contain fields");
-                }
+                    call.instanceCall = !symbolTable.TryGetClassFullScope(call.callee.typeName.Peek(), out _);
 
-                var variable = symbolTable.GetVariable(expr.typeName.Dequeue());
-
-                expr.offsets[expr.typeName.Count] = variable;
-
-                symbolTable.SetContext(variable.type);
-
-                if (expr.typeName.Count == 0)
-                {
-                    expr.type = variable.type;
+                    if (call.instanceCall)
+                    {
+                        expr.getters.InsertRange(0, call.callee.ToGetReference().getters);
+                        call.callee.typeName = null;
+                    }
+                    expr.ambiguousCall = false;
                 }
             }
+
+            var context = new SaveContext();
+
+            var get = expr.getters[0] as Expr.Get;
+            if (get != null)
+            {
+                get.data = symbolTable.GetVariable(get.name, out expr.classScoped);
+                symbolTable.SetContext(get.data.type);
+            }
+
+            for (int i = Convert.ToInt16(get != null); i < expr.getters.Count; i++)
+            {
+                expr.getters[i].Accept(this);
+            }
+            
+            context.Dispose();
             return null;
         }
 
-        private void GetVariableDefinition(Queue<Token> typeName, Expr.StackData stack)
+        public override object? VisitGetExpr(Expr.Get expr)
+        {
+            var variable = symbolTable.GetVariable(expr.name);
+
+            expr.data = variable;
+
+            symbolTable.SetContext(variable.type);
+
+            return null;
+        }
+
+        private void GetVariableDefinition(ExprUtils.QueueList<Token> typeName, Expr.StackData stack)
         {
             using (new SaveContext())
             {
@@ -361,7 +329,7 @@ internal partial class Analyzer
             }
         }
 
-        private void HandleTypeNameReference(Queue<Token> typeName)
+        private void HandleTypeNameReference(ExprUtils.QueueList<Token> typeName)
         {
             symbolTable.SetContext(symbolTable.GetClassFullScope(typeName.Dequeue()));
 

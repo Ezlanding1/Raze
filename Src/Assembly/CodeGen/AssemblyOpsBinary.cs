@@ -9,7 +9,7 @@ namespace Raze;
 internal partial class AssemblyOps
 {
     Assembler assembler;
-    public List<Expr.Variable> vars;
+    public List<Expr.GetReference> vars;
     public int count;
 
     public AssemblyOps(Assembler assembler)
@@ -19,7 +19,7 @@ internal partial class AssemblyOps
 
     internal static class Binary
     {
-        public static Instruction.Register.RegisterSize GetOpSize(Instruction.Value operand, ExprUtils.AssignableInstruction.Binary.AssignType assignType, List<Expr.Variable> vars, int count, bool first)
+        public static Instruction.Register.RegisterSize GetOpSize(Instruction.Value operand, ExprUtils.AssignableInstruction.Binary.AssignType assignType, List<Expr.GetReference> vars, int count, bool first)
         {
             if (operand.IsRegister() || operand.IsPointer())
             {
@@ -33,7 +33,7 @@ internal partial class AssemblyOps
 
             if (cOff != 0)
             {
-                return InstructionUtils.ToRegisterSize(vars[count - cOff].Stack.size);
+                return InstructionUtils.ToRegisterSize(((Expr.Get)vars[count - cOff].getters[^1]).data.size);
             }
 
             throw new Errors.BackendError("Inavalid Assembly Block", $"No size could be determined for the { (first? "first" : "second") } operand");
@@ -53,7 +53,7 @@ internal partial class AssemblyOps
         {
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst))
             {
-                return assemblyOps.assembler.NonLiteral(assemblyOps.vars[assemblyOps.count].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count++].Stack.size));
+                return assemblyOps.assembler.NonLiteral(assemblyOps.vars[assemblyOps.count].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(((Expr.Get)assemblyOps.vars[assemblyOps.count++].getters[^1]).data.size));
             }
             return (Instruction.Value)instruction.instruction.operand1;
         }
@@ -171,7 +171,7 @@ internal partial class AssemblyOps
             assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler);
 
             var operand1 = (Instruction.Value)(instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst) ?
-                    assemblyOps.assembler.MovToRegister(assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count-1].Stack.size)) :
+                    assemblyOps.assembler.MovToRegister(assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(((Expr.Get)assemblyOps.vars[assemblyOps.count - 1].getters[^1]).data.size)) :
                     instruction.instruction.operand1);
 
             var operand2 = HandleOperand1(instruction, assemblyOps);

@@ -9,6 +9,30 @@ namespace Raze;
 
 internal abstract partial class ExprUtils
 {
+    public class QueueList<T> : List<T>
+    {
+        public QueueList() { }
+        public QueueList(List<T> list) : base(list) { }
+
+        public void Enqueue(T entry)
+        {
+            this.Add(entry);
+        }
+        public T Dequeue()
+        {
+            var first = this[0];
+            this.RemoveAt(0);
+            return first;
+        }
+        public T Peek() => this[0];
+
+        public T StackPop()
+        {
+            var last = this[^1];
+            this.RemoveAt(this.Count - 1);
+            return last;
+        }
+    }
     public class Modifiers
     {
         private (string, bool)[] modifiers;

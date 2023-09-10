@@ -30,12 +30,12 @@ internal abstract class Expr
         public T VisitForExpr(For expr);
         public T VisitWhileExpr(While expr);
         public T VisitCallExpr(Call expr);
+        public T VisitGetReferenceExpr(GetReference expr); 
+        public T VisitGetExpr(Get expr); 
         public T VisitTypeReferenceExpr(TypeReference expr);
-        public T VisitGetReferenceExpr(GetReference expr);
         public T VisitLogicalExpr(Logical epxr);
         public T VisitBlockExpr(Block expr);
         public T VisitAssemblyExpr(Assembly expr);
-        public T VisitVariableExpr(Variable expr);
         public T VisitFunctionExpr(Function expr);
         public T VisitClassExpr(Class expr);
         public T VisitReturnExpr(Return expr);
@@ -129,12 +129,12 @@ internal abstract class Expr
     {
         public Expr? value;
 
-        public Queue<Token> typeName;
+        public ExprUtils.QueueList<Token> typeName;
 
         public StackData stack = new();
         public bool classScoped;
 
-        public Declare(Queue<Token> typeName, Token name, bool _ref, Expr value) : base(name)
+        public Declare(ExprUtils.QueueList<Token> typeName, Token name, bool _ref, Expr value) : base(name)
         {
             this.typeName = typeName;
             this.stack._ref = _ref;
@@ -212,28 +212,76 @@ internal abstract class Expr
         }
     }
 
-    public class Call : GetReference
+    public class TypeReference : Expr
+    {
+        public ExprUtils.QueueList<Token> typeName;
+        public Type type;
+
+        private protected TypeReference() { }
+
+        public TypeReference(ExprUtils.QueueList<Token> typeName)
+        {
+            this.typeName = typeName;
+        }
+
+        public override T Accept<T>(IVisitor<T> visitor)
+        {
+            return visitor.VisitTypeReferenceExpr(this);
+        }
+
+        public GetReference ToGetReference() => new GetReference(typeName.ToList().ConvertAll<Getter>(x => new Get(x)));
+    }
+
+    public class GetReference : Expr
+    {
+        public bool classScoped;
+        public List<Getter> getters;
+        public bool ambiguousCall;
+
+        private protected GetReference() { }
+
+        public GetReference(List<Getter> getters, bool ambiguousCall = false)
+        {
+            this.getters = getters;
+            this.ambiguousCall = ambiguousCall;
+        }
+
+        public override T Accept<T>(IVisitor<T> visitor)
+        {
+            return visitor.VisitGetReferenceExpr(this);
+        }
+
+        public bool IsMethod() => getters[^1] is Call;
+        public bool HasMethod() => getters.Any(x => x is Call);
+
+        public TypeReference ToTypeReference() => new TypeReference(new ExprUtils.QueueList<Token>(this.getters.ConvertAll(x => x.name)));
+    }
+
+    public abstract class Getter : Expr
     {
         public Token name;
-        public Queue<Token> callee { get => typeName; set => typeName = value; } 
-        public TypeReference get;
-        public bool constructor;
-        public bool instanceCall = false;
+        public Getter(Token name) => this.name = name;
+    }
 
-        public Definition funcEnclosing;
-        public Function internalFunction { get => (Function)funcEnclosing; set => funcEnclosing = value; }
+    public class Call : Getter
+    {
+        public TypeReference callee;
+
+        public bool constructor;
+        public bool instanceCall;
+
+        public Definition funcEnclosing { get => (Definition)callee.type; set => callee.type = value; }
+        public Function internalFunction { get => (Function)callee.type; set => callee.type = value; }
 
         public List<Expr> arguments;
 
         public int encSize;
 
-        public Call(Token name, Queue<Token> callee, GetReference get, List<Expr> arguments)
+        public Call(Token name, List<Expr> arguments, TypeReference callee, bool instanceCall) : base(name)
         {
-            this.name = name;
-            this.callee = callee;
-            this.offsets = typeName != null ? new StackData[typeName.Count] : null;
-            this.get = get;
             this.arguments = arguments;
+            this.callee = callee;
+            this.instanceCall = instanceCall;
         }
 
         public override T Accept<T>(IVisitor<T> visitor)
@@ -243,38 +291,15 @@ internal abstract class Expr
 
     }
 
-    public class TypeReference : Expr
+    public class Get : Getter
     {
-        public Queue<Token> typeName;
-        public Type type;
+        public StackData data;
 
-        private protected TypeReference() { }
-
-        public TypeReference(Queue<Token> typeName)
-        {
-            this.typeName = typeName;
-        }
+        public Get(Token name) : base(name) { }
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.VisitTypeReferenceExpr(this);
-        }
-    }
-
-    public class GetReference : TypeReference
-    {
-        public StackData[] offsets;
-
-        private protected GetReference() { }
-
-        public GetReference(Queue<Token> typeName) : base(typeName)
-        {
-            offsets = new StackData[typeName.Count];
-        }
-
-        public override T Accept<T>(IVisitor<T> visitor)
-        {
-            return visitor.VisitGetReferenceExpr(this);
+            return visitor.VisitGetExpr(this);
         }
     }
 
@@ -315,9 +340,9 @@ internal abstract class Expr
     public partial class Assembly : Expr
     {
         public List<ExprUtils.AssignableInstruction> block;
-        public List<Variable> variables;
+        public List<GetReference> variables;
 
-        public Assembly(List<ExprUtils.AssignableInstruction> block, List<Variable> variables)
+        public Assembly(List<ExprUtils.AssignableInstruction> block, List<GetReference> variables)
         {
             this.block = block;
             this.variables = variables;
@@ -357,26 +382,6 @@ internal abstract class Expr
         }
     }
 
-    public class Variable : GetReference
-    {
-        public bool classScoped;
-
-        public StackData Stack
-        {
-            get => offsets[0];
-            set => offsets[0] = value;
-        }
-
-        public Variable(Queue<Token> typeName) : base(typeName)
-        {
-        }
-
-        public override T Accept<T>(IVisitor<T> visitor)
-        {
-            return visitor.VisitVariableExpr(this);
-        }
-    }
-
     public class Keyword : Expr
     {
         public string keyword;
@@ -410,14 +415,14 @@ internal abstract class Expr
 
     public class Parameter
     {
-        public Queue<Token> typeName;
+        public ExprUtils.QueueList<Token> typeName;
         public Token name;
 
         public ExprUtils.Modifiers modifiers;
 
         public StackData stack;
 
-        public Parameter(Queue<Token> typeName, Token name, ExprUtils.Modifiers modifiers)
+        public Parameter(ExprUtils.QueueList<Token> typeName, Token name, ExprUtils.Modifiers modifiers)
         {
             this.typeName = typeName;
             this.name = name;
@@ -631,17 +636,17 @@ internal abstract class Expr
 
     public class Assign : Expr
     {
-        public Variable member;
+        public GetReference member;
         public Expr value;
 
         public bool binary;
 
-        public Assign(Variable member, Expr value)
+        public Assign(GetReference member, Expr value)
         {
             this.member = member;
             this.value = value;
         }
-        public Assign(Variable member, Expr.Binary value)
+        public Assign(GetReference member, Expr.Binary value)
         {
             this.member = member;
             this.value = value;

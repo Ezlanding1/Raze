@@ -88,7 +88,7 @@ internal partial class Analyzer
         {
             base.VisitAssignExpr(expr);
 
-            SetInlineRef(expr.member.Stack);
+            SetInlineRef(((Expr.Get)expr.member.getters[^1]).data);
 
             return null;
         }

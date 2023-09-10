@@ -196,7 +196,7 @@ internal partial class Analyzer
             return (symbol = _GetDefinition(key)) != null;
         }
 
-        public Expr.DataType GetClassFullScope(Token key)
+        public Expr.DataType _GetClassFullScope(Token key)
         {
             Expr.Definition? x = NearestEnclosingClass();
 
@@ -213,12 +213,20 @@ internal partial class Analyzer
             {
                 if (value.definitionType == Expr.Definition.DefinitionType.Function)
                 {
-                    throw new Errors.AnalyzerError("Undefined Reference", $"The class '{key.lexeme}' does not exist in the current context");
+                    return null;
                 }
                 return (Expr.DataType)value;
             }
 
-            throw new Errors.AnalyzerError("Undefined Reference", $"The class '{key.lexeme}' does not exist in the current context");
+            return null;
+        }
+        public Expr.Definition GetClassFullScope(Token key)
+        {
+            return _GetClassFullScope(key) ?? throw new Errors.AnalyzerError("Undefined Reference", $"The class '{key.lexeme}' does not exist in the current context");
+        }
+        public bool TryGetClassFullScope(Token key, out Expr.Definition symbol)
+        {
+            return (symbol = _GetClassFullScope(key)) != null;
         }
 
         // 'GetFunction' Methods:
@@ -322,6 +330,10 @@ internal partial class Analyzer
             {
                 if (item.name.lexeme == key)
                 {
+                    if (item.definitionType != Expr.Definition.DefinitionType.Function)
+                    {
+                        throw new Errors.AnalyzerError("Invalid Call", $"{item.definitionType} is not invokable");
+                    }
                     if (ParamMatch(types, (Expr.Function)item))
                     {
                         if (value == null)

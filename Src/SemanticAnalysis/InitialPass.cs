@@ -117,16 +117,9 @@ internal partial class Analyzer
 
         public override object? VisitCallExpr(Expr.Call expr)
         {
-            if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
-
             foreach (var argExpr in expr.arguments)
             {
                 argExpr.Accept(this);
-            }
-
-            if (expr.get != null)
-            {
-                expr.get.Accept(this);
             }
             
             return null;
@@ -191,9 +184,9 @@ internal partial class Analyzer
         public override object? VisitNewExpr(Expr.New expr)
         {
             if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
-
-            expr.call.callee ??= new();
-            expr.call.callee.Enqueue(expr.call.name);
+            
+            expr.call.callee.typeName ??= new();
+            expr.call.callee.typeName.Enqueue(expr.call.name);
 
             return null;
         }
@@ -222,16 +215,16 @@ internal partial class Analyzer
             return base.VisitAssemblyExpr(expr);
         }
 
-        public override object? VisitVariableExpr(Expr.Variable expr)
+        public override object VisitGetReferenceExpr(Expr.GetReference expr)
         {
-            if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
+            if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); } 
 
             return null;
         }
 
         public override object VisitAssignExpr(Expr.Assign expr)
         {
-            if (expr.member.typeName.Peek().lexeme == "this" && expr.member.typeName.Count == 1 && (symbolTable.NearestEnclosingClass()?.definitionType != Expr.Definition.DefinitionType.Primitive)) { throw new Errors.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword cannot be assigned to");  }
+            if (expr.member.getters.Count == 1 && expr.member.getters[0].name.lexeme == "this" && (symbolTable.NearestEnclosingClass()?.definitionType != Expr.Definition.DefinitionType.Primitive)) { throw new Errors.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword cannot be assigned to");  }
 
             expr.member.Accept(this);
             return base.VisitAssignExpr(expr);
@@ -271,7 +264,7 @@ internal partial class Analyzer
         {
             if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
 
-            if (!(expr.left is Expr.Variable))
+            if (!(expr.left is Expr.GetReference))
             {
                 throw new Errors.AnalyzerError("Invalid 'is' Operator", "the first operand of 'is' operator must be a variable");
             }

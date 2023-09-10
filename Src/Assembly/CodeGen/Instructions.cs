@@ -156,7 +156,6 @@ internal abstract class Instruction
         public Pointer(Register.RegisterName register, int offset, int size, char _operator='-') : this(new Register(register, Register.RegisterSize._64Bits), offset, size, _operator)
         {
         }
-
         public Pointer(int offset, int size) : this(Register.RegisterName.RBP, offset, size, '-')
         {
         }
