@@ -64,10 +64,13 @@ internal class Shell
             var instructions = output.Item1;
             var data = output.Item2;
 
+            // Throw any encountered compile errors
+            Diagnostics.ThrowCompilerErrors();
 
             #if DEBUG
             Raze.Tools.AssemblyPrinter.PrintAssembly(instructions, data, SymbolTableSingleton.SymbolTable.main);
             #endif
+
 
             // Output Result
             //string path = Environment.GetFolderPath(System.Environment.SpecialFolder.DesktopDirectory) + "\\out.asm";
@@ -78,8 +81,12 @@ internal class Shell
         }
         catch (Exception e)
         {
-            if (e is Errors)
+            if (e is Error)
             {
+                if (Diagnostics.errors.Count != 0)
+                {
+                    Diagnostics.errors.ComposeErrorReport();
+                }
                 Console.WriteLine(e.Message);
             }
             else

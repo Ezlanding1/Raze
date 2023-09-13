@@ -38,24 +38,24 @@ internal partial class Analyzer
     {
         if (main == null)
         {
-            throw new Errors.AnalyzerError("Entrypoint Not Found", "Program does not contain a Main method");
+            throw new Error.AnalyzerError("Entrypoint Not Found", "Program does not contain a Main method");
         }
 
         if (!main.modifiers["static"])
         {
-            throw new Errors.AnalyzerError("Invalid Main Function", "The Main function must be marked 'static'");
+            throw new Error.AnalyzerError("Invalid Main Function", "The Main function must be marked 'static'");
         }
 
         if (main._returnType.type.name.lexeme != "void" && !Analyzer.TypeCheckUtils.literalTypes[Token.TokenType.INTEGER].Matches(main._returnType.type))
         {
-            throw new Errors.AnalyzerError("Invalid Main Function", $"Main can only return types 'number', and 'void'. Got '{main._returnType.type}'");
+            throw new Error.AnalyzerError("Invalid Main Function", $"Main can only return types 'number', and 'void'. Got '{main._returnType.type}'");
         }
 
         foreach (var item in main.modifiers.EnumerateTrueModifiers())
         {
             if (item != "static")
             {
-                throw new Errors.AnalyzerError("Invalid Main Function", $"Main cannot have the '{item}' modifier");
+                throw new Error.AnalyzerError("Invalid Main Function", $"Main cannot have the '{item}' modifier");
             }
         } 
     }

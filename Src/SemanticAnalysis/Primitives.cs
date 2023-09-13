@@ -112,7 +112,7 @@ internal partial class Analyzer
                 case (BOOLEAN, BOOLEAN): return Token.TokenType.BOOLEAN; // BOOLEAN OP BOOLEAN
 
                 default:
-                    throw new Errors.ImpossibleError($"Unrecognized literal operation");
+                    throw new Error.ImpossibleError($"Unrecognized literal operation");
             }
         }
 
@@ -129,7 +129,7 @@ internal partial class Analyzer
 
             if (pName == "Increment" || pName == "Decrement")
             {
-                throw new Errors.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
+                throw new Error.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
             }
 
             switch ((Token.TokenType)type1)
@@ -147,7 +147,7 @@ internal partial class Analyzer
                 case BOOLEAN: return Token.TokenType.BOOLEAN; // BOOLEAN OP
 
                 default:
-                    throw new Errors.ImpossibleError($"Unrecognized literal operation");
+                    throw new Error.ImpossibleError($"Unrecognized literal operation");
             }
         }
 
@@ -210,13 +210,13 @@ internal partial class Analyzer
             return assembler.CreateDatalLabel(assembler.dataCount++);
         }
 
-        public static Errors.AnalyzerError InvalidOperation(Token op, Token.TokenType type1, Token.TokenType type2)
+        public static Error.AnalyzerError InvalidOperation(Token op, Token.TokenType type1, Token.TokenType type2)
         {
             return InvalidOperation(op, TypeCheckUtils.literalTypes[type1].ToString(), TypeCheckUtils.literalTypes[type2].ToString());
         }
-        public static Errors.AnalyzerError InvalidOperation(Token op, string type1, string type2)
+        public static Error.AnalyzerError InvalidOperation(Token op, string type1, string type2)
         {
-            return new Errors.AnalyzerError("Invalid Operator", $"Types '{type1}' and '{type2}' don't have a definition for '{SymbolToPrimitiveName(op)}' ( '{op.lexeme}' )");
+            return new Error.AnalyzerError("Invalid Operator", $"Types '{type1}' and '{type2}' don't have a definition for '{SymbolToPrimitiveName(op)}' ( '{op.lexeme}' )");
         }
 
         // Unary Operation
@@ -238,13 +238,13 @@ internal partial class Analyzer
             return new Instruction.Literal(OperationType(op, (sbyte)a.type), result);
         }
 
-        public static Errors.AnalyzerError InvalidOperation(Token op, Token.TokenType type)
+        public static Error.AnalyzerError InvalidOperation(Token op, Token.TokenType type)
         {
             return InvalidOperation(op, TypeCheckUtils.literalTypes[type].ToString());
         }
-        public static Errors.AnalyzerError InvalidOperation(Token op, string type)
+        public static Error.AnalyzerError InvalidOperation(Token op, string type)
         {
-            return new Errors.AnalyzerError("Invalid Operator", $"Type '{type}' doesn't not have a definition for '{SymbolToPrimitiveName(op)}' ( '{op.lexeme}' )");
+            return new Error.AnalyzerError("Invalid Operator", $"Type '{type}' doesn't not have a definition for '{SymbolToPrimitiveName(op)}' ( '{op.lexeme}' )");
         }
 
         public static bool IsVoidType(Expr.Type type)

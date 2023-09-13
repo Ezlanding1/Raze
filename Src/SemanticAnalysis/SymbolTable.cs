@@ -72,7 +72,7 @@ internal partial class Analyzer
             AddDefinition((Expr.DataType)definition);
             foreach (var duplicate in (definition).declarations.GroupBy(x => x.name.lexeme).Where(x => x.Count() > 1).Select(x => x.ElementAt(0)))
             {
-                throw new Errors.AnalyzerError("Double Declaration", $"A variable named '{duplicate.name.lexeme}' is already declared in this scope");
+                throw new Error.AnalyzerError("Double Declaration", $"A variable named '{duplicate.name.lexeme}' is already declared in this scope");
             }
         }
 
@@ -134,7 +134,7 @@ internal partial class Analyzer
 
         public Expr.StackData GetVariable(Token key, out bool isClassScoped, bool ignoreEnclosing=false)
         {
-            return _GetVariable(key, out isClassScoped, ignoreEnclosing) ?? throw new Errors.AnalyzerError("Undefined Reference", $"The variable '{key.lexeme}' does not exist in the current context");
+            return _GetVariable(key, out isClassScoped, ignoreEnclosing) ?? throw new Error.AnalyzerError("Undefined Reference", $"The variable '{key.lexeme}' does not exist in the current context");
         }
         public Expr.StackData GetVariable(Token key)
         {
@@ -161,7 +161,7 @@ internal partial class Analyzer
 
             if (current.definitionType == Expr.Definition.DefinitionType.Function)
             {
-                throw new Errors.ImpossibleError("Requested function's definitions");
+                throw new Error.ImpossibleError("Requested function's definitions");
             }
 
             if (TryGetValue(((Expr.DataType)current).definitions, key, out var value))
@@ -174,7 +174,7 @@ internal partial class Analyzer
 
         public Expr.Definition GetDefinition(Token key, bool func = false)
         {
-            return _GetDefinition(key) ?? throw new Errors.AnalyzerError("Undefined Reference", $"The {(func ? "function" : "class")} '{key.lexeme}' does not exist in the current context");
+            return _GetDefinition(key) ?? throw new Error.AnalyzerError("Undefined Reference", $"The {(func ? "function" : "class")} '{key.lexeme}' does not exist in the current context");
         }
         public bool TryGetDefinition(Token key, out Expr.Definition symbol)
         {
@@ -207,7 +207,7 @@ internal partial class Analyzer
         }
         public Expr.Definition GetClassFullScope(Token key)
         {
-            return _GetClassFullScope(key) ?? throw new Errors.AnalyzerError("Undefined Reference", $"The class '{key.lexeme}' does not exist in the current context");
+            return _GetClassFullScope(key) ?? throw new Error.AnalyzerError("Undefined Reference", $"The class '{key.lexeme}' does not exist in the current context");
         }
         public bool TryGetClassFullScope(Token key, out Expr.Definition symbol)
         {
@@ -229,7 +229,7 @@ internal partial class Analyzer
 
             if (current.definitionType == Expr.Definition.DefinitionType.Function)
             {
-                throw new Errors.ImpossibleError("Requested function's definitions");
+                throw new Error.ImpossibleError("Requested function's definitions");
             }
 
             if (TryGetFuncValue(((Expr.DataType)current).definitions, key, types, out var value))
@@ -242,7 +242,7 @@ internal partial class Analyzer
 
         public Expr.Function GetFunction(string key, Expr.Type[] types)
         {
-            return _GetFunction(key, types) ?? throw new Errors.AnalyzerError("Undefined Reference", $"The function '{key}({string.Join(", ", (object?[])types)})' does not exist in the current context");
+            return _GetFunction(key, types) ?? throw new Error.AnalyzerError("Undefined Reference", $"The function '{key}({string.Join(", ", (object?[])types)})' does not exist in the current context");
         }
         public bool TryGetFunction(string key, Expr.Type[] types, out Expr.Function symbol)
         {
@@ -263,7 +263,7 @@ internal partial class Analyzer
         public void UpContext()
         {
             if (current == null)
-                throw new Errors.ImpossibleError("Up Context Called On 'GLOBAL' context (no enclosing)");
+                throw new Error.ImpossibleError("Up Context Called On 'GLOBAL' context (no enclosing)");
 
             current = (Expr.Definition)current.enclosing;
         }
@@ -288,18 +288,18 @@ internal partial class Analyzer
                 {
                     if (duplicate.name.lexeme == "Main")
                     {
-                        throw new Errors.AnalyzerError("Double Declaration", "A Program may have only one 'Main' method");
+                        throw new Error.AnalyzerError("Double Declaration", "A Program may have only one 'Main' method");
                     }
 
-                    throw new Errors.AnalyzerError("Double Declaration", $"A function '{duplicate}' is already defined in this scope");
+                    throw new Error.AnalyzerError("Double Declaration", $"A function '{duplicate}' is already defined in this scope");
                 }
                 else if (duplicate.definitionType == Expr.Definition.DefinitionType.Primitive)
                 {
-                    throw new Errors.AnalyzerError("Double Declaration", $"A primitive class named '{duplicate.name.lexeme}' is already defined in this scope");
+                    throw new Error.AnalyzerError("Double Declaration", $"A primitive class named '{duplicate.name.lexeme}' is already defined in this scope");
                 }
                 else
                 {
-                    throw new Errors.AnalyzerError("Double Declaration", $"A class named '{duplicate.name.lexeme}' is already defined in this scope");
+                    throw new Error.AnalyzerError("Double Declaration", $"A class named '{duplicate.name.lexeme}' is already defined in this scope");
                 }
             }
         }
@@ -326,7 +326,7 @@ internal partial class Analyzer
                 {
                     if (item.definitionType != Expr.Definition.DefinitionType.Function)
                     {
-                        throw new Errors.AnalyzerError("Invalid Call", $"{item.definitionType} is not invokable");
+                        throw new Error.AnalyzerError("Invalid Call", $"{item.definitionType} is not invokable");
                     }
                     if (ParamMatch(types, (Expr.Function)item))
                     {
@@ -336,7 +336,7 @@ internal partial class Analyzer
                         }
                         else
                         {
-                            throw new Errors.AnalyzerError("Ambiguous Call", $"Call is ambiguous between {value} and {(Expr.Function)item}");
+                            throw new Error.AnalyzerError("Ambiguous Call", $"Call is ambiguous between {value} and {(Expr.Function)item}");
                         }
                     }
                 }

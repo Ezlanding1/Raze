@@ -36,7 +36,7 @@ internal partial class AssemblyOps
                 return InstructionUtils.ToRegisterSize(((Expr.Get)vars[count - cOff].getters[^1]).data.size);
             }
 
-            throw new Errors.BackendError("Inavalid Assembly Block", $"No size could be determined for the { (first? "first" : "second") } operand");
+            throw new Error.BackendError("Inavalid Assembly Block", $"No size could be determined for the { (first? "first" : "second") } operand");
         }
 
         public static void ReturnOp(ref Instruction.Value operand, ExprUtils.AssignableInstruction.Binary.AssignType assignType, AssemblyOps assemblyOps, bool first)
@@ -120,7 +120,7 @@ internal partial class AssemblyOps
 
                     if (((Instruction.SizedValue)operand2).size != Instruction.Register.RegisterSize._8Bits)
                     {
-                        throw new Errors.BackendError("Invalid Assembly Block", "Instruction's operand sizes don't match");
+                        throw new Error.BackendError("Invalid Assembly Block", "Instruction's operand sizes don't match");
                     }
 
                     assemblyOps.assembler.Emit(new Instruction.Binary("MOV", cl, operand2));

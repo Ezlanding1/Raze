@@ -20,11 +20,11 @@ internal partial class Analyzer
 
                 if (!Primitives.IsVoidType(result) && !callReturn)
                 {
-                    throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
+                    throw new Error.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
                 }
                 if (_return.Count != 0)
                 {
-                    throw new Errors.AnalyzerError("Top Level Code", $"Top level 'return' is Not allowed");
+                    throw new Error.AnalyzerError("Top Level Code", $"Top level 'return' is Not allowed");
                 }
                 callReturn = false;
             }
@@ -40,7 +40,7 @@ internal partial class Analyzer
 
                 if (!Primitives.IsVoidType(result) && !callReturn)
                 {
-                    throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
+                    throw new Error.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
                 }
                 callReturn = false;
             }
@@ -96,11 +96,11 @@ internal partial class Analyzer
 
             if (expr.internalFunction.parameters[0].modifiers["ref"] && TypeCheckUtils.CannotBeRef(expr.left))
             {
-                throw new Errors.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
+                throw new Error.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
             }
             if (expr.internalFunction.parameters[1].modifiers["ref"] && TypeCheckUtils.CannotBeRef(expr.right))
             {
-                throw new Errors.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
+                throw new Error.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
             }
 
             return expr.internalFunction._returnType.type;
@@ -145,7 +145,7 @@ internal partial class Analyzer
 
             if (expr.internalFunction.parameters[0].modifiers["ref"] && TypeCheckUtils.CannotBeRef(expr.operand))
             {
-                throw new Errors.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
+                throw new Error.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
             }
 
             return expr.internalFunction._returnType.type;
@@ -193,7 +193,7 @@ internal partial class Analyzer
             {
                 if (expr.internalFunction.parameters[i].modifiers["ref"] && TypeCheckUtils.CannotBeRef(expr.arguments[i]))
                 {
-                    throw new Errors.AnalyzerError("Invalid Function Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
+                    throw new Error.AnalyzerError("Invalid Function Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
                 }
             }
 
@@ -219,7 +219,7 @@ internal partial class Analyzer
 
             if (symbolTable.TryGetVariable(name, out _, out _, true))
             {
-                throw new Errors.AnalyzerError("Double Declaration", $"A variable named '{name.lexeme}' is already declared in this scope");
+                throw new Error.AnalyzerError("Double Declaration", $"A variable named '{name.lexeme}' is already declared in this scope");
             }
 
             if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Class)
@@ -270,7 +270,7 @@ internal partial class Analyzer
                     expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[5]];
                     break;
                 default: 
-                    throw new Errors.ImpossibleError("Invalid primitive superclass");
+                    throw new Error.ImpossibleError("Invalid primitive superclass");
             }
 
             Expr.ListAccept(expr.definitions, this);
@@ -299,7 +299,7 @@ internal partial class Analyzer
 
                 if (symbolTable.TryGetVariable(paramExpr.name, out _, out _, true))
                 {
-                    throw new Errors.AnalyzerError("Double Declaration", $"A variable named '{paramExpr.name.lexeme}' is already declared in this scope");
+                    throw new Error.AnalyzerError("Double Declaration", $"A variable named '{paramExpr.name.lexeme}' is already declared in this scope");
                 }
                 paramExpr.stack._ref = paramExpr.modifiers["ref"];
 
@@ -312,7 +312,7 @@ internal partial class Analyzer
 
                 if (!Primitives.IsVoidType(result) && !callReturn)
                 {
-                    throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
+                    throw new Error.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
                 }
                 callReturn = false;
             }
@@ -455,14 +455,14 @@ internal partial class Analyzer
             var result = expr.initExpr.Accept(this);
             if (!Primitives.IsVoidType(result) && !callReturn)
             {
-                throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
+                throw new Error.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
             }
             callReturn = false;
 
             result = expr.updateExpr.Accept(this);
             if (!Primitives.IsVoidType(result) && !callReturn)
             {
-                throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
+                throw new Error.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
             }
             callReturn = false;
 

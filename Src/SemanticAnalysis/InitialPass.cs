@@ -46,7 +46,7 @@ internal partial class Analyzer
 
                 if (expr.modifiers["operator"]) 
                 {
-                    throw new Errors.AnalyzerError("Invalid Operator Definition", $"Top level operator function definitions are not allowed");
+                    throw new Error.AnalyzerError("Invalid Operator Definition", $"Top level operator function definitions are not allowed");
                 }
             }
 
@@ -85,7 +85,7 @@ internal partial class Analyzer
                     case "LessThanOrEqualTo":
                         if (expr.Arity != 2)
                         {
-                            throw new Errors.AnalyzerError("Invalid Operator Definition", $"The '{expr.name.lexeme}' operator must have an arity of 2");
+                            throw new Error.AnalyzerError("Invalid Operator Definition", $"The '{expr.name.lexeme}' operator must have an arity of 2");
                         }
                         break;
                     // Unary
@@ -95,11 +95,11 @@ internal partial class Analyzer
                     case "Not":
                         if (expr.Arity != 1)
                         {
-                            throw new Errors.AnalyzerError("Invalid Operator Definition", $"The '{expr.name.lexeme}' operator must have an arity of 1");
+                            throw new Error.AnalyzerError("Invalid Operator Definition", $"The '{expr.name.lexeme}' operator must have an arity of 1");
                         }
                         break;
                     default:
-                        throw new Errors.AnalyzerError("Invalid Operator Definition", $"'{expr.name.lexeme}' is not a recognized operator");
+                        throw new Error.AnalyzerError("Invalid Operator Definition", $"'{expr.name.lexeme}' is not a recognized operator");
                 }
             }
             
@@ -141,11 +141,11 @@ internal partial class Analyzer
 
         public override object? VisitDeclareExpr(Expr.Declare expr)
         {
-            if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
+            if (symbolTable.CurrentIsTop()) { throw new Error.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
 
             if (symbolTable.Current?.definitionType == Expr.Definition.DefinitionType.Primitive)
             {
-                throw new Errors.AnalyzerError("Invalid Variable Declaration", "A variable may not be declared within a primitive definition");
+                throw new Error.AnalyzerError("Invalid Variable Declaration", "A variable may not be declared within a primitive definition");
             }
 
             GetVariableDefinition(expr.typeName, expr.stack);
@@ -157,7 +157,7 @@ internal partial class Analyzer
         {
             if (symbolTable.Current?.definitionType == Expr.Definition.DefinitionType.Function)
             {
-                throw new Errors.AnalyzerError("Invalid Class Definition", "A class definition may be only within another class");
+                throw new Error.AnalyzerError("Invalid Class Definition", "A class definition may be only within another class");
             }
 
             symbolTable.AddDefinition(expr);
@@ -173,28 +173,28 @@ internal partial class Analyzer
 
         public override object? VisitIfExpr(Expr.If expr)
         {
-            if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
+            if (symbolTable.CurrentIsTop()) { throw new Error.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
 
             return base.VisitIfExpr(expr);
         }
 
         public override object VisitWhileExpr(Expr.While expr)
         {
-            if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
+            if (symbolTable.CurrentIsTop()) { throw new Error.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
 
             return base.VisitWhileExpr(expr);
         }
 
         public override object VisitForExpr(Expr.For expr)
         {
-            if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
+            if (symbolTable.CurrentIsTop()) { throw new Error.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
 
             return base.VisitForExpr(expr);
         }
 
         public override object? VisitNewExpr(Expr.New expr)
         {
-            if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
+            if (symbolTable.CurrentIsTop()) { throw new Error.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
             
             expr.call.callee.typeName ??= new();
             expr.call.callee.typeName.Enqueue(expr.call.name);
@@ -208,16 +208,16 @@ internal partial class Analyzer
         {
             if (symbolTable.CurrentIsTop())
             {
-                throw new Errors.AnalyzerError("Top Level Assembly Block", "Assembly Blocks must be placed in an unsafe function");
+                throw new Error.AnalyzerError("Top Level Assembly Block", "Assembly Blocks must be placed in an unsafe function");
             }
 
             if (symbolTable.Current?.definitionType != Expr.Definition.DefinitionType.Function)
             {
-                throw new Errors.AnalyzerError("ASM Block Not In Function", "Assembly Blocks must be placed in functions");
+                throw new Error.AnalyzerError("ASM Block Not In Function", "Assembly Blocks must be placed in functions");
             }
             if ((symbolTable.Current?.definitionType == Expr.Definition.DefinitionType.Function) && !((Expr.Function)symbolTable.Current).modifiers["unsafe"])
             {
-                throw new Errors.AnalyzerError("Unsafe Code in Safe Function", "Mark a function with 'unsafe' to include unsafe code");
+                throw new Error.AnalyzerError("Unsafe Code in Safe Function", "Mark a function with 'unsafe' to include unsafe code");
             }
 
             foreach (var variable in expr.variables)
@@ -230,7 +230,7 @@ internal partial class Analyzer
 
         public override object? VisitGetReferenceExpr(Expr.GetReference expr)
         {
-            if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
+            if (symbolTable.CurrentIsTop()) { throw new Error.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
 
             if (expr.ambiguousCall)
             {
@@ -274,7 +274,7 @@ internal partial class Analyzer
 
         public override object VisitAssignExpr(Expr.Assign expr)
         {
-            if (expr.member.getters.Count == 1 && expr.member.getters[0].name.lexeme == "this" && (symbolTable.NearestEnclosingClass()?.definitionType != Expr.Definition.DefinitionType.Primitive)) { throw new Errors.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword cannot be assigned to");  }
+            if (expr.member.getters.Count == 1 && expr.member.getters[0].name.lexeme == "this" && (symbolTable.NearestEnclosingClass()?.definitionType != Expr.Definition.DefinitionType.Primitive)) { throw new Error.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword cannot be assigned to");  }
 
             expr.member.Accept(this);
             return base.VisitAssignExpr(expr);
@@ -284,7 +284,7 @@ internal partial class Analyzer
         {
             if (symbolTable.Current?.definitionType == Expr.Definition.DefinitionType.Function)
             {
-                throw new Errors.AnalyzerError("Invalid Class Definition", "A primitive class definition may be only within another class");
+                throw new Error.AnalyzerError("Invalid Class Definition", "A primitive class definition may be only within another class");
             }
 
             symbolTable.AddDefinition(expr);
@@ -301,11 +301,11 @@ internal partial class Analyzer
 
         public override object? VisitIsExpr(Expr.Is expr)
         {
-            if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
+            if (symbolTable.CurrentIsTop()) { throw new Error.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
 
             if (!(expr.left is Expr.GetReference))
             {
-                throw new Errors.AnalyzerError("Invalid 'is' Operator", "the first operand of 'is' operator must be a variable");
+                throw new Error.AnalyzerError("Invalid 'is' Operator", "the first operand of 'is' operator must be a variable");
             }
             return null;
         }
@@ -335,7 +335,7 @@ internal partial class Analyzer
         {
             if (!symbolTable.TryGetDefinition(symbolTable.Current.name, out var symbol))
             {
-                throw new Errors.AnalyzerError("Class Without Constructor", "A Class must contain a constructor method");
+                throw new Error.AnalyzerError("Class Without Constructor", "A Class must contain a constructor method");
             }
 
             var constructor = (Expr.Function)symbol;
@@ -344,11 +344,11 @@ internal partial class Analyzer
 
             if (constructor.modifiers["static"])
             {
-                throw new Errors.AnalyzerError("Constructor Marked 'static'", "A constructor cannot have the 'static' modifier");
+                throw new Error.AnalyzerError("Constructor Marked 'static'", "A constructor cannot have the 'static' modifier");
             }
             if (constructor.modifiers["operator"])
             {
-                throw new Errors.AnalyzerError("Constructor Marked 'operator'", "A constructor cannot have the 'operator' modifier");
+                throw new Error.AnalyzerError("Constructor Marked 'operator'", "A constructor cannot have the 'operator' modifier");
             }
         }
     }

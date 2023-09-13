@@ -15,7 +15,7 @@ internal class RegisterAlloc
             {
                 if (registerStates[i].HasState(RegisterState.RegisterStates.Free)) { return i; }
             }
-            throw new Errors.ImpossibleError("Requesting stack memory using the RegisterAlloc class is not implemented in this version of the compiler");
+            throw new Error.ImpossibleError("Requesting stack memory using the RegisterAlloc class is not implemented in this version of the compiler");
         }
     }
 

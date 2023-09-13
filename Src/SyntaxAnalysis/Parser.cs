@@ -116,7 +116,7 @@ internal class Parser
                     Expect(Token.TokenType.COMMA, "',' between parameters");
                     if (IsAtEnd())
                     {
-                        throw new Errors.ParseError("Unexpected End In Function Parameters", $"Function '{name.lexeme}' reached an unexpected end during it's parameters");
+                        throw new Error.ParseError("Unexpected End In Function Parameters", $"Function '{name.lexeme}' reached an unexpected end during it's parameters");
                     }
                 }
 
@@ -146,7 +146,7 @@ internal class Parser
 
                 if (Literals.Contains(name.type))
                 {
-                    throw new Errors.ParseError("Invalid Class", $"The name of a class may not be a literal ({name.lexeme})");
+                    throw new Error.ParseError("Invalid Class", $"The name of a class may not be a literal ({name.lexeme})");
                 }
 
                 List<Expr.Declare> declarations = new();
@@ -169,7 +169,7 @@ internal class Parser
                         }
                         else
                         {
-                            throw new Errors.ParseError("Invalid Class Definition", $"A class may only contain declarations and definitions. Got '{Previous().lexeme}'");
+                            throw new Error.ParseError("Invalid Class Definition", $"A class may only contain declarations and definitions. Got '{Previous().lexeme}'");
                         }
                     }
 
@@ -189,7 +189,7 @@ internal class Parser
 
                 if (Literals.Contains(name.type))
                 {
-                    throw new Errors.ParseError("Invalid Primitive", $"The name of a primitive may not be a literal ({name.lexeme})");
+                    throw new Error.ParseError("Invalid Primitive", $"The name of a primitive may not be a literal ({name.lexeme})");
                 }
 
                 ExpectValue(Token.TokenType.IDENTIFIER, "sizeof", "'sizeof' keyword");
@@ -198,7 +198,7 @@ internal class Parser
 
                 if (!new List<string>() { "8", "4", "2", "1" }.Contains(size.lexeme))
                 {
-                    throw new Errors.ParseError("Invalid Primitive", "The size of primitive classes must be the integers '8', '4', '2', or '1'");
+                    throw new Error.ParseError("Invalid Primitive", "The size of primitive classes must be the integers '8', '4', '2', or '1'");
                 }
 
                 Expr.TypeReference type = new(null);
@@ -212,7 +212,7 @@ internal class Parser
 
                     if (!Enum.TryParse<Token.TokenType>(Previous().lexeme, out var literalEnum) || !Literals.Contains(literalEnum))
                     {
-                        throw new Errors.ParseError("Invalid Primitive", $"The superclass of a primitive must be a valid literal ({string.Join(", ", Literals)}). Got '{Previous().lexeme}'");
+                        throw new Error.ParseError("Invalid Primitive", $"The superclass of a primitive must be a valid literal ({string.Join(", ", Literals)}). Got '{Previous().lexeme}'");
                     }
                 }
 
@@ -227,7 +227,7 @@ internal class Parser
                     }
                     else
                     {
-                        throw new Errors.ParseError("Invalid Class Definition", $"A primitive class may only contain definitions. Got '{Previous().lexeme}'");
+                        throw new Error.ParseError("Invalid Class Definition", $"A primitive class may only contain definitions. Got '{Previous().lexeme}'");
                     }
 
                     if (IsAtEnd())
@@ -287,11 +287,11 @@ internal class Parser
                 {
                     if (current.lexeme == "if")
                     {
-                        throw new Errors.AnalyzerError("Invalid Else If", "'else if' conditional has no matching 'if'");
+                        throw new Error.AnalyzerError("Invalid Else If", "'else if' conditional has no matching 'if'");
                     }
                     else
                     {
-                        throw new Errors.AnalyzerError("Invalid Else", "'else' conditional has no matching 'if'");
+                        throw new Error.AnalyzerError("Invalid Else", "'else' conditional has no matching 'if'");
                     }
                     
                 }
@@ -500,7 +500,7 @@ internal class Parser
                 {
                     if (variable.IsMethod())
                     {
-                        throw new Errors.ParseError("Invalid Assign Statement", "Cannot assign to a non-variable");
+                        throw new Error.ParseError("Invalid Assign Statement", "Cannot assign to a non-variable");
                     }
                     expr = new Expr.Assign(variable, NoSemicolon());
                 }
@@ -508,7 +508,7 @@ internal class Parser
                 {
                     if (variable.IsMethod())
                     {
-                        throw new Errors.ParseError("Invalid Assign Statement", "Cannot assign to a non-variable");
+                        throw new Error.ParseError("Invalid Assign Statement", "Cannot assign to a non-variable");
                     }
                     var op = tokens[index - 2];
                     expr = new Expr.Assign(variable, new Expr.Binary(variable, op, NoSemicolon()));
@@ -558,7 +558,7 @@ internal class Parser
             }
             else
             {
-                throw new Errors.ParseError("Invalid Class Definition", $"A class may only contain declarations and definitions");
+                throw new Error.ParseError("Invalid Class Definition", $"A class may only contain declarations and definitions");
             }
             Expect(Token.TokenType.SEMICOLON, "';' after expression");
             return declare;
@@ -570,13 +570,13 @@ internal class Parser
     {
         if (variable.HasMethod())
         {
-            throw new Errors.ParseError("Invalid Declare Statement", "Cannot declare to a non-type value");
+            throw new Error.ParseError("Invalid Declare Statement", "Cannot declare to a non-type value");
         }
 
         var name = Previous();
         if (name.lexeme == "this")
         {
-            throw new Errors.ParseError("Invalid 'This' Keyword", "The 'this' keyword may only be used in a member to reference the enclosing class");
+            throw new Error.ParseError("Invalid 'This' Keyword", "The 'this' keyword may only be used in a member to reference the enclosing class");
         }
         Expect(Token.TokenType.EQUALS, "'=' when declaring variable");
 
@@ -643,7 +643,7 @@ internal class Parser
 
     private Exception End()
     {
-        return new Errors.ParseError("Expression Reached Unexpected End", $"Expression '{((Previous() != null)? Previous().lexeme : "")}' reached an unexpected end");
+        return new Error.ParseError("Expression Reached Unexpected End", $"Expression '{((Previous() != null)? Previous().lexeme : "")}' reached an unexpected end");
     }
 
     private List<Expr> GetArgs()
@@ -707,7 +707,7 @@ internal class Parser
             bool localReturn = false;
             if (ReservedValueMatch("return"))
             {
-                if (returned) { throw new Errors.ParseError("Invalid Assembly Block", "Only one return may appear in an assembly block"); }
+                if (returned) { throw new Error.ParseError("Invalid Assembly Block", "Only one return may appear in an assembly block"); }
                 returned = true;
                 localReturn = true;
             }
@@ -735,7 +735,7 @@ internal class Parser
                         }
                         else
                         {
-                            throw new Errors.ParseError("Invalid Assembly Register", $"Invalid assembly register given '{identifier}'");
+                            throw new Error.ParseError("Invalid Assembly Register", $"Invalid assembly register given '{identifier}'");
                         }
                     }
 
@@ -752,7 +752,7 @@ internal class Parser
                             }
                             else
                             {
-                                throw new Errors.ParseError("Invalid Assembly Register", $"Invalid assembly register given '{identifier.lexeme}'");
+                                throw new Error.ParseError("Invalid Assembly Register", $"Invalid assembly register given '{identifier.lexeme}'");
                             }
                         }
                         else if (TypeMatch(Token.TokenType.INTEGER, Token.TokenType.FLOATING, Token.TokenType.STRING, Token.TokenType.HEX, Token.TokenType.BINARY))
@@ -777,7 +777,7 @@ internal class Parser
                 }
                 else
                 {
-                    if (localReturn) { throw new Errors.ParseError("Invalid Assembly Block", "Return on a zero instruction is not allowed"); }
+                    if (localReturn) { throw new Error.ParseError("Invalid Assembly Block", "Return on a zero instruction is not allowed"); }
                     // Zero
                     instructions.Add(new ExprUtils.AssignableInstruction.AssignableInstructionZ(new Instruction.Zero(op.lexeme)));
                 }
@@ -785,7 +785,7 @@ internal class Parser
             }
             else
             {
-                throw new Errors.ParseError("Invalid Assembly Statement", $"'{current.lexeme}' is invalid in an assembly block");
+                throw new Error.ParseError("Invalid Assembly Statement", $"'{current.lexeme}' is invalid in an assembly block");
             }
 
             if (IsAtEnd())
@@ -903,9 +903,9 @@ internal class Parser
         throw Expected(type + " : " + value, errorMessage);
     }
 
-    private Errors.ParseError Expected(string type, string errorMessage)
+    private Error.ParseError Expected(string type, string errorMessage)
     {
-        return new Errors.ParseError($"{type}", "Expected " + errorMessage + $"{((current != null) ? "\nGot: '" + current.lexeme + "' Instead" : "")}");
+        return new Error.ParseError($"{type}", "Expected " + errorMessage + $"{((current != null) ? "\nGot: '" + current.lexeme + "' Instead" : "")}");
     }
 
     private Token Previous(int sub=1)
@@ -914,7 +914,7 @@ internal class Parser
         {
             return tokens[index - sub];
         }
-        throw new Errors.ImpossibleError("Requested the token before the first token");
+        throw new Error.ImpossibleError("Requested the token before the first token");
     }
 
     private Token Peek()

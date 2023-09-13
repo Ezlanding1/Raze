@@ -34,7 +34,7 @@ internal partial class Analyzer
         {
             if (!type2.Matches(type1))
             {
-                throw new Errors.AnalyzerError("Type Mismatch", string.Format(error, type2, type1));
+                throw new Error.AnalyzerError("Type Mismatch", string.Format(error, type2, type1));
             }
         }
 
@@ -47,7 +47,7 @@ internal partial class Analyzer
             {
                 if (!literalTypes[Token.TokenType.BOOLEAN].Matches(condition.Accept(visitor)))
                 {
-                    throw new Errors.AnalyzerError("Type Mismatch", $"'if' expects condition to return 'BOOLEAN'. Got '{condition.Accept(visitor)}'");
+                    throw new Error.AnalyzerError("Type Mismatch", $"'if' expects condition to return 'BOOLEAN'. Got '{condition.Accept(visitor)}'");
                 }
             }
             block.Accept(visitor);
@@ -86,11 +86,11 @@ internal partial class Analyzer
                 {
                     if (_return.Count == 0)
                     {
-                        throw new Errors.AnalyzerError("No Return", "A Function must have a 'return' expression");
+                        throw new Error.AnalyzerError("No Return", "A Function must have a 'return' expression");
                     }
                     else
                     {
-                        throw new Errors.AnalyzerError("No Return", "A Function must have a 'return' expression from all code paths");
+                        throw new Error.AnalyzerError("No Return", "A Function must have a 'return' expression from all code paths");
                     }
                 }
                 _return.Clear();
@@ -99,7 +99,7 @@ internal partial class Analyzer
             {
                 if (_return.Count != 0)
                 {
-                    throw new Errors.AnalyzerError("Invalid Return", $"A constructor cannot have a 'return' expression");
+                    throw new Error.AnalyzerError("Invalid Return", $"A constructor cannot have a 'return' expression");
                 }
             }
         }
@@ -108,22 +108,22 @@ internal partial class Analyzer
         {
             if (!expr.constructor && callee.constructor)
             {
-                throw new Errors.AnalyzerError("Constructor Called As Method", "A Constructor may not be called as a method of its class");
+                throw new Error.AnalyzerError("Constructor Called As Method", "A Constructor may not be called as a method of its class");
             }
             else if (expr.constructor && !callee.constructor)
             {
-                throw new Errors.AnalyzerError("Method Called As Constructor", "A Method may not be called as a constructor of its class");
+                throw new Error.AnalyzerError("Method Called As Constructor", "A Method may not be called as a constructor of its class");
             }
 
             if (expr.callee != null && expr.instanceCall != null)
             {
                 if ((bool)expr.instanceCall && callee.modifiers["static"])
                 {
-                    throw new Errors.AnalyzerError("Static Method Called From Instance", "You cannot call a static method from an instance");
+                    throw new Error.AnalyzerError("Static Method Called From Instance", "You cannot call a static method from an instance");
                 }
                 if (!(bool)expr.instanceCall && !callee.modifiers["static"] && !expr.constructor)
                 {
-                    throw new Errors.AnalyzerError("Instance Method Called From Static Context", "You cannot call an instance method from a static context");
+                    throw new Error.AnalyzerError("Instance Method Called From Static Context", "You cannot call an instance method from a static context");
                 }
             }
         }
