@@ -161,7 +161,7 @@ internal partial class Analyzer
 
             if (current.definitionType == Expr.Definition.DefinitionType.Function)
             {
-                throw new Error.ImpossibleError("Requested function's definitions");
+                Diagnostics.errors.Push(new Error.ImpossibleError("Requested function's definitions"));
             }
 
             if (TryGetValue(((Expr.DataType)current).definitions, key, out var value))
@@ -229,7 +229,7 @@ internal partial class Analyzer
 
             if (current.definitionType == Expr.Definition.DefinitionType.Function)
             {
-                throw new Error.ImpossibleError("Requested function's definitions");
+                Diagnostics.errors.Push(new Error.ImpossibleError("Requested function's definitions"));
             }
 
             if (TryGetFuncValue(((Expr.DataType)current).definitions, key, types, out var value))
@@ -263,7 +263,7 @@ internal partial class Analyzer
         public void UpContext()
         {
             if (current == null)
-                throw new Error.ImpossibleError("Up Context Called On 'GLOBAL' context (no enclosing)");
+                Diagnostics.errors.Push(new Error.ImpossibleError("Up Context Called On 'GLOBAL' context (no enclosing)"));
 
             current = (Expr.Definition)current.enclosing;
         }

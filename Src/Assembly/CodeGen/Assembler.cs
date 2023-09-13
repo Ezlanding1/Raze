@@ -271,7 +271,8 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
     public Instruction.Value? VisitTypeReferenceExpr(Expr.TypeReference expr)
     {
-        throw new Error.ImpossibleError("Type accepted in assembler");
+        Diagnostics.errors.Push(new Error.ImpossibleError("Type accepted in assembler"));
+        return null;
     }
 
     public Instruction.Value? VisitGetReferenceExpr(Expr.GetReference expr)
@@ -504,7 +505,8 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             case Token.TokenType.BOOLEAN:
                 return new Instruction.Literal(expr.literal.type, expr.literal.lexeme);
             default:
-                throw new Error.ImpossibleError($"Invalid Literal Type ({expr.literal.type})");
+                Diagnostics.errors.Push(new Error.ImpossibleError($"Invalid Literal Type ({expr.literal.type})"));
+                return null;
         }
         
     }
@@ -698,14 +700,18 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         return null;
     }
 
-    public Instruction.Value? VisitKeywordExpr(Expr.Keyword expr) => expr.keyword switch
+    public Instruction.Value? VisitKeywordExpr(Expr.Keyword expr)
     {
-        "null" => new Instruction.Literal(Parser.Literals[0], "0"),
-        "true" => new Instruction.Literal(Parser.Literals[0], "1"),
-        "false" => new Instruction.Literal(Parser.Literals[0], "0"),
-        _ => throw new Error.ImpossibleError($"'{expr.keyword}' is not a keyword")
-    };
-
+        switch (expr.keyword)
+        {
+            case "null": return new Instruction.Literal(Parser.Literals[0], "0");
+            case "true": return new Instruction.Literal(Parser.Literals[0], "1");
+            case "false": return new Instruction.Literal(Parser.Literals[0], "0");
+            default: 
+                Diagnostics.errors.Push(new Error.ImpossibleError($"'{expr.keyword}' is not a keyword"));
+                return null;
+        }
+    }
     public Instruction.Value? VisitAssemblyExpr(Expr.Assembly expr)
     {
         assemblyOps.count = 0;
@@ -837,7 +843,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
     {
         if (operand.IsLiteral())
         {
-            if (size == null) { throw new Error.ImpossibleError("Null size in NonLiteral when operand is literal"); }
+            if (size == null) { Diagnostics.errors.Push(new Error.ImpossibleError("Null size in NonLiteral when operand is literal")); }
 
             Emit(new Instruction.Binary("MOV", alloc.CurrentRegister((Instruction.Register.RegisterSize)size), operand));
             return alloc.NextRegister((Instruction.Register.RegisterSize)size);

@@ -92,7 +92,7 @@ partial class Syntaxes
             {
                 if (instruction.register.name == Instruction.Register.RegisterName.TMP)
                 {
-                    throw new Error.ImpossibleError("TMP Register Cannot Be Emitted");
+                    Diagnostics.errors.Push(new Error.ImpossibleError("TMP Register Cannot Be Emitted"));
                 }
 
                 if (instruction.offset == 0)
@@ -116,7 +116,7 @@ partial class Syntaxes
             {
                 if (instruction.name == Instruction.Register.RegisterName.TMP)
                 {
-                    throw new Error.ImpossibleError("TMP Register Cannot Be Emitted");
+                    Diagnostics.errors.Push(new Error.ImpossibleError("TMP Register Cannot Be Emitted"));
                 }
 
                 return $"{RegisterToString[(instruction.name, instruction.size)]}";
@@ -141,7 +141,7 @@ partial class Syntaxes
             {
                 if (instruction.register.name == Instruction.Register.RegisterName.TMP)
                 {
-                    throw new Error.ImpossibleError("TMP Register Cannot Be Emitted");
+                    Diagnostics.errors.Push(new Error.ImpossibleError("TMP Register Cannot Be Emitted"));
                 }
 
                 if (instruction.offset == 0)

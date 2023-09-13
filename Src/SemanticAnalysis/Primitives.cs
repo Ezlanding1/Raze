@@ -112,7 +112,8 @@ internal partial class Analyzer
                 case (BOOLEAN, BOOLEAN): return Token.TokenType.BOOLEAN; // BOOLEAN OP BOOLEAN
 
                 default:
-                    throw new Error.ImpossibleError($"Unrecognized literal operation");
+                    Diagnostics.errors.Push(new Error.ImpossibleError($"Unrecognized literal operation"));
+                    return 0;
             }
         }
 
@@ -147,7 +148,8 @@ internal partial class Analyzer
                 case BOOLEAN: return Token.TokenType.BOOLEAN; // BOOLEAN OP
 
                 default:
-                    throw new Error.ImpossibleError($"Unrecognized literal operation");
+                    Diagnostics.errors.Push(new Error.ImpossibleError($"Unrecognized literal operation"));
+                    return 0;
             }
         }
 

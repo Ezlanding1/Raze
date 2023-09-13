@@ -270,7 +270,8 @@ internal partial class Analyzer
                     expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[5]];
                     break;
                 default: 
-                    throw new Error.ImpossibleError("Invalid primitive superclass");
+                    Diagnostics.errors.Push(new Error.ImpossibleError("Invalid primitive superclass"));
+                    break;
             }
 
             Expr.ListAccept(expr.definitions, this);

@@ -18,10 +18,6 @@ public enum ErrorType
 
 internal abstract class Error : Exception
 {
-    public Error() : base()
-    {
-
-    }
     public abstract string ComposeErrorMessage();
 
     // An error raised that is impossible to reach, undefined behavior, or otherwise unexpected

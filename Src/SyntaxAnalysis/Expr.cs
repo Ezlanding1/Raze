@@ -451,7 +451,8 @@ internal abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            throw new Error.ImpossibleError("type accepted");
+            Diagnostics.errors.Push(new Error.ImpossibleError("type accepted"));
+            return default;
         }
 
         public bool Matches(Type type)

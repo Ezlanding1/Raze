@@ -538,7 +538,13 @@ internal class InstructionUtils
 
     public static Instruction.Register.RegisterSize ToRegisterSize(int size)
     {
-        return Enum.IsDefined(typeof(Instruction.Register.RegisterSize), size) ? ((Instruction.Register.RegisterSize)size) : throw new Error.ImpossibleError($"Invalid Register Size ({size})");
+        if (Enum.IsDefined(typeof(Instruction.Register.RegisterSize), size))
+        {
+            return (Instruction.Register.RegisterSize)size;
+        }
+
+        Diagnostics.errors.Push(new Error.ImpossibleError($"Invalid Register Size ({size})"));
+        return 0;
     }
     
 

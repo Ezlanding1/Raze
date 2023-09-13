@@ -73,7 +73,8 @@ internal abstract partial class ExprUtils
                     return i;
                 }
             }
-            throw new Error.ImpossibleError("Requested parameter not found");
+            Diagnostics.errors.Push(new Error.ImpossibleError("Requested parameter not found"));
+            return -1;
         }
 
         public bool this[string s]

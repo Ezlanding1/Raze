@@ -914,7 +914,8 @@ internal class Parser
         {
             return tokens[index - sub];
         }
-        throw new Error.ImpossibleError("Requested the token before the first token");
+        Diagnostics.errors.Push(new Error.ImpossibleError("Requested the token before the first token"));
+        return null;
     }
 
     private Token Peek()
