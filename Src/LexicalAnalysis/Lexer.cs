@@ -9,6 +9,8 @@ namespace Raze;
 
 internal class Lexer
 {
+    const int StringTruncateLength = 40;
+
     List<Token> tokens;
     TokenDefinition[] tokenDefinitions;
     (Regex, string)[] regexes;
@@ -74,17 +76,28 @@ internal class Lexer
                     string str = match.ToString();
                     Escape(ref str);
                     Console.WriteLine(str);
+                    if (str[^1] != '\"' || str.Length == 1)
+                    {
+                        Diagnostics.errors.Push(new Error.LexError(line, col, "Non Terminated String", $"\'{((str.Length <= StringTruncateLength) ? str + "'" : str.Substring(0, StringTruncateLength) + "'...")} was not terminated"));
+                    }
                     return new Token(pattern.type, str);
+                }
+                if (pattern.type == Token.TokenType.FLOATING)
+                {
+                    string floating = match.ToString();
+                    if (floating[^1] == '.')
+                    {
+                        Diagnostics.errors.Push(new Error.LexError(line, col, "Invalid Formatted Number", $"'{floating}' is incorectly formatted"));
+                    }
+                    return new Token(pattern.type, floating);
                 }
                 return new Token(pattern.type, match.ToString());
             }
         }
-        if (lexeme[0] == '"')
-            throw new Error.LexError(line, col, "Non Terminated String", $"String: \'{((lexeme.Length <= 40) ? lexeme + "'": lexeme.Substring(0, 40) + "'...")}\nwas not ternimated");
-        if (lexeme[0] == '.')
-            throw new Error.LexError(line, col, "Invalid Formatted Number", $"{lexeme.Split()[0]} is incorectly formatted");
 
-        throw new Error.LexError(line, col, "Illegal Char Error", $"Character '{lexeme[0]}' is Illegal");
+        Diagnostics.errors.Push(new Error.LexError(line, col, "Illegal Char Error", $"Character '{lexeme[0]}' is Illegal"));
+        index++;
+        return null;
     }
 
     private void Escape (ref string str)

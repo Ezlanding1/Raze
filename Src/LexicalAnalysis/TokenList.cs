@@ -15,10 +15,10 @@ internal class TokenList
         // Non Finite Tokens
         { Token.TokenType.BINARY, /*lang=regex*/@"[0-1]+[b]" },
         { Token.TokenType.HEX, /*lang=regex*/@"0[xX][0-9a-fA-F]+" },
-        { Token.TokenType.FLOATING, /*lang=regex*/@"[0-9]+[.][0-9]+" },
+        { Token.TokenType.FLOATING, /*lang=regex*/@"[0-9]+\.[0-9]*" },
         { Token.TokenType.INTEGER, /*lang=regex*/@"[0-9]+" },
         { Token.TokenType.IDENTIFIER, /*lang=regex*/@"[a-zA-Z_][a-zA-Z0-9_]*" },
-        { Token.TokenType.STRING, /*lang=regex*/"[\"][^\"]*[\"]" },
+        { Token.TokenType.STRING, /*lang=regex*/"\"[^\"^\r^\n^;]*\"?" },
         { Token.TokenType.WHITESPACE, /*lang=regex*/@"[\s]" },
 
         // Comparison Operators
