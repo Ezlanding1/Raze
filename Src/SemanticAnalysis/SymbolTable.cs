@@ -65,7 +65,7 @@ internal partial class Analyzer
         public void AddDefinition(Expr.DataType definition)
         {
             AddDefinition((Expr.Definition)definition);
-            CheckDefinitions(definition.definitions);
+            CheckDuplicates(definition.definitions);
         }
         public void AddDefinition(Expr.Class definition)
         {
@@ -279,10 +279,10 @@ internal partial class Analyzer
             return definition;
         }
 
-        public void CheckGlobals() { CheckDefinitions(globals); }
-        public void CheckDefinitions(List<Expr.Definition> definitions)
+        public void CheckGlobals() { CheckDuplicates(globals); }
+        public void CheckDuplicates(List<Expr.Definition> definitions)
         {
-            foreach (var duplicate in definitions.GroupBy(x => x.ToString()).Where(x => x.Count() > 1).Select(x => x.ElementAt(0)))
+            foreach (var duplicate in definitions.GroupBy(x => x.ToMangledName()).Where(x => x.Count() > 1).Select(x => x.ElementAt(0)))
             {
                 if (duplicate.definitionType == Expr.Definition.DefinitionType.Function)
                 {

@@ -81,13 +81,13 @@ internal class Shell
         }
         catch (Exception e)
         {
-            if (e is Error)
+            if (e is Error err)
             {
                 if (Diagnostics.errors.Count != 0)
                 {
                     Diagnostics.errors.ComposeErrorReport();
                 }
-                Console.WriteLine(e.Message);
+                Console.WriteLine(err.ComposeErrorMessage());
             }
             else
             {

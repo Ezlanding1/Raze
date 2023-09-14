@@ -48,7 +48,7 @@ internal abstract class Error : Exception
         }
 
         public override string ComposeErrorMessage() => 
-            $"{ErrorType.LexerException}\n{name}: {details}\nLine: {line}, COL: {col + 1}";
+            $"{ErrorType.LexerException}\n{name}: {details}\nLine: {line}, Col: {col + 1}";
     }
 
     // An error raised during Parsing ( Raze.Parser )

@@ -73,7 +73,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
         alloc.ReserveRegister(this);
 
-        EmitCall(new Instruction.Unary("CALL", new Instruction.ProcedureRef(ToMangledName(expr.internalFunction))));
+        EmitCall(new Instruction.Unary("CALL", new Instruction.ProcedureRef(expr.internalFunction.ToMangledName())));
 
         return alloc.CallAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnSize));
     }
@@ -153,7 +153,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
         alloc.ReserveRegister(this);
 
-        EmitCall(new Instruction.Unary("CALL", new Instruction.ProcedureRef(ToMangledName(expr.internalFunction))));
+        EmitCall(new Instruction.Unary("CALL", new Instruction.ProcedureRef(expr.internalFunction.ToMangledName())));
 
         if (expr.arguments.Count > InstructionUtils.paramRegister.Length && alloc.fncPushPreserved.leaf)
         {
@@ -225,7 +225,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             return null;
         }
 
-        Emit(new Instruction.Procedure(ToMangledName(expr)));
+        Emit(new Instruction.Procedure(expr.ToMangledName()));
 
         Emit(alloc.fncPushPreserved = new(expr.size));
 
@@ -527,7 +527,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
         alloc.ReserveRegister(this);
 
-        EmitCall(new Instruction.Unary("CALL", new Instruction.ProcedureRef(ToMangledName(expr.internalFunction))));
+        EmitCall(new Instruction.Unary("CALL", new Instruction.ProcedureRef(expr.internalFunction.ToMangledName())));
 
         return alloc.CallAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnSize));
     }
@@ -849,27 +849,6 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             return alloc.NextRegister((Instruction.Register.RegisterSize)size);
         }
         return (Instruction.SizedValue)operand;
-    }
-
-    public static string ToMangledName(Expr.Function function)
-    {
-        return (function.enclosing != null ?
-                    function.enclosing.ToString() + "." :
-                    "")
-                    + function.name.lexeme + getParameters();
-
-        string getParameters()
-        {
-            string res = "";
-            if (function.parameters.Count != 0 && function.parameters[0].typeName.Count == 0)
-            {
-                foreach (var type in function.parameters)
-                {
-                    res += (type.stack.type);
-                }
-            }
-            return res;
-        }
     }
 }
 

@@ -8,6 +8,8 @@ namespace Raze;
 
 internal class ErrorStack : Stack<Error>
 {
+    private const string ErrorPadding = "\n\n";
+
     internal new void Push(Error error)
     {
         if (error is Error.ImpossibleError)
@@ -19,9 +21,14 @@ internal class ErrorStack : Stack<Error>
 
     internal void ComposeErrorReport()
     {
-        while (Count > 0)
+        var color = Console.ForegroundColor;
+        Console.ForegroundColor = ConsoleColor.DarkRed;
+
+        while (Count > 1)
         {
-            Console.WriteLine(this.Pop().ComposeErrorMessage());
+            Console.WriteLine(this.Pop().ComposeErrorMessage() + ErrorPadding);
         }
+        Console.WriteLine(this.Pop().ComposeErrorMessage());
+        Console.ForegroundColor = color;
     }
 }

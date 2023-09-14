@@ -90,7 +90,7 @@ internal class Parser
                     _return.typeName.Enqueue(new Token(Token.TokenType.RESERVED, "void"));
                 }
 
-                Expect(Token.TokenType.IDENTIFIER, definitionType.type + " name");
+                Expect(Token.TokenType.IDENTIFIER, definitionType.lexeme + " name");
                 Token name = Previous();
                 Expect(Token.TokenType.LPAREN, "'(' after function name");
                 List<Expr.Parameter> parameters = new();
@@ -122,14 +122,14 @@ internal class Parser
 
                 List<Expr> block = new();
 
-                Expect(Token.TokenType.LBRACE, "'{' before class body");
+                Expect(Token.TokenType.LBRACE, "'{' before function body");
                 while (!TypeMatch(Token.TokenType.RBRACE))
                 {
                     block.Add(Start());
 
                     if (IsAtEnd())
                     {
-                        Expect(Token.TokenType.RBRACE, "'}' after block");
+                        Expect(Token.TokenType.RBRACE, "'}' after function body");
                     }
                     if (TypeMatch(Token.TokenType.RBRACE))
                     {
@@ -141,7 +141,7 @@ internal class Parser
             }
             else if (definitionType.lexeme == "class")
             {
-                Expect(Token.TokenType.IDENTIFIER, definitionType.type + " name");
+                Expect(Token.TokenType.IDENTIFIER, definitionType.lexeme + " name");
                 Token name = Previous();
 
                 if (Literals.Contains(name.type))
@@ -175,7 +175,7 @@ internal class Parser
 
                     if (IsAtEnd())
                     {
-                        Expect(Token.TokenType.RBRACE, "'}' after block");
+                        Expect(Token.TokenType.RBRACE, "'}' after class body");
                     }
                 }
 
@@ -184,7 +184,7 @@ internal class Parser
             else if (definitionType.lexeme == "primitive")
             {
                 ExpectValue(Token.TokenType.RESERVED, "class", "'class' keyword");
-                Expect(Token.TokenType.IDENTIFIER, "name of primitive type");
+                Expect(Token.TokenType.IDENTIFIER, definitionType.lexeme + " name");
                 var name = Previous();
 
                 if (Literals.Contains(name.type))
@@ -298,7 +298,7 @@ internal class Parser
                 case "while":
                 {
                     Expr condition = GetCondition();
-                    block = GetBlock(conditionalType.lexeme);
+                    block = GetBlock(conditionalType.lexeme + " loop");
                     return new Expr.While(condition, block);
                 }
                 case "for":
@@ -310,7 +310,7 @@ internal class Parser
                     Expect(Token.TokenType.SEMICOLON, "';' after expression");
                     var updateExpr = Logical();
                     Expect(Token.TokenType.RPAREN, "')' after update of For Statement");
-                    block = GetBlock(conditionalType.lexeme);
+                    block = GetBlock(conditionalType.lexeme + " loop");
                     return new Expr.For(condition, block, initExpr, updateExpr);
                 }
             }
@@ -683,7 +683,7 @@ internal class Parser
             bodyExprs.Add(Start());
             if (IsAtEnd())
             {
-                Expect(Token.TokenType.RBRACE, "'}' after block");
+                Expect(Token.TokenType.RBRACE, "'}' after " + bodytype + " body");
             }
             if (TypeMatch(Token.TokenType.RBRACE))
             {

@@ -493,6 +493,8 @@ internal abstract class Expr
             this.size = size;
         }
 
+        public abstract string ToMangledName();
+
         public abstract override T Accept<T>(IVisitor<T> visitor);
     }
 
@@ -516,6 +518,27 @@ internal abstract class Expr
             this._returnType = _returnType;
             this.parameters = parameters;
             this.block = block;
+        }
+
+        public override string ToMangledName()
+        {
+            return (this.enclosing != null ?
+                    this.enclosing.ToString() + "." :
+                    "")
+                    + this.name.lexeme + getParameters();
+
+            string getParameters()
+            {
+                string res = "";
+                if (this.parameters.Count != 0 && this.parameters[0].typeName.Count == 0)
+                {
+                    foreach (var type in this.parameters)
+                    {
+                        res += (type.stack.type);
+                    }
+                }
+                return res;
+            }
         }
 
         public override string ToString()
@@ -576,6 +599,11 @@ internal abstract class Expr
         public DataType(Token name, List<Definition> definitions, int size, TypeReference superclass) : this(name, definitions, superclass)
         {
             this.size = size;
+        }
+
+        public override string ToMangledName()
+        {
+            return name.lexeme;
         }
     }
 
