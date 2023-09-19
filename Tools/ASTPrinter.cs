@@ -260,4 +260,10 @@ internal class ASTPrinter : Expr.IVisitor<object?>
         PrintAST(expr.right);
         return null;
     }
+
+    public object? VisitNoOpExpr(Expr.NoOp expr)
+    {
+        PrintAST("Invalid Expr");
+        return null;
+    }
 }

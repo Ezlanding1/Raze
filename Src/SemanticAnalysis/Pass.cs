@@ -164,5 +164,7 @@ internal partial class Analyzer
             expr.conditional.block.Accept(this);
             return default;
         }
+
+        public virtual T VisitNoOpExpr(Expr.NoOp expr) => default;
     }
 }

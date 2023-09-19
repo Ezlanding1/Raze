@@ -14,12 +14,12 @@ internal class Parser
     Token? current;
     int index;
 
-    public static readonly Token.TokenType[] Literals = 
-    { 
-        Token.TokenType.INTEGER, 
-        Token.TokenType.FLOATING, 
-        Token.TokenType.STRING, 
-        Token.TokenType.BINARY, 
+    public static readonly Token.TokenType[] Literals =
+    {
+        Token.TokenType.INTEGER,
+        Token.TokenType.FLOATING,
+        Token.TokenType.STRING,
+        Token.TokenType.BINARY,
         Token.TokenType.HEX,
         Token.TokenType.BOOLEAN
     };
@@ -46,25 +46,21 @@ internal class Parser
         return Definition();
     }
 
-    private Expr.Definition _Definition()
+    private Expr.Definition? _Definition()
     {
         if (ReservedValueMatch("function", "class", "primitive"))
         {
             Token definitionType = Previous();
             if (definitionType.lexeme == "function")
             {
-                ExprUtils.Modifiers modifiers = new(
-                    "static",
-                    "unsafe",
-                    "operator",
-                    "inline"
-                );
+                ExprUtils.Modifiers modifiers = ExprUtils.Modifiers.FunctionModifierTemplate();
 
-                Expr.TypeReference _return;
+                Expr.TypeReference _return = new(null);
 
                 if (IsAtEnd())
                 {
-                    throw End();
+                    End();
+                    return null;
                 }
 
                 while (modifiers.ContainsModifier(current.lexeme))
@@ -73,21 +69,21 @@ internal class Parser
                     Advance();
                 }
 
-                if (Peek().type == Token.TokenType.IDENTIFIER)
+                var retToken = Peek();
+                if (retToken == null)
+                {
+                    return null;
+                }
+                if (retToken.type == Token.TokenType.IDENTIFIER)
                 {
                     Expect(Token.TokenType.IDENTIFIER, "function return type");
-                    _return = new(new());
+                    _return.typeName = new();
                     _return.typeName.Enqueue(Previous());
 
                     if (TypeMatch(Token.TokenType.DOT))
                     {
                         _return = new Expr.TypeReference(GetTypeReference());
                     }
-                }
-                else
-                {
-                    _return = new(new());
-                    _return.typeName.Enqueue(new Token(Token.TokenType.RESERVED, "void"));
                 }
 
                 Expect(Token.TokenType.IDENTIFIER, definitionType.lexeme + " name");
@@ -96,11 +92,9 @@ internal class Parser
                 List<Expr.Parameter> parameters = new();
                 while (!TypeMatch(Token.TokenType.RPAREN))
                 {
-                    ExprUtils.Modifiers paramModifers = new("ref", "inlineRef");
+                    ExprUtils.Modifiers paramModifers = ExprUtils.Modifiers.ParameterModifierTemplate();
 
-                    
                     paramModifers["ref"] = ReservedValueMatch("ref");
-                    paramModifers["inlineRef"] = true;
 
                     Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter type");
                     var typeName = GetTypeReference();
@@ -116,7 +110,8 @@ internal class Parser
                     Expect(Token.TokenType.COMMA, "',' between parameters");
                     if (IsAtEnd())
                     {
-                        throw new Error.ParseError("Unexpected End In Function Parameters", $"Function '{name.lexeme}' reached an unexpected end during it's parameters");
+                        Diagnostics.errors.Push(new Error.ParseError("Unexpected End In Function Parameters", $"Function '{name.lexeme}' reached an unexpected end during its parameters"));
+                        return new Expr.Function(modifiers, _return, name, parameters, new());
                     }
                 }
 
@@ -125,11 +120,12 @@ internal class Parser
                 Expect(Token.TokenType.LBRACE, "'{' before function body");
                 while (!TypeMatch(Token.TokenType.RBRACE))
                 {
-                    block.Add(Start());
-
+                    block.Add(Entity());
+                    
                     if (IsAtEnd())
                     {
                         Expect(Token.TokenType.RBRACE, "'}' after function body");
+                        break;
                     }
                     if (TypeMatch(Token.TokenType.RBRACE))
                     {
@@ -146,7 +142,7 @@ internal class Parser
 
                 if (Literals.Contains(name.type))
                 {
-                    throw new Error.ParseError("Invalid Class", $"The name of a class may not be a literal ({name.lexeme})");
+                    Diagnostics.errors.Push(new Error.ParseError("Invalid Class", $"The name of a class may not be a literal ({name.lexeme})"));
                 }
 
                 List<Expr.Declare> declarations = new();
@@ -160,7 +156,7 @@ internal class Parser
                     {
                         declarations.Add(declExpr);
                     }
-                    else
+                    else if (!IsAtEnd())
                     {
                         Expr.Definition? definitionExpr = _Definition();
                         if (definitionExpr != null)
@@ -169,13 +165,13 @@ internal class Parser
                         }
                         else
                         {
-                            throw new Error.ParseError("Invalid Class Definition", $"A class may only contain declarations and definitions. Got '{Previous().lexeme}'");
+                            Diagnostics.errors.Push(new Error.ParseError("Invalid Class Definition", $"A class may only contain declarations and definitions. {GotInfo()}"));
                         }
                     }
-
-                    if (IsAtEnd())
+                    else
                     {
                         Expect(Token.TokenType.RBRACE, "'}' after class body");
+                        break;
                     }
                 }
 
@@ -189,19 +185,30 @@ internal class Parser
 
                 if (Literals.Contains(name.type))
                 {
-                    throw new Error.ParseError("Invalid Primitive", $"The name of a primitive may not be a literal ({name.lexeme})");
+                    Diagnostics.errors.Push(new Error.ParseError("Invalid Primitive", $"The name of a primitive may not be a literal ({name.lexeme})"));
                 }
 
                 ExpectValue(Token.TokenType.IDENTIFIER, "sizeof", "'sizeof' keyword");
-                Expect(Token.TokenType.INTEGER, "size (in bytes) of primitive");
-                Token size = Previous();
+                
+                int size = -1;
 
-                if (!new List<string>() { "8", "4", "2", "1" }.Contains(size.lexeme))
+                if (TypeMatch(Token.TokenType.INTEGER))
                 {
-                    throw new Error.ParseError("Invalid Primitive", "The size of primitive classes must be the integers '8', '4', '2', or '1'");
+                    if (!new List<string>() { "8", "4", "2", "1" }.Contains(Previous().lexeme))
+                    {
+                        Diagnostics.errors.Push(new Error.ParseError("Invalid Primitive", $"The size of primitive classes must be the integers '8', '4', '2', or '1'. Got: '{Previous().lexeme}'"));
+                    }
+                    else
+                    {
+                        size = int.Parse(Previous().lexeme);
+                    }
+                }
+                else
+                {
+                    Expected("INTEGER", "size (in bytes) of primitive");
                 }
 
-                Expr.TypeReference type = new(null);
+                Expr.TypeReference type = null;
 
                 if (ValueMatch("extends"))
                 {
@@ -212,7 +219,7 @@ internal class Parser
 
                     if (!Enum.TryParse<Token.TokenType>(Previous().lexeme, out var literalEnum) || !Literals.Contains(literalEnum))
                     {
-                        throw new Error.ParseError("Invalid Primitive", $"The superclass of a primitive must be a valid literal ({string.Join(", ", Literals)}). Got '{Previous().lexeme}'");
+                        Diagnostics.errors.Push(new Error.ParseError("Invalid Primitive", $"The superclass of a primitive must be a valid literal ({string.Join(", ", Literals)}). Got: '{Previous().lexeme}'"));
                     }
                 }
 
@@ -225,18 +232,19 @@ internal class Parser
                     {
                         definitions.Add(bodyExpr);
                     }
+                    else if (!IsAtEnd())
+                    {
+                        Diagnostics.errors.Push(new Error.ParseError("Invalid Class Definition", $"A primitive class may only contain definitions. {GotInfo()}"));
+                        Advance();
+                    }
                     else
                     {
-                        throw new Error.ParseError("Invalid Class Definition", $"A primitive class may only contain definitions. Got '{Previous().lexeme}'");
-                    }
-
-                    if (IsAtEnd())
-                    {
-                        Expect(Token.TokenType.RBRACE, "'}' after block");
+                        Expect(Token.TokenType.RBRACE, "'}' after primitive body");
+                        break;
                     }
                 }
 
-                return new Expr.Primitive(name, definitions, int.Parse(size.lexeme), type);
+                return new Expr.Primitive(name, definitions, size, type);
             }
         }
         return null;
@@ -267,52 +275,54 @@ internal class Parser
             switch (conditionalType.lexeme)
             {
                 case "if":
-                {
-                    var expr = new Expr.If(new(GetCondition(), GetBlock(conditionalType.lexeme)));
+                    {
+                        var expr = new Expr.If(new(GetCondition(), GetBlock(conditionalType.lexeme)));
 
-                    while (ReservedValueMatch("else"))
+                        while (ReservedValueMatch("else"))
+                        {
+                            if (ReservedValueMatch("if"))
+                            {
+                                expr.conditionals.Add(new Expr.Conditional(GetCondition(), GetBlock("else if")));
+                            }
+                            else
+                            {
+                                expr._else = GetBlock("else");
+                            }
+                        }
+                        return expr;
+                    }
+                case "else":
                     {
                         if (ReservedValueMatch("if"))
                         {
-                            expr.conditionals.Add(new Expr.Conditional(GetCondition(), GetBlock("else if")));
+                            Diagnostics.errors.Push(new Error.ParseError("Invalid Else If", "'else if' conditional has no matching 'if'"));
+                            return new Expr.If(new(GetCondition(), GetBlock("else if")));
                         }
                         else
                         {
-                            expr._else = GetBlock("else");
+                            Diagnostics.errors.Push(new Error.ParseError("Invalid Else", "'else' conditional has no matching 'if'"));
+                            return GetBlock("else");
                         }
+
                     }
-                    return expr;
-                }
-                case "else":
-                {
-                    if (current.lexeme == "if")
-                    {
-                        throw new Error.AnalyzerError("Invalid Else If", "'else if' conditional has no matching 'if'");
-                    }
-                    else
-                    {
-                        throw new Error.AnalyzerError("Invalid Else", "'else' conditional has no matching 'if'");
-                    }
-                    
-                }
                 case "while":
-                {
-                    Expr condition = GetCondition();
-                    block = GetBlock(conditionalType.lexeme + " loop");
-                    return new Expr.While(condition, block);
-                }
+                    {
+                        Expr condition = GetCondition();
+                        block = GetBlock(conditionalType.lexeme + " loop");
+                        return new Expr.While(condition, block);
+                    }
                 case "for":
-                {
-                    Expect(Token.TokenType.LPAREN, "'(' after 'for'");
-                    var initExpr = Logical();
-                    Expect(Token.TokenType.SEMICOLON, "';' after expression");
-                    var condition = Logical();
-                    Expect(Token.TokenType.SEMICOLON, "';' after expression");
-                    var updateExpr = Logical();
-                    Expect(Token.TokenType.RPAREN, "')' after update of For Statement");
-                    block = GetBlock(conditionalType.lexeme + " loop");
-                    return new Expr.For(condition, block, initExpr, updateExpr);
-                }
+                    {
+                        Expect(Token.TokenType.LPAREN, "'(' after 'for'");
+                        var initExpr = Logical();
+                        Expect(Token.TokenType.SEMICOLON, "';' after expression");
+                        var condition = Logical();
+                        Expect(Token.TokenType.SEMICOLON, "';' after expression");
+                        var updateExpr = Logical();
+                        Expect(Token.TokenType.RPAREN, "')' after update of For Statement");
+                        block = GetBlock(conditionalType.lexeme + " loop");
+                        return new Expr.For(condition, block, initExpr, updateExpr);
+                    }
             }
         }
         return Semicolon();
@@ -321,7 +331,10 @@ internal class Parser
     private Expr Semicolon()
     {
         Expr expr = NoSemicolon();
-        Expect(Token.TokenType.SEMICOLON, "';' after expression");
+        if (expr is not Expr.NoOp)
+        {
+            Expect(Token.TokenType.SEMICOLON, "';' after expression");
+        }
         return expr;
     }
 
@@ -474,11 +487,11 @@ internal class Parser
     {
         if (!IsAtEnd())
         {
-            Expr? expr = Literal();
+            Expr expr;
 
-            if (expr != null)
+            if (TypeMatch(Literals))
             {
-                return expr;
+                return new Expr.Literal(Previous());
             }
 
             if (TypeMatch(Token.TokenType.LPAREN))
@@ -492,15 +505,11 @@ internal class Parser
             {
                 var variable = GetReference();
 
-                if (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this"))
-                {
-                    expr = Declare(variable);
-                }
-                else if (TypeMatch(Token.TokenType.EQUALS))
+                if (TypeMatch(Token.TokenType.EQUALS))
                 {
                     if (variable.IsMethod())
                     {
-                        throw new Error.ParseError("Invalid Assign Statement", "Cannot assign to a non-variable");
+                        Diagnostics.errors.Push(new Error.ParseError("Invalid Assign Statement", "Cannot assign to a method"));
                     }
                     expr = new Expr.Assign(variable, NoSemicolon());
                 }
@@ -508,16 +517,23 @@ internal class Parser
                 {
                     if (variable.IsMethod())
                     {
-                        throw new Error.ParseError("Invalid Assign Statement", "Cannot assign to a non-variable");
+                        Diagnostics.errors.Push(new Error.ParseError("Invalid Assign Statement", "Cannot assign to a method"));
                     }
                     var op = tokens[index - 2];
                     expr = new Expr.Assign(variable, new Expr.Binary(variable, op, NoSemicolon()));
+                }
+                else if (variable.IsMethod())
+                {
+                    expr = variable;
+                }
+                else if (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this"))
+                {
+                    expr = Declare(variable);
                 }
                 else
                 {
                     expr = variable;
                 }
-
                 return expr;
             }
 
@@ -529,19 +545,18 @@ internal class Parser
             if (ReservedValueMatch("new"))
             {
                 Expect(Token.TokenType.IDENTIFIER, "identifier after new expression");
-                return new Expr.New(GetNewGetter());
+                var newCallExpr = GetNewGetter();
+                if (newCallExpr == null)
+                {
+                    return new Expr.NoOp();
+                }
+                return new Expr.New(newCallExpr);
             }
         }
-        throw End();
-    }
 
-    private Expr.Literal? Literal()
-    {
-        if (TypeMatch(Literals))
-        {
-            return new Expr.Literal(Previous());
-        }
-        return null;
+        End();
+        Advance();
+        return new Expr.NoOp();
     }
 
     private Expr.Declare? FullDeclare()
@@ -558,7 +573,8 @@ internal class Parser
             }
             else
             {
-                throw new Error.ParseError("Invalid Class Definition", $"A class may only contain declarations and definitions");
+                Diagnostics.errors.Push(new Error.ParseError("Invalid Class Definition", $"A class may only contain declarations and definitions"));
+                return null;
             }
             Expect(Token.TokenType.SEMICOLON, "';' after expression");
             return declare;
@@ -570,14 +586,16 @@ internal class Parser
     {
         if (variable.HasMethod())
         {
-            throw new Error.ParseError("Invalid Declare Statement", "Cannot declare to a non-type value");
+            Diagnostics.errors.Push(new Error.ParseError("Invalid Declare Statement", "Cannot declare to a non-type value"));
         }
 
         var name = Previous();
         if (name.lexeme == "this")
         {
-            throw new Error.ParseError("Invalid 'This' Keyword", "The 'this' keyword may only be used in a member to reference the enclosing class");
+            Diagnostics.errors.Push(new Error.ParseError("Invalid 'This' Keyword", "The 'this' keyword may only be used in a member to reference the enclosing class"));
+            name.type = Token.TokenType.IDENTIFIER;
         }
+
         Expect(Token.TokenType.EQUALS, "'=' when declaring variable");
 
         return new Expr.Declare(variable.ToTypeReference().typeName, name, ReservedValueMatch("ref"), NoSemicolon());
@@ -614,7 +632,7 @@ internal class Parser
         return new Expr.GetReference(getters, callee.typeName != null || (callee.typeName == null && getters.Count == 0));
     }
 
-    private Expr.Call GetNewGetter()
+    private Expr.Call? GetNewGetter()
     {
         Expr.TypeReference callee = new(GetTypeReference());
 
@@ -623,7 +641,8 @@ internal class Parser
             return new Expr.Call(callee.typeName.StackPop(), GetArgs(), (callee.typeName.Count == 0) ? new(null) : callee, false);
         }
 
-        throw Expected(Token.TokenType.LPAREN.ToString(), "'(' after type in new expression");
+        Expected(Token.TokenType.LPAREN.ToString(), "'(' after type in new expression");
+        return null;
     }
 
     private ExprUtils.QueueList<Token> GetTypeReference()
@@ -641,9 +660,9 @@ internal class Parser
     }
 
 
-    private Exception End()
+    private void End()
     {
-        return new Error.ParseError("Expression Reached Unexpected End", $"Expression '{((Previous() != null)? Previous().lexeme : "")}' reached an unexpected end");
+        Diagnostics.errors.Push(new Error.ParseError("Expression Reached Unexpected End", $"Expression '{Previous().lexeme}' reached an unexpected end"));
     }
 
     private List<Expr> GetArgs()
@@ -652,11 +671,23 @@ internal class Parser
         while (!TypeMatch(Token.TokenType.RPAREN))
         {
             arguments.Add(Logical());
-            if (TypeMatch(Token.TokenType.RPAREN))
+
+            if (TypeMatch(Token.TokenType.COMMA))
             {
-                break;
+                if (TypeMatch(Token.TokenType.COMMA))
+                {
+                    Diagnostics.errors.Push(new Error.ParseError("Invalid Function Arguments", "Unexpected comma ','"));
+                    while (TypeMatch(Token.TokenType.COMMA))
+                    {
+                        Diagnostics.errors.Push(new Error.ParseError("Invalid Function Arguments", "Unexpected comma ','"));
+                    }
+                }
+                if (TypeMatch(Token.TokenType.RPAREN))
+                {
+                    Diagnostics.errors.Push(new Error.ParseError("Invalid Function Arguments", "Unexpected comma ','"));
+                    break;
+                }
             }
-            Expect(Token.TokenType.COMMA, "',' between parameters");
         }
         return arguments;
     }
@@ -677,13 +708,18 @@ internal class Parser
     private List<Expr> GetBlockItems(string bodytype)
     {
         List<Expr> bodyExprs = new();
-        Expect(Token.TokenType.LBRACE, "'{' before " + bodytype + " body");
+        if (!TypeMatch(Token.TokenType.LBRACE))
+        {
+            Expected("LBRACE", "'{' before " + bodytype + " body");
+            return new();
+        }
         while (!TypeMatch(Token.TokenType.RBRACE))
         {
             bodyExprs.Add(Start());
             if (IsAtEnd())
             {
                 Expect(Token.TokenType.RBRACE, "'}' after " + bodytype + " body");
+                break;
             }
             if (TypeMatch(Token.TokenType.RBRACE))
             {
@@ -692,7 +728,7 @@ internal class Parser
         }
         return bodyExprs;
     }
-    
+
     private (List<ExprUtils.AssignableInstruction>, List<Expr.GetReference>) GetAsmInstructions()
     {
         List<ExprUtils.AssignableInstruction> instructions = new();
@@ -707,7 +743,7 @@ internal class Parser
             bool localReturn = false;
             if (ReservedValueMatch("return"))
             {
-                if (returned) { throw new Error.ParseError("Invalid Assembly Block", "Only one return may appear in an assembly block"); }
+                if (returned) { Diagnostics.errors.Push(new Error.ParseError("Invalid Assembly Block", "Only one return may appear in an assembly block")); }
                 returned = true;
                 localReturn = true;
             }
@@ -724,7 +760,7 @@ internal class Parser
                     {
                         Expect(Token.TokenType.IDENTIFIER, "after escape '$'");
                         value = null;
-                        variables.Add(new Expr.GetReference(new(){ new Expr.Get(Previous()) }));
+                        variables.Add(new Expr.GetReference(new() { new Expr.Get(Previous()) }));
                     }
                     else
                     {
@@ -735,7 +771,8 @@ internal class Parser
                         }
                         else
                         {
-                            throw new Error.ParseError("Invalid Assembly Register", $"Invalid assembly register given '{identifier}'");
+                            Diagnostics.errors.Push(new Error.ParseError("Invalid Assembly Register", $"Invalid assembly register '{identifier}'"));
+                            value = new Instruction.Register(Instruction.Register.RegisterName.TMP, Instruction.Register.RegisterSize._8Bits);
                         }
                     }
 
@@ -752,18 +789,19 @@ internal class Parser
                             }
                             else
                             {
-                                throw new Error.ParseError("Invalid Assembly Register", $"Invalid assembly register given '{identifier.lexeme}'");
+                                Diagnostics.errors.Push(new Error.ParseError("Invalid Assembly Register", $"Invalid assembly register given '{identifier.lexeme}'"));
+                                instructions.Add(new ExprUtils.AssignableInstruction.Binary(new Instruction.Binary(op.lexeme, value, new Instruction.Register(Instruction.Register.RegisterName.TMP, Instruction.Register.RegisterSize._8Bits)), ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
                             }
                         }
                         else if (TypeMatch(Token.TokenType.INTEGER, Token.TokenType.FLOATING, Token.TokenType.STRING, Token.TokenType.HEX, Token.TokenType.BINARY))
                         {
-                            instructions.Add(new ExprUtils.AssignableInstruction.Binary(new Instruction.Binary(op.lexeme, value, new Instruction.Literal(Previous().type, Previous().lexeme)), (value == null)? ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst : ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
+                            instructions.Add(new ExprUtils.AssignableInstruction.Binary(new Instruction.Binary(op.lexeme, value, new Instruction.Literal(Previous().type, Previous().lexeme)), (value == null) ? ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst : ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
                         }
                         else if (TypeMatch(Token.TokenType.DOLLAR))
                         {
                             Expect(Token.TokenType.IDENTIFIER, "after escape '$'");
                             variables.Add(new Expr.GetReference(new() { new Expr.Get(Previous()) }));
-                            instructions.Add(new ExprUtils.AssignableInstruction.Binary(new Instruction.Binary(op.lexeme, value, null), (value == null)? (ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst | ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond) : ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond, localReturn));
+                            instructions.Add(new ExprUtils.AssignableInstruction.Binary(new Instruction.Binary(op.lexeme, value, null), (value == null) ? (ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst | ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond) : ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond, localReturn));
                         }
                         else
                         {
@@ -772,12 +810,12 @@ internal class Parser
                     }
                     else
                     {
-                        instructions.Add(new ExprUtils.AssignableInstruction.Unary(new Instruction.Unary(op.lexeme, value), (value == null)? ExprUtils.AssignableInstruction.Unary.AssignType.AssignFirst : ExprUtils.AssignableInstruction.Unary.AssignType.AssignNone, localReturn));
+                        instructions.Add(new ExprUtils.AssignableInstruction.Unary(new Instruction.Unary(op.lexeme, value), (value == null) ? ExprUtils.AssignableInstruction.Unary.AssignType.AssignFirst : ExprUtils.AssignableInstruction.Unary.AssignType.AssignNone, localReturn));
                     }
                 }
                 else
                 {
-                    if (localReturn) { throw new Error.ParseError("Invalid Assembly Block", "Return on a zero instruction is not allowed"); }
+                    if (localReturn) { Diagnostics.errors.Push(new Error.ParseError("Invalid Assembly Block", "Return on a zero instruction is not allowed")); }
                     // Zero
                     instructions.Add(new ExprUtils.AssignableInstruction.AssignableInstructionZ(new Instruction.Zero(op.lexeme)));
                 }
@@ -785,12 +823,13 @@ internal class Parser
             }
             else
             {
-                throw new Error.ParseError("Invalid Assembly Statement", $"'{current.lexeme}' is invalid in an assembly block");
+                Diagnostics.errors.Push(new Error.ParseError("Invalid Assembly Statement", $"'{current.lexeme}' is invalid in an assembly block"));
             }
 
             if (IsAtEnd())
             {
                 Expect(Token.TokenType.RBRACE, "'}' after Assembly Block");
+                break;
             }
             if (TypeMatch(Token.TokenType.RBRACE))
             {
@@ -890,7 +929,7 @@ internal class Parser
             Advance();
             return;
         }
-        throw Expected(type.ToString(), errorMessage);
+        Expected(type.ToString(), errorMessage);
     }
 
     private void ExpectValue(Token.TokenType type, string value, string errorMessage)
@@ -900,31 +939,29 @@ internal class Parser
             Advance();
             return;
         }
-        throw Expected(type + " : " + value, errorMessage);
+        Expected(type + " : " + value, errorMessage);
     }
 
-    private Error.ParseError Expected(string type, string errorMessage)
+    private void Expected(string type, string errorMessage)
     {
-        return new Error.ParseError($"{type}", "Expected " + errorMessage + $"{((current != null) ? "\nGot: '" + current.lexeme + "' Instead" : "")}");
+        Diagnostics.errors.Push(new Error.ParseError($"{type}", "Expected " + errorMessage + "\n" + GotInfo()));
     }
 
-    private Token Previous(int sub=1)
+    private string GotInfo() => $"Got: '{current?.lexeme}'";
+
+    private Token Previous(int sub = 1)
     {
-        if (!IsAtEnd(index - sub))
-        {
-            return tokens[index - sub];
-        }
-        Diagnostics.errors.Push(new Error.ImpossibleError("Requested the token before the first token"));
-        return null;
+        return tokens[index - sub];
     }
 
-    private Token Peek()
+    private Token? Peek()
     {
         if (!IsAtEnd(index + 1))
         {
             return tokens[index + 1];
         }
-        throw End();
+        End();
+        return null;
     }
 
     private void Advance()

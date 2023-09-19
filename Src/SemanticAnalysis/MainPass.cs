@@ -240,7 +240,7 @@ internal partial class Analyzer
         {
             symbolTable.SetContext(expr);
 
-            if (expr.superclass.typeName.Count != 0)
+            if (expr.superclass != null)
             {
                 expr._Matches =
                     (x) =>

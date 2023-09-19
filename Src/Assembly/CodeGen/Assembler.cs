@@ -758,6 +758,11 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         return new Instruction.Literal(Parser.Literals[5], expr.value);
     }
 
+    public Instruction.Value? VisitNoOpExpr(Expr.NoOp expr)
+    {
+        return new Instruction.Register(Instruction.Register.RegisterName.TMP, Instruction.Register.RegisterSize._64Bits);
+    }
+
     private void DoFooter()
     {
         Emit(alloc.fncPushPreserved);

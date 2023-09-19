@@ -82,5 +82,26 @@ internal abstract partial class ExprUtils
             get { return modifiers[GetModifier(s)].Item2; }
             set { modifiers[GetModifier(s)].Item2 = value; }
         }
+
+        public static Modifiers FunctionModifierTemplate()
+        {
+            return new(
+                "static",
+                "unsafe",
+                "operator",
+                "inline"
+            );
+        }
+
+        public static Modifiers ParameterModifierTemplate()
+        {
+            var modifiers = new Modifiers(
+                "ref", 
+                "inlineRef"
+            );
+            modifiers["inlineRef"] = true;
+
+            return modifiers;
+        }
     }
 }

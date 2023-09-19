@@ -44,6 +44,7 @@ internal abstract class Expr
         public T VisitKeywordExpr(Keyword expr);
         public T VisitNewExpr(New expr);
         public T VisitIsExpr(Is expr);
+        public T VisitNoOpExpr(NoOp expr);
     }
 
     public class Binary : Expr
@@ -435,18 +436,11 @@ internal abstract class Expr
     public class Type : Named
     {
         public Type? enclosing;
-
-        public Func<Type, bool> _Matches;
         
         public Definition.DefinitionType definitionType;
 
         public Type(Token name) : base(name)
         {
-            _Matches =
-                (x) =>
-                {
-                    return x == this;
-                };
         }
 
         public override T Accept<T>(IVisitor<T> visitor)
@@ -455,9 +449,13 @@ internal abstract class Expr
             return default;
         }
 
-        public bool Matches(Type type)
+        public virtual bool Match(Type type)
         {
-            return type._Matches(this) || ((enclosing != null) && enclosing.Matches(type));
+            return type == this;
+        }
+        public virtual bool Matches(Type type)
+        {
+            return type.Match(this);
         }
 
         public override string ToString()
@@ -611,10 +609,15 @@ internal abstract class Expr
     {
         public List<Declare> declarations;
 
-        public Class(Token name, List<Declare> declarations, List<Definition> definitions, TypeReference type) : base(name, definitions, type)
+        public Class(Token name, List<Declare> declarations, List<Definition> definitions, TypeReference superclass) : base(name, definitions, superclass)
         {
             this.definitionType = DefinitionType.Class;
             this.declarations = declarations;
+        }
+
+        public override bool Matches(Type type)
+        {
+            return type.Match(this) || this.superclass.type.Matches(type);
         }
 
         public override T Accept<T>(IVisitor<T> visitor)
@@ -625,11 +628,15 @@ internal abstract class Expr
 
     public class Primitive : DataType
     {
-        public Primitive(Token name, List<Definition> definitions, int size, TypeReference type) : base(name, definitions, size, type)
+        public Primitive(Token name, List<Definition> definitions, int size, TypeReference superclass) : base(name, definitions, size, superclass)
         {
             this.definitionType = DefinitionType.Primitive;
         }
 
+        public override bool Match(Type type)
+        {
+            return this == type || this.superclass.type == type;
+        }
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
@@ -696,6 +703,14 @@ internal abstract class Expr
         public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitIsExpr(this);
+        }
+    }
+
+    public class NoOp : Expr
+    {
+        public override T Accept<T>(IVisitor<T> visitor)
+        {
+            return visitor.VisitNoOpExpr(this);
         }
     }
 }
