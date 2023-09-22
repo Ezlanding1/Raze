@@ -12,7 +12,7 @@ internal partial class Analyzer
     {
         public class Any : Expr.Class
         {
-            public Any() : base(new(Token.TokenType.IDENTIFIER, "any"), new(), new(), null)
+            public Any(Token name) : base(name, new(), new(), null)
             {
             }
 

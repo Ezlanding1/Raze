@@ -51,7 +51,7 @@ internal partial class Analyzer
                 }
             }
 
-            if (expr._returnType.typeName.Peek().type != Token.TokenType.RESERVED && expr._returnType.typeName.Peek().lexeme != "void")
+            if (expr._returnType.typeName != null)
             {
                 expr._returnType.Accept(this);
                 expr._returnSize = (expr._returnType.type?.definitionType == Expr.Definition.DefinitionType.Primitive) ? ((Expr.Primitive)expr._returnType.type).size : 8;
@@ -200,6 +200,12 @@ internal partial class Analyzer
             return null;
         }
 
+        public override object VisitReturnExpr(Expr.Return expr)
+        {
+            HandleTopLevelCode();
+            return base.VisitReturnExpr(expr);
+        }
+
         public override object? VisitAssemblyExpr(Expr.Assembly expr)
         {
             if (symbolTable.CurrentIsTop())
@@ -229,7 +235,7 @@ internal partial class Analyzer
 
                 if (call.callee.typeName != null)
                 {
-                    call.instanceCall = !symbolTable.TryGetClassFullScope(call.callee.typeName.Peek(), out _);
+                    call.instanceCall = !symbolTable.TryGetDefinitionFullScope(call.callee.typeName.Peek(), out _);
 
                     if ((bool)call.instanceCall)
                     {
@@ -317,7 +323,7 @@ internal partial class Analyzer
 
             while (typeName.Count > 0)
             {
-                symbolTable.SetContext(symbolTable.GetDefinition(typeName.Dequeue()));
+                symbolTable.SetContext(symbolTable.GetClass(typeName.Dequeue()));
             }
         }
 

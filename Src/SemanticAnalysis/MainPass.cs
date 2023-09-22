@@ -219,7 +219,7 @@ internal partial class Analyzer
 
             if (symbolTable.TryGetVariable(name, out _, out _, true))
             {
-                throw new Error.AnalyzerError("Double Declaration", $"A variable named '{name.lexeme}' is already declared in this scope");
+                Diagnostics.errors.Push(new Error.AnalyzerError("Double Declaration", $"A variable named '{name.lexeme}' is already declared in this scope"));
             }
 
             if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Class)
@@ -291,7 +291,7 @@ internal partial class Analyzer
 
                 if (symbolTable.TryGetVariable(paramExpr.name, out _, out _, true))
                 {
-                    throw new Error.AnalyzerError("Double Declaration", $"A variable named '{paramExpr.name.lexeme}' is already declared in this scope");
+                    Diagnostics.errors.Push(new Error.AnalyzerError("Double Declaration", $"A variable named '{paramExpr.name.lexeme}' is already declared in this scope"));
                 }
                 paramExpr.stack._ref = paramExpr.modifiers["ref"];
 

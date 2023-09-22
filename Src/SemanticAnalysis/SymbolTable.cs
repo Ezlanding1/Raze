@@ -21,6 +21,9 @@ internal partial class Analyzer
         private List<(Token, Expr.StackData)> locals = new();
         Stack<int> framePointer = new();
 
+        private static Expr.StackData VarNotFoundData = new(TypeCheckUtils.anyType, false, false, 0, 0);
+        private static Expr.Class ClassNotFoundDefinition = TypeCheckUtils.anyType;
+
         public void SetContext(Expr.Definition? current)
         {
             this.current = current;
@@ -137,10 +140,16 @@ internal partial class Analyzer
             isClassScoped = false;
             return null;
         }
-
-        public Expr.StackData GetVariable(Token key, out bool isClassScoped, bool ignoreEnclosing=false)
+        public Expr.StackData? GetVariable(Token key, out bool isClassScoped, bool ignoreEnclosing=false)
         {
-            return _GetVariable(key, out isClassScoped, ignoreEnclosing) ?? throw new Error.AnalyzerError("Undefined Reference", $"The variable '{key.lexeme}' does not exist in the current context");
+            var variable = _GetVariable(key, out isClassScoped, ignoreEnclosing);
+
+            if (variable == null)
+            {
+                Diagnostics.errors.Push(new Error.AnalyzerError("Undefined Reference", $"The variable '{key.lexeme}' does not exist in the current context"));
+                return SymbolTable.VarNotFoundData;
+            }
+            return variable;
         }
         public Expr.StackData GetVariable(Token key)
         {
@@ -150,7 +159,6 @@ internal partial class Analyzer
         {
             return (symbol = _GetVariable(key, out isClassScoped, ignoreEnclosing)) != null;
         }
-
 
         // 'GetDefinition' Methods:
 
@@ -177,47 +185,65 @@ internal partial class Analyzer
 
             return null;
         }
-
-        public Expr.Definition GetDefinition(Token key, bool func = false)
+        public Expr.Definition GetClass(Token key)
         {
-            return _GetDefinition(key) ?? throw new Error.AnalyzerError("Undefined Reference", $"The {(func ? "function" : "class")} '{key.lexeme}' does not exist in the current context");
+            var _class = _GetDefinition(key);
+
+            if (_class == null)
+            {
+                Diagnostics.errors.Push(new Error.AnalyzerError("Undefined Reference", $"The class '{key.lexeme}' does not exist in the current context"));
+                return new SpecialObjects.Any(key);
+            }
+            else if (_class.definitionType == Expr.Definition.DefinitionType.Function)
+            {
+                Diagnostics.errors.Push(new Error.AnalyzerError("Undefined Reference", $"The function '{key.lexeme}' cannot be used as a type"));
+                return ClassNotFoundDefinition;
+            }
+            return _class;
         }
         public bool TryGetDefinition(Token key, out Expr.Definition symbol)
         {
             return (symbol = _GetDefinition(key)) != null;
         }
 
-        public Expr.DataType _GetClassFullScope(Token key)
+        // 'GetDefinitionFullScope' methods
+
+        public Expr.Definition? _GetDefinitionFullScope(Token key)
         {
-            Expr.Definition? x = NearestEnclosingClass();
+            Expr.Type? x = NearestEnclosingClass();
 
             while (x != null)
             {
                 if (x.name.lexeme == key.lexeme)
                 {
-                    return (Expr.DataType)x;
+                    return (Expr.Definition)x;
                 }
-                x = (Expr.Definition)x.enclosing;
+                x = x.enclosing;
             }
 
-            if (TryGetValue(globals, key, out var value))
-            {
-                if (value.definitionType == Expr.Definition.DefinitionType.Function)
-                {
-                    return null;
-                }
-                return (Expr.DataType)value;
-            }
-
-            return null;
+            TryGetValue(globals, key, out var value);
+            
+            return value;
         }
         public Expr.Definition GetClassFullScope(Token key)
         {
-            return _GetClassFullScope(key) ?? throw new Error.AnalyzerError("Undefined Reference", $"The class '{key.lexeme}' does not exist in the current context");
+            Expr.Definition? _class = _GetDefinitionFullScope(key);
+
+            if (_class == null)
+            {
+                Diagnostics.errors.Push(new Error.AnalyzerError("Undefined Reference", $"The class '{key.lexeme}' does not exist in the current context"));
+                return new SpecialObjects.Any(key);
+            }
+            else if (_class.definitionType == Expr.Definition.DefinitionType.Function)
+            {
+                Diagnostics.errors.Push(new Error.AnalyzerError("Undefined Reference", $"The function '{key.lexeme}' cannot be used as a type"));
+                return ClassNotFoundDefinition;
+            }
+            return _class;
         }
-        public bool TryGetClassFullScope(Token key, out Expr.Definition symbol)
+        public bool TryGetDefinitionFullScope(Token key, out Expr.Definition symbol)
         {
-            return (symbol = _GetClassFullScope(key)) != null;
+            return (symbol = _GetDefinitionFullScope(key)) != null;
         }
 
         // 'GetFunction' Methods:
