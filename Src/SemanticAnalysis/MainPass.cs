@@ -240,15 +240,6 @@ internal partial class Analyzer
         {
             symbolTable.SetContext(expr);
 
-            if (expr.superclass != null)
-            {
-                expr._Matches =
-                    (x) =>
-                    {
-                        return (x == expr || x == expr.superclass.type);
-                    };
-            }
-
             switch (expr.superclass.typeName.Dequeue().lexeme)
             {
                 case "INTEGER":

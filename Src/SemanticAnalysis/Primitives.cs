@@ -218,7 +218,7 @@ internal partial class Analyzer
         }
         public static Error.AnalyzerError InvalidOperation(Token op, string type1, string type2)
         {
-            return new Error.AnalyzerError("Invalid Operator", $"Types '{type1}' and '{type2}' don't have a definition for '{SymbolToPrimitiveName(op)}' ( '{op.lexeme}' )");
+            return new Error.AnalyzerError("Invalid Operator", $"Types '{type1}' and '{type2}' don't have a definition for '{SymbolToPrimitiveName(op)}({type1}, {type2})'");
         }
 
         // Unary Operation

@@ -70,9 +70,9 @@ internal partial class Analyzer
         public void AddDefinition(Expr.Class definition)
         {
             AddDefinition((Expr.DataType)definition);
-            foreach (var duplicate in (definition).declarations.GroupBy(x => x.name.lexeme).Where(x => x.Count() > 1).Select(x => x.ElementAt(0)))
+            foreach (var duplicate in definition.declarations.GroupBy(x => x.name.lexeme).Where(x => x.Count() > 1).Select(x => x.ElementAt(0)))
             {
-                throw new Error.AnalyzerError("Double Declaration", $"A variable named '{duplicate.name.lexeme}' is already declared in this scope");
+                Diagnostics.errors.Push(new Error.AnalyzerError("Double Declaration", $"A variable named '{duplicate.name.lexeme}' is already declared in this scope"));
             }
         }
 
@@ -84,6 +84,12 @@ internal partial class Analyzer
 
         private Expr.StackData? _GetVariable(Token key, out bool isClassScoped, bool ignoreEnclosing)
         {
+            if (current == null)
+            {
+                isClassScoped = false;
+                return null;
+            }
+
             if (current.definitionType == Expr.Definition.DefinitionType.Function)
             {
                 for (int i = locals.Count - 1; i >= 0; i--)
@@ -252,7 +258,7 @@ internal partial class Analyzer
         public Expr.DataType? NearestEnclosingClass(Expr.Definition definition)
         {
             // Assumes a function is enclosed by a class (no nested functions)
-            return (definition.definitionType == Expr.Definition.DefinitionType.Function) ? (Expr.DataType)definition.enclosing : (Expr.DataType)definition;
+            return (definition?.definitionType == Expr.Definition.DefinitionType.Function) ? (Expr.DataType)definition.enclosing : (Expr.DataType)definition;
         }
         public Expr.DataType? NearestEnclosingClass()
         {
@@ -288,18 +294,18 @@ internal partial class Analyzer
                 {
                     if (duplicate.name.lexeme == "Main")
                     {
-                        throw new Error.AnalyzerError("Double Declaration", "A Program may have only one 'Main' method");
+                        Diagnostics.errors.Push(new Error.AnalyzerError("Double Declaration", "A Program may have only one 'Main' method"));
                     }
 
-                    throw new Error.AnalyzerError("Double Declaration", $"A function '{duplicate}' is already defined in this scope");
+                    Diagnostics.errors.Push(new Error.AnalyzerError("Double Declaration", $"A function '{duplicate}' is already defined in this scope"));
                 }
                 else if (duplicate.definitionType == Expr.Definition.DefinitionType.Primitive)
                 {
-                    throw new Error.AnalyzerError("Double Declaration", $"A primitive class named '{duplicate.name.lexeme}' is already defined in this scope");
+                    Diagnostics.errors.Push(new Error.AnalyzerError("Double Declaration", $"A primitive class named '{duplicate.name.lexeme}' is already defined in this scope"));
                 }
                 else
                 {
-                    throw new Error.AnalyzerError("Double Declaration", $"A class named '{duplicate.name.lexeme}' is already defined in this scope");
+                    Diagnostics.errors.Push(new Error.AnalyzerError("Double Declaration", $"A class named '{duplicate.name.lexeme}' is already defined in this scope"));
                 }
             }
         }

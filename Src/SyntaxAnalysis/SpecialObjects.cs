@@ -25,5 +25,16 @@ internal partial class Analyzer
                 return true;
             }
         }
+
+        public class DefaultConstructor : Expr.Function
+        {
+            public DefaultConstructor(Token name) : base(null, new(null), name, new(), new())
+            {
+                this.modifiers = ExprUtils.Modifiers.FunctionModifierTemplate();
+                this.constructor = true;
+                this.enclosing = SymbolTableSingleton.SymbolTable.Current;
+                this._returnType.type = TypeCheckUtils._voidType;
+            }
+        }
     }
 }
