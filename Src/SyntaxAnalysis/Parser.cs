@@ -244,7 +244,7 @@ internal class Parser
 
     private Expr Definition()
     {
-        return _Definition() ?? Entity();
+        return SymbolTableSingleton.SymbolTable.AddGlobal(_Definition()) ?? Entity();
     }
 
     private Expr Entity()

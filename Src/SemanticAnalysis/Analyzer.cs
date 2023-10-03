@@ -17,27 +17,21 @@ internal partial class Analyzer
         this.expressions = expressions;
     }
 
-    internal List<Expr> Analyze(){
-
+    internal void Analyze()
+    {
         // Semantic Analysis Pass 1 
         Pass<object?> initialPass = new InitialPass(expressions);
-        expressions = initialPass.Run();
+        initialPass.Run();
 
-        // Semantic Analysis Pass 2
-        Pass<object?> mainPass = new MainPass(expressions);
-        expressions = mainPass.Run();
-
-        // Semantic Analysis Pass - Type Check Analysis
-        Pass<Expr.Type> TypeChackPass = new TypeCheckPass(expressions);
-        expressions = TypeChackPass.Run();
+        // Semantic Analysis Pass 2 - Symbol Resolution And Type Check Analysis
+        Pass<Expr.Type> mainPass = new MainPass(expressions);
+        mainPass.Run();
 
         CheckMain(SymbolTableSingleton.SymbolTable.main);
 
         // AST Optimization Pass
         Pass<object?> optimizationPass = new OptimizationPass(expressions);
         optimizationPass.Run();
-
-        return expressions;
     }
 
     private void CheckMain(Expr.Function? main)
@@ -52,7 +46,7 @@ internal partial class Analyzer
             throw new Errors.AnalyzerError("Invalid Main Function", "The Main function must be marked 'static'");
         }
 
-        if (main._returnType.type.name.lexeme != "void" && !Analyzer.TypeCheckPass.literalTypes[Token.TokenType.INTEGER].Matches(main._returnType.type))
+        if (main._returnType.type.name.lexeme != "void" && !Analyzer.TypeCheckUtils.literalTypes[Token.TokenType.INTEGER].Matches(main._returnType.type))
         {
             throw new Errors.AnalyzerError("Invalid Main Function", $"Main can only return types 'number', and 'void'. Got '{main._returnType.type}'");
         }

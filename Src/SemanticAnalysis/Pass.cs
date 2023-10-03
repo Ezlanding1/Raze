@@ -17,7 +17,7 @@ internal partial class Analyzer
             this.expressions = expressions;
         }
 
-        internal abstract List<Expr> Run();
+        internal abstract void Run();
 
         public virtual T VisitBinaryExpr(Expr.Binary expr)
         {

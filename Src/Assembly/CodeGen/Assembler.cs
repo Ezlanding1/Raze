@@ -86,7 +86,15 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         {
             if (!expr.constructor)
             {
-                ((Instruction.Binary)instructions[^1]).operand1 = new Instruction.Register(InstructionUtils.paramRegister[0], Instruction.Register.RegisterSize._64Bits);
+                if (instructions[^1] is Instruction.Binary binary)
+                {
+                    alloc.Free((Instruction.Value)binary.operand1);
+                    binary.operand1 = new Instruction.Register(InstructionUtils.paramRegister[0], Instruction.Register.RegisterSize._64Bits);
+                }
+                else
+                {
+                    Emit(new Instruction.Binary("MOV", Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterName.RAX));
+                }
             }
             else
             {
@@ -268,81 +276,100 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
     public Instruction.Value? VisitGetReferenceExpr(Expr.GetReference expr)
     {
+        Instruction.Register register = null;
+
         if (expr.classScoped)
         {
-            Emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(Instruction.Register.RegisterName.RBP, 8, 8)));
+            Emit(new Instruction.Binary("MOV", (register = alloc.NextRegister(Instruction.Register.RegisterSize._64Bits)), new Instruction.Pointer(Instruction.Register.RegisterName.RBP, 8, 8)));
         }
 
-        Instruction.Register reg = alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits);
+        var firstGet = expr.getters[0].Accept(this);
 
-        if (expr.getters.Count != 1)
+        if (expr.getters[0] is Expr.Get)
         {
-            var firstGetter = expr.getters[0].Accept(this);
-            if (firstGetter.IsPointer())
-            {
-                if (expr.getters[0] is Expr.Get firstGet && firstGet.data.stackRegister)
-                {
-                    reg = (Instruction.Register)NonPointer(((Expr.StackRegister)firstGet.data).register);
-                }
-                else
-                {
-                    if (!expr.classScoped)
-                    {
-                        ((Instruction.Pointer)firstGetter).register = new(Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._64Bits);
-                    }
-                    Emit(new Instruction.Binary("MOV", reg, firstGetter));
-                }
-            }
-            else
-            {
-                reg = (Instruction.Register)firstGetter;
-            }
-        }
-
-        for (int i = 1; i < expr.getters.Count-1; i++)
-        {
-            var getter = expr.getters[i].Accept(this);
-
-            if (getter.IsPointer())
-            {
-                ((Instruction.Pointer)getter).register = reg;
-                Emit(new Instruction.Binary("MOV", reg, getter));
-            }
-            else
-            {
-                alloc.Free(reg);
-                reg = (Instruction.Register)getter;
-            }
-        }
-        alloc.Free(reg);
-
-        var lastGetter = expr.getters[^1].Accept(this);
-        if (expr.getters[^1] is Expr.Get)
-        {
-            var stack = ((Expr.Get)expr.getters[^1]).data;
+            var stack = ((Expr.Get)expr.getters[0]).data;
 
             if (stack.stackRegister)
             {
-                return ((Expr.StackRegister)stack).register;
+                if (expr.getters.Count == 1)
+                {
+                    return ((Expr.StackRegister)stack).register;
+                }
+                register = (Instruction.Register)NonPointer(NonLiteral(((Expr.StackRegister)stack).register, InstructionUtils.ToRegisterSize(stack.size)));
             }
-            if (stack._ref)
+            else if (stack._ref)
             {
                 Emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(new Instruction.Register(Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._64Bits), stack.stackOffset, 8, stack.plus ? '+' : '-')));
                 alloc.NullReg();
-                return new Instruction.Pointer(alloc.NextRegister(InstructionUtils.ToRegisterSize(stack.size)), 0, stack.size);
+                register = alloc.NextRegister(InstructionUtils.ToRegisterSize(stack.size));
+
+                if (expr.getters.Count == 1)
+                {
+                    return new Instruction.Pointer(register, 0, stack.size);
+                }
             }
-            return new Instruction.Pointer(
-                (expr.getters.Count == 1 && !expr.classScoped) ?
-                    new(Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._64Bits) : 
-                    alloc.NextRegister(InstructionUtils.ToRegisterSize(stack.size)), 
-                stack.stackOffset, stack.size, stack.plus ? '+' : '-');
+            else if (register == null)
+            {
+                if (expr.getters.Count == 1)
+                {
+                    return new Instruction.Pointer(Instruction.Register.RegisterName.RBP, ((Expr.Get)expr.getters[0]).data.stackOffset, ((Expr.Get)expr.getters[0]).data.size, stack.plus ? '+' : '-');
+                }
+                register = alloc.NextRegister(Instruction.Register.RegisterSize._64Bits);
+                Emit(new Instruction.Binary("MOV", register, new Instruction.Pointer(Instruction.Register.RegisterName.RBP, ((Expr.Get)expr.getters[0]).data.stackOffset, ((Expr.Get)expr.getters[0]).data.size, stack.plus ? '+' : '-')));
+            }
+            else
+            {
+                if (expr.getters.Count == 1)
+                {
+                    return new Instruction.Pointer(register, ((Expr.Get)expr.getters[0]).data.stackOffset, ((Expr.Get)expr.getters[0]).data.size);
+                }
+                Emit(new Instruction.Binary("MOV", register, new Instruction.Pointer(register, ((Expr.Get)expr.getters[0]).data.stackOffset, ((Expr.Get)expr.getters[0]).data.size)));
+            }
         }
-        return lastGetter;
+        else
+        {
+            if (expr.getters.Count == 1)
+            {
+                return firstGet;
+            }
+            if (firstGet.IsPointer())
+            {
+                register = ((Instruction.Pointer)firstGet).register;
+            }
+            else
+            {
+                register = (Instruction.Register)firstGet;
+            }
+        }
+
+        for (int i = 1; i < expr.getters.Count; i++)
+        {
+            var get = expr.getters[i].Accept(this);
+
+            if (expr.getters[i] is Expr.Get)
+            {
+                if (i == expr.getters.Count-1)
+                {
+                    register.size = InstructionUtils.ToRegisterSize(((Expr.Get)expr.getters[i]).data.size);
+                    return new Instruction.Pointer(register, ((Expr.Get)expr.getters[i]).data.stackOffset, ((Expr.Get)expr.getters[i]).data.size);
+                }
+                Emit(new Instruction.Binary("MOV", register, new Instruction.Pointer(register, ((Expr.Get)expr.getters[i]).data.stackOffset, ((Expr.Get)expr.getters[i]).data.size)));
+            }
+            else
+            {
+                if (register.name != Instruction.Register.RegisterName.RAX)
+                {
+                    alloc.Free(register);
+                }
+                register = (Instruction.Register)get;
+            }
+        }
+        return register;
     }
 
     public Instruction.Value? VisitGetExpr(Expr.Get expr)
     {
-        return new Instruction.Pointer(alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits), expr.data.stackOffset, 8);
+        return null;
     }
 
     public Instruction.Value? VisitLogicalExpr(Expr.Logical expr)

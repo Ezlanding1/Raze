@@ -56,7 +56,7 @@ internal class Shell
 
             // Run Analysis on the Code 
             Analyzer analyzer = new Analyzer(expressions);
-            expressions = analyzer.Analyze();
+            analyzer.Analyze();
 
             // Lower AST to ASM
             Assembler assembler = new InlinedAssembler(expressions);

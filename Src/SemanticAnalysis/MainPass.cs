@@ -2,81 +2,206 @@
 
 internal partial class Analyzer
 {
-    internal class MainPass : Pass<object?>
+    internal class MainPass : Pass<Expr.Type>
     {
         SymbolTable symbolTable = SymbolTableSingleton.SymbolTable;
+        List<(Expr.Type?, bool, Expr.Return?)> _return = new();
+        bool callReturn;
 
         public MainPass(List<Expr> expressions) : base(expressions)
         {
         }
 
-        internal override List<Expr> Run()
+        internal override void Run()
         {
             foreach (var expr in expressions)
             {
-                expr.Accept(this);
+                Expr.Type result = expr.Accept(this);
+
+                if (!Primitives.IsVoidType(result) && !callReturn)
+                {
+                    throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
+                }
+                if (_return.Count != 0)
+                {
+                    throw new Errors.AnalyzerError("Top Level Code", $"Top level 'return' is Not allowed");
+                }
+                callReturn = false;
             }
-            return expressions;
         }
 
-        public override object? VisitBlockExpr(Expr.Block expr)
+        public override Expr.Type VisitBlockExpr(Expr.Block expr)
         {
             symbolTable.CreateBlock();
-            
-            foreach (Expr blockExpr in expr.block)
+
+            foreach (var blockExpr in expr.block)
             {
-                blockExpr.Accept(this);
+                Expr.Type result = blockExpr.Accept(this);
+
+                if (!Primitives.IsVoidType(result) && !callReturn)
+                {
+                    throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
+                }
+                callReturn = false;
             }
-            
+
             symbolTable.RemoveBlock();
 
-            return null;
+            return TypeCheckUtils._voidType;
         }
 
-        public override object? VisitBinaryExpr(Expr.Binary expr)
+        public override Expr.Type VisitBinaryExpr(Expr.Binary expr)
         {
-            base.VisitBinaryExpr(expr);
-
-            expr.encSize = symbolTable.Current.size;
-
-            return null;
-        }
-
-        public override object VisitUnaryExpr(Expr.Unary expr)
-        {
-            base.VisitUnaryExpr(expr);
-
-            expr.encSize = symbolTable.Current.size;
-
-            return null;
-        }
-
-        public override object? VisitCallExpr(Expr.Call expr)
-        {
-            for (int i = 0; i < expr.arguments.Count; i++)
+            Expr.Type[] argumentTypes =
             {
-                expr.arguments[i].Accept(this);
+                expr.left.Accept(this),
+                expr.right.Accept(this)
+            };
+
+            var context = symbolTable.Current;
+
+            var (arg0, arg1) = (Primitives.IsLiteralTypeOrVoid(argumentTypes[0]), Primitives.IsLiteralTypeOrVoid(argumentTypes[1]));
+
+            if (arg0.Item1 && arg1.Item1)
+            {
+                return TypeCheckUtils.literalTypes[Primitives.OperationType(expr.op, arg0.Item2, arg1.Item2)];
             }
 
-            expr.encSize = symbolTable.Current.size;
+            if (!arg0.Item1)
+            {
+                symbolTable.SetContext((Expr.Definition)argumentTypes[0]);
+
+                if (symbolTable.TryGetFunction(Primitives.SymbolToPrimitiveName(expr.op), argumentTypes, out var symbol))
+                {
+                    expr.internalFunction = symbol;
+                }
+            }
+
+            if (expr.internalFunction == null && !arg1.Item1)
+            {
+                symbolTable.SetContext((Expr.Definition)argumentTypes[1]);
+
+                if (symbolTable.TryGetFunction(Primitives.SymbolToPrimitiveName(expr.op), new Expr.Type[] { argumentTypes[1], argumentTypes[0] }, out var symbol))
+                {
+                    expr.internalFunction = symbol;
+                }
+            }
+
+            if (expr.internalFunction == null)
+            {
+                throw Primitives.InvalidOperation(expr.op, argumentTypes[0].ToString(), argumentTypes[1].ToString());
+            }
+
+            symbolTable.SetContext(context);
+
+            if (expr.internalFunction.parameters[0].modifiers["ref"] && TypeCheckUtils.CannotBeRef(expr.left))
+            {
+                throw new Errors.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
+            }
+            if (expr.internalFunction.parameters[1].modifiers["ref"] && TypeCheckUtils.CannotBeRef(expr.right))
+            {
+                throw new Errors.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
+            }
+
+            return expr.internalFunction._returnType.type;
+        }
+
+        public override Expr.Type VisitUnaryExpr(Expr.Unary expr)
+        {
+            Expr.Type[] argumentTypes =
+            {
+                expr.operand.Accept(this)
+            };
+
+            var context = symbolTable.Current;
+
+            var arg = Primitives.IsLiteralTypeOrVoid(argumentTypes[0]);
+
+            if (arg.Item1)
+            {
+                return TypeCheckUtils.literalTypes[Primitives.OperationType(expr.op, arg.Item2)];
+            }
+
+            if (!arg.Item1)
+            {
+                symbolTable.SetContext((Expr.Definition)argumentTypes[0]);
+
+                if (symbolTable.TryGetFunction(Primitives.SymbolToPrimitiveName(expr.op), argumentTypes, out var symbol))
+                {
+                    expr.internalFunction = symbol;
+                }
+            }
+
+            if (expr.internalFunction == null)
+            {
+                throw Primitives.InvalidOperation(expr.op, argumentTypes[0].ToString());
+            }
+            symbolTable.SetContext(context);
+
+            if (Primitives.SymbolToPrimitiveName(expr.op) == "Increment")
+            {
+                callReturn = true;
+            }
+
+            if (expr.internalFunction.parameters[0].modifiers["ref"] && TypeCheckUtils.CannotBeRef(expr.operand))
+            {
+                throw new Errors.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
+            }
+
+            return expr.internalFunction._returnType.type;
+        }
+
+        public override Expr.Type VisitCallExpr(Expr.Call expr)
+        {
+            Expr.Type[] argumentTypes = new Expr.Type[expr.arguments.Count];
+
+            for (int i = 0; i < expr.arguments.Count; i++)
+            {
+                argumentTypes[i] = expr.arguments[i].Accept(this);
+            }
 
             if (expr.callee.typeName != null)
             {
-                using (new SaveContext())
-                {
-                    expr.callee.Accept(this);
-                    expr.funcEnclosing = symbolTable.Current;
-                }
+                symbolTable.SetContext((Expr.Definition)expr.callee.Accept(this));
+                symbolTable.SetContext(symbolTable.GetFunction(expr.name.lexeme, argumentTypes));
             }
             else
             {
-                expr.funcEnclosing = symbolTable.Current;
+                symbolTable.SetContext(symbolTable.NearestEnclosingClass(symbolTable.Current));
+                if (symbolTable.TryGetFunction(expr.name.lexeme, argumentTypes, out var symbol))
+                {
+                    symbolTable.SetContext(symbol);
+                }
+                else
+                {
+                    symbolTable.SetContext(null);
+                    symbolTable.SetContext(symbolTable.GetFunction(expr.name.lexeme, argumentTypes));
+                }
             }
 
-            return null;
+            // 
+            if (symbolTable.Current.definitionType != Expr.Definition.DefinitionType.Function)
+            {
+                throw new Exception();
+            }
+
+            TypeCheckUtils.ValidateCall(expr, ((Expr.Function)symbolTable.Current));
+
+            expr.internalFunction = ((Expr.Function)symbolTable.Current);
+
+            for (int i = 0; i < expr.internalFunction.Arity; i++)
+            {
+                if (expr.internalFunction.parameters[i].modifiers["ref"] && TypeCheckUtils.CannotBeRef(expr.arguments[i]))
+                {
+                    throw new Errors.AnalyzerError("Invalid Function Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
+                }
+            }
+
+            callReturn = true;
+            return expr.internalFunction._returnType.type;
         }
 
-        public override object? VisitClassExpr(Expr.Class expr)
+        public override Expr.Type VisitClassExpr(Expr.Class expr)
         {
             symbolTable.SetContext(expr);
 
@@ -85,10 +210,10 @@ internal partial class Analyzer
 
             symbolTable.UpContext();
 
-            return null;
+            return TypeCheckUtils._voidType;
         }
 
-        public override object? VisitDeclareExpr(Expr.Declare expr)
+        public override Expr.Type VisitDeclareExpr(Expr.Declare expr)
         {
             var name = expr.name;
 
@@ -102,16 +227,16 @@ internal partial class Analyzer
                 expr.classScoped = true;
             }
 
-            expr.value.Accept(this);
+            Expr.Type assignType = expr.value.Accept(this);
 
-            GetVariableDefinition(expr.typeName, expr.stack);
+            TypeCheckUtils.MustMatchType(expr.stack.type, assignType);
 
             symbolTable.Add(name, expr.stack);
 
-            return null;
+            return TypeCheckUtils._voidType;
         }
 
-        public override object? VisitPrimitiveExpr(Expr.Primitive expr)
+        public override Expr.Type VisitPrimitiveExpr(Expr.Primitive expr)
         {
             symbolTable.SetContext(expr);
 
@@ -127,22 +252,22 @@ internal partial class Analyzer
             switch (expr.superclass.typeName.Dequeue().lexeme)
             {
                 case "INTEGER":
-                    expr.superclass.type = TypeCheckPass.literalTypes[Parser.Literals[0]];
+                    expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[0]];
                     break;
                 case "FLOATING":
-                    expr.superclass.type = TypeCheckPass.literalTypes[Parser.Literals[1]];
+                    expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[1]];
                     break;
                 case "STRING":
-                    expr.superclass.type = TypeCheckPass.literalTypes[Parser.Literals[2]];
+                    expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[2]];
                     break;
                 case "BINARY":
-                    expr.superclass.type = TypeCheckPass.literalTypes[Parser.Literals[3]];
+                    expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[3]];
                     break;
                 case "HEX":
-                    expr.superclass.type = TypeCheckPass.literalTypes[Parser.Literals[4]];
+                    expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[4]];
                     break;
                 case "BOOLEAN":
-                    expr.superclass.type = TypeCheckPass.literalTypes[Parser.Literals[5]];
+                    expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[5]];
                     break;
                 default: 
                     throw new Errors.ImpossibleError("Invalid primitive superclass");
@@ -152,26 +277,12 @@ internal partial class Analyzer
 
             symbolTable.UpContext();
 
-            return null;
+            return TypeCheckUtils._voidType;
         }
 
-        public override object? VisitFunctionExpr(Expr.Function expr)
+        public override Expr.Type VisitFunctionExpr(Expr.Function expr)
         {
             symbolTable.SetContext(expr);
-
-            if (expr._returnType.typeName.Peek().type != Token.TokenType.RESERVED && expr._returnType.typeName.Peek().lexeme != "void")
-            {
-                using (new SaveContext())
-                {
-                    expr._returnType.Accept(this);
-                    expr._returnType.type = (Expr.DataType)symbolTable.Current;
-                    expr._returnSize = (symbolTable.Current?.definitionType == Expr.Definition.DefinitionType.Primitive) ? ((Expr.Primitive)symbolTable.Current).size : 8;
-                }
-            }
-            else
-            {
-                expr._returnType.type = TypeCheckPass._voidType;
-            }
 
             symbolTable.CreateBlock();
 
@@ -186,10 +297,6 @@ internal partial class Analyzer
             {
                 Expr.Parameter paramExpr = expr.parameters[i];
 
-                paramExpr.stack = (expr.modifiers["inline"])? new Expr.StackRegister() : new Expr.StackData();
-
-                GetVariableDefinition(paramExpr.typeName, paramExpr.stack);
-
                 if (symbolTable.TryGetVariable(paramExpr.name, out _, out _, true))
                 {
                     throw new Errors.AnalyzerError("Double Declaration", $"A variable named '{paramExpr.name.lexeme}' is already declared in this scope");
@@ -201,142 +308,184 @@ internal partial class Analyzer
 
             foreach (Expr blockExpr in expr.block)
             {
-                blockExpr.Accept(this);
+                Expr.Type result = blockExpr.Accept(this);
+
+                if (!Primitives.IsVoidType(result) && !callReturn)
+                {
+                    throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
+                }
+                callReturn = false;
             }
+
+            TypeCheckUtils.HandleFunctionReturns(expr, _return);
 
             symbolTable.RemoveBlock();
             symbolTable.UpContext();
 
-            return null;
+            return TypeCheckUtils._voidType;
         }
 
-        public override object VisitIfExpr(Expr.If expr)
+        public override Expr.Type VisitIfExpr(Expr.If expr)
         {
-            expr.conditionals.ForEach(x => HandleConditional(x));
+            expr.conditionals.ForEach(x => { HandleConditional(x); TypeCheckUtils.TypeCheckConditional(this, _return, x.condition, x.block); });
 
             if (expr._else != null)
+            {
                 expr._else.Accept(this);
+                TypeCheckUtils.TypeCheckConditional(this, _return, null, expr._else);
+            }
 
-            return null;
+            return TypeCheckUtils._voidType;
         }
 
-        public override object? VisitAssignExpr(Expr.Assign expr)
+        public override Expr.Type VisitAssignExpr(Expr.Assign expr)
         {
-            expr.value.Accept(this);
+            Expr.Type assignType = expr.value.Accept(this);
+
             if (!expr.binary)
             {
                 expr.member.Accept(this);
             }
-            return null;
+            TypeCheckUtils.MustMatchType(((Expr.Get)expr.member.getters[^1]).data.type, assignType);
+
+            return TypeCheckUtils._voidType;
         }
 
-        public override object VisitAssemblyExpr(Expr.Assembly expr)
+        public override Expr.Type VisitAssemblyExpr(Expr.Assembly expr)
         {
             foreach (var variable in expr.variables)
             {
                 variable.Accept(this);
             }
-            return null;
+            if (expr.block.Any(x => x.HasReturn()))
+            {
+                _return.Add((null, false, null));
+            }
+
+            return TypeCheckUtils._voidType;
         }
 
-        public override object? VisitNewExpr(Expr.New expr)
+        public override Expr.Type VisitNewExpr(Expr.New expr)
         {
-            expr.call.constructor = true;
+            using (new SaveContext())
+            {
+                expr.call.constructor = true;
 
-            expr.call.Accept(this);
+                expr.call.Accept(this);
 
-            expr.internalClass = (Expr.DataType)expr.call.funcEnclosing;
-
-            return null;
+                expr.internalClass = (Expr.DataType)expr.call.internalFunction.enclosing;
+            }
+            return expr.internalClass;
         }
 
-        public override object VisitIsExpr(Expr.Is expr)
+        public override Expr.Type VisitIsExpr(Expr.Is expr)
         {
             expr.left.Accept(this);
 
             using (new SaveContext())
-                expr.right.Accept(this);
+                expr.value = expr.right.Accept(this) == expr.right.type ? "1" : "0";
 
-            return null;
+            return TypeCheckUtils.literalTypes[Token.TokenType.BOOLEAN];
         }
 
-        public override object VisitTypeReferenceExpr(Expr.TypeReference expr)
+        public override Expr.Type VisitTypeReferenceExpr(Expr.TypeReference expr)
         {
-            if (expr.typeName.Count != 0)
-            {
-                HandleTypeNameReference(expr.typeName);
-            }
-
-            return null;
+            return expr.type;
         }
 
-        public override object? VisitGetReferenceExpr(Expr.GetReference expr)
-        {
-            if (expr.ambiguousCall)
-            {
-                var call = (Expr.Call)expr.getters[0];
-
-                if (call.callee.typeName != null)
-                {
-                    call.instanceCall = !symbolTable.TryGetClassFullScope(call.callee.typeName.Peek(), out _);
-
-                    if (call.instanceCall)
-                    {
-                        expr.getters.InsertRange(0, call.callee.ToGetReference().getters);
-                        call.callee.typeName = null;
-                    }
-                    expr.ambiguousCall = false;
-                }
-            }
-
-            var context = new SaveContext();
-
-            var get = expr.getters[0] as Expr.Get;
-            if (get != null)
-            {
-                get.data = symbolTable.GetVariable(get.name, out expr.classScoped);
-                symbolTable.SetContext(get.data.type);
-            }
-
-            for (int i = Convert.ToInt16(get != null); i < expr.getters.Count; i++)
-            {
-                expr.getters[i].Accept(this);
-            }
-            
-            context.Dispose();
-            return null;
-        }
-
-        public override object? VisitGetExpr(Expr.Get expr)
-        {
-            var variable = symbolTable.GetVariable(expr.name);
-
-            expr.data = variable;
-
-            symbolTable.SetContext(variable.type);
-
-            return null;
-        }
-
-        private void GetVariableDefinition(ExprUtils.QueueList<Token> typeName, Expr.StackData stack)
+        public override Expr.Type VisitGetReferenceExpr(Expr.GetReference expr)
         {
             using (new SaveContext())
             {
-                HandleTypeNameReference(typeName);
+                if (expr.ambiguousCall)
+                {
+                    foreach (Expr.Getter getter in expr.getters)
+                    {
+                        symbolTable.SetContext((Expr.Definition)getter.Accept(this));
+                    }
+                }
+                else
+                {
+                    var get = expr.getters[0] as Expr.Get;
+                    if (get != null)
+                    {
+                        get.data = symbolTable.GetVariable(get.name, out expr.classScoped);
+                        symbolTable.SetContext(get.data.type);
+                    }
 
-                stack.size = (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Primitive) ? ((Expr.Primitive)symbolTable.Current).size : 8;
-                stack.type = symbolTable.Current;
+                    for (int i = Convert.ToInt16(get != null); i < expr.getters.Count; i++)
+                    {
+                        symbolTable.SetContext((Expr.Definition)expr.getters[i].Accept(this));
+                    }
+                }
+                return symbolTable.Current;
             }
         }
 
-        private void HandleTypeNameReference(ExprUtils.QueueList<Token> typeName)
-        {
-            symbolTable.SetContext(symbolTable.GetClassFullScope(typeName.Dequeue()));
+        public override Expr.Type VisitGetExpr(Expr.Get expr) => (expr.data = symbolTable.GetVariable(expr.name)).type;
 
-            while (typeName.Count > 0)
+        public override Expr.Type VisitLogicalExpr(Expr.Logical expr)
+        {
+            Expr.Type[] argumentTypes =
             {
-                symbolTable.SetContext(symbolTable.GetDefinition(typeName.Dequeue()));
+                expr.left.Accept(this),
+                expr.right.Accept(this)
+            };
+
+            TypeCheckUtils.MustMatchType(argumentTypes[0], TypeCheckUtils.literalTypes[Token.TokenType.BOOLEAN]);
+            TypeCheckUtils.MustMatchType(argumentTypes[1], TypeCheckUtils.literalTypes[Token.TokenType.BOOLEAN]);
+
+            return TypeCheckUtils.literalTypes[Token.TokenType.BOOLEAN];
+        }
+        
+        public override Expr.Type VisitGroupingExpr(Expr.Grouping expr)
+        {
+            return expr.expression.Accept(this);
+        }
+
+        public override Expr.Type VisitWhileExpr(Expr.While expr)
+        {
+            TypeCheckUtils.TypeCheckConditional(this, _return, expr.conditional.condition, expr.conditional.block);
+
+            return TypeCheckUtils._voidType;
+        }
+
+        public override Expr.Type VisitForExpr(Expr.For expr)
+        {
+            var result = expr.initExpr.Accept(this);
+            if (!Primitives.IsVoidType(result) && !callReturn)
+            {
+                throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
             }
+            callReturn = false;
+
+            result = expr.updateExpr.Accept(this);
+            if (!Primitives.IsVoidType(result) && !callReturn)
+            {
+                throw new Errors.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
+            }
+            callReturn = false;
+
+            TypeCheckUtils.TypeCheckConditional(this, _return, expr.conditional.condition, expr.conditional.block);
+
+            return TypeCheckUtils._voidType;
+        }
+
+        public override Expr.Type VisitLiteralExpr(Expr.Literal expr)
+        {
+            return TypeCheckUtils.literalTypes[expr.literal.type];
+        }
+
+        public override Expr.Type VisitReturnExpr(Expr.Return expr)
+        {
+            _return.Add((expr._void ? TypeCheckUtils._voidType : expr.value.Accept(this), false, expr));
+
+            return TypeCheckUtils._voidType;
+        }
+
+        public override Expr.Type VisitKeywordExpr(Expr.Keyword expr)
+        {
+            return TypeCheckUtils.keywordTypes[expr.keyword];
         }
 
         private void HandleConditional(Expr.Conditional expr)

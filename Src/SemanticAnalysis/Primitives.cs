@@ -43,11 +43,11 @@ internal partial class Analyzer
         {
             if (type1 == -1)
             {
-                throw InvalidOperation(op, "void", type2 == -1 ? "void" : (TypeCheckPass.literalTypes[(Token.TokenType)type2].ToString()));
+                throw InvalidOperation(op, "void", type2 == -1 ? "void" : (TypeCheckUtils.literalTypes[(Token.TokenType)type2].ToString()));
             }
             else if (type2 == -1)
             {
-                throw InvalidOperation(op, TypeCheckPass.literalTypes[(Token.TokenType)type1].ToString(), "void");
+                throw InvalidOperation(op, TypeCheckUtils.literalTypes[(Token.TokenType)type1].ToString(), "void");
             }
 
             Token.TokenType t1 = (Token.TokenType)type1;
@@ -212,7 +212,7 @@ internal partial class Analyzer
 
         public static Errors.AnalyzerError InvalidOperation(Token op, Token.TokenType type1, Token.TokenType type2)
         {
-            return InvalidOperation(op, TypeCheckPass.literalTypes[type1].ToString(), TypeCheckPass.literalTypes[type2].ToString());
+            return InvalidOperation(op, TypeCheckUtils.literalTypes[type1].ToString(), TypeCheckUtils.literalTypes[type2].ToString());
         }
         public static Errors.AnalyzerError InvalidOperation(Token op, string type1, string type2)
         {
@@ -240,7 +240,7 @@ internal partial class Analyzer
 
         public static Errors.AnalyzerError InvalidOperation(Token op, Token.TokenType type)
         {
-            return InvalidOperation(op, TypeCheckPass.literalTypes[type].ToString());
+            return InvalidOperation(op, TypeCheckUtils.literalTypes[type].ToString());
         }
         public static Errors.AnalyzerError InvalidOperation(Token op, string type)
         {

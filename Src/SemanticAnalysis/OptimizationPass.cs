@@ -19,13 +19,12 @@ internal partial class Analyzer
         {
         }
 
-        internal override List<Expr> Run()
+        internal override void Run()
         {
             foreach (Expr expr in expressions)
             {
                 expr.Accept(this);
             }
-            return expressions;
         }
 
         public override object? VisitFunctionExpr(Expr.Function expr)

@@ -17,16 +17,14 @@ internal partial class Analyzer
         {
         }
 
-        internal override List<Expr> Run()
+        internal override void Run()
         {
+            symbolTable.CheckGlobals();
+
             foreach (Expr expr in expressions)
             {
                 expr.Accept(this);
             }
-
-            symbolTable.CheckGlobals();
-            
-            return expressions;
         }
 
         public override object? VisitBlockExpr(Expr.Block expr)
@@ -40,11 +38,6 @@ internal partial class Analyzer
 
         public override object? VisitFunctionExpr(Expr.Function expr)
         {
-            if (symbolTable.Current == null)
-            {
-                symbolTable.AddGlobal(expr);
-            }
-
             symbolTable.AddDefinition(expr);
 
             if (expr.enclosing == null)
@@ -55,6 +48,16 @@ internal partial class Analyzer
                 {
                     throw new Errors.AnalyzerError("Invalid Operator Definition", $"Top level operator function definitions are not allowed");
                 }
+            }
+
+            if (expr._returnType.typeName.Peek().type != Token.TokenType.RESERVED && expr._returnType.typeName.Peek().lexeme != "void")
+            {
+                expr._returnType.Accept(this);
+                expr._returnSize = (expr._returnType.type?.definitionType == Expr.Definition.DefinitionType.Primitive) ? ((Expr.Primitive)expr._returnType.type).size : 8;
+            }
+            else
+            {
+                expr._returnType.type = TypeCheckUtils._voidType;
             }
 
             if (expr.modifiers["operator"])
@@ -105,6 +108,12 @@ internal partial class Analyzer
                 symbolTable.main = expr;
             }
 
+            foreach (var parameter in expr.parameters) 
+            {
+                parameter.stack = (expr.modifiers["inline"]) ? new Expr.StackRegister() : new Expr.StackData();
+                GetVariableDefinition(parameter.typeName, parameter.stack);
+            }
+
             foreach (var blockExpr in expr.block)
             {
                 blockExpr.Accept(this);
@@ -117,6 +126,11 @@ internal partial class Analyzer
 
         public override object? VisitCallExpr(Expr.Call expr)
         {
+            if (expr.callee.typeName != null)
+            {
+                expr.callee.Accept(this);
+            }
+
             foreach (var argExpr in expr.arguments)
             {
                 argExpr.Accept(this);
@@ -134,6 +148,8 @@ internal partial class Analyzer
                 throw new Errors.AnalyzerError("Invalid Variable Declaration", "A variable may not be declared within a primitive definition");
             }
 
+            GetVariableDefinition(expr.typeName, expr.stack);
+
             return base.VisitDeclareExpr(expr);
         }
 
@@ -142,11 +158,6 @@ internal partial class Analyzer
             if (symbolTable.Current?.definitionType == Expr.Definition.DefinitionType.Function)
             {
                 throw new Errors.AnalyzerError("Invalid Class Definition", "A class definition may be only within another class");
-            }
-            
-            if (symbolTable.Current == null)
-            {
-                symbolTable.AddGlobal(expr);
             }
 
             symbolTable.AddDefinition(expr);
@@ -188,6 +199,8 @@ internal partial class Analyzer
             expr.call.callee.typeName ??= new();
             expr.call.callee.typeName.Enqueue(expr.call.name);
 
+            expr.call.Accept(this);
+
             return null;
         }
 
@@ -215,10 +228,47 @@ internal partial class Analyzer
             return base.VisitAssemblyExpr(expr);
         }
 
-        public override object VisitGetReferenceExpr(Expr.GetReference expr)
+        public override object? VisitGetReferenceExpr(Expr.GetReference expr)
         {
-            if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); } 
+            if (symbolTable.CurrentIsTop()) { throw new Errors.AnalyzerError("Top Level Code", "Top level code is not allowed"); }
 
+            if (expr.ambiguousCall)
+            {
+                var call = (Expr.Call)expr.getters[0];
+
+                if (call.callee.typeName != null)
+                {
+                    call.instanceCall = !symbolTable.TryGetClassFullScope(call.callee.typeName.Peek(), out _);
+
+                    if ((bool)call.instanceCall)
+                    {
+                        expr.getters.InsertRange(0, call.callee.ToGetReference().getters);
+                        call.callee.typeName = null;
+                    }
+                }
+                else
+                {
+                    call.instanceCall = null;
+                }
+            }
+            
+            foreach (Expr.Getter get in expr.getters)
+            {
+                get.Accept(this);
+            }
+            return null;
+        }
+
+        public override object? VisitTypeReferenceExpr(Expr.TypeReference expr)
+        {
+            using (new SaveContext())
+            {
+                if (expr.typeName.Count != 0)
+                {
+                    HandleTypeNameReference(expr.typeName);
+                }
+                expr.type = symbolTable.Current;
+            }
             return null;
         }
 
@@ -237,16 +287,6 @@ internal partial class Analyzer
                 throw new Errors.AnalyzerError("Invalid Class Definition", "A primitive class definition may be only within another class");
             }
 
-            if (symbolTable.TryGetDefinition(expr.name, out _))
-            {
-                throw new Errors.AnalyzerError("Double Declaration", $"A primitive class named '{expr.name.lexeme}' is already defined in this scope");
-            }
-
-            if (symbolTable.Current == null)
-            {
-                symbolTable.AddGlobal(expr);
-            }
-
             symbolTable.AddDefinition(expr);
 
             foreach (var blockExpr in expr.definitions)
@@ -254,7 +294,6 @@ internal partial class Analyzer
                 blockExpr.Accept(this);
             }
             
-
             symbolTable.UpContext();
 
             return null;
@@ -269,6 +308,27 @@ internal partial class Analyzer
                 throw new Errors.AnalyzerError("Invalid 'is' Operator", "the first operand of 'is' operator must be a variable");
             }
             return null;
+        }
+
+        private void GetVariableDefinition(ExprUtils.QueueList<Token> typeName, Expr.StackData stack)
+        {
+            using (new SaveContext())
+            {
+                HandleTypeNameReference(typeName);
+
+                stack.size = (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Primitive) ? ((Expr.Primitive)symbolTable.Current).size : 8;
+                stack.type = symbolTable.Current;
+            }
+        }
+
+        private void HandleTypeNameReference(ExprUtils.QueueList<Token> typeName)
+        {
+            symbolTable.SetContext(symbolTable.GetClassFullScope(typeName.Dequeue()));
+
+            while (typeName.Count > 0)
+            {
+                symbolTable.SetContext(symbolTable.GetDefinition(typeName.Dequeue()));
+            }
         }
 
         private void GetConstructor()

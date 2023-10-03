@@ -52,9 +52,7 @@ internal abstract class Expr
         public Token op;
         public Expr right;
 
-        public int encSize;
-
-        public Expr.Function internalFunction;
+        public Function internalFunction;
 
         public Binary(Expr left, Token op, Expr right)
         {
@@ -72,13 +70,10 @@ internal abstract class Expr
 
     public class Unary : Expr
     {
-
         public Token op;
         public Expr operand;
 
-        public Expr.Function internalFunction;
-
-        public int encSize;
+        public Function internalFunction;
 
         public Unary(Token op, Expr operand)
         {
@@ -268,14 +263,11 @@ internal abstract class Expr
         public TypeReference callee;
 
         public bool constructor;
-        public bool instanceCall;
+        public bool? instanceCall;
 
-        public Definition funcEnclosing { get => (Definition)callee.type; set => callee.type = value; }
         public Function internalFunction { get => (Function)callee.type; set => callee.type = value; }
 
         public List<Expr> arguments;
-
-        public int encSize;
 
         public Call(Token name, List<Expr> arguments, TypeReference callee, bool instanceCall) : base(name)
         {

@@ -65,22 +65,7 @@ internal partial class Analyzer
         public void AddDefinition(Expr.DataType definition)
         {
             AddDefinition((Expr.Definition)definition);
-            foreach (var duplicate in definition.definitions.GroupBy(x => x.ToString()).Where(x => x.Count() > 1).Select(x => x.ElementAt(0)))
-            {
-                if (duplicate.definitionType == Expr.Definition.DefinitionType.Function)
-                {
-                    if (duplicate.name.lexeme == "Main")
-                    {
-                        throw new Errors.AnalyzerError("Double Declaration", "A Program may have only one 'Main' method");
-                    }
-
-                    throw new Errors.AnalyzerError("Double Declaration", $"A function '{duplicate}' is already defined in this scope");
-                }
-                else
-                {
-                    throw new Errors.AnalyzerError("Double Declaration", $"A class named '{duplicate.name.lexeme}' is already defined in this scope");
-                }
-            }
+            CheckDefinitions(definition.definitions);
         }
         public void AddDefinition(Expr.Class definition)
         {
@@ -285,14 +270,19 @@ internal partial class Analyzer
 
         public bool CurrentIsTop() => current == null;
 
-        public void AddGlobal(Expr.Definition definition)
+        public Expr.Definition? AddGlobal(Expr.Definition definition)
         {
-            globals.Add(definition);
+            if (definition != null) 
+            {
+                globals.Add(definition);
+            }
+            return definition;
         }
 
-        public void CheckGlobals()
+        public void CheckGlobals() { CheckDefinitions(globals); }
+        public void CheckDefinitions(List<Expr.Definition> definitions)
         {
-            foreach (var duplicate in globals.GroupBy(x => x.ToString()).Where(x => x.Count() > 1).Select(x => x.ElementAt(0)))
+            foreach (var duplicate in definitions.GroupBy(x => x.ToString()).Where(x => x.Count() > 1).Select(x => x.ElementAt(0)))
             {
                 if (duplicate.definitionType == Expr.Definition.DefinitionType.Function)
                 {
@@ -302,6 +292,10 @@ internal partial class Analyzer
                     }
 
                     throw new Errors.AnalyzerError("Double Declaration", $"A function '{duplicate}' is already defined in this scope");
+                }
+                else if (duplicate.definitionType == Expr.Definition.DefinitionType.Primitive)
+                {
+                    throw new Errors.AnalyzerError("Double Declaration", $"A primitive class named '{duplicate.name.lexeme}' is already defined in this scope");
                 }
                 else
                 {
