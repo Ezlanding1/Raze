@@ -71,7 +71,8 @@ internal abstract partial class ExprUtils
                         AssemblyOps.Binary.CMP(this, assemblyOps);
                         return;
                     default:
-                        throw new Error.BackendError("Invalid Assembly Block", $"Instruction '{instruction.instruction}' not supported");
+                        Diagnostics.errors.Push(new Error.BackendError("Invalid Assembly Block", $"Instruction '{instruction.instruction}' not supported"));
+                        return;
                 }
             }
 
@@ -110,7 +111,8 @@ internal abstract partial class ExprUtils
                         AssemblyOps.Unary.DefaultUnOp(this, assemblyOps);
                         return;
                     default:
-                        throw new Error.BackendError("Invalid Assembly Block", $"Instruction '{instruction.instruction}' not supported");
+                        Diagnostics.errors.Push(new Error.BackendError("Invalid Assembly Block", $"Instruction '{instruction.instruction}' not supported"));
+                        break;
                 }
             }
 
@@ -134,7 +136,8 @@ internal abstract partial class ExprUtils
                 switch (instruction.instruction)
                 {
                     default:
-                        throw new Error.BackendError("Invalid Assembly Block", $"Instruction '{instruction.instruction}' not supported");
+                        Diagnostics.errors.Push(new Error.BackendError("Invalid Assembly Block", $"Instruction '{instruction.instruction}' not supported"));
+                        break;
                 }
             }
 

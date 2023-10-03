@@ -23,13 +23,13 @@ partial class Syntaxes
 
         public class SyntaxTypeCreator
         {
-            public static ISyntaxFactory FactoryMethod(string type)
+            public static ISyntaxFactory? FactoryMethod(string type)
             {
                 return type switch
                 {
                     "Intel_x86_64_NASM" => new IntelSyntax(),
                     "Intel_x86_64_GAS" => new GasSyntax(),
-                    _ => throw new ArgumentException("Raze Error: Invalid Type Given", type),
+                    _ => null
                 };
             }
         }

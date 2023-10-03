@@ -36,7 +36,8 @@ internal partial class AssemblyOps
                 return InstructionUtils.ToRegisterSize(((Expr.Get)vars[count - cOff].getters[^1]).data.size);
             }
 
-            throw new Error.BackendError("Inavalid Assembly Block", $"No size could be determined for the { (first? "first" : "second") } operand");
+            Diagnostics.errors.Push(new Error.BackendError("Inavalid Assembly Block", $"No size could be determined for the { (first? "first" : "second") } operand"));
+            return Instruction.Register.RegisterSize._8BitsUpper;
         }
 
         public static void ReturnOp(ref Instruction.Value operand, ExprUtils.AssignableInstruction.Binary.AssignType assignType, AssemblyOps assemblyOps, bool first)
@@ -120,7 +121,7 @@ internal partial class AssemblyOps
 
                     if (((Instruction.SizedValue)operand2).size != Instruction.Register.RegisterSize._8Bits)
                     {
-                        throw new Error.BackendError("Invalid Assembly Block", "Instruction's operand sizes don't match");
+                        Diagnostics.errors.Push(new Error.BackendError("Invalid Assembly Block", "Instruction's operand sizes don't match"));
                     }
 
                     assemblyOps.assembler.Emit(new Instruction.Binary("MOV", cl, operand2));
@@ -174,7 +175,9 @@ internal partial class AssemblyOps
                     assemblyOps.assembler.MovToRegister(assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(((Expr.Get)assemblyOps.vars[assemblyOps.count - 1].getters[^1]).data.size)) :
                     instruction.instruction.operand1);
 
-            var operand2 = HandleOperand1(instruction, assemblyOps);
+            var operand2 = (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))? 
+                assemblyOps.assembler.NonLiteral(assemblyOps.vars[assemblyOps.count].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(((Expr.Get)assemblyOps.vars[assemblyOps.count++].getters[^1]).data.size)) :
+                (Instruction.Value)instruction.instruction.operand2;
 
             string emitOp = "";
             switch (instruction.instruction.instruction)

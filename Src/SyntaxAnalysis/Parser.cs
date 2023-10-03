@@ -751,7 +751,7 @@ internal class Parser
             {
                 var op = Previous();
 
-                if (TypeMatch(Token.TokenType.IDENTIFIER, Token.TokenType.DOLLAR))
+                if (TypeMatch(Token.TokenType.IDENTIFIER, Token.TokenType.DOLLAR, Token.TokenType.INTEGER, Token.TokenType.FLOATING, Token.TokenType.STRING, Token.TokenType.HEX, Token.TokenType.BINARY))
                 {
                     // Unary
                     Instruction.Value? value;
@@ -762,7 +762,7 @@ internal class Parser
                         value = null;
                         variables.Add(new Expr.GetReference(new() { new Expr.Get(Previous()) }));
                     }
-                    else
+                    else if (Previous().type == Token.TokenType.IDENTIFIER)
                     {
                         var identifier = Previous();
                         if (InstructionUtils.Registers.TryGetValue(identifier.lexeme, out var reg))
@@ -774,6 +774,10 @@ internal class Parser
                             Diagnostics.errors.Push(new Error.ParseError("Invalid Assembly Register", $"Invalid assembly register '{identifier}'"));
                             value = new Instruction.Register(Instruction.Register.RegisterName.TMP, Instruction.Register.RegisterSize._8Bits);
                         }
+                    }
+                    else
+                    {
+                        value = new Instruction.Literal(Previous().type, Previous().lexeme);
                     }
 
                     if (TypeMatch(Token.TokenType.COMMA))
@@ -823,7 +827,8 @@ internal class Parser
             }
             else
             {
-                Diagnostics.errors.Push(new Error.ParseError("Invalid Assembly Statement", $"'{current.lexeme}' is invalid in an assembly block"));
+                Diagnostics.errors.Push(new Error.ParseError("Invalid Assembly Statement", $"'{Previous().lexeme}' is invalid in an assembly block"));
+                Advance();
             }
 
             if (IsAtEnd())
