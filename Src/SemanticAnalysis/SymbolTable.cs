@@ -23,6 +23,7 @@ internal partial class Analyzer
 
         private static Expr.StackData VarNotFoundData = new(TypeCheckUtils.anyType, false, false, 0, 0);
         private static Expr.Class ClassNotFoundDefinition = TypeCheckUtils.anyType;
+        public Expr.Function FunctionNotFoundDefinition = SpecialObjects.GenerateAnyFunction();
 
         public void SetContext(Expr.Definition? current)
         {
@@ -147,7 +148,7 @@ internal partial class Analyzer
             if (variable == null)
             {
                 Diagnostics.errors.Push(new Error.AnalyzerError("Undefined Reference", $"The variable '{key.lexeme}' does not exist in the current context"));
-                return SymbolTable.VarNotFoundData;
+                return VarNotFoundData;
             }
             return variable;
         }
@@ -274,7 +275,14 @@ internal partial class Analyzer
 
         public Expr.Function GetFunction(string key, Expr.Type[] types)
         {
-            return _GetFunction(key, types) ?? throw new Error.AnalyzerError("Undefined Reference", $"The function '{key}({string.Join(", ", (object?[])types)})' does not exist in the current context");
+            Expr.Function? function = _GetFunction(key, types);
+
+            if (function == null)
+            {
+                Diagnostics.errors.Push(new Error.AnalyzerError("Undefined Reference", $"The function '{key}({string.Join(", ", (object?[])types)})' does not exist in the current context"));
+                return FunctionNotFoundDefinition;
+            }
+            return function;
         }
         public bool TryGetFunction(string key, Expr.Type[] types, out Expr.Function symbol)
         {
@@ -358,7 +366,8 @@ internal partial class Analyzer
                 {
                     if (item.definitionType != Expr.Definition.DefinitionType.Function)
                     {
-                        throw new Error.AnalyzerError("Invalid Call", $"{item.definitionType} is not invokable");
+                        Diagnostics.errors.Push(new Error.AnalyzerError("Invalid Call", $"{item.definitionType} is not invokable"));
+                        return false;
                     }
                     if (ParamMatch(types, (Expr.Function)item))
                     {
@@ -368,7 +377,8 @@ internal partial class Analyzer
                         }
                         else
                         {
-                            throw new Error.AnalyzerError("Ambiguous Call", $"Call is ambiguous between {value} and {(Expr.Function)item}");
+                            Diagnostics.errors.Push(new Error.AnalyzerError("Ambiguous Call", $"Call is ambiguous between {value} and {(Expr.Function)item}"));
+                            return false;
                         }
                     }
                 }

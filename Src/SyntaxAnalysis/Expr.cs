@@ -210,14 +210,19 @@ internal abstract class Expr
 
     public class TypeReference : Expr
     {
-        public ExprUtils.QueueList<Token> typeName;
+        public ExprUtils.QueueList<Token>? typeName;
         public Type type;
 
         private protected TypeReference() { }
 
-        public TypeReference(ExprUtils.QueueList<Token> typeName)
+        public TypeReference(ExprUtils.QueueList<Token>? typeName)
         {
             this.typeName = typeName;
+        }
+
+        public TypeReference(ExprUtils.QueueList<Token>? typeName, Type type) : this(typeName)
+        {
+            this.type = type;
         }
 
         public override T Accept<T>(IVisitor<T> visitor)
@@ -617,7 +622,7 @@ internal abstract class Expr
 
         public override bool Matches(Type type)
         {
-            return type.Match(this) || this.superclass.type.Matches(type);
+            return type.Match(this) || (this.superclass.type != null && this.superclass.type.Matches(type));
         }
 
         public override T Accept<T>(IVisitor<T> visitor)

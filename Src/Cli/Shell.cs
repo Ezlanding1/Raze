@@ -58,19 +58,22 @@ internal class Shell
             Analyzer analyzer = new Analyzer(expressions);
             analyzer.Analyze();
 
+            // Throw any encountered compile errors
+            Diagnostics.ThrowCompilerErrors();
+
             // Lower AST to ASM
             Assembler assembler = new InlinedAssembler(expressions);
             var output = assembler.Assemble();
             var instructions = output.Item1;
             var data = output.Item2;
 
-            // Throw any encountered compile errors
-            Diagnostics.ThrowCompilerErrors();
 
             #if DEBUG
             Raze.Tools.AssemblyPrinter.PrintAssembly(instructions, data, SymbolTableSingleton.SymbolTable.main);
             #endif
 
+            // Throw any encountered assembling errors
+            Diagnostics.ThrowCompilerErrors();
 
             // Output Result
             //string path = Environment.GetFolderPath(System.Environment.SpecialFolder.DesktopDirectory) + "\\out.asm";

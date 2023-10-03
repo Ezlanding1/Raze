@@ -26,6 +26,13 @@ internal partial class Analyzer
             }
         }
 
+        public static Expr.Function GenerateAnyFunction()
+        {
+            Expr.Function function = new(ExprUtils.Modifiers.FunctionModifierTemplate(), new(null, TypeCheckUtils.anyType), new(Token.TokenType.IDENTIFIER, "any"), new(), new());
+            function.enclosing = TypeCheckUtils.anyType;
+            return function;
+        }
+
         public class DefaultConstructor : Expr.Function
         {
             public DefaultConstructor(Token name) : base(null, new(null), name, new(), new())

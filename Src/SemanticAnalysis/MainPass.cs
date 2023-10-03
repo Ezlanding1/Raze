@@ -20,11 +20,11 @@ internal partial class Analyzer
 
                 if (!Primitives.IsVoidType(result) && !callReturn)
                 {
-                    throw new Error.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
+                    Diagnostics.errors.Push(new Error.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'"));
                 }
                 if (_return.Count != 0)
                 {
-                    throw new Error.AnalyzerError("Top Level Code", $"Top level 'return' is Not allowed");
+                    _return.Clear();
                 }
                 callReturn = false;
             }
@@ -40,7 +40,7 @@ internal partial class Analyzer
 
                 if (!Primitives.IsVoidType(result) && !callReturn)
                 {
-                    throw new Error.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
+                    Diagnostics.errors.Push(new Error.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'"));
                 }
                 callReturn = false;
             }
@@ -64,7 +64,12 @@ internal partial class Analyzer
 
             if (arg0.Item1 && arg1.Item1)
             {
-                return TypeCheckUtils.literalTypes[Primitives.OperationType(expr.op, arg0.Item2, arg1.Item2)];
+                var opType = Primitives.OperationType(expr.op, arg0.Item2, arg1.Item2);
+                if (opType != null)
+                {
+                    return TypeCheckUtils.literalTypes[(Token.TokenType)opType];
+                }
+                return TypeCheckUtils.anyType;
             }
 
             if (!arg0.Item1)
@@ -89,18 +94,27 @@ internal partial class Analyzer
 
             if (expr.internalFunction == null)
             {
-                throw Primitives.InvalidOperation(expr.op, argumentTypes[0].ToString(), argumentTypes[1].ToString());
+                Diagnostics.errors.Push(Primitives.InvalidOperation(expr.op, argumentTypes[0].ToString(), argumentTypes[1].ToString()));
+                expr.internalFunction = symbolTable.FunctionNotFoundDefinition;
             }
 
             symbolTable.SetContext(context);
 
+            if (expr.internalFunction == symbolTable.FunctionNotFoundDefinition)
+            {
+                callReturn = true;
+                return expr.internalFunction._returnType.type;
+            }
+
             if (expr.internalFunction.parameters[0].modifiers["ref"] && TypeCheckUtils.CannotBeRef(expr.left))
             {
-                throw new Error.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
+                Diagnostics.errors.Push(new Error.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter"));
+                expr.internalFunction.parameters[0].modifiers["ref"] = false;
             }
             if (expr.internalFunction.parameters[1].modifiers["ref"] && TypeCheckUtils.CannotBeRef(expr.right))
             {
-                throw new Error.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
+                Diagnostics.errors.Push(new Error.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter"));
+                expr.internalFunction.parameters[1].modifiers["ref"] = false;
             }
 
             return expr.internalFunction._returnType.type;
@@ -119,24 +133,25 @@ internal partial class Analyzer
 
             if (arg.Item1)
             {
-                return TypeCheckUtils.literalTypes[Primitives.OperationType(expr.op, arg.Item2)];
-            }
-
-            if (!arg.Item1)
-            {
-                symbolTable.SetContext((Expr.Definition)argumentTypes[0]);
-
-                if (symbolTable.TryGetFunction(Primitives.SymbolToPrimitiveName(expr.op), argumentTypes, out var symbol))
+                var opType = Primitives.OperationType(expr.op, arg.Item2);
+                if (opType != null)
                 {
-                    expr.internalFunction = symbol;
+                    return TypeCheckUtils.literalTypes[(Token.TokenType)opType];
                 }
+                return TypeCheckUtils.anyType;
             }
 
-            if (expr.internalFunction == null)
-            {
-                throw Primitives.InvalidOperation(expr.op, argumentTypes[0].ToString());
-            }
+            symbolTable.SetContext((Expr.Definition)argumentTypes[0]);
+
+            expr.internalFunction = symbolTable.GetFunction(Primitives.SymbolToPrimitiveName(expr.op), argumentTypes);
+
             symbolTable.SetContext(context);
+
+            if (expr.internalFunction == symbolTable.FunctionNotFoundDefinition)
+            {
+                callReturn = true;
+                return expr.internalFunction._returnType.type;
+            }
 
             if (Primitives.SymbolToPrimitiveName(expr.op) == "Increment")
             {
@@ -145,7 +160,8 @@ internal partial class Analyzer
 
             if (expr.internalFunction.parameters[0].modifiers["ref"] && TypeCheckUtils.CannotBeRef(expr.operand))
             {
-                throw new Error.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
+                Diagnostics.errors.Push(new Error.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter"));
+                expr.internalFunction.parameters[0].modifiers["ref"] = false;
             }
 
             return expr.internalFunction._returnType.type;
@@ -179,21 +195,28 @@ internal partial class Analyzer
                 }
             }
 
-            // 
             if (symbolTable.Current.definitionType != Expr.Definition.DefinitionType.Function)
             {
-                throw new Exception();
+                Diagnostics.errors.Push(new Error.ImpossibleError("Call references non-function"));
             }
 
-            TypeCheckUtils.ValidateCall(expr, ((Expr.Function)symbolTable.Current));
-
             expr.internalFunction = ((Expr.Function)symbolTable.Current);
+
+            if (expr.internalFunction == symbolTable.FunctionNotFoundDefinition)
+            {
+                callReturn = true;
+                return expr.internalFunction._returnType.type;
+            }
+            TypeCheckUtils.ValidateCall(expr, expr.internalFunction);
+
+            TypeCheckUtils.ValidateCall(expr, ((Expr.Function)symbolTable.Current));
 
             for (int i = 0; i < expr.internalFunction.Arity; i++)
             {
                 if (expr.internalFunction.parameters[i].modifiers["ref"] && TypeCheckUtils.CannotBeRef(expr.arguments[i]))
                 {
-                    throw new Error.AnalyzerError("Invalid Function Argument", "Cannot assign when non-variable is passed to 'ref' parameter");
+                    Diagnostics.errors.Push(new Error.AnalyzerError("Invalid Function Argument", "Cannot assign when non-variable is passed to 'ref' parameter"));
+                    expr.internalFunction.parameters[i].modifiers["ref"] = false;
                 }
             }
 
@@ -304,7 +327,7 @@ internal partial class Analyzer
 
                 if (!Primitives.IsVoidType(result) && !callReturn)
                 {
-                    throw new Error.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
+                    Diagnostics.errors.Push(new Error.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'"));
                 }
                 callReturn = false;
             }
@@ -447,14 +470,14 @@ internal partial class Analyzer
             var result = expr.initExpr.Accept(this);
             if (!Primitives.IsVoidType(result) && !callReturn)
             {
-                throw new Error.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
+                Diagnostics.errors.Push(new Error.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'"));
             }
             callReturn = false;
 
             result = expr.updateExpr.Accept(this);
             if (!Primitives.IsVoidType(result) && !callReturn)
             {
-                throw new Error.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'");
+                Diagnostics.errors.Push(new Error.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'"));
             }
             callReturn = false;
 
@@ -478,6 +501,11 @@ internal partial class Analyzer
         public override Expr.Type VisitKeywordExpr(Expr.Keyword expr)
         {
             return TypeCheckUtils.keywordTypes[expr.keyword];
+        }
+
+        public override Expr.Type VisitNoOpExpr(Expr.NoOp expr)
+        {
+            return TypeCheckUtils.anyType;
         }
 
         private void HandleConditional(Expr.Conditional expr)
