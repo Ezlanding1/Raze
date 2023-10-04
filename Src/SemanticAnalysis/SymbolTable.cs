@@ -322,7 +322,7 @@ internal partial class Analyzer
         public void CheckGlobals() { CheckDuplicates(globals); }
         public void CheckDuplicates(List<Expr.Definition> definitions)
         {
-            foreach (var duplicate in definitions.GroupBy(x => x.ToMangledName()).Where(x => x.Count() > 1).Select(x => x.ElementAt(0)))
+            foreach (var duplicate in definitions.GroupBy(x => ToUniqueName(x)).Where(x => x.Count() > 1).Select(x => x.ElementAt(0)))
             {
                 if (duplicate.definitionType == Expr.Definition.DefinitionType.Function)
                 {
@@ -341,6 +341,43 @@ internal partial class Analyzer
                 {
                     Diagnostics.errors.Push(new Error.AnalyzerError("Double Declaration", $"A class named '{duplicate.name.lexeme}' is already defined in this scope"));
                 }
+            }
+        }
+
+        private string ToUniqueName(Expr.Definition definition)
+        {
+            if (definition.definitionType == Expr.Definition.DefinitionType.Function)
+            {
+                var function = (Expr.Function)definition;
+
+                return (function.enclosing != null ?
+                        function.enclosing.ToString() + "." :
+                        "")
+                        + function.name.lexeme + getParameters();
+
+                string getParameters()
+                {
+                    string res = "";
+                    if (function.parameters.Count != 0)
+                    {
+                        foreach (var type in function.parameters)
+                        {
+                            if (type.typeName.Count == 0)
+                            {
+                                res += (type.stack.type);
+                            }
+                            else
+                            {
+                                res += (string.Join(".", type.typeName.ToList().ConvertAll(x => x.lexeme)) + ", ");
+                            }
+                        }
+                    }
+                    return res;
+                }
+            }
+            else
+            {
+                return definition.name.lexeme;
             }
         }
 
