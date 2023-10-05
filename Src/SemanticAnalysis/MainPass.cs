@@ -183,14 +183,16 @@ internal partial class Analyzer
             }
             else
             {
-                symbolTable.SetContext(symbolTable.NearestEnclosingClass(symbolTable.Current));
+                var context = symbolTable.Current;
+
+                symbolTable.SetContext(null);
                 if (symbolTable.TryGetFunction(expr.name.lexeme, argumentTypes, out var symbol))
                 {
                     symbolTable.SetContext(symbol);
                 }
                 else
                 {
-                    symbolTable.SetContext(null);
+                    symbolTable.SetContext(context);
                     symbolTable.SetContext(symbolTable.GetFunction(expr.name.lexeme, argumentTypes));
                 }
             }
