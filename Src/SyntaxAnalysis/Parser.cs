@@ -584,7 +584,7 @@ internal class Parser
 
     private Expr.Declare Declare(Expr.GetReference variable)
     {
-        if (variable.HasMethod())
+        if (variable is not Expr.AmbiguousGetReference)
         {
             Diagnostics.errors.Push(new Error.ParseError("Invalid Declare Statement", "Cannot declare to a non-type value"));
         }
@@ -598,21 +598,22 @@ internal class Parser
 
         Expect(Token.TokenType.EQUALS, "'=' when declaring variable");
 
-        return new Expr.Declare(variable.ToTypeReference().typeName, name, ReservedValueMatch("ref"), NoSemicolon());
+        return new Expr.Declare(((Expr.AmbiguousGetReference)variable).typeName, name, ReservedValueMatch("ref"), NoSemicolon());
     }
 
     private Expr.GetReference GetReference()
     {
         List<Expr.Getter> getters = new();
-        Expr.TypeReference callee = new(GetTypeReference());
+        Expr.AmbiguousGetReference callee = new(GetTypeReference());
 
         if (TypeMatch(Token.TokenType.LPAREN))
         {
-            getters.Add(new Expr.Call(callee.typeName.StackPop(), GetArgs(), (callee.typeName.Count == 0) ? new(null) : callee, false));
+            getters.Add(new Expr.Call(callee.typeName.StackPop(), GetArgs(), (callee.typeName.Count == 0) ? null : callee));
         }
         else
         {
-            return callee.ToGetReference();
+            callee.instanceCall = true;
+            return callee;
         }
 
         while (TypeMatch(Token.TokenType.DOT))
@@ -621,7 +622,8 @@ internal class Parser
 
             if (TypeMatch(Token.TokenType.LPAREN))
             {
-                getters.Add(new Expr.Call(Previous(2), GetArgs(), new(null), true));
+                var call = new Expr.Call(Previous(2), GetArgs(), new Expr.InstanceGetReference(getters));
+                getters = new() { call };
             }
             else
             {
@@ -629,16 +631,17 @@ internal class Parser
             }
         }
 
-        return new Expr.GetReference(getters, callee.typeName != null || (callee.typeName == null && getters.Count == 0));
+        return new Expr.InstanceGetReference(getters);
     }
 
     private Expr.Call? GetNewGetter()
     {
-        Expr.TypeReference callee = new(GetTypeReference());
+        Expr.AmbiguousGetReference callee = new(GetTypeReference());
+        callee.instanceCall = false;
 
         if (TypeMatch(Token.TokenType.LPAREN))
         {
-            return new Expr.Call(callee.typeName.StackPop(), GetArgs(), (callee.typeName.Count == 0) ? new(null) : callee, false);
+            return new Expr.Call(callee.typeName.StackPop(), GetArgs(), (callee.typeName.Count == 0) ? null : callee);
         }
 
         Expected(Token.TokenType.LPAREN.ToString(), "'(' after type in new expression");
@@ -760,7 +763,7 @@ internal class Parser
                     {
                         Expect(Token.TokenType.IDENTIFIER, "after escape '$'");
                         value = null;
-                        variables.Add(new Expr.GetReference(new() { new Expr.Get(Previous()) }));
+                        variables.Add(new Expr.AmbiguousGetReference(Previous(), true));
                     }
                     else if (Previous().type == Token.TokenType.IDENTIFIER)
                     {
@@ -804,7 +807,7 @@ internal class Parser
                         else if (TypeMatch(Token.TokenType.DOLLAR))
                         {
                             Expect(Token.TokenType.IDENTIFIER, "after escape '$'");
-                            variables.Add(new Expr.GetReference(new() { new Expr.Get(Previous()) }));
+                            variables.Add(new Expr.AmbiguousGetReference(Previous(), true));
                             instructions.Add(new ExprUtils.AssignableInstruction.Binary(new Instruction.Binary(op.lexeme, value, null), (value == null) ? (ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst | ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond) : ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond, localReturn));
                         }
                         else

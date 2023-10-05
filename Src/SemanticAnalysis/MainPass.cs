@@ -176,7 +176,7 @@ internal partial class Analyzer
                 argumentTypes[i] = expr.arguments[i].Accept(this);
             }
 
-            if (expr.callee.typeName != null)
+            if (expr.callee != null)
             {
                 symbolTable.SetContext((Expr.Definition)expr.callee.Accept(this));
                 symbolTable.SetContext(symbolTable.GetFunction(expr.name.lexeme, argumentTypes));
@@ -342,11 +342,10 @@ internal partial class Analyzer
 
         public override Expr.Type VisitIfExpr(Expr.If expr)
         {
-            expr.conditionals.ForEach(x => { HandleConditional(x); TypeCheckUtils.TypeCheckConditional(this, _return, x.condition, x.block); });
+            expr.conditionals.ForEach(x => TypeCheckUtils.TypeCheckConditional(this, _return, x.condition, x.block));
 
             if (expr._else != null)
             {
-                expr._else.Accept(this);
                 TypeCheckUtils.TypeCheckConditional(this, _return, null, expr._else);
             }
 
@@ -361,7 +360,7 @@ internal partial class Analyzer
             {
                 expr.member.Accept(this);
             }
-            TypeCheckUtils.MustMatchType(((Expr.Get)expr.member.getters[^1]).data.type, assignType);
+            TypeCheckUtils.MustMatchType(expr.member.GetLastData().type, assignType);
 
             return TypeCheckUtils._voidType;
         }
@@ -408,30 +407,40 @@ internal partial class Analyzer
             return expr.type;
         }
 
-        public override Expr.Type VisitGetReferenceExpr(Expr.GetReference expr)
+        public override Expr.Type VisitAmbiguousGetReferenceExpr(Expr.AmbiguousGetReference expr)
+        {
+            if (expr.instanceCall)
+            {
+                using (new SaveContext())
+                {
+                    expr.datas[0] = symbolTable.GetVariable(expr.typeName.Dequeue(), out expr.classScoped);
+                    symbolTable.SetContext(expr.datas[0].type);
+
+                    for (int i = 1; i < expr.datas.Length; i++)
+                    {
+                        expr.datas[i] = symbolTable.GetVariable(expr.typeName.Dequeue());
+                        symbolTable.SetContext(expr.datas[i].type);
+                    }
+                    return expr.datas[^1].type;
+                }
+            }
+            else
+            {
+                using (new SaveContext())
+                {
+                    InitialPass.HandleTypeNameReference(expr.typeName);
+                    return symbolTable.Current;
+                }
+            }
+        }
+
+        public override Expr.Type VisitInstanceGetReferenceExpr(Expr.InstanceGetReference expr)
         {
             using (new SaveContext())
             {
-                if (expr.ambiguousCall)
+                foreach (Expr.Getter getter in expr.getters)
                 {
-                    foreach (Expr.Getter getter in expr.getters)
-                    {
-                        symbolTable.SetContext((Expr.Definition)getter.Accept(this));
-                    }
-                }
-                else
-                {
-                    var get = expr.getters[0] as Expr.Get;
-                    if (get != null)
-                    {
-                        get.data = symbolTable.GetVariable(get.name, out expr.classScoped);
-                        symbolTable.SetContext(get.data.type);
-                    }
-
-                    for (int i = Convert.ToInt16(get != null); i < expr.getters.Count; i++)
-                    {
-                        symbolTable.SetContext((Expr.Definition)expr.getters[i].Accept(this));
-                    }
+                    symbolTable.SetContext((Expr.Definition)getter.Accept(this));
                 }
                 return symbolTable.Current;
             }
@@ -506,12 +515,6 @@ internal partial class Analyzer
         public override Expr.Type VisitNoOpExpr(Expr.NoOp expr)
         {
             return TypeCheckUtils.anyType;
-        }
-
-        private void HandleConditional(Expr.Conditional expr)
-        {
-            expr.condition.Accept(this);
-            expr.block.Accept(this);
         }
     }
 }

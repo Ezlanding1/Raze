@@ -107,11 +107,11 @@ internal partial class Analyzer
 
             if (expr.callee != null && expr.instanceCall != null)
             {
-                if ((bool)expr.instanceCall && callee.modifiers["static"])
+                if (expr.instanceCall == true && callee.modifiers["static"])
                 {
                     Diagnostics.errors.Push(new Error.AnalyzerError("Static Method Called From Instance", "You cannot call a static method from an instance"));
                 }
-                if (!(bool)expr.instanceCall && !callee.modifiers["static"] && !expr.constructor)
+                if (expr.instanceCall == false && !callee.modifiers["static"] && !expr.constructor)
                 {
                     Diagnostics.errors.Push(new Error.AnalyzerError("Instance Method Called From Static Context", "You cannot call an instance method from a static context"));
                 }

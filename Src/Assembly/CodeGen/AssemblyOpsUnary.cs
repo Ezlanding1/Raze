@@ -18,7 +18,7 @@ internal partial class AssemblyOps
             }
             if (assignType == ExprUtils.AssignableInstruction.Unary.AssignType.AssignFirst)
             {
-                return InstructionUtils.ToRegisterSize(((Expr.Get)vars[count - 1].getters[^1]).data.size);
+                return InstructionUtils.ToRegisterSize(vars[count - 1].GetLastData().size);
             }
             return null;
         }

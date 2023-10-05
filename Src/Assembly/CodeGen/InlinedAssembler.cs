@@ -187,14 +187,28 @@ internal class InlinedAssembler : Assembler
 
         if (!expr.internalFunction.modifiers["static"])
         {
-            alloc.Lock((Instruction.Register)(instanceArg = alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits)));
             if (!expr.constructor)
             {
-                ((Instruction.Binary)instructions[^1]).operand1 = instanceArg;
+                if (expr.callee != null)
+                {
+                    instanceArg = expr.callee.Accept(this);
+                }
+                else
+                {
+                    var enclosing = SymbolTableSingleton.SymbolTable.NearestEnclosingClass(expr.internalFunction);
+                    var size = (enclosing?.definitionType == Expr.Definition.DefinitionType.Primitive) ? enclosing.size : 8;
+                    instanceArg = new Instruction.Pointer(8, size);
+                }
             }
             else
             {
+                instanceArg = alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits);
                 Emit(new Instruction.Binary("MOV", instanceArg, new Instruction.Register(Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits)));
+            }
+
+            if (instanceArg.IsRegister())
+            {
+                alloc.Lock((Instruction.Register)instanceArg);
             }
         }
 

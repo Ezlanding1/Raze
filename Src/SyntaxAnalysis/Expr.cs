@@ -30,7 +30,8 @@ internal abstract class Expr
         public T VisitForExpr(For expr);
         public T VisitWhileExpr(While expr);
         public T VisitCallExpr(Call expr);
-        public T VisitGetReferenceExpr(GetReference expr); 
+        public T VisitAmbiguousGetReferenceExpr(AmbiguousGetReference expr); 
+        public T VisitInstanceGetReferenceExpr(InstanceGetReference expr); 
         public T VisitGetExpr(Get expr); 
         public T VisitTypeReferenceExpr(TypeReference expr);
         public T VisitLogicalExpr(Logical epxr);
@@ -229,33 +230,91 @@ internal abstract class Expr
         {
             return visitor.VisitTypeReferenceExpr(this);
         }
-
-        public GetReference ToGetReference() => new GetReference(typeName.ToList().ConvertAll<Getter>(x => new Get(x)));
     }
 
-    public class GetReference : Expr
+    public abstract class GetReference : Expr
     {
+        public abstract StackData GetLastData();
+        public abstract int GetLastSize();
+        public abstract bool HandleThis();
+        public abstract bool IsMethod();
+    }
+
+    public class AmbiguousGetReference : GetReference
+    {
+        public ExprUtils.QueueList<Token> typeName;
+        public StackData[]? datas;
         public bool classScoped;
-        public List<Getter> getters;
-        public bool ambiguousCall;
-
-        private protected GetReference() { }
-
-        public GetReference(List<Getter> getters, bool ambiguousCall = false)
+        public bool ambiguousCall = true;
+        public bool instanceCall
         {
-            this.getters = getters;
-            this.ambiguousCall = ambiguousCall;
+            get => datas != null;
+            set { datas = value ? new StackData[typeName.Count] : null; ambiguousCall = false; }
         }
+
+        public AmbiguousGetReference(ExprUtils.QueueList<Token> typeName)
+        {
+            this.typeName = typeName;
+        }
+        public AmbiguousGetReference(ExprUtils.QueueList<Token> typeName, bool instanceCall) : this(typeName)
+        {
+            this.instanceCall = instanceCall;
+        }
+        public AmbiguousGetReference(Token name, bool instanceCall)
+        {
+            this.typeName = new();
+            this.typeName.Enqueue(name);
+            this.instanceCall = instanceCall;
+        }
+
+        public override StackData GetLastData() => datas[^1];
+        public override int GetLastSize() => datas[^1].size;
+        public override bool HandleThis()
+        {
+            if (typeName.Count == 1 && typeName.Peek().lexeme == "this") 
+            { 
+                typeName.Peek().type = Token.TokenType.IDENTIFIER; 
+                return true; 
+            }
+            return false;
+        }
+        public override bool IsMethod() => false;
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.VisitGetReferenceExpr(this);
+            return visitor.VisitAmbiguousGetReferenceExpr(this);
+        }
+    }
+
+    public class InstanceGetReference : GetReference
+    {
+        public List<Getter> getters;
+
+        private protected InstanceGetReference() { }
+
+        public InstanceGetReference(List<Getter> getters)
+        {
+            this.getters = getters;
         }
 
-        public bool IsMethod() => getters[^1] is Call;
+        public override StackData GetLastData() => ((Get)getters[^1]).data;
+        public override int GetLastSize() => (getters[^1] is Get) ? ((Get)getters[^1]).data.size : ((Call)getters[^1]).internalFunction._returnSize;
+        public override bool HandleThis()
+        {
+            if (getters.Count == 1 && getters[0].name.lexeme == "this")
+            {
+                getters[0].name.type = Token.TokenType.IDENTIFIER;
+                return true;
+            }
+            return false;
+        }
+        public override bool IsMethod() => getters[^1] is Call;
         public bool HasMethod() => getters.Any(x => x is Call);
 
-        public TypeReference ToTypeReference() => new TypeReference(new ExprUtils.QueueList<Token>(this.getters.ConvertAll(x => x.name)));
+        public override T Accept<T>(IVisitor<T> visitor)
+        {
+            return visitor.VisitInstanceGetReferenceExpr(this);
+        }
     }
 
     public abstract class Getter : Expr
@@ -266,20 +325,29 @@ internal abstract class Expr
 
     public class Call : Getter
     {
-        public TypeReference callee;
+        public GetReference? callee;
 
         public bool constructor;
-        public bool? instanceCall;
+        public bool? instanceCall
+        {
+            get 
+            {
+                if (callee is AmbiguousGetReference ambigGetRef)
+                {
+                    return ambigGetRef.ambiguousCall ? null : ambigGetRef.instanceCall;
+                }
+                else return true;
+            }
+        }
 
-        public Function internalFunction { get => (Function)callee.type; set => callee.type = value; }
+        public Function internalFunction;
 
         public List<Expr> arguments;
 
-        public Call(Token name, List<Expr> arguments, TypeReference callee, bool instanceCall) : base(name)
+        public Call(Token name, List<Expr> arguments, GetReference? callee) : base(name)
         {
             this.arguments = arguments;
             this.callee = callee;
-            this.instanceCall = instanceCall;
         }
 
         public override T Accept<T>(IVisitor<T> visitor)

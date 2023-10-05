@@ -68,7 +68,9 @@ internal partial class Analyzer
 
         public virtual T VisitTypeReferenceExpr(Expr.TypeReference expr) => default;
 
-        public virtual T VisitGetReferenceExpr(Expr.GetReference expr)
+        public virtual T VisitAmbiguousGetReferenceExpr(Expr.AmbiguousGetReference expr) => default;
+
+        public virtual T VisitInstanceGetReferenceExpr(Expr.InstanceGetReference expr)
         {
             foreach (Expr.Getter getter in expr.getters)
             {

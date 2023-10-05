@@ -131,7 +131,7 @@ internal partial class Analyzer
 
         public override object? VisitCallExpr(Expr.Call expr)
         {
-            if (expr.callee.typeName != null)
+            if (expr.callee != null)
             {
                 expr.callee.Accept(this);
             }
@@ -192,8 +192,8 @@ internal partial class Analyzer
         {
             HandleTopLevelCode();
             
-            expr.call.callee.typeName ??= new();
-            expr.call.callee.typeName.Enqueue(expr.call.name);
+            expr.call.callee ??= new Expr.AmbiguousGetReference(new ExprUtils.QueueList<Token>(), false);
+            ((Expr.AmbiguousGetReference)expr.call.callee).typeName.Enqueue(expr.call.name);
 
             expr.call.Accept(this);
 
@@ -225,29 +225,21 @@ internal partial class Analyzer
             return base.VisitAssemblyExpr(expr);
         }
 
-        public override object? VisitGetReferenceExpr(Expr.GetReference expr)
+        public override object VisitAmbiguousGetReferenceExpr(Expr.AmbiguousGetReference expr)
         {
-            HandleTopLevelCode();
-
             if (expr.ambiguousCall)
             {
-                var call = (Expr.Call)expr.getters[0];
-
-                if (call.callee.typeName != null)
+                if (!symbolTable.TryGetDefinitionFullScope(expr.typeName.Peek(), out _))
                 {
-                    call.instanceCall = !symbolTable.TryGetDefinitionFullScope(call.callee.typeName.Peek(), out _);
-
-                    if ((bool)call.instanceCall)
-                    {
-                        expr.getters.InsertRange(0, call.callee.ToGetReference().getters);
-                        call.callee.typeName = null;
-                    }
-                }
-                else
-                {
-                    call.instanceCall = null;
+                    expr.instanceCall = true;
                 }
             }
+            return null;
+        }
+
+        public override object? VisitInstanceGetReferenceExpr(Expr.InstanceGetReference expr)
+        {
+            HandleTopLevelCode();
             
             foreach (Expr.Getter get in expr.getters)
             {
@@ -271,10 +263,9 @@ internal partial class Analyzer
 
         public override object VisitAssignExpr(Expr.Assign expr)
         {
-            if (expr.member.getters.Count == 1 && expr.member.getters[0].name.lexeme == "this" && (symbolTable.NearestEnclosingClass()?.definitionType != Expr.Definition.DefinitionType.Primitive)) 
+            if (expr.member.HandleThis() && (symbolTable.NearestEnclosingClass()?.definitionType != Expr.Definition.DefinitionType.Primitive)) 
             { 
                 Diagnostics.errors.Push(new Error.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword cannot be assigned to"));
-                expr.member.getters[0].name.type = Token.TokenType.IDENTIFIER;
             }
 
             expr.member.Accept(this);
@@ -317,13 +308,13 @@ internal partial class Analyzer
             }
         }
 
-        private void HandleTypeNameReference(ExprUtils.QueueList<Token> typeName)
+        public static void HandleTypeNameReference(ExprUtils.QueueList<Token> typeName)
         {
-            symbolTable.SetContext(symbolTable.GetClassFullScope(typeName.Dequeue()));
+            SymbolTableSingleton.SymbolTable.SetContext(SymbolTableSingleton.SymbolTable.GetClassFullScope(typeName.Dequeue()));
 
             while (typeName.Count > 0)
             {
-                symbolTable.SetContext(symbolTable.GetClass(typeName.Dequeue()));
+                SymbolTableSingleton.SymbolTable.SetContext(SymbolTableSingleton.SymbolTable.GetClass(typeName.Dequeue()));
             }
         }
 

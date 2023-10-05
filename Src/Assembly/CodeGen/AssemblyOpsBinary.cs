@@ -33,7 +33,7 @@ internal partial class AssemblyOps
 
             if (cOff != 0)
             {
-                return InstructionUtils.ToRegisterSize(((Expr.Get)vars[count - cOff].getters[^1]).data.size);
+                return InstructionUtils.ToRegisterSize(vars[count - cOff].GetLastData().size);
             }
 
             Diagnostics.errors.Push(new Error.BackendError("Inavalid Assembly Block", $"No size could be determined for the { (first? "first" : "second") } operand"));
@@ -54,7 +54,7 @@ internal partial class AssemblyOps
         {
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst))
             {
-                return assemblyOps.assembler.NonLiteral(assemblyOps.vars[assemblyOps.count].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(((Expr.Get)assemblyOps.vars[assemblyOps.count++].getters[^1]).data.size));
+                return assemblyOps.assembler.NonLiteral(assemblyOps.vars[assemblyOps.count].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count++].GetLastData().size));
             }
             return (Instruction.Value)instruction.instruction.operand1;
         }
@@ -172,11 +172,11 @@ internal partial class AssemblyOps
             assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler);
 
             var operand1 = (Instruction.Value)(instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst) ?
-                    assemblyOps.assembler.MovToRegister(assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(((Expr.Get)assemblyOps.vars[assemblyOps.count - 1].getters[^1]).data.size)) :
+                    assemblyOps.assembler.MovToRegister(assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count - 1].GetLastData().size)) :
                     instruction.instruction.operand1);
 
             var operand2 = (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))? 
-                assemblyOps.assembler.NonLiteral(assemblyOps.vars[assemblyOps.count].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(((Expr.Get)assemblyOps.vars[assemblyOps.count++].getters[^1]).data.size)) :
+                assemblyOps.assembler.NonLiteral(assemblyOps.vars[assemblyOps.count].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count++].GetLastData().size)) :
                 (Instruction.Value)instruction.instruction.operand2;
 
             string emitOp = "";

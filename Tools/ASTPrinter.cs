@@ -68,7 +68,7 @@ internal class ASTPrinter : Expr.IVisitor<object?>
 
     public object? VisitCallExpr(Expr.Call expr)
     {
-        if (expr.callee.typeName != null)
+        if (expr.callee != null)
         {
             expr.callee.Accept(this);
         }
@@ -110,7 +110,16 @@ internal class ASTPrinter : Expr.IVisitor<object?>
         return null;
     }
 
-    public object? VisitGetReferenceExpr(Expr.GetReference expr)
+    public object? VisitAmbiguousGetReferenceExpr(Expr.AmbiguousGetReference expr)
+    {
+        foreach (var type in expr.typeName)
+        {
+            PrintAST(type);
+        }
+        return null;
+    }
+
+    public object? VisitInstanceGetReferenceExpr(Expr.InstanceGetReference expr)
     {
         foreach (var type in expr.getters)
         {
