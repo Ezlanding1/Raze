@@ -202,16 +202,15 @@ internal partial class Analyzer
                 Diagnostics.errors.Push(new Error.ImpossibleError("Call references non-function"));
             }
 
-            expr.internalFunction = ((Expr.Function)symbolTable.Current);
+            expr.internalFunction = (Expr.Function)symbolTable.Current;
 
             if (expr.internalFunction == symbolTable.FunctionNotFoundDefinition)
             {
                 callReturn = true;
                 return expr.internalFunction._returnType.type;
             }
-            TypeCheckUtils.ValidateCall(expr, expr.internalFunction);
 
-            TypeCheckUtils.ValidateCall(expr, ((Expr.Function)symbolTable.Current));
+            TypeCheckUtils.ValidateCall(expr, expr.internalFunction);
 
             for (int i = 0; i < expr.internalFunction.Arity; i++)
             {

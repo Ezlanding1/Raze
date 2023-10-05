@@ -166,6 +166,7 @@ internal class Parser
                         else
                         {
                             Diagnostics.errors.Push(new Error.ParseError("Invalid Class Definition", $"A class may only contain declarations and definitions. {GotInfo()}"));
+                            Advance();
                         }
                     }
                     else

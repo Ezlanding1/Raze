@@ -67,7 +67,6 @@ internal abstract class Expr
         {
             return visitor.VisitBinaryExpr(this);
         }
-
     }
 
     public class Unary : Expr
@@ -91,7 +90,6 @@ internal abstract class Expr
 
     public class Grouping : Expr
     {
-
         public Expr expression;
 
         public Grouping(Expr expression)
@@ -103,7 +101,6 @@ internal abstract class Expr
         {
             return visitor.VisitGroupingExpr(this);
         }
-
     }
 
     public class Literal : Expr
@@ -119,7 +116,6 @@ internal abstract class Expr
         {
             return visitor.VisitLiteralExpr(this);
         }
-
     }
 
     public class Declare : Named
@@ -142,7 +138,6 @@ internal abstract class Expr
         {
             return visitor.VisitDeclareExpr(this);
         }
-
     }
 
     public class Conditional
@@ -328,13 +323,13 @@ internal abstract class Expr
         public GetReference? callee;
 
         public bool constructor;
-        public bool? instanceCall
+        public bool instanceCall
         {
-            get 
+            get
             {
                 if (callee is AmbiguousGetReference ambigGetRef)
                 {
-                    return ambigGetRef.ambiguousCall ? null : ambigGetRef.instanceCall;
+                    return ambigGetRef.instanceCall;
                 }
                 else return true;
             }
@@ -423,7 +418,7 @@ internal abstract class Expr
     public class StackData
     {
         public int stackOffset;
-        public Expr.Definition type;
+        public Definition type;
         public bool plus;
         public bool _ref;
         public int size;

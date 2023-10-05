@@ -105,13 +105,13 @@ internal partial class Analyzer
                 Diagnostics.errors.Push(new Error.AnalyzerError("Method Called As Constructor", "A Method may not be called as a constructor of its class"));
             }
 
-            if (expr.callee != null && expr.instanceCall != null)
+            if (expr.callee != null)
             {
-                if (expr.instanceCall == true && callee.modifiers["static"])
+                if (expr.instanceCall && callee.modifiers["static"])
                 {
                     Diagnostics.errors.Push(new Error.AnalyzerError("Static Method Called From Instance", "You cannot call a static method from an instance"));
                 }
-                if (expr.instanceCall == false && !callee.modifiers["static"] && !expr.constructor)
+                if (!expr.instanceCall && !callee.modifiers["static"] && !expr.constructor)
                 {
                     Diagnostics.errors.Push(new Error.AnalyzerError("Instance Method Called From Static Context", "You cannot call an instance method from a static context"));
                 }
