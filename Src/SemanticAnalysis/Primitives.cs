@@ -302,6 +302,7 @@ internal partial class Analyzer
             Token.TokenType.LESS => "LessThan",
             Token.TokenType.GREATEREQUAL => "GreaterThanOrEqualTo",
             Token.TokenType.LESSEQUAL => "LessThanOrEqualTo",
+            Token.TokenType.LBRACKET => "Indexer"
         };
     }
 }

@@ -46,6 +46,7 @@ internal abstract partial class ExprUtils
                     case "AND":
                     case "OR":
                     case "XOR":
+                    case "LEA":
                         AssemblyOps.Binary.DefaultBinOp(this, assemblyOps);
                         return;
                     case "IMUL":
@@ -110,6 +111,9 @@ internal abstract partial class ExprUtils
                     case "INC":
                         AssemblyOps.Unary.DefaultUnOp(this, assemblyOps);
                         return;
+                    case "DEREF":
+                        AssemblyOps.Unary.DEREF(this, assemblyOps);
+                        return;
                     default:
                         Diagnostics.errors.Push(new Error.BackendError("Invalid Assembly Block", $"Instruction '{instruction.instruction}' not supported"));
                         break;
@@ -122,11 +126,11 @@ internal abstract partial class ExprUtils
             }
         }
 
-        public class AssignableInstructionZ : AssignableInstruction
+        public class Zero : AssignableInstruction
         {
             public Instruction.Zero instruction;
 
-            public AssignableInstructionZ(Instruction.Zero instruction)
+            public Zero(Instruction.Zero instruction)
             {
                 this.instruction = instruction;
             }
@@ -135,6 +139,9 @@ internal abstract partial class ExprUtils
             {
                 switch (instruction.instruction)
                 {
+                    case "SYSCALL":
+                        AssemblyOps.Zero.DefaultZOp(this, assemblyOps);
+                        break;
                     default:
                         Diagnostics.errors.Push(new Error.BackendError("Invalid Assembly Block", $"Instruction '{instruction.instruction}' not supported"));
                         break;

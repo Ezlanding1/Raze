@@ -84,6 +84,7 @@ internal partial class Analyzer
                     case "LessThan":
                     case "GreaterThanOrEqualTo":
                     case "LessThanOrEqualTo":
+                    case "Indexer":
                         if (expr.Arity != 2)
                         {
                             Diagnostics.errors.Push(new Error.AnalyzerError("Invalid Operator Definition", $"The '{expr.name.lexeme}' operator must have an arity of 2"));

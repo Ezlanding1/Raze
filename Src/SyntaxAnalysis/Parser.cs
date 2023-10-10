@@ -88,10 +88,18 @@ internal class Parser
 
                     paramModifers["ref"] = ReservedValueMatch("ref");
 
-                    Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter type");
+                    if (!Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter type"))
+                    {
+                        Advance();
+                        continue;
+                    }
                     var typeName = GetTypeReference();
 
-                    Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter");
+                    if (!Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter"))
+                    {
+                        Advance();
+                        continue;
+                    }
                     Token variable = Previous();
 
                     parameters.Add(new Expr.Parameter(typeName, variable, paramModifers));
@@ -515,6 +523,11 @@ internal class Parser
                     var op = tokens[index - 2];
                     expr = new Expr.Assign(variable, new Expr.Binary(variable, op, NoSemicolon()));
                 }
+                else if (TypeMatch(Token.TokenType.LBRACKET))
+                {
+                    expr = new Expr.Binary(variable, Previous(), NoSemicolon());
+                    Expect(Token.TokenType.RBRACKET, "']' after indexer");
+                }
                 else if (variable.IsMethod())
                 {
                     expr = variable;
@@ -754,7 +767,10 @@ internal class Parser
 
                     if (Previous().type == Token.TokenType.DOLLAR)
                     {
-                        Expect(Token.TokenType.IDENTIFIER, "after escape '$'");
+                        if (!(TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this")))
+                        {
+                            Expected("IDENTIFIER, 'this'", "after escape '$'");
+                        }
                         value = null;
                         variables.Add(new Expr.AmbiguousGetReference(Previous(), true));
                     }
@@ -799,7 +815,10 @@ internal class Parser
                         }
                         else if (TypeMatch(Token.TokenType.DOLLAR))
                         {
-                            Expect(Token.TokenType.IDENTIFIER, "after escape '$'");
+                            if (!(TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this")))
+                            {
+                                Expected("IDENTIFIER, 'this'", "after escape '$'");
+                            }
                             variables.Add(new Expr.AmbiguousGetReference(Previous(), true));
                             instructions.Add(new ExprUtils.AssignableInstruction.Binary(new Instruction.Binary(op.lexeme, value, null), (value == null) ? (ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst | ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond) : ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond, localReturn));
                         }
@@ -817,7 +836,7 @@ internal class Parser
                 {
                     if (localReturn) { Diagnostics.errors.Push(new Error.ParseError("Invalid Assembly Block", "Return on a zero instruction is not allowed")); }
                     // Zero
-                    instructions.Add(new ExprUtils.AssignableInstruction.AssignableInstructionZ(new Instruction.Zero(op.lexeme)));
+                    instructions.Add(new ExprUtils.AssignableInstruction.Zero(new Instruction.Zero(op.lexeme)));
                 }
                 Expect(Token.TokenType.SEMICOLON, "';' after Assembly statement");
             }

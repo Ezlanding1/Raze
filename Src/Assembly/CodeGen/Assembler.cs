@@ -184,7 +184,19 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
         if (operand.IsPointer())
         {
-            var reg = alloc.CurrentRegister(_ref? Instruction.Register.RegisterSize._64Bits : ((Instruction.Pointer)operand).size);
+            Instruction.Register reg;
+
+            Instruction.Register.RegisterSize size = _ref ? Instruction.Register.RegisterSize._64Bits : ((Instruction.Pointer)operand).size;
+
+            if (((Instruction.Pointer)operand).register.name == Instruction.Register.RegisterName.RBP)
+            {
+                reg = alloc.CurrentRegister(size);
+            }
+            else
+            {
+                reg = new Instruction.Register(((Instruction.Pointer)operand).register.name, size);
+            }
+            
             Emit(new Instruction.Binary(_ref? "LEA" : "MOV", reg, operand));
             _ref = false;
             operand = reg;
