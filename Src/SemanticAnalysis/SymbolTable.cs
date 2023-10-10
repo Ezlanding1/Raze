@@ -262,7 +262,7 @@ internal partial class Analyzer
 
             if (current.definitionType == Expr.Definition.DefinitionType.Function)
             {
-                Diagnostics.errors.Push(new Error.ImpossibleError("Requested function's definitions"));
+                return null;
             }
 
             if (TryGetFuncValue(((Expr.DataType)current).definitions, key, types, out var value))

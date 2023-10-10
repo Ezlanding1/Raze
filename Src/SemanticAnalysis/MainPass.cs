@@ -264,31 +264,6 @@ internal partial class Analyzer
         {
             symbolTable.SetContext(expr);
 
-            switch (expr.superclass.typeName.Dequeue().lexeme)
-            {
-                case "INTEGER":
-                    expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[0]];
-                    break;
-                case "FLOATING":
-                    expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[1]];
-                    break;
-                case "STRING":
-                    expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[2]];
-                    break;
-                case "BINARY":
-                    expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[3]];
-                    break;
-                case "HEX":
-                    expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[4]];
-                    break;
-                case "BOOLEAN":
-                    expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[5]];
-                    break;
-                default: 
-                    Diagnostics.errors.Push(new Error.ImpossibleError("Invalid primitive superclass"));
-                    break;
-            }
-
             Expr.ListAccept(expr.definitions, this);
 
             symbolTable.UpContext();

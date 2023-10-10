@@ -20,7 +20,10 @@ internal static class Diagnostics
 
     public static void Panic(Error error)
     {
-        errors.ComposeErrorReport();
+        if (errors.Count != 0)
+        {
+            errors.ComposeErrorReport();
+        }
         
         Console.WriteLine("INTERNAL ERROR:");
         Console.WriteLine(error.ComposeErrorMessage());
