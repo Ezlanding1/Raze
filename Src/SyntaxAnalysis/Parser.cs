@@ -55,13 +55,7 @@ internal class Parser
             {
                 ExprUtils.Modifiers modifiers = ExprUtils.Modifiers.FunctionModifierTemplate();
 
-                Expr.TypeReference _return = new(null);
-
-                if (IsAtEnd())
-                {
-                    End();
-                    return null;
-                }
+                if (IsAtEnd()) return null;
 
                 while (modifiers.ContainsModifier(current.lexeme))
                 {
@@ -69,26 +63,24 @@ internal class Parser
                     Advance();
                 }
 
-                var retToken = Peek();
-                if (retToken == null)
-                {
+                Expr.TypeReference _return = new(null);
+
+                if (!Expect(Token.TokenType.IDENTIFIER, definitionType.lexeme + " name"))
                     return null;
-                }
-                if (retToken.type == Token.TokenType.IDENTIFIER)
+
+                if (current.type == Token.TokenType.DOT || current.type == Token.TokenType.IDENTIFIER)
                 {
-                    Expect(Token.TokenType.IDENTIFIER, "function return type");
-                    _return.typeName = new();
-                    _return.typeName.Enqueue(Previous());
+                    _return.typeName = GetTypeReference();
 
-                    if (TypeMatch(Token.TokenType.DOT))
-                    {
-                        _return = new Expr.TypeReference(GetTypeReference());
-                    }
+                    if (!Expect(Token.TokenType.IDENTIFIER, definitionType.lexeme + " name"))
+                        return null;
                 }
 
-                Expect(Token.TokenType.IDENTIFIER, definitionType.lexeme + " name");
                 Token name = Previous();
+
                 Expect(Token.TokenType.LPAREN, "'(' after function name");
+                if (IsAtEnd()) return null;
+
                 List<Expr.Parameter> parameters = new();
                 while (!TypeMatch(Token.TokenType.RPAREN))
                 {
@@ -931,14 +923,15 @@ internal class Parser
         return (t == 2);
     }
 
-    private void Expect(Token.TokenType type, string errorMessage)
+    private bool Expect(Token.TokenType type, string errorMessage)
     {
         if (current != null && current.type == type)
         {
             Advance();
-            return;
+            return true;
         }
         Expected(type.ToString(), errorMessage);
+        return false;
     }
 
     private void ExpectValue(Token.TokenType type, string value, string errorMessage)
@@ -963,16 +956,6 @@ internal class Parser
         return tokens[index - sub];
     }
 
-    private Token? Peek()
-    {
-        if (!IsAtEnd(index + 1))
-        {
-            return tokens[index + 1];
-        }
-        End();
-        return null;
-    }
-
     private void Advance()
     {
         index++;
@@ -987,9 +970,5 @@ internal class Parser
     private bool IsAtEnd()
     {
         return (index >= tokens.Count || index < 0);
-    }
-    private bool IsAtEnd(int idx)
-    {
-        return (idx >= tokens.Count || idx < 0);
     }
 }
