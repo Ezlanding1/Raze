@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -20,9 +21,9 @@ internal class RegisterAlloc
         }
     }
 
-    RegisterState[] registerStates = { new(), new(), new(), new(), new(), new(), new(), new() };
+    RegisterState[] registerStates = { new NeedableRegisterState(), new(), new(), new(), new(), new(), new(), new() };
 
-    Instruction.Register?[] registers = new Instruction.Register[6];
+    StrongBox<Instruction.Register.RegisterName>?[] registers = new StrongBox<Instruction.Register.RegisterName>[6];
 
     public Instruction.Register?[] paramRegisters = new Instruction.Register[6];
 
@@ -32,15 +33,11 @@ internal class RegisterAlloc
     {
         if (registers[idx] == null)
         {
-            registers[idx] = new(InstructionUtils.storageRegisters[idx], size);
-        }
-        else
-        {
-            registers[idx].size = size;
+            registers[idx] = new(InstructionUtils.storageRegisters[idx]);
         }
         registerStates[idx].SetState(RegisterState.RegisterStates.Used);
 
-        return registers[idx];
+        return new Instruction.Register(registers[idx], size);
     }
 
     public Instruction.Register NextRegister(Instruction.Register.RegisterSize size)
@@ -60,9 +57,9 @@ internal class RegisterAlloc
     {
         if (registerStates[RegisterIdx].HasState(RegisterState.RegisterStates.Free))
         {
-            registers[RegisterIdx] = new(InstructionUtils.storageRegisters[RegisterIdx], size);
+            registers[RegisterIdx] = new(InstructionUtils.storageRegisters[RegisterIdx]);
         }
-        return registers[RegisterIdx];
+        return new Instruction.Register(registers[RegisterIdx], size);
     }
 
     public void ReserveRegister(Assembler assembler, int i = 0)
@@ -76,14 +73,14 @@ internal class RegisterAlloc
 
         if (registerStates[i].HasState(RegisterState.RegisterStates.Needed))
         {
-            registers[i].name = InstructionUtils.storageRegisters[newIdx];
-            assembler.Emit(new Instruction.Binary("MOV", NextRegister(registers[i].size), new Instruction.Register(InstructionUtils.storageRegisters[i], registers[i].size)));
+            registers[i].Value = InstructionUtils.storageRegisters[newIdx];
+            assembler.Emit(new Instruction.Binary("MOV", NextRegister(((NeedableRegisterState)registerStates[i]).neededSize), new Instruction.Register(InstructionUtils.storageRegisters[i], ((NeedableRegisterState)registerStates[i]).neededSize)));
             registers[i] = null;
         }
         else
         {
             registers[newIdx] = registers[i];
-            registers[newIdx].name = InstructionUtils.storageRegisters[newIdx];
+            registers[newIdx].Value = InstructionUtils.storageRegisters[newIdx];
             fncPushPreserved.IncludeRegister(newIdx);
             registerStates[newIdx].SetState(RegisterState.RegisterStates.Used);
             registers[i] = null;
@@ -107,6 +104,7 @@ internal class RegisterAlloc
 
     public Instruction.Register CallAlloc(Instruction.Register.RegisterSize size)
     {
+        ((NeedableRegisterState)registerStates[0]).neededSize = size;
         registerStates[0].SetState(RegisterState.RegisterStates.Needed);
         return GetRegister(0, size);
     }

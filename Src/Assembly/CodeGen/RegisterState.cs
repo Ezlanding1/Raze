@@ -54,3 +54,8 @@ internal class RegisterState
         }
     }
 }
+
+internal class NeedableRegisterState : RegisterState
+{
+    public Instruction.Register.RegisterSize neededSize;
+}

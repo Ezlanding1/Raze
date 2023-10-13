@@ -1,3 +1,5 @@
+using System.Runtime.CompilerServices;
+
 namespace Raze;
 
 internal abstract class Instruction
@@ -108,30 +110,27 @@ internal abstract class Instruction
             R15
         }
 
-        public RegisterName name;
+        private StrongBox<RegisterName> _name;
+        public RegisterName name
+        {
+            get => _name.Value;
+            set => _name.Value = value;
+        }
 
-        private protected Register(int registerType, RegisterName register, RegisterSize size) : base(registerType)
-        {
-            this.name = register;
-            this.size = size;
-        }
-        
-        private protected Register(int registerType, RegisterName register, int size) : base(registerType)
-        {
-            this.name = register;
-            this.size = InstructionUtils.ToRegisterSize(size);
-        }
-        
         public Register(RegisterName register, RegisterSize size) : base(0)
         {
-            this.name = register;
+            this._name = new(register);
             this.size = size;
         }
 
-        public Register(RegisterName register, int size) : base(0)
+        public Register(RegisterName register, int size) : this(register, InstructionUtils.ToRegisterSize(size))
         {
-            this.name = register;
-            this.size = InstructionUtils.ToRegisterSize(size);
+        }
+
+        public Register(StrongBox<RegisterName> _name, RegisterSize size) : base(0)
+        {
+            this._name = _name;
+            this.size = size;
         }
 
         public override string Accept(IVisitor visitor)
