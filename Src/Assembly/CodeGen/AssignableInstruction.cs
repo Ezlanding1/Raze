@@ -47,8 +47,10 @@ internal abstract partial class ExprUtils
                     case "AND":
                     case "OR":
                     case "XOR":
-                    case "LEA":
                         AssemblyOps.Binary.DefaultBinOp(this, assemblyOps);
+                        return;
+                    case "LEA":
+                        AssemblyOps.Binary.LEA(this, assemblyOps);
                         return;
                     case "IMUL":
                         AssemblyOps.Binary.IMUL(this, assemblyOps);

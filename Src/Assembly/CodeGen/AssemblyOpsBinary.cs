@@ -95,7 +95,7 @@ internal partial class AssemblyOps
                     var size = GetOpSize(operand2, instruction.assignType, assemblyOps.vars, assemblyOps.count, false);
                     if (size != null)
                     {
-                        ((Instruction.SizedValue)operand1).size = operand2.IsPointer()? Instruction.Register.RegisterSize._64Bits : (Instruction.Register.RegisterSize)size;
+                        ((Instruction.SizedValue)operand1).size = (Instruction.Register.RegisterSize)size;
                     }
                 }
                 return operand2;
@@ -107,6 +107,35 @@ internal partial class AssemblyOps
         {
             var operand1 = HandleOperand1(instruction, assemblyOps);
             var operand2 = HandleOperand2(instruction, operand1, assemblyOps);
+
+            assemblyOps.assembler.Emit(new Instruction.Binary(instruction.instruction.instruction, operand1, operand2));
+
+            if (instruction.returns && assemblyOps.assembler is InlinedAssembler)
+            {
+                ReturnOp(ref operand1, instruction.assignType, assemblyOps, true);
+            }
+
+            if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst))
+                assemblyOps.assembler.alloc.Free(operand1);
+
+            if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))
+                assemblyOps.assembler.alloc.Free(operand2);
+        }
+
+        public static void CheckLEA(Instruction.Value operand1, Instruction.Value operand2)
+        {
+            if (!operand1.IsRegister()) { Diagnostics.errors.Push(new Error.BackendError("Invalid Assembly Block", $"'LEA' Instruction's first operand must be a register. Got {operand1.GetType().Name}")); }
+            if (!operand2.IsPointer()) { Diagnostics.errors.Push(new Error.BackendError("Invalid Assembly Block", $"'LEA' Instruction's second operand must be a pointer. Got {operand2.GetType().Name}")); }
+        }
+        public static void LEA(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
+        {
+            var operand1 = HandleOperand1(instruction, assemblyOps);
+            Instruction.Value? operand2 =
+                (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond)) ?
+                assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler) :
+                (Instruction.Value)instruction.instruction.operand2;
+
+            CheckLEA(operand1, operand2);
 
             assemblyOps.assembler.Emit(new Instruction.Binary(instruction.instruction.instruction, operand1, operand2));
 
