@@ -11,6 +11,7 @@ internal abstract partial class ExprUtils
     public abstract class AssignableInstruction
     {
         public abstract void Assign(AssemblyOps assemblyOps);
+        public abstract (int, int) GetAssigningVars();
         public abstract bool HasReturn();
 
 
@@ -77,6 +78,32 @@ internal abstract partial class ExprUtils
                 }
             }
 
+            public override (int, int) GetAssigningVars()
+            {
+                int variablesUsed = ((int)assignType == 1 || (int)assignType == 2) ? 1 : ((int)assignType == 3) ? 2 : 0;
+
+                switch (instruction.instruction)
+                {
+                    case "MOV":
+                    case "ADD":
+                    case "SUB":
+                    case "AND":
+                    case "OR":
+                    case "XOR":
+                    case "LEA":
+                    //case "IMUL":
+                    case "SAL":
+                    case "SAR":
+                    //case "IDIV":
+                    //case "DIV":
+                    //case "IMOD":
+                    //case "MOD":
+                        return (variablesUsed, (int)AssignType.AssignFirst);
+                    default:
+                        return (variablesUsed, (int)AssignType.AssignNone);
+                }
+            }
+
             public override bool HasReturn()
             {
                 return returns;
@@ -120,6 +147,20 @@ internal abstract partial class ExprUtils
                 }
             }
 
+            public override (int, int) GetAssigningVars()
+            {
+                int variablesUsed = ((int)assignType == 1) ? 1 : 0;
+
+                switch (instruction.instruction)
+                {
+                    case "INC":
+                    //case "DEREF":
+                        return (variablesUsed, (int)AssignType.AssignFirst);
+                    default:
+                        return (variablesUsed, (int)AssignType.AssignNone);
+                }
+            }
+
             public override bool HasReturn()
             {
                 return returns;
@@ -145,6 +186,17 @@ internal abstract partial class ExprUtils
                     default:
                         Diagnostics.errors.Push(new Error.BackendError("Invalid Assembly Block", $"Instruction '{instruction.instruction}' not supported"));
                         break;
+                }
+            }
+
+            public override (int, int) GetAssigningVars()
+            {
+                int variablesUsed = 0;
+
+                switch (instruction.instruction)
+                {
+                    default:
+                        return (variablesUsed, 0);
                 }
             }
 
