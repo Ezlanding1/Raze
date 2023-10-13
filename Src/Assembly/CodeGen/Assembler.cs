@@ -51,24 +51,19 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
     public virtual Instruction.Value? VisitBinaryExpr(Expr.Binary expr)
     {
-        var localParams = new Instruction.Register[2];
-
         Instruction.Value operand1 = expr.left.Accept(this);
-        Emit(new Instruction.Binary("MOV", (localParams[0] = alloc.AllocParam(0, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[0].stack.size))), operand1));
+        Emit(new Instruction.Binary("MOV", alloc.AllocParam(0, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[0].stack.size)), operand1));
 
         alloc.Free(operand1);
 
         Instruction.Value operand2 = expr.right.Accept(this);
-        Emit(new Instruction.Binary("MOV", (localParams[1] = alloc.AllocParam(1, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[1].stack.size))), operand2));
+        Emit(new Instruction.Binary("MOV", alloc.AllocParam(1, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[1].stack.size)), operand2));
 
         alloc.Free(operand2);
 
         for (int i = 0; i < 2; i++)
         {
-            if (localParams[i] != null)
-            {
-                alloc.FreeParameter(i, localParams[i], this);
-            }
+            alloc.FreeParameter(i, this);
         }
 
         alloc.ReserveRegister(this);
@@ -105,8 +100,6 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             }
         }
 
-        var localParams = new Instruction.Register?[Math.Min(expr.arguments.Count + Convert.ToInt16(instance), 6)];
-
         for (int i = 0; i < expr.arguments.Count; i++)
         {
             Instruction.Value arg = expr.arguments[i].Accept(this);
@@ -126,7 +119,6 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
                         Emit(new Instruction.Binary("MOV", paramReg, arg));
                     }
                 }
-                localParams[Convert.ToInt16(instance) + i] = alloc.paramRegisters[Convert.ToInt16(instance) + i];
             }
             else
             {
@@ -146,12 +138,9 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             alloc.Free(arg);
         }
 
-        for (int i = Convert.ToInt16(instance); i < localParams.Length; i++)
+        for (int i = 0; i < expr.arguments.Count; i++)
         {
-            if (localParams[i] != null)
-            {
-                alloc.FreeParameter(i, localParams[i], this);
-            }
+            alloc.FreeParameter(i + Convert.ToInt16(instance), this);
         }
 
         alloc.ReserveRegister(this);
@@ -532,17 +521,12 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
     public virtual Instruction.Value? VisitUnaryExpr(Expr.Unary expr)
     {
-        Instruction.Register param;
-
         Instruction.Value operand = expr.operand.Accept(this);
-        Emit(new Instruction.Binary("MOV", (param = alloc.AllocParam(0, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[0].stack.size))), operand));
+        Emit(new Instruction.Binary("MOV", alloc.AllocParam(0, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[0].stack.size)), operand));
 
         alloc.Free(operand);
 
-        if (param != null)
-        {
-            alloc.FreeParameter(0, param, this);
-        }
+        alloc.FreeParameter(0, this);
 
         alloc.ReserveRegister(this);
 

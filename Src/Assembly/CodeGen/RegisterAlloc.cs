@@ -90,17 +90,8 @@ internal class RegisterAlloc
         registerStates[i].SetState(RegisterState.RegisterStates.Free);
     }
 
-    public Instruction.Register AllocParam(int i, Instruction.Register.RegisterSize size)
-    {
-        if (paramRegisters[i] != null)
-        {
-            paramRegisters[i].name = InstructionUtils.storageRegisters[RegisterIdx];
-            registers[RegisterIdx] = paramRegisters[i];
-            registerStates[RegisterIdx].SetState(RegisterState.RegisterStates.Used);
-        }
-
-        return (paramRegisters[i] = new Instruction.Register(InstructionUtils.paramRegister[i], size));
-    }
+    public Instruction.Register AllocParam(int i, Instruction.Register.RegisterSize size) =>
+        (paramRegisters[i] = new Instruction.Register(InstructionUtils.paramRegister[i], size));
 
     public Instruction.Register CallAlloc(Instruction.Register.RegisterSize size)
     {
@@ -133,13 +124,15 @@ internal class RegisterAlloc
         return idx < InstructionUtils.storageRegisters.Length ? idx : -1;
     }
 
-    public void FreeParameter(int i, Instruction.Register param, Assembler assembler)
+    public void FreeParameter(int i, Assembler assembler)
     {
-        var allocIdx = NameToIdx(param.name);
+        if (i >= paramRegisters.Length || paramRegisters[i] == null) return;
+
+        var allocIdx = NameToIdx(paramRegisters[i].name);
 
         if (allocIdx != -1)
         {
-            assembler.Emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionUtils.paramRegister[i], param.size), param));
+            assembler.Emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionUtils.paramRegister[i], paramRegisters[i].size), paramRegisters[i]));
             Free(allocIdx);
         }
         else
