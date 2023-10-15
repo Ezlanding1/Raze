@@ -173,18 +173,9 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
         if (operand.IsPointer())
         {
-            Instruction.Register reg;
-
             Instruction.Register.RegisterSize size = _ref ? Instruction.Register.RegisterSize._64Bits : ((Instruction.Pointer)operand).size;
 
-            if (((Instruction.Pointer)operand).register.name == Instruction.Register.RegisterName.RBP)
-            {
-                reg = alloc.CurrentRegister(size);
-            }
-            else
-            {
-                reg = new Instruction.Register(((Instruction.Pointer)operand).register.name, size);
-            }
+            Instruction.Register reg = ((Instruction.Pointer)operand).AsRegister(size, this);
             
             Emit(new Instruction.Binary(_ref? "LEA" : "MOV", reg, operand));
             _ref = false;
@@ -834,17 +825,9 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
     {
         if (operand.IsPointer())
         {
-            if (((Instruction.Pointer)operand).register.name == Instruction.Register.RegisterName.RBP)
-            {
-                Emit(new Instruction.Binary("MOV", alloc.CurrentRegister(((Instruction.Pointer)operand).size), operand));
-                return alloc.NextRegister(((Instruction.Pointer)operand).size);
-            }
-            else
-            {
-                var reg = new Instruction.Register(((Instruction.Pointer)operand).register.name, ((Instruction.Pointer)operand).size);
-                Emit(new Instruction.Binary("MOV", reg, operand));
-                return reg;
-            }
+            Instruction.Register reg = ((Instruction.Pointer)operand).AsRegister(((Instruction.Pointer)operand).size, this);
+            Emit(new Instruction.Binary("MOV", reg, operand));
+            return reg;
         }
         return operand;
     }

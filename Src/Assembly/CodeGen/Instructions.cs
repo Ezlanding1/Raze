@@ -72,6 +72,8 @@ internal abstract class Instruction
     {
         public Register.RegisterSize size;
 
+        public abstract Register AsRegister(Register.RegisterSize size, Assembler assembler);
+
         public SizedValue(int valueType) : base(valueType)
         {
 
@@ -133,6 +135,11 @@ internal abstract class Instruction
             this.size = size;
         }
 
+        public override Register AsRegister(RegisterSize size, Assembler assembler)
+        {
+            return new Register(this.name, size);
+        }
+
         public override string Accept(IVisitor visitor)
         {
             return visitor.VisitRegister(this);
@@ -158,6 +165,18 @@ internal abstract class Instruction
         public Pointer(int offset, int size) : this(Register.RegisterName.RBP, offset, size, '-')
         {
         }
+
+        public bool IsOnStack() => register.name == Register.RegisterName.RBP;
+
+        public override Register AsRegister(Register.RegisterSize size, Assembler assembler)
+        {
+            if (!IsOnStack())
+            {
+                return new Register(register.name, size);
+            }
+            return assembler.alloc.NextRegister(size);
+        }
+
 
         public override string Accept(IVisitor visitor)
         {

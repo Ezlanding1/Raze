@@ -97,16 +97,8 @@ internal partial class AssemblyOps
 
                     if (op1size != op2size)
                     {
-                        Instruction.Register reg;
+                        Instruction.Register reg = ((Instruction.SizedValue)operand2).AsRegister(op1size, assemblyOps.assembler);
 
-                        if (operand2.IsRegister() && ((Instruction.Register)operand2).name != Instruction.Register.RegisterName.RBP)
-                        {
-                            reg = new Instruction.Register(((Instruction.Register)operand2).name, op1size);
-                        }
-                        else
-                        {
-                            reg = assemblyOps.assembler.alloc.NextRegister(op1size);
-                        }
                         assemblyOps.assembler.Emit(new Instruction.Binary("MOVSX", reg, operand2));
                         operand2 = reg;
                     }

@@ -144,7 +144,7 @@ internal class RegisterAlloc
 
     public void Free(Instruction.Value value, bool force = false)
     {
-        if (value.IsPointer() && ((Instruction.Pointer)value).register.name != Instruction.Register.RegisterName.RBP)
+        if (value.IsPointer())
         {
             FreePtr((Instruction.Pointer)value, force);
         }
