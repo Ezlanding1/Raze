@@ -27,7 +27,7 @@ internal partial class AssemblyOps
                 return ((Instruction.SizedValue)operand).size;
             }
 
-            int cOff = Convert.ToInt32(assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst)) 
+            int cOff = Convert.ToInt32(assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst))
                 + Convert.ToInt32(assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond));
 
             if (cOff == 2)
@@ -40,7 +40,7 @@ internal partial class AssemblyOps
                 return InstructionUtils.ToRegisterSize(vars[count - cOff].GetLastData().size);
             }
 
-            Diagnostics.errors.Push(new Error.BackendError("Inavalid Assembly Block", $"No size could be determined for the { (first? "first" : "second") } operand"));
+            Diagnostics.errors.Push(new Error.BackendError("Inavalid Assembly Block", $"No size could be determined for the {(first ? "first" : "second")} operand"));
             return null;
         }
 
@@ -83,24 +83,37 @@ internal partial class AssemblyOps
             }
             return (Instruction.Value)instruction.instruction.operand1;
         }
-        public static Instruction.Value HandleOperand2(ExprUtils.AssignableInstruction.Binary instruction, Instruction.Value operand1, AssemblyOps assemblyOps)
+        public static Instruction.Value HandleOperand2(ExprUtils.AssignableInstruction.Binary instruction, Instruction.Value operand1, AssemblyOps assemblyOps, bool ignoreSize=false)
         {
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))
             {
                 var operand2 = assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler);
                 operand2 = (operand1.IsPointer() && operand2.IsPointer()) ? assemblyOps.assembler.NonPointer(operand2) : operand2;
 
-                if (!operand1.IsLiteral())
+                if (!operand1.IsLiteral() && !operand2.IsLiteral() && !ignoreSize)
                 {
-                    var size = GetOpSize(operand2, instruction.assignType, assemblyOps.vars, assemblyOps.count, false);
-                    if (size != null)
+                    var op1size = ((Instruction.SizedValue)operand1).size;
+                    var op2size = ((Instruction.SizedValue)operand2).size;
+
+                    if (op1size != op2size)
                     {
-                        ((Instruction.SizedValue)operand1).size = (Instruction.Register.RegisterSize)size;
+                        Instruction.Register reg;
+
+                        if (operand2.IsRegister() && ((Instruction.Register)operand2).name != Instruction.Register.RegisterName.RBP)
+                        {
+                            reg = new Instruction.Register(((Instruction.Register)operand2).name, op1size);
+                        }
+                        else
+                        {
+                            reg = assemblyOps.assembler.alloc.NextRegister(op1size);
+                        }
+                        assemblyOps.assembler.Emit(new Instruction.Binary("MOVSX", reg, operand2));
+                        operand2 = reg;
                     }
                 }
                 return operand2;
             }
-            return (Instruction.Value)instruction.instruction.operand2;     
+            return (Instruction.Value)instruction.instruction.operand2;
         }
 
         public static void DefaultBinOp(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
@@ -174,7 +187,7 @@ internal partial class AssemblyOps
         public static void SAL_SAR(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
             var operand1 = HandleOperand1(instruction, assemblyOps);
-            var operand2 = HandleOperand2(instruction, operand1, assemblyOps);
+            var operand2 = HandleOperand2(instruction, operand1, assemblyOps, true);
 
             if (!operand2.IsLiteral())
             {
@@ -238,7 +251,7 @@ internal partial class AssemblyOps
                     assemblyOps.assembler.MovToRegister(assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count - 1].GetLastData().size)) :
                     instruction.instruction.operand1);
 
-            var operand2 = (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))? 
+            var operand2 = (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond)) ?
                 assemblyOps.assembler.NonLiteral(assemblyOps.vars[assemblyOps.count].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count++].GetLastData().size)) :
                 (Instruction.Value)instruction.instruction.operand2;
 
@@ -263,7 +276,7 @@ internal partial class AssemblyOps
             var size = (Instruction.Register.RegisterSize)_size;
             var rax = assemblyOps.assembler.alloc.CallAlloc(size);
             var rdx = new Instruction.Register(Instruction.Register.RegisterName.RDX, size);
-            
+
             Instruction.Register paramStoreReg = null;
 
             if (assemblyOps.assembler.alloc.paramRegisters[2] == null)
@@ -274,7 +287,7 @@ internal partial class AssemblyOps
                 }
                 assemblyOps.assembler.alloc.NullReg(0);
 
-                assemblyOps.assembler.Emit(emitOp == "DIV" ? new Instruction.Binary("XOR", new Instruction.Register(Instruction.Register.RegisterName.RDX, size), new Instruction.Register(Instruction.Register.RegisterName.RDX, size)) :  new Instruction.Zero("CDQ"));
+                assemblyOps.assembler.Emit(emitOp == "DIV" ? new Instruction.Binary("XOR", new Instruction.Register(Instruction.Register.RegisterName.RDX, size), new Instruction.Register(Instruction.Register.RegisterName.RDX, size)) : new Instruction.Zero("CDQ"));
                 assemblyOps.assembler.Emit(new Instruction.Unary(emitOp, operand2));
             }
             else

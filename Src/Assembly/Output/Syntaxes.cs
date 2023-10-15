@@ -97,9 +97,9 @@ partial class Syntaxes
 
                 if (instruction.offset == 0)
                 {
-                    return $"{InstructionUtils.wordSize[instruction.size]} [{RegisterToString[(instruction.register.name, InstructionUtils.SYS_SIZE)]}]";
+                    return $"{InstructionUtils.wordSize[instruction.size]} [{instruction.register.Accept(this)}]";
                 }
-                return $"{InstructionUtils.wordSize[instruction.size]} [{RegisterToString[(instruction.register.name, InstructionUtils.SYS_SIZE)]} {instruction._operator} {instruction.offset}]";
+                return $"{InstructionUtils.wordSize[instruction.size]} [{instruction.register.Accept(this)} {instruction._operator} {instruction.offset}]";
             }
 
             public string VisitProcedureRef(Instruction.ProcedureRef instruction)
@@ -146,9 +146,9 @@ partial class Syntaxes
 
                 if (instruction.offset == 0)
                 {
-                    return $"[{RegisterToString[(instruction.register.name, InstructionUtils.SYS_SIZE)]}]";
+                    return $"[{instruction.register.Accept(this)}]";
                 }
-                return $"[{RegisterToString[(instruction.register.name, InstructionUtils.SYS_SIZE)]} {instruction._operator} {instruction.offset}]";
+                return $"[{instruction.register.Accept(this)} {instruction._operator} {instruction.offset}]";
             }
 
             public string VisitLiteral(Instruction.Literal instruction)
