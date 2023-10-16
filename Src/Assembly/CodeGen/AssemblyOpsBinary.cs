@@ -48,7 +48,7 @@ internal partial class AssemblyOps
         {
             if (((InlinedAssembler)assemblyOps.assembler).inlineState.inline)
             {
-                operand = assemblyOps.assembler.NonLiteral(operand, GetOpSize(operand, assignType, assemblyOps.vars, assemblyOps.count, first));
+                operand = operand.NonLiteral(GetOpSize(operand, assignType, assemblyOps.vars, assemblyOps.count, first), assemblyOps.assembler);
                 ((InlinedAssembler.InlineStateInlined)((InlinedAssembler)assemblyOps.assembler).inlineState).callee = (Instruction.SizedValue)operand;
                 ((InlinedAssembler)assemblyOps.assembler).LockOperand((Instruction.SizedValue)operand);
             }
@@ -79,7 +79,7 @@ internal partial class AssemblyOps
         {
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst))
             {
-                return assemblyOps.assembler.NonLiteral(assemblyOps.vars[assemblyOps.count].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count++].GetLastData().size));
+                return assemblyOps.vars[assemblyOps.count].Accept(assemblyOps.assembler).NonLiteral(InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count++].GetLastData().size), assemblyOps.assembler);
             }
             return (Instruction.Value)instruction.instruction.operand1;
         }
@@ -88,7 +88,7 @@ internal partial class AssemblyOps
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))
             {
                 var operand2 = assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler);
-                operand2 = (operand1.IsPointer() && operand2.IsPointer()) ? assemblyOps.assembler.NonPointer(operand2) : operand2;
+                operand2 = (operand1.IsPointer() && operand2.IsPointer()) ? operand2.NonPointer(assemblyOps.assembler) : operand2;
 
                 if (!operand1.IsLiteral() && !operand2.IsLiteral() && !ignoreSize)
                 {
@@ -158,7 +158,7 @@ internal partial class AssemblyOps
 
         public static void IMUL(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
-            var operand1 = assemblyOps.assembler.NonPointer(HandleOperand1(instruction, assemblyOps));
+            var operand1 = HandleOperand1(instruction, assemblyOps).NonPointer(assemblyOps.assembler);
 
             var operand2 = HandleOperand2(instruction, operand1, assemblyOps);
 
@@ -244,7 +244,7 @@ internal partial class AssemblyOps
                     instruction.instruction.operand1);
 
             var operand2 = (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond)) ?
-                assemblyOps.assembler.NonLiteral(assemblyOps.vars[assemblyOps.count].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count++].GetLastData().size)) :
+                assemblyOps.vars[assemblyOps.count].Accept(assemblyOps.assembler).NonLiteral(InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count++].GetLastData().size), assemblyOps.assembler) :
                 (Instruction.Value)instruction.instruction.operand2;
 
             string emitOp = "";

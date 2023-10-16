@@ -29,7 +29,7 @@ internal partial class AssemblyOps
         {
             if (((InlinedAssembler)assemblyOps.assembler).inlineState.inline)
             {
-                operand = assemblyOps.assembler.NonLiteral(operand, GetOpSize(operand, assignType, assemblyOps.vars, assemblyOps.count));
+                operand = operand.NonLiteral(GetOpSize(operand, assignType, assemblyOps.vars, assemblyOps.count), assemblyOps.assembler);
                 ((InlinedAssembler.InlineStateInlined)((InlinedAssembler)assemblyOps.assembler).inlineState).callee = (Instruction.SizedValue)operand;
                 ((InlinedAssembler)assemblyOps.assembler).LockOperand((Instruction.SizedValue)operand);
             }
@@ -81,7 +81,7 @@ internal partial class AssemblyOps
                 return;
             }
 
-            Instruction.Value deref = new Instruction.Pointer((Instruction.Register)assemblyOps.assembler.NonPointer(operand), 0, 1);
+            Instruction.Value deref = new Instruction.Pointer((Instruction.Register)operand.NonPointer(assemblyOps.assembler), 0, 1);
 
             if (instruction.returns && assemblyOps.assembler is InlinedAssembler)
             {

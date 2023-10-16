@@ -307,7 +307,7 @@ internal class InlinedAssembler : Assembler
 
             if (((InlineStateInlined)inlineState).callee == null)
             {
-                ((InlineStateInlined)inlineState).callee = NonLiteral(operand, InstructionUtils.ToRegisterSize(expr.size));
+                ((InlineStateInlined)inlineState).callee = operand.NonLiteral(InstructionUtils.ToRegisterSize(expr.size), this);
             }
             else
             {

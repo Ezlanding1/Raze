@@ -66,6 +66,31 @@ internal abstract class Instruction
         public bool IsRegister() => valueType == 0;
         public bool IsPointer() => valueType == 1;
         public bool IsLiteral() => valueType == 2;
+
+        public Register NonPointerNonLiteral(Register.RegisterSize? size, Assembler assembler) =>
+            (Register)this.NonPointer(assembler).NonLiteral(size, assembler);
+
+        public Value NonPointer(Assembler assembler)
+        {
+            if (IsPointer())
+            {
+                Register reg = ((Pointer)this).AsRegister(((Pointer)this).size, assembler);
+                assembler.Emit(new Binary("MOV", reg, this));
+                return reg;
+            }
+            return this;
+        }
+        public SizedValue NonLiteral(Register.RegisterSize? size, Assembler assembler)
+        {
+            if (IsLiteral())
+            {
+                if (size == null) { Diagnostics.errors.Push(new Error.ImpossibleError("Null size in NonLiteral when operand is literal")); }
+
+                assembler.Emit(new Binary("MOV", assembler.alloc.CurrentRegister((Register.RegisterSize)size), this));
+                return assembler.alloc.NextRegister((Register.RegisterSize)size);
+            }
+            return (SizedValue)this;
+        }
     }
 
     internal abstract class SizedValue : Value

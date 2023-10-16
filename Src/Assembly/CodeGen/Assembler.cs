@@ -289,7 +289,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
                 {
                     return ((Expr.StackRegister)stack).register;
                 }
-                register = (Instruction.Register)NonPointer(NonLiteral(((Expr.StackRegister)stack).register, InstructionUtils.ToRegisterSize(stack.size)));
+                register = ((Expr.StackRegister)stack).register.NonPointerNonLiteral(InstructionUtils.ToRegisterSize(stack.size), this);
             }
             else if (stack._ref)
             {
@@ -820,28 +820,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         return false;
     }
 
-    public Instruction.Register MovToRegister(Instruction.Value operand, Instruction.Register.RegisterSize? size) => (Instruction.Register)(NonLiteral(NonPointer(operand), size));
-    public Instruction.Value NonPointer(Instruction.Value operand)
-    {
-        if (operand.IsPointer())
-        {
-            Instruction.Register reg = ((Instruction.Pointer)operand).AsRegister(((Instruction.Pointer)operand).size, this);
-            Emit(new Instruction.Binary("MOV", reg, operand));
-            return reg;
-        }
-        return operand;
-    }
-    public Instruction.SizedValue NonLiteral(Instruction.Value operand, Instruction.Register.RegisterSize? size)
-    {
-        if (operand.IsLiteral())
-        {
-            if (size == null) { Diagnostics.errors.Push(new Error.ImpossibleError("Null size in NonLiteral when operand is literal")); }
-
-            Emit(new Instruction.Binary("MOV", alloc.CurrentRegister((Instruction.Register.RegisterSize)size), operand));
-            return alloc.NextRegister((Instruction.Register.RegisterSize)size);
-        }
-        return (Instruction.SizedValue)operand;
-    }
+    public Instruction.Register MovToRegister(Instruction.Value operand, Instruction.Register.RegisterSize? size) => operand.NonPointerNonLiteral(size, this);
 
     public static string ToMangledName(Expr.Function function)
     {
