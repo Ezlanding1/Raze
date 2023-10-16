@@ -152,14 +152,23 @@ internal abstract class Instruction
         public int offset;
         public char _operator;
 
-        public Pointer(Register register, int offset, int size, char _operator ='-') : base(1)
+        public Pointer(Register register, int offset, Register.RegisterSize size, char _operator ='-') : base(1)
         {
             this.register = register;
-            this.size = InstructionUtils.ToRegisterSize(size);
+            this.size = size;
             this.offset = offset;
             this._operator = _operator;
         }
+        public Pointer(Register register, int offset, int size, char _operator ='-') : this(register, offset, InstructionUtils.ToRegisterSize(size), _operator)
+        {
+        }
+        public Pointer(Register.RegisterName register, int offset, Register.RegisterSize size, char _operator = '-') : this(new Register(register, Register.RegisterSize._64Bits), offset, size, _operator)
+        {
+        }
         public Pointer(Register.RegisterName register, int offset, int size, char _operator='-') : this(new Register(register, Register.RegisterSize._64Bits), offset, size, _operator)
+        {
+        }
+        public Pointer(int offset, Register.RegisterSize size) : this(Register.RegisterName.RBP, offset, size, '-')
         {
         }
         public Pointer(int offset, int size) : this(Register.RegisterName.RBP, offset, size, '-')

@@ -22,7 +22,7 @@ internal abstract class CustomInstructions
 
         public override string GetInstruction(IVisitor visitor)
         {
-            return new Binary("SUB", new Register(Register.RegisterName.RSP, Register.RegisterSize._64Bits), literal).Accept(visitor);
+            return new Binary("SUB", new Register(Register.RegisterName.RSP, InstructionUtils.SYS_SIZE), literal).Accept(visitor);
         }
 
         private string AlignTo16(int i)

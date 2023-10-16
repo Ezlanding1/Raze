@@ -281,7 +281,7 @@ internal partial class Analyzer
 
             if (instance)
             {
-                symbolTable.Current.size += 8;
+                symbolTable.Current.size += (int)InstructionUtils.SYS_SIZE;
             }
 
             for (int i = 0; i < expr.Arity; i++)

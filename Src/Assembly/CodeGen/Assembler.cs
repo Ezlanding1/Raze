@@ -96,7 +96,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             }
             else
             {
-                Emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionUtils.paramRegister[0], Instruction.Register.RegisterSize._64Bits), new Instruction.Register(Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits)));
+                Emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionUtils.paramRegister[0], InstructionUtils.SYS_SIZE), new Instruction.Register(Instruction.Register.RegisterName.RBX, InstructionUtils.SYS_SIZE)));
             }
         }
 
@@ -108,7 +108,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             {
                 if (expr.internalFunction.parameters[i].modifiers["ref"])
                 {
-                    Emit(new Instruction.Binary("LEA", alloc.AllocParam(Convert.ToInt16(instance) + i, Instruction.Register.RegisterSize._64Bits), arg));
+                    Emit(new Instruction.Binary("LEA", alloc.AllocParam(Convert.ToInt16(instance) + i, InstructionUtils.SYS_SIZE), arg));
                 }
                 else
                 {
@@ -125,7 +125,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
                 if (expr.internalFunction.parameters[i].modifiers["ref"])
                 {
                     Instruction.Register refRegister;
-                    Emit(new Instruction.Binary("LEA", (refRegister = alloc.NextRegister(Instruction.Register.RegisterSize._64Bits)), arg));
+                    Emit(new Instruction.Binary("LEA", (refRegister = alloc.NextRegister(InstructionUtils.SYS_SIZE)), arg));
                     Emit(new Instruction.Unary("PUSH", refRegister));
                     alloc.FreeRegister(refRegister);
                 }
@@ -149,7 +149,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
         if (expr.arguments.Count > InstructionUtils.paramRegister.Length && alloc.fncPushPreserved.leaf)
         {
-            Emit(new Instruction.Binary("ADD", new Instruction.Register(Instruction.Register.RegisterName.RSP, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.Literals[0], ((expr.arguments.Count - InstructionUtils.paramRegister.Length) * 8).ToString())));
+            Emit(new Instruction.Binary("ADD", new Instruction.Register(Instruction.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE), new Instruction.Literal(Parser.Literals[0], ((expr.arguments.Count - InstructionUtils.paramRegister.Length) * 8).ToString())));
         }
         
         return alloc.CallAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnSize));
@@ -173,7 +173,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
         if (operand.IsPointer())
         {
-            Instruction.Register.RegisterSize size = _ref ? Instruction.Register.RegisterSize._64Bits : ((Instruction.Pointer)operand).size;
+            Instruction.Register.RegisterSize size = _ref ? InstructionUtils.SYS_SIZE : ((Instruction.Pointer)operand).size;
 
             Instruction.Register reg = ((Instruction.Pointer)operand).AsRegister(size, this);
             
@@ -188,24 +188,24 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
             if (expr.classScoped)
             {
-                Emit(new Instruction.Binary(_ref ? "LEA" : "MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(Instruction.Register.RegisterName.RBP, 8, 8)));
-                instruction.operand = new Instruction.Pointer(alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits), expr.stack.stackOffset, expr.stack._ref ? 8 : expr.stack.size);
+                Emit(new Instruction.Binary(_ref ? "LEA" : "MOV", alloc.CurrentRegister(InstructionUtils.SYS_SIZE), new Instruction.Pointer(Instruction.Register.RegisterName.RBP, (int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE)));
+                instruction.operand = new Instruction.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), expr.stack.stackOffset, expr.stack._ref ? InstructionUtils.SYS_SIZE : InstructionUtils.ToRegisterSize(expr.stack.size));
             }
             else
             {
-                instruction.operand = new Instruction.Pointer(expr.stack.stackOffset, expr.stack._ref ? 8 : expr.stack.size);
+                instruction.operand = new Instruction.Pointer(expr.stack.stackOffset, expr.stack._ref ? InstructionUtils.SYS_SIZE : InstructionUtils.ToRegisterSize(expr.stack.size));
             }
             return null;
         }
 
         if (expr.classScoped)
         {
-            Emit(new Instruction.Binary(_ref ? "LEA" : "MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(Instruction.Register.RegisterName.RBP, 8, 8)));
-            Emit(new Instruction.Binary(_ref ? "LEA" : "MOV", new Instruction.Pointer(alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits), expr.stack.stackOffset, expr.stack._ref ? 8 : expr.stack.size), operand));
+            Emit(new Instruction.Binary(_ref ? "LEA" : "MOV", alloc.CurrentRegister(InstructionUtils.SYS_SIZE), new Instruction.Pointer(Instruction.Register.RegisterName.RBP, (int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE)));
+            Emit(new Instruction.Binary(_ref ? "LEA" : "MOV", new Instruction.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), expr.stack.stackOffset, expr.stack._ref ? InstructionUtils.SYS_SIZE : InstructionUtils.ToRegisterSize(expr.stack.size)), operand));
         }
         else
         {
-            Emit(new Instruction.Binary(_ref ? "LEA" : "MOV", new Instruction.Pointer(expr.stack.stackOffset, expr.stack._ref ? 8 : expr.stack.size), operand));
+            Emit(new Instruction.Binary(_ref ? "LEA" : "MOV", new Instruction.Pointer(expr.stack.stackOffset, expr.stack._ref ? InstructionUtils.SYS_SIZE : InstructionUtils.ToRegisterSize(expr.stack.size)), operand));
         }
 
         alloc.Free(operand);
@@ -278,7 +278,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
             if (expr.classScoped)
             {
-                Emit(new Instruction.Binary("MOV", (register = alloc.NextRegister(Instruction.Register.RegisterSize._64Bits)), new Instruction.Pointer(Instruction.Register.RegisterName.RBP, 8, 8)));
+                Emit(new Instruction.Binary("MOV", (register = alloc.NextRegister(InstructionUtils.SYS_SIZE)), new Instruction.Pointer(Instruction.Register.RegisterName.RBP, (int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE)));
             }
 
             var stack = expr.datas[0];
@@ -293,9 +293,9 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             }
             else if (stack._ref)
             {
-                Emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits), new Instruction.Pointer(new Instruction.Register(Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._64Bits), stack.stackOffset, 8, stack.plus ? '+' : '-')));
+                Emit(new Instruction.Binary("MOV", alloc.CurrentRegister(InstructionUtils.SYS_SIZE), new Instruction.Pointer(new Instruction.Register(Instruction.Register.RegisterName.RBP, InstructionUtils.SYS_SIZE), stack.stackOffset, InstructionUtils.SYS_SIZE, stack.plus ? '+' : '-')));
                 alloc.NullReg();
-                register = alloc.NextRegister(Instruction.Register.RegisterSize._64Bits);
+                register = alloc.NextRegister(InstructionUtils.SYS_SIZE);
 
                 if (expr.datas.Length == 1)
                 {
@@ -308,7 +308,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
                 {
                     return new Instruction.Pointer(Instruction.Register.RegisterName.RBP, stack.stackOffset, stack.size, stack.plus ? '+' : '-');
                 }
-                register = alloc.NextRegister(Instruction.Register.RegisterSize._64Bits);
+                register = alloc.NextRegister(InstructionUtils.SYS_SIZE);
                 Emit(new Instruction.Binary("MOV", register, new Instruction.Pointer(Instruction.Register.RegisterName.RBP, stack.stackOffset, stack.size, stack.plus ? '+' : '-')));
             }
             else
@@ -656,7 +656,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         }
         else
         {
-            Emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.Literals[0], "0")));
+            Emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, InstructionUtils.SYS_SIZE), new Instruction.Literal(Parser.Literals[0], "0")));
         }
         
         DoFooter();
@@ -733,7 +733,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         var ptr = new Instruction.Pointer(rax, expr.internalClass.size, 8, '+');
         Emit(new Instruction.Binary("LEA", rbx, ptr));
 
-        Emit(new Instruction.Binary("LEA", new Instruction.Register( Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), ptr));
+        Emit(new Instruction.Binary("LEA", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), ptr));
         Emit(new Instruction.Binary("MOV", rax, new Instruction.Literal(Parser.Literals[0], "12")));
         Emit(new Instruction.Zero("SYSCALL"));
            
@@ -744,7 +744,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
         alloc.FreeRegister(rax);
         expr.call.Accept(this);
-        return new Instruction.Register( Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits);
+        return new Instruction.Register(Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits);
     }
 
     public Instruction.Value? VisitIsExpr(Expr.Is expr)

@@ -202,8 +202,8 @@ internal class InlinedAssembler : Assembler
             }
             else
             {
-                instanceArg = alloc.CurrentRegister(Instruction.Register.RegisterSize._64Bits);
-                Emit(new Instruction.Binary("MOV", instanceArg, new Instruction.Register(Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits)));
+                instanceArg = alloc.CurrentRegister(InstructionUtils.SYS_SIZE);
+                Emit(new Instruction.Binary("MOV", instanceArg, new Instruction.Register(Instruction.Register.RegisterName.RBX, InstructionUtils.SYS_SIZE)));
             }
 
             if (instanceArg.IsRegister())
