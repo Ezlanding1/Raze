@@ -51,24 +51,28 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
     public virtual Instruction.Value? VisitBinaryExpr(Expr.Binary expr)
     {
+        var localParams = new Instruction.Register?[2];
+
         Instruction.Value operand1 = expr.left.Accept(this);
-        Emit(new Instruction.Binary("MOV", alloc.AllocParam(0, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[0].stack.size)), operand1));
+
+        Emit(new Instruction.Binary("MOV", alloc.AllocParam(0, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[0].stack.size), localParams, this), operand1));
 
         alloc.Free(operand1);
 
         Instruction.Value operand2 = expr.right.Accept(this);
-        Emit(new Instruction.Binary("MOV", alloc.AllocParam(1, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[1].stack.size)), operand2));
+
+        Emit(new Instruction.Binary("MOV", alloc.AllocParam(1, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[1].stack.size), localParams, this), operand2));
 
         alloc.Free(operand2);
-
-        for (int i = 0; i < 2; i++)
-        {
-            alloc.FreeParameter(i, this);
-        }
 
         alloc.ReserveRegister(this);
 
         EmitCall(new Instruction.Unary("CALL", new Instruction.ProcedureRef(ToMangledName(expr.internalFunction))));
+
+        for (int i = 0; i < 2; i++)
+        {
+            alloc.FreeParameter(i, localParams[i], this);
+        }
 
         return alloc.CallAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnSize));
     }
@@ -77,6 +81,8 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
     {
         bool instance = !expr.internalFunction.modifiers["static"];
 
+        var localParams = new Instruction.Register?[Math.Min(expr.arguments.Count + Convert.ToInt16(instance), 6)];
+
         if (instance)
         {
             if (!expr.constructor)
@@ -84,14 +90,14 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
                 if (expr.callee != null)
                 {
                     var callee = expr.callee.Accept(this);
-                    Emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, InstructionUtils.ToRegisterSize(expr.callee.GetLastSize())), callee));
+                    Emit(new Instruction.Binary("MOV", alloc.AllocParam(0, InstructionUtils.ToRegisterSize(expr.callee.GetLastSize()), localParams, this), callee));
                     alloc.Free(callee);
                 }
                 else
                 {
                     var enclosing = SymbolTableSingleton.SymbolTable.NearestEnclosingClass(expr.internalFunction);
                     var size = (enclosing?.definitionType == Expr.Definition.DefinitionType.Primitive) ? enclosing.size : 8;
-                    Emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, InstructionUtils.ToRegisterSize(size)), new Instruction.Pointer(8, size)));
+                    Emit(new Instruction.Binary("MOV", alloc.AllocParam(0, InstructionUtils.ToRegisterSize(size), localParams, this), new Instruction.Pointer(8, size)));
                 }
             }
             else
@@ -108,11 +114,11 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             {
                 if (expr.internalFunction.parameters[i].modifiers["ref"])
                 {
-                    Emit(new Instruction.Binary("LEA", alloc.AllocParam(Convert.ToInt16(instance) + i, InstructionUtils.SYS_SIZE), arg));
+                    Emit(new Instruction.Binary("LEA", alloc.AllocParam(Convert.ToInt16(instance) + i, InstructionUtils.SYS_SIZE, localParams, this), arg));
                 }
                 else
                 {
-                    var paramReg = alloc.AllocParam(Convert.ToInt16(instance) + i, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[i].stack.size));
+                    var paramReg = alloc.AllocParam(Convert.ToInt16(instance) + i, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[i].stack.size), localParams, this);
 
                     if (!(arg.IsRegister() && HandleSeteOptimization((Instruction.Register)arg, paramReg)))
                     {
@@ -138,9 +144,13 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             alloc.Free(arg);
         }
 
-        for (int i = 0; i < expr.arguments.Count; i++)
+        if (instance)
         {
-            alloc.FreeParameter(i + Convert.ToInt16(instance), this);
+            alloc.FreeParameter(0, localParams[0], this);
+        }
+        for (int i = Convert.ToInt16(instance); i < localParams.Length; i++)
+        {
+            alloc.FreeParameter(i, localParams[i], this);
         }
 
         alloc.ReserveRegister(this);
@@ -512,12 +522,15 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
 
     public virtual Instruction.Value? VisitUnaryExpr(Expr.Unary expr)
     {
+        Instruction.Register?[] localParam = new Instruction.Register[1];
+
         Instruction.Value operand = expr.operand.Accept(this);
-        Emit(new Instruction.Binary("MOV", alloc.AllocParam(0, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[0].stack.size)), operand));
+
+        Emit(new Instruction.Binary("MOV", alloc.AllocParam(0, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[0].stack.size), localParam, this), operand));
 
         alloc.Free(operand);
 
-        alloc.FreeParameter(0, this);
+        alloc.FreeParameter(0, localParam[0], this);
 
         alloc.ReserveRegister(this);
 

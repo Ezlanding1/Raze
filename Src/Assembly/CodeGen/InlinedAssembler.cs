@@ -90,8 +90,19 @@ internal class InlinedAssembler : Assembler
 
         var ret = ((InlineStateInlined)inlineState).callee;
 
-        if (ret != ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register)
-            alloc.Free(((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register, true);
+        alloc.Free(((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register, true);
+
+        if (ret != null)
+        {
+            if (ret.IsRegister())
+            {
+                alloc.GetRegister(alloc.NameToIdx(((Instruction.Register)ret).name), ((Instruction.Register)ret).size);
+            }
+            else if (ret.IsPointer() && !((Instruction.Pointer)ret).IsOnStack())
+            {
+                alloc.GetRegister(alloc.NameToIdx(((Instruction.Pointer)ret).register.name), ((Instruction.Pointer)ret).size);
+            }
+        }
 
         UnlockOperand(ret);
 
@@ -140,11 +151,8 @@ internal class InlinedAssembler : Assembler
 
         var ret = ((InlineStateInlined)inlineState).callee;
 
-        if (ret != ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register)
-            alloc.Free(((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register, true);
-
-        if (ret != ((Expr.StackRegister)expr.internalFunction.parameters[1].stack).register)
-            alloc.Free(((Expr.StackRegister)expr.internalFunction.parameters[1].stack).register, true);
+        alloc.Free(((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register, true);
+        alloc.Free(((Expr.StackRegister)expr.internalFunction.parameters[1].stack).register, true);
 
         UnlockOperand(ret);
 
@@ -161,6 +169,18 @@ internal class InlinedAssembler : Assembler
         else if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
         {
             Emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
+        }
+
+        if (ret != null)
+        {
+            if (ret.IsRegister())
+            {
+                alloc.GetRegister(alloc.NameToIdx(((Instruction.Register)ret).name), ((Instruction.Register)ret).size);
+            }
+            else if (ret.IsPointer() && !((Instruction.Pointer)ret).IsOnStack())
+            {
+                alloc.GetRegister(alloc.NameToIdx(((Instruction.Pointer)ret).register.name), ((Instruction.Pointer)ret).size);
+            }
         }
 
         inlineState = inlineState.lastState;
@@ -257,9 +277,16 @@ internal class InlinedAssembler : Assembler
             Emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
         }
 
-        if (ret != null && ret.IsRegister())
+        if (ret != null)
         {
-            alloc.GetRegister(alloc.NameToIdx(((Instruction.Register)ret).name), ((Instruction.Register)ret).size);
+            if (ret.IsRegister())
+            {
+                alloc.GetRegister(alloc.NameToIdx(((Instruction.Register)ret).name), ((Instruction.Register)ret).size);
+            }
+            else if (ret.IsPointer() && !((Instruction.Pointer)ret).IsOnStack())
+            {
+                alloc.GetRegister(alloc.NameToIdx(((Instruction.Pointer)ret).register.name), ((Instruction.Pointer)ret).size);
+            }
         }
 
         inlineState = inlineState.lastState;
