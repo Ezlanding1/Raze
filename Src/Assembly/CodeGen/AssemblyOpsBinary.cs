@@ -95,12 +95,25 @@ internal partial class AssemblyOps
                     var op1size = ((Instruction.SizedValue)operand1).size;
                     var op2size = ((Instruction.SizedValue)operand2).size;
 
-                    if (op1size != op2size)
+                    if ((int)op1size > (int)op2size)
                     {
                         Instruction.Register reg = ((Instruction.SizedValue)operand2).AsRegister(op1size, assemblyOps.assembler);
 
                         assemblyOps.assembler.Emit(new Instruction.Binary("MOVSX", reg, operand2));
                         operand2 = reg;
+                    }
+                    else if ((int)op1size < (int)op2size)
+                    {
+                        // WARNING: Loss of information from operand2, since the only a subsection of operand2 is used.
+                        if (operand2.IsRegister())
+                        {
+                            operand2 = ((Instruction.Register)operand2).AsRegister(op1size, assemblyOps.assembler);
+                        }
+                        else
+                        {
+                            var ptr = (Instruction.Pointer)operand2;
+                            operand2 = new Instruction.Pointer(ptr.register, ptr.offset, op1size, ptr._operator);
+                        }
                     }
                 }
                 return operand2;

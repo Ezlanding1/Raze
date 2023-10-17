@@ -52,7 +52,7 @@ partial class Syntaxes
 
             public string VisitBinary(Instruction.Binary instruction)
             {
-                if (instruction.operand2 is Instruction.Pointer)
+                if (instruction.operand2 is Instruction.Pointer && instruction.instruction != "MOVSX")
                     return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, {PointerToString((Instruction.Pointer)instruction.operand2)}";
 
                 return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, {instruction.operand2.Accept(this)}";
