@@ -230,16 +230,14 @@ internal class InlinedAssembler : Assembler
 
         if (instanceArg != null)
         {
-            if (ret != ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register)
-                alloc.Free(instanceArg, true);
+            alloc.Free(instanceArg, true);
         }
 
         for (int i = 0; i < expr.arguments.Count; i++)
         {
             expr.internalFunction.parameters[i].stack.stackRegister = false;
 
-            if (ret != ((Expr.StackRegister)expr.internalFunction.parameters[i].stack).register)
-                alloc.Free(((Expr.StackRegister)expr.internalFunction.parameters[i].stack).register, true);
+            alloc.Free(((Expr.StackRegister)expr.internalFunction.parameters[i].stack).register, true);
         }
 
         UnlockOperand(ret);
@@ -257,6 +255,11 @@ internal class InlinedAssembler : Assembler
         else if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
         {
             Emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
+        }
+
+        if (ret != null && ret.IsRegister())
+        {
+            alloc.GetRegister(alloc.NameToIdx(((Instruction.Register)ret).name), ((Instruction.Register)ret).size);
         }
 
         inlineState = inlineState.lastState;
