@@ -211,20 +211,25 @@ internal partial class Analyzer
 
         public Expr.Definition? _GetDefinitionFullScope(Token key)
         {
+            Expr.Definition? definition = null;
+
             Expr.Type? x = NearestEnclosingClass();
 
             while (x != null)
             {
-                if (x.name.lexeme == key.lexeme)
+                if (TryGetValue(((Expr.DataType)x).definitions, key, out var xValue))
                 {
-                    return (Expr.Definition)x;
+                    definition = xValue;
                 }
                 x = x.enclosing;
             }
 
-            TryGetValue(globals, key, out var value);
+            if (TryGetValue(globals, key, out var value))
+            {
+                definition = value;
+            }
             
-            return value;
+            return definition;
         }
         public Expr.Definition GetClassFullScope(Token key)
         {
@@ -251,7 +256,7 @@ internal partial class Analyzer
 
         private Expr.Function? _GetFunction(string key, Expr.Type[] types)
         {
-            if (current == null)
+            if (current == null || NearestEnclosingClass() == null)
             {
                 if (TryGetFuncValue(globals, key, types, out var globalValue))
                 {
@@ -260,12 +265,7 @@ internal partial class Analyzer
                 return null;
             }
 
-            if (current.definitionType == Expr.Definition.DefinitionType.Function)
-            {
-                return null;
-            }
-
-            if (TryGetFuncValue(((Expr.DataType)current).definitions, key, types, out var value))
+            if (TryGetFuncValue(NearestEnclosingClass().definitions, key, types, out var value))
             {
                 return value;
             }
