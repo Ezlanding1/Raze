@@ -28,7 +28,7 @@ partial class Syntaxes
                 return type switch
                 {
                     "Intel_x86_64_NASM" => new IntelSyntax(),
-                    "Intel_x86_64_GAS" => new GasSyntax(),
+                    "Intel_x86_64_AT&T" => new AttSyntax(),
                     _ => null
                 };
             }

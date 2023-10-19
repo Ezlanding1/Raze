@@ -244,9 +244,9 @@ partial class Syntaxes
             };
         }
 
-        partial class GasSyntax : ISyntaxFactory, Instruction.IVisitor
+        partial class AttSyntax : ISyntaxFactory, Instruction.IVisitor
         {
-            public GasSyntax()
+            public AttSyntax()
             {
                 header = new Instruction.Comment("Raze Compiler Version ALPHA 0.0.0 Intel_x86-64 GAS");
             }
