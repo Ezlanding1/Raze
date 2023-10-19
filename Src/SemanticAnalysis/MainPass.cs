@@ -246,6 +246,8 @@ internal partial class Analyzer
                 Diagnostics.errors.Push(new Error.AnalyzerError("Double Declaration", $"A variable named '{name.lexeme}' is already declared in this scope"));
             }
 
+            if (symbolTable.Current == null) return TypeCheckUtils._voidType;
+
             if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Class)
             {
                 expr.classScoped = true;

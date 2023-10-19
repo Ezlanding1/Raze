@@ -176,13 +176,13 @@ internal partial class Analyzer
             return base.VisitIfExpr(expr);
         }
 
-        public override object VisitWhileExpr(Expr.While expr)
+        public override object? VisitWhileExpr(Expr.While expr)
         {
             HandleTopLevelCode();
             return base.VisitWhileExpr(expr);
         }
 
-        public override object VisitForExpr(Expr.For expr)
+        public override object? VisitForExpr(Expr.For expr)
         {
             HandleTopLevelCode();
             return base.VisitForExpr(expr);
@@ -200,7 +200,7 @@ internal partial class Analyzer
             return null;
         }
 
-        public override object VisitReturnExpr(Expr.Return expr)
+        public override object? VisitReturnExpr(Expr.Return expr)
         {
             HandleTopLevelCode();
             return base.VisitReturnExpr(expr);
@@ -225,7 +225,7 @@ internal partial class Analyzer
             return base.VisitAssemblyExpr(expr);
         }
 
-        public override object VisitAmbiguousGetReferenceExpr(Expr.AmbiguousGetReference expr)
+        public override object? VisitAmbiguousGetReferenceExpr(Expr.AmbiguousGetReference expr)
         {
             if (expr.ambiguousCall)
             {
@@ -261,7 +261,7 @@ internal partial class Analyzer
             return null;
         }
 
-        public override object VisitAssignExpr(Expr.Assign expr)
+        public override object? VisitAssignExpr(Expr.Assign expr)
         {
             if (expr.member.HandleThis() && (symbolTable.NearestEnclosingClass()?.definitionType != Expr.Definition.DefinitionType.Primitive)) 
             { 
@@ -272,7 +272,7 @@ internal partial class Analyzer
             return base.VisitAssignExpr(expr);
         }
 
-        public override object VisitPrimitiveExpr(Expr.Primitive expr)
+        public override object? VisitPrimitiveExpr(Expr.Primitive expr)
         {
             symbolTable.AddDefinition(expr);
 
