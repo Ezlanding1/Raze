@@ -120,10 +120,7 @@ internal partial class Analyzer
                 GetVariableDefinition(parameter.typeName, parameter.stack);
             }
 
-            foreach (var blockExpr in expr.block)
-            {
-                blockExpr.Accept(this);
-            }
+            expr.block.Accept(this);
 
             symbolTable.UpContext();
 

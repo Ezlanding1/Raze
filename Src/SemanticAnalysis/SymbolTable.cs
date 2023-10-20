@@ -279,7 +279,10 @@ internal partial class Analyzer
 
             if (function == null)
             {
-                Diagnostics.errors.Push(new Error.AnalyzerError("Undefined Reference", $"The function '{key}({string.Join(", ", (object?[])types)})' does not exist in the current context"));
+                if (!types.Any(x => x == TypeCheckUtils.anyType))
+                {
+                    Diagnostics.errors.Push(new Error.AnalyzerError("Undefined Reference", $"The function '{key}({string.Join(", ", (object?[])types)})' does not exist in the current context"));
+                }
                 return FunctionNotFoundDefinition;
             }
             return function;

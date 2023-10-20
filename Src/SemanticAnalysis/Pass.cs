@@ -62,7 +62,7 @@ internal partial class Analyzer
 
         public virtual T VisitFunctionExpr(Expr.Function expr)
         {
-            Expr.ListAccept(expr.block, this);
+            expr.block.Accept(this);
             return default;
         }
 

@@ -24,6 +24,15 @@ internal class Parser
         Token.TokenType.BOOLEAN
     };
 
+    public static readonly Token.TokenType[] SynchronizationTokens =
+    {
+        Token.TokenType.SEMICOLON,
+        Token.TokenType.COMMA,
+        Token.TokenType.RBRACE,
+        Token.TokenType.RBRACKET,
+        Token.TokenType.RPAREN
+    };
+
     public Parser(List<Token> tokens)
     {
         this.tokens = tokens;
@@ -65,8 +74,7 @@ internal class Parser
 
                 Expr.TypeReference _return = new(null);
 
-                if (!Expect(Token.TokenType.IDENTIFIER, definitionType.lexeme + " name"))
-                    return null;
+                Expect(Token.TokenType.IDENTIFIER, definitionType.lexeme + " name");
 
                 if (current.type == Token.TokenType.DOT || current.type == Token.TokenType.IDENTIFIER)
                 {
@@ -111,29 +119,11 @@ internal class Parser
                     if (IsAtEnd())
                     {
                         Diagnostics.errors.Push(new Error.ParseError("Unexpected End In Function Parameters", $"Function '{name.lexeme}' reached an unexpected end during its parameters"));
-                        return new Expr.Function(modifiers, _return, name, parameters, new());
+                        return new Expr.Function(modifiers, _return, name, parameters, new(new()));
                     }
                 }
 
-                List<Expr> block = new();
-
-                Expect(Token.TokenType.LBRACE, "'{' before function body");
-                while (!TypeMatch(Token.TokenType.RBRACE))
-                {
-                    block.Add(Entity());
-                    
-                    if (IsAtEnd())
-                    {
-                        Expect(Token.TokenType.RBRACE, "'}' after function body");
-                        break;
-                    }
-                    if (TypeMatch(Token.TokenType.RBRACE))
-                    {
-                        break;
-                    }
-                }
-
-                return new Expr.Function(modifiers, _return, name, parameters, block);
+                return new Expr.Function(modifiers, _return, name, parameters, GetBlock(definitionType.lexeme));
             }
             else if (definitionType.lexeme == "class")
             {
@@ -262,6 +252,11 @@ internal class Parser
         {
             var instructions = GetAsmInstructions();
             return new Expr.Assembly(instructions.Item1, instructions.Item2);
+        }
+        else if (TypeMatch(Token.TokenType.LBRACE))
+        {
+            current = tokens[--index];
+            return GetBlock("disconnected block");
         }
         return Conditional();
     }
@@ -554,7 +549,7 @@ internal class Parser
                 var newCallExpr = GetNewGetter();
                 if (newCallExpr == null)
                 {
-                    return new Expr.NoOp();
+                    return new Expr.InvalidExpr();
                 }
                 return new Expr.New(newCallExpr);
             }
@@ -562,7 +557,7 @@ internal class Parser
 
         End();
         Advance();
-        return new Expr.NoOp();
+        return new Expr.InvalidExpr();
     }
 
     private Expr.Declare? FullDeclare()
@@ -720,6 +715,7 @@ internal class Parser
         if (!TypeMatch(Token.TokenType.LBRACE))
         {
             Expected("LBRACE", "'{' before " + bodytype + " body");
+            Advance();
             return new();
         }
         while (!TypeMatch(Token.TokenType.RBRACE))
@@ -728,10 +724,6 @@ internal class Parser
             if (IsAtEnd())
             {
                 Expect(Token.TokenType.RBRACE, "'}' after " + bodytype + " body");
-                break;
-            }
-            if (TypeMatch(Token.TokenType.RBRACE))
-            {
                 break;
             }
         }
@@ -950,6 +942,12 @@ internal class Parser
             return true;
         }
         Expected(type.ToString(), errorMessage);
+
+        if (index+1 < tokens.Count && !SynchronizationTokens.Contains(Previous(-1).type))
+        {
+            Advance();
+            return Expect(type, errorMessage);
+        }
         return false;
     }
 

@@ -42,14 +42,15 @@ internal partial class Analyzer
 
         public static bool CannotBeRef(Expr expr) => expr is not Expr.GetReference || (expr is Expr.GetReference getRef && getRef.IsMethod());
 
-        public static void TypeCheckConditional(Expr.IVisitor<Expr.Type> visitor, List<(Expr.Type?, bool, Expr.Return?)> _return, Expr? condition, Expr.Block block)
+        public static void TypeCheckConditional(Expr.IVisitor<Expr.Type> visitor, string conditionalName, List<(Expr.Type?, bool, Expr.Return?)> _return, Expr? condition, Expr.Block block)
         {
             int _returnCount = _return.Count;
             if (condition != null)
             {
-                if (!literalTypes[Token.TokenType.BOOLEAN].Matches(condition.Accept(visitor)))
+                var conditionType = condition.Accept(visitor);
+                if (!literalTypes[Token.TokenType.BOOLEAN].Matches(conditionType))
                 {
-                    Diagnostics.errors.Push(new Error.AnalyzerError("Type Mismatch", $"'if' expects condition to return 'BOOLEAN'. Got '{condition.Accept(visitor)}'"));
+                    Diagnostics.errors.Push(new Error.AnalyzerError("Type Mismatch", $"'{conditionalName}' expects condition to return 'BOOLEAN'. Got '{conditionType}'"));
                 }
             }
             block.Accept(visitor);

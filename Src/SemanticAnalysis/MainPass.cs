@@ -94,7 +94,10 @@ internal partial class Analyzer
 
             if (expr.internalFunction == null)
             {
-                Diagnostics.errors.Push(Primitives.InvalidOperation(expr.op, argumentTypes[0].ToString(), argumentTypes[1].ToString()));
+                if (argumentTypes[0] != TypeCheckUtils.anyType && argumentTypes[1] != TypeCheckUtils.anyType)
+                {
+                    Diagnostics.errors.Push(Primitives.InvalidOperation(expr.op, argumentTypes[0].ToString(), argumentTypes[1].ToString()));
+                }
                 expr.internalFunction = symbolTable.FunctionNotFoundDefinition;
             }
 
@@ -299,16 +302,7 @@ internal partial class Analyzer
                 symbolTable.Add(paramExpr.name, paramExpr.stack, i+Convert.ToInt16(instance), expr.Arity);
             }
 
-            foreach (Expr blockExpr in expr.block)
-            {
-                Expr.Type result = blockExpr.Accept(this);
-
-                if (!Primitives.IsVoidType(result) && !callReturn)
-                {
-                    Diagnostics.errors.Push(new Error.AnalyzerError("Expression With Non-Null Return", $"Expression returned with type '{result}'"));
-                }
-                callReturn = false;
-            }
+            expr.block.Accept(this);
 
             TypeCheckUtils.HandleFunctionReturns(expr, _return);
 
@@ -320,11 +314,11 @@ internal partial class Analyzer
 
         public override Expr.Type VisitIfExpr(Expr.If expr)
         {
-            expr.conditionals.ForEach(x => TypeCheckUtils.TypeCheckConditional(this, _return, x.condition, x.block));
+            expr.conditionals.ForEach(x => TypeCheckUtils.TypeCheckConditional(this, "if", _return, x.condition, x.block));
 
             if (expr._else != null)
             {
-                TypeCheckUtils.TypeCheckConditional(this, _return, null, expr._else);
+                TypeCheckUtils.TypeCheckConditional(this, "else", _return, null, expr._else);
             }
 
             return TypeCheckUtils._voidType;
@@ -447,7 +441,7 @@ internal partial class Analyzer
 
         public override Expr.Type VisitWhileExpr(Expr.While expr)
         {
-            TypeCheckUtils.TypeCheckConditional(this, _return, expr.conditional.condition, expr.conditional.block);
+            TypeCheckUtils.TypeCheckConditional(this, "while", _return, expr.conditional.condition, expr.conditional.block);
 
             return TypeCheckUtils._voidType;
         }
@@ -468,7 +462,7 @@ internal partial class Analyzer
             }
             callReturn = false;
 
-            TypeCheckUtils.TypeCheckConditional(this, _return, expr.conditional.condition, expr.conditional.block);
+            TypeCheckUtils.TypeCheckConditional(this, "for", _return, expr.conditional.condition, expr.conditional.block);
 
             return TypeCheckUtils._voidType;
         }

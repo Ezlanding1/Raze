@@ -261,11 +261,7 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             alloc.ListAccept(((Expr.Class)expr.enclosing).declarations, this);
         }
 
-        foreach (var blockExpr in expr.block)
-        {
-            blockExpr.Accept(this);
-            alloc.FreeAll();
-        }
+        expr.block.Accept(this);
 
         if (Analyzer.Primitives.IsVoidType(expr._returnType.type) || expr.modifiers["unsafe"])
         {

@@ -96,7 +96,7 @@ internal class ASTPrinter : Expr.IVisitor<object?>
             }
         }
 
-        Expr.ListAccept(expr.block, this);
+        expr.block.Accept(this);
 
         return null;
     }

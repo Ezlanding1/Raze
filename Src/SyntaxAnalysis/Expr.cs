@@ -573,9 +573,9 @@ internal abstract class Expr
         }
         public ExprUtils.Modifiers modifiers;
         public bool constructor;
-        public List<Expr> block;
+        public Block block;
 
-        public Function(ExprUtils.Modifiers modifiers, TypeReference _returnType, Token name, List<Parameter> parameters, List<Expr> block) : base(name)
+        public Function(ExprUtils.Modifiers modifiers, TypeReference _returnType, Token name, List<Parameter> parameters, Block block) : base(name)
         {
             this.definitionType = DefinitionType.Function;
             this.modifiers = modifiers;
@@ -745,12 +745,15 @@ internal abstract class Expr
             return visitor.VisitIsExpr(this);
         }
     }
-
-    public class NoOp : Expr
+    
+    public abstract class NoOp : Expr
     {
         public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitNoOpExpr(this);
         }
     }
+
+    public class InvalidExpr : NoOp { }
+    public class SynchronizationExpr : NoOp { }
 }

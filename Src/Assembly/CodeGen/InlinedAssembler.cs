@@ -64,7 +64,7 @@ internal class InlinedAssembler : Assembler
         expr.internalFunction.parameters[0].stack.stackRegister = true;
         ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = LockOperand(HandleParameterRegister(expr.internalFunction.parameters[0], operand));
 
-        foreach (var bodyExpr in expr.internalFunction.block)
+        foreach (var bodyExpr in expr.internalFunction.block.block)
         {
             bodyExpr.Accept(this);
             alloc.FreeAll(false);
@@ -140,7 +140,7 @@ internal class InlinedAssembler : Assembler
         expr.internalFunction.parameters[1].stack.stackRegister = true;
         ((Expr.StackRegister)expr.internalFunction.parameters[1].stack).register = LockOperand(HandleParameterRegister(expr.internalFunction.parameters[1], operand2));
 
-        foreach (var bodyExpr in expr.internalFunction.block)
+        foreach (var bodyExpr in expr.internalFunction.block.block)
         {
             bodyExpr.Accept(this);
             alloc.FreeAll(false);
@@ -240,12 +240,12 @@ internal class InlinedAssembler : Assembler
             ((Expr.StackRegister)expr.internalFunction.parameters[i].stack).register = LockOperand(HandleParameterRegister(expr.internalFunction.parameters[i], arg));
         }
 
-        foreach (var bodyExpr in expr.internalFunction.block)
+        foreach (var bodyExpr in expr.internalFunction.block.block)
         {
             bodyExpr.Accept(this);
             alloc.FreeAll(false);
         }
-        
+
         var ret = ((InlineStateInlined)inlineState).callee;
 
         if (instanceArg != null)
