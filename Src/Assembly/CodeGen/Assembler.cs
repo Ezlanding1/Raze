@@ -192,20 +192,31 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             operand = reg;
 
         }
-        else if (operand.IsRegister() && SafeGetCmpTypeRaw((Instruction.Register)operand, out var instruction))
+        else if (operand.IsRegister())
         {
-            alloc.Free((Instruction.Value)instruction.operand);
+            if (SafeGetCmpTypeRaw((Instruction.Register)operand, out var instruction))
+            {
+                alloc.Free((Instruction.Value)instruction.operand);
 
-            if (expr.classScoped)
-            {
-                Emit(new Instruction.Binary(_ref ? "LEA" : "MOV", alloc.CurrentRegister(InstructionUtils.SYS_SIZE), new Instruction.Pointer(Instruction.Register.RegisterName.RBP, (int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE)));
-                instruction.operand = new Instruction.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), expr.stack.stackOffset, expr.stack._ref ? InstructionUtils.SYS_SIZE : InstructionUtils.ToRegisterSize(expr.stack.size));
+                if (expr.classScoped)
+                {
+                    Emit(new Instruction.Binary(_ref ? "LEA" : "MOV", alloc.CurrentRegister(InstructionUtils.SYS_SIZE), new Instruction.Pointer(Instruction.Register.RegisterName.RBP, (int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE)));
+                    instruction.operand = new Instruction.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), expr.stack.stackOffset, expr.stack._ref ? InstructionUtils.SYS_SIZE : InstructionUtils.ToRegisterSize(expr.stack.size));
+                }
+                else
+                {
+                    instruction.operand = new Instruction.Pointer(expr.stack.stackOffset, expr.stack._ref ? InstructionUtils.SYS_SIZE : InstructionUtils.ToRegisterSize(expr.stack.size));
+                }
+                return null;
             }
-            else
+        }
+        else
+        {
+            Instruction.Literal literal = (Instruction.Literal)operand;
+            if (expr.stack.size < SizeOfLiteral(literal.type, literal.value))
             {
-                instruction.operand = new Instruction.Pointer(expr.stack.stackOffset, expr.stack._ref ? InstructionUtils.SYS_SIZE : InstructionUtils.ToRegisterSize(expr.stack.size));
+                Diagnostics.errors.Push(new Error.BackendError("Invalid Literal", $"The size of literal '{literal.value}' exceeds size of assigned data type '{expr.stack.size}'"));
             }
-            return null;
         }
 
         if (expr.classScoped)
@@ -658,6 +669,11 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             }
             else
             {
+                Instruction.Literal literal = (Instruction.Literal)operand;
+                if (expr.size < SizeOfLiteral(literal.type, literal.value))
+                {
+                    Diagnostics.errors.Push(new Error.BackendError("Invalid Literal", $"The size of literal '{literal.value}' exceeds size of assigned data type '{expr.size}'"));
+                }
                 Emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, InstructionUtils.ToRegisterSize(expr.size)), operand));
             }
 
@@ -684,9 +700,21 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             Emit(new Instruction.Binary("MOV", reg, operand2));
             operand2 = reg;
         }
-        else if (operand2.IsRegister() && HandleSeteOptimization((Instruction.Register)operand2, operand1))
+        else if (operand2.IsRegister())
         {
-            return null;
+            if (HandleSeteOptimization((Instruction.Register)operand2, operand1))
+            {
+                return null;
+            }
+        }
+        else
+        {
+            Instruction.Literal literal = (Instruction.Literal)operand2;
+            var size = expr.member.GetLastSize();
+            if (size < SizeOfLiteral(literal.type, literal.value))
+            {
+                Diagnostics.errors.Push(new Error.BackendError("Invalid Literal", $"The size of literal '{literal.value}' exceeds size of assigned data type '{size}'"));
+            }
         }
 
         Emit(new Instruction.Binary("MOV", operand1, operand2));
@@ -849,6 +877,79 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
                 }
             }
             return res;
+        }
+    }
+
+    public int SizeOfLiteral(Token.TokenType type, string value)
+    {
+        switch (type)
+        {
+            case Token.TokenType.INTEGER:
+                return GetIntegralSize(long.Parse(value));
+            case Token.TokenType.FLOATING:
+            {
+                double val = double.Parse(value);
+                if (val <= 480 && val >= 0.0078)
+                {
+                    return (int)Instruction.Register.RegisterSize._8Bits;
+                }
+                else if (val <= (double)Half.MaxValue && val >= (double)Half.MinValue)
+                {
+                    return (int)Instruction.Register.RegisterSize._16Bits;
+                }
+                else if (val <= float.MaxValue && val >= float.MinValue)
+                {
+                    return (int)Instruction.Register.RegisterSize._32Bits;
+                }
+                else
+                {
+                    return (int)Instruction.Register.RegisterSize._64Bits;
+                }
+            }
+            case Token.TokenType.STRING:
+            {
+                return (int)Instruction.Register.RegisterSize._8Bits;
+            }
+            case Token.TokenType.BINARY:
+            {
+                int length = value.Length-2;
+                length--;
+                length |= length >> 1;
+                length |= length >> 2;
+                length |= length >> 4;
+                length |= length >> 8;
+                length |= length >> 16;
+                length++;
+                length /= 8;
+                return length;
+            }
+            case Token.TokenType.HEX:
+                return GetIntegralSize(long.Parse(value, NumberStyles.AllowHexSpecifier));
+            case Token.TokenType.BOOLEAN:
+                return (int)Instruction.Register.RegisterSize._8Bits;
+            default:
+                return 0;
+
+        }
+
+        int GetIntegralSize(long value)
+        {
+            if (value <= byte.MaxValue && value >= byte.MinValue)
+            {
+                return (int)Instruction.Register.RegisterSize._8Bits;
+            }
+            else if (value <= short.MaxValue && value >= short.MinValue)
+            {
+                return (int)Instruction.Register.RegisterSize._16Bits;
+            }
+            else if (value <= int.MaxValue && value >= int.MinValue)
+            {
+                return (int)Instruction.Register.RegisterSize._32Bits;
+            }
+            else
+            {
+                return (int)Instruction.Register.RegisterSize._64Bits;
+            }
         }
     }
 }

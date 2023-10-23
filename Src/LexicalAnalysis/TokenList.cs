@@ -13,7 +13,7 @@ internal class TokenList
     public static readonly Dictionary<Token.TokenType, string> Tokens = new Dictionary<Token.TokenType, string>()
     {
         // Non Finite Tokens
-        { Token.TokenType.BINARY, /*lang=regex*/@"[0-1]+[b]" },
+        { Token.TokenType.BINARY, /*lang=regex*/@"0[bB][0-1]+" },
         { Token.TokenType.HEX, /*lang=regex*/@"0[xX][0-9a-fA-F]+" },
         { Token.TokenType.FLOATING, /*lang=regex*/@"[0-9]+\.[0-9]*" },
         { Token.TokenType.INTEGER, /*lang=regex*/@"[0-9]+" },
