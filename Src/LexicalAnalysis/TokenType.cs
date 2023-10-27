@@ -16,6 +16,7 @@ internal partial class Token
         INTEGER,            
         IDENTIFIER,            
         STRING,
+        REF_STRING,
         BOOLEAN,
         WHITESPACE,            
         EQUALTO,            

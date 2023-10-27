@@ -21,7 +21,8 @@ internal class Parser
         Token.TokenType.STRING,
         Token.TokenType.BINARY,
         Token.TokenType.HEX,
-        Token.TokenType.BOOLEAN
+        Token.TokenType.BOOLEAN,
+        Token.TokenType.REF_STRING
     };
 
     public static readonly Token.TokenType[] SynchronizationTokens =
@@ -801,7 +802,7 @@ internal class Parser
                                 instructions.Add(new ExprUtils.AssignableInstruction.Binary(new Instruction.Binary(op.lexeme, value, new Instruction.Register(Instruction.Register.RegisterName.TMP, Instruction.Register.RegisterSize._8Bits)), ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
                             }
                         }
-                        else if (TypeMatch(Token.TokenType.INTEGER, Token.TokenType.FLOATING, Token.TokenType.STRING, Token.TokenType.HEX, Token.TokenType.BINARY))
+                        else if (TypeMatch(Token.TokenType.INTEGER, Token.TokenType.FLOATING, Token.TokenType.STRING, Token.TokenType.REF_STRING, Token.TokenType.HEX, Token.TokenType.BINARY))
                         {
                             instructions.Add(new ExprUtils.AssignableInstruction.Binary(new Instruction.Binary(op.lexeme, value, new Instruction.Literal(Previous().type, Previous().lexeme)), (value == null) ? ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst : ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
                         }

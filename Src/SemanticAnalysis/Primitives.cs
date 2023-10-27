@@ -13,6 +13,7 @@ internal partial class Analyzer
         const Token.TokenType INTEGER = Token.TokenType.INTEGER;
         const Token.TokenType FLOATING = Token.TokenType.FLOATING;
         const Token.TokenType STRING = Token.TokenType.STRING;
+        const Token.TokenType REF_STRING = Token.TokenType.REF_STRING;
         const Token.TokenType BINARY = Token.TokenType.BINARY;
         const Token.TokenType HEX = Token.TokenType.HEX;
         const Token.TokenType BOOLEAN = Token.TokenType.BOOLEAN;
@@ -24,6 +25,7 @@ internal partial class Analyzer
             Token.TokenType.INTEGER => true,
             Token.TokenType.FLOATING => false,
             Token.TokenType.STRING => false,
+            Token.TokenType.REF_STRING => false,
             Token.TokenType.BINARY => true,
             Token.TokenType.HEX => true,
             Token.TokenType.BOOLEAN => false,
@@ -34,6 +36,7 @@ internal partial class Analyzer
             Token.TokenType.INTEGER => int.Parse(literal.value),
             Token.TokenType.FLOATING => float.Parse(literal.value),
             Token.TokenType.STRING => literal.value,
+            Token.TokenType.REF_STRING => literal.value,
             Token.TokenType.BINARY => Convert.ToInt32(literal.value, 2),
             Token.TokenType.HEX => Convert.ToInt32(literal.value, 16),
             Token.TokenType.BOOLEAN => byte.Parse(literal.value)
@@ -89,21 +92,37 @@ internal partial class Analyzer
             {
                 case (INTEGER, INTEGER): return Token.TokenType.INTEGER; // INTEGER OP INTEGER
                 case (INTEGER, FLOATING): case (FLOATING, INTEGER): return Token.TokenType.FLOATING; // INTEGER OP FLOATING
-                case (INTEGER, STRING): case (STRING, INTEGER): Diagnostics.errors.Push(InvalidOperation(op, t1, t2)); break;  // INTEGER OP STRING
+                case (INTEGER, STRING):
+                case (STRING, INTEGER):
+                case (INTEGER, REF_STRING):
+                case (REF_STRING, INTEGER): Diagnostics.errors.Push(InvalidOperation(op, t1, t2)); break;  // INTEGER OP STRING
                 case (INTEGER, BINARY): case (BINARY, INTEGER): return Token.TokenType.BINARY; // INTEGER OP BINARY
                 case (INTEGER, HEX): case (HEX, INTEGER): return Token.TokenType.HEX; // INTEGER OP HEX
                 case (INTEGER, BOOLEAN): case (BOOLEAN, INTEGER): Diagnostics.errors.Push(InvalidOperation(op, t1, t2)); break;  // INTEGER OP BOOLEAN
 
                 case (FLOATING, FLOATING): return Token.TokenType.FLOATING; // FLOATING OP FLOATING
-                case (FLOATING, STRING): case (STRING, FLOATING): Diagnostics.errors.Push(InvalidOperation(op, t1, t2)); break; // FLOATING OP STRING
+                case (FLOATING, STRING):
+                case (STRING, FLOATING):
+                case (FLOATING, REF_STRING):
+                case (REF_STRING, FLOATING): Diagnostics.errors.Push(InvalidOperation(op, t1, t2)); break; // FLOATING OP STRING
                 case (FLOATING, BINARY): case (BINARY, FLOATING): Diagnostics.errors.Push(InvalidOperation(op, t1, t2)); break;  // FLOATING OP BINARY
                 case (FLOATING, HEX): case (HEX, FLOATING): Diagnostics.errors.Push(InvalidOperation(op, t1, t2)); break;  // FLOATING OP HEX
                 case (FLOATING, BOOLEAN): case (BOOLEAN, FLOATING): Diagnostics.errors.Push(InvalidOperation(op, t1, t2)); break;  // FLOATING OP BOOLEAN
 
-                case (STRING, STRING): Diagnostics.errors.Push(InvalidOperation(op, t1, t2)); break; // STRING OP STRING
-                case (STRING, BINARY): case (BINARY, STRING): Diagnostics.errors.Push(InvalidOperation(op, t1, t2)); break;  // STRING OP BINARY
-                case (STRING, HEX): case (HEX, STRING): Diagnostics.errors.Push(InvalidOperation(op, t1, t2)); break;  // STRING OP HEX
-                case (STRING, BOOLEAN): case (BOOLEAN, STRING): Diagnostics.errors.Push(InvalidOperation(op, t1, t2)); break;  // STRING OP BOOLEAN
+                case (STRING, STRING):
+                case (REF_STRING, REF_STRING): Diagnostics.errors.Push(InvalidOperation(op, t1, t2)); break; // STRING OP STRING
+                case (STRING, BINARY):
+                case (BINARY, STRING):
+                case (REF_STRING, BINARY):
+                case (BINARY, REF_STRING): Diagnostics.errors.Push(InvalidOperation(op, t1, t2)); break;  // STRING OP BINARY
+                case (STRING, HEX):
+                case (HEX, STRING):
+                case (REF_STRING, HEX):
+                case (HEX, REF_STRING): Diagnostics.errors.Push(InvalidOperation(op, t1, t2)); break;  // STRING OP HEX
+                case (STRING, BOOLEAN):
+                case (BOOLEAN, STRING):
+                case (REF_STRING, BOOLEAN):
+                case (BOOLEAN, REF_STRING): Diagnostics.errors.Push(InvalidOperation(op, t1, t2)); break;  // STRING OP BOOLEAN
 
                 case (BINARY, BINARY): return Token.TokenType.BINARY; // BINARY OP BINARY
                 case (BINARY, HEX): case (HEX, BINARY): Diagnostics.errors.Push(InvalidOperation(op, t1, t2)); break;  // BINARY OP HEX
@@ -147,6 +166,8 @@ internal partial class Analyzer
 
                 case STRING: Diagnostics.errors.Push(InvalidOperation(op, Token.TokenType.STRING)); break;  // STRING OP
 
+                case REF_STRING: Diagnostics.errors.Push(InvalidOperation(op, Token.TokenType.REF_STRING)); break;  // REF_STRING OP
+
                 case BINARY: return Token.TokenType.BINARY; // BINARY OP
 
                 case HEX: return Token.TokenType.HEX; // HEX OP
@@ -168,7 +189,7 @@ internal partial class Analyzer
                 (
                     pName switch
                     {
-                        "Add" => Add(ToType(a, a.type), ToType(b, b.type), (a.type == b.type && a.type == Token.TokenType.STRING), assembler),
+                        "Add" => Add(ToType(a, a.type), ToType(b, b.type), (a.type == b.type && a.type == Token.TokenType.REF_STRING), assembler),
                         "Subtract" => ToType(a, a.type) - ToType(b, b.type),
                         "Multiply" => ToType(a, a.type) * ToType(b, b.type),
                         "Modulo" => ToType(a, a.type) % ToType(b, b.type),

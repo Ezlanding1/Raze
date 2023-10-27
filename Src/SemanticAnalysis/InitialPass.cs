@@ -293,6 +293,9 @@ internal partial class Analyzer
                 case "BOOLEAN":
                     expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[5]];
                     break;
+                case "REF_STRING":
+                    expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[6]];
+                    break;
                 default:
                     Diagnostics.errors.Push(new Error.ImpossibleError("Invalid primitive superclass"));
                     break;

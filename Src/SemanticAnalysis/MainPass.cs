@@ -320,7 +320,6 @@ internal partial class Analyzer
             {
                 TypeCheckUtils.TypeCheckConditional(this, "else", _return, null, expr._else);
             }
-
             return TypeCheckUtils._voidType;
         }
 

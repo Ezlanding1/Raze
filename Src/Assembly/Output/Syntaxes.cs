@@ -153,6 +153,21 @@ partial class Syntaxes
 
             public string VisitLiteral(Instruction.Literal instruction)
             {
+                switch (instruction.type)
+                {
+                    case Token.TokenType.STRING:
+                    {
+                        if (instruction.value == "") return "0";
+
+                        int strAsInt = instruction.value[^1];
+                        for (int i = instruction.value.Length - 2; i >= 0; i--)
+                        {
+                            strAsInt <<= 8;
+                            strAsInt += instruction.value[i];
+                        }
+                        return $"{strAsInt}";
+                    }
+                }
                 return $"{instruction.value}";
             }
 

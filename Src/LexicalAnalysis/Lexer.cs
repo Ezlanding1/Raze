@@ -82,13 +82,20 @@ internal class Lexer
                 if (pattern.type == Token.TokenType.STRING)
                 {
                     string str = match.ToString();
-                    Escape(ref str);
-                    Console.WriteLine(str);
+                    if (str[^1] != '\'' || str.Length == 1)
+                    {
+                        Diagnostics.errors.Push(new Error.LexError(line, col, "Non Terminated String", $"\'{((str.Length <= StringTruncateLength) ? str + "'" : str.Substring(0, StringTruncateLength) + "'...")} was not terminated"));
+                    }
+                    return new Token(pattern.type, Escape(str[1..^1]));
+                }
+                if (pattern.type == Token.TokenType.REF_STRING)
+                {
+                    string str = match.ToString();
                     if (str[^1] != '\"' || str.Length == 1)
                     {
                         Diagnostics.errors.Push(new Error.LexError(line, col, "Non Terminated String", $"\'{((str.Length <= StringTruncateLength) ? str + "'" : str.Substring(0, StringTruncateLength) + "'...")} was not terminated"));
                     }
-                    return new Token(pattern.type, str);
+                    return new Token(pattern.type, Escape(str));
                 }
                 if (pattern.type == Token.TokenType.FLOATING)
                 {
@@ -108,12 +115,13 @@ internal class Lexer
         return null;
     }
 
-    private void Escape (ref string str)
+    private string Escape (string str)
     {
         foreach ((Regex,string) regex in regexes)
         {
             str = regex.Item1.Replace(str, regex.Item2);
         }
+        return str;
     }
 
     private void InitRegex()
@@ -152,7 +160,8 @@ internal class Lexer
     {
         Token.TokenType.INTEGER => (value.Length == 19) ? !long.TryParse(value, out _) : value.Length > 19,
         Token.TokenType.FLOATING => (!double.TryParse(value, out var d)) || (d == double.PositiveInfinity || d == double.NegativeInfinity),
-        Token.TokenType.STRING => false,
+        Token.TokenType.STRING => 8 < value.Length-2,
+        Token.TokenType.REF_STRING => false,
         Token.TokenType.BINARY => 64 < value[2..].Length,
         Token.TokenType.HEX => (value.Length == 18) ? ((!long.TryParse(value[2..], NumberStyles.AllowHexSpecifier, null, out var h)) || h < 0) : value.Length > 18,
         Token.TokenType.BOOLEAN => false,

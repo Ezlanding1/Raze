@@ -110,6 +110,15 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
         {
             Instruction.Value arg = expr.arguments[i].Accept(this);
 
+            if (arg.IsLiteral())
+            {
+                Instruction.Literal literal = (Instruction.Literal)arg;
+                if (expr.internalFunction.parameters[i].stack.size < SizeOfLiteral(literal.type, literal.value))
+                {
+                    Diagnostics.errors.Push(new Error.BackendError("Invalid Literal", $"The size of literal '{literal.value}' exceeds size of assigned data type '{expr.internalFunction.parameters[i].stack.size}'"));
+                }
+            }
+
             if (i + Convert.ToUInt16(instance) < InstructionUtils.paramRegister.Length)
             {
                 if (expr.internalFunction.parameters[i].modifiers["ref"])
@@ -217,6 +226,23 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             {
                 Diagnostics.errors.Push(new Error.BackendError("Invalid Literal", $"The size of literal '{literal.value}' exceeds size of assigned data type '{expr.stack.size}'"));
             }
+
+            var chunks = ChunkString(literal);
+            if (chunks.Item1 != -1)
+            {
+                if (expr.classScoped)
+                {
+                    Emit(new Instruction.Binary("MOV", alloc.CurrentRegister(InstructionUtils.SYS_SIZE), new Instruction.Pointer(Instruction.Register.RegisterName.RBP, (int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE)));
+                    Emit(new Instruction.Binary("MOV", new Instruction.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), expr.stack.stackOffset, Instruction.Register.RegisterSize._32Bits), new Instruction.Literal(Token.TokenType.INTEGER, chunks.Item1.ToString())));
+                    Emit(new Instruction.Binary("MOV", new Instruction.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), expr.stack.stackOffset, InstructionUtils.ToRegisterSize(expr.stack.size - 4)), new Instruction.Literal(Token.TokenType.INTEGER, chunks.Item2.ToString())));
+                }
+                else
+                {
+                    Emit(new Instruction.Binary("MOV", new Instruction.Pointer(expr.stack.stackOffset-4, Instruction.Register.RegisterSize._32Bits), new Instruction.Literal(Token.TokenType.INTEGER, chunks.Item1.ToString())));
+                    Emit(new Instruction.Binary("MOV", new Instruction.Pointer(expr.stack.stackOffset, InstructionUtils.ToRegisterSize(expr.stack.size-4)), new Instruction.Literal(Token.TokenType.INTEGER, chunks.Item2.ToString())));
+                }
+                goto dealloc;
+            }
         }
 
         if (expr.classScoped)
@@ -229,8 +255,8 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             Emit(new Instruction.Binary(_ref ? "LEA" : "MOV", new Instruction.Pointer(expr.stack.stackOffset, expr.stack._ref ? InstructionUtils.SYS_SIZE : InstructionUtils.ToRegisterSize(expr.stack.size)), operand));
         }
 
+        dealloc:
         alloc.Free(operand);
-
         return null;
     }
 
@@ -509,11 +535,12 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
     {
         switch (expr.literal.type)
         {
-            case Token.TokenType.STRING:
+            case Token.TokenType.REF_STRING:
                 string name = DataLabel;
                 EmitData(new Instruction.Data(name, InstructionUtils.dataSize[1], expr.literal.lexeme + ", 0"));
                 dataCount++;
                 return new Instruction.Literal(expr.literal.type, name);
+            case Token.TokenType.STRING:
             case Token.TokenType.INTEGER:
             case Token.TokenType.FLOATING:
             case Token.TokenType.BINARY:
@@ -715,10 +742,24 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             {
                 Diagnostics.errors.Push(new Error.BackendError("Invalid Literal", $"The size of literal '{literal.value}' exceeds size of assigned data type '{size}'"));
             }
+
+            if (operand1.IsPointer())
+            {
+                var chunks = ChunkString(literal);
+                if (chunks.Item1 != -1)
+                {
+                    var ptr = (Instruction.Pointer)operand1;
+                    Emit(new Instruction.Binary("MOV", new Instruction.Pointer(ptr.register, ptr.offset - 4, Instruction.Register.RegisterSize._32Bits, ptr._operator), new Instruction.Literal(Token.TokenType.INTEGER, chunks.Item1.ToString())));
+                    Emit(new Instruction.Binary("MOV", new Instruction.Pointer(ptr.register, ptr.offset, InstructionUtils.ToRegisterSize((int)ptr.size-4), ptr._operator), new Instruction.Literal(Token.TokenType.INTEGER, chunks.Item2.ToString())));
+
+                    goto dealloc;
+                }
+            }
         }
 
         Emit(new Instruction.Binary("MOV", operand1, operand2));
 
+        dealloc:
         alloc.Free(operand1);
         alloc.Free(operand2);
         return null;
@@ -908,7 +949,11 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
             }
             case Token.TokenType.STRING:
             {
-                return (int)Instruction.Register.RegisterSize._8Bits;
+                return value.Length;
+            }
+            case Token.TokenType.REF_STRING:
+            {
+                return (int)InstructionUtils.SYS_SIZE;
             }
             case Token.TokenType.BINARY:
             {
@@ -951,6 +996,32 @@ internal class Assembler : Expr.IVisitor<Instruction.Value?>
                 return (int)Instruction.Register.RegisterSize._64Bits;
             }
         }
+    }
+
+    // MOV M64, IMM64 is not encodable, so the 64-bit value must be chunked into two IMM32s
+    private (int, int) ChunkString(Instruction.Literal literal)
+    {
+        int size = literal.value.Length;
+        if (literal.type != Token.TokenType.STRING || size <= 4)
+        {
+            return (-1, -1);
+        }
+
+        int h1 = literal.value[3];
+        for (int i = 2; i >= 0; i--)
+        {
+            h1 <<= 8;
+            h1 += literal.value[i];
+        }
+
+        int h2 = literal.value[^1];
+        for (int i = size-1; i >= 4; i--)
+        {
+            h2 <<= 8;
+            h2 += literal.value[i];
+        }
+
+        return (h2, h1);
     }
 }
 

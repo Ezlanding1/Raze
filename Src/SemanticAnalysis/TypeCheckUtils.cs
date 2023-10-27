@@ -23,6 +23,7 @@ internal partial class Analyzer
             { Parser.Literals[3], new(new Token(Parser.Literals[3])) },
             { Parser.Literals[4], new(new Token(Parser.Literals[4])) },
             { Parser.Literals[5], new(new Token(Parser.Literals[5])) },
+            { Parser.Literals[6], new(new Token(Parser.Literals[6])) },
         };
 
         public static Dictionary<string, Expr.Type> keywordTypes = new Dictionary<string, Expr.Type>()
