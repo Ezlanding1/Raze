@@ -1,0 +1,1 @@
+pandoc Raze.md -s -t man > Raze.man
