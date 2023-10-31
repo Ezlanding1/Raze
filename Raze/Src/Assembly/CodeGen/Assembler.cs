@@ -110,6 +110,8 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
         {
             Instruction.Value arg = expr.arguments[i].Accept(this);
 
+            if (arg == null) continue;
+
             if (arg.IsLiteral())
             {
                 Instruction.Literal literal = (Instruction.Literal)arg;
@@ -189,6 +191,8 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
         Instruction.Value operand = expr.value.Accept(this);
 
         var _ref = expr.stack._ref;
+
+        if (operand == null) return null;
 
         if (operand.IsPointer())
         {
@@ -720,6 +724,8 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
     {
         Instruction.Value operand2 = expr.value.Accept(this);
         Instruction.Value operand1 = expr.member.Accept(this);
+
+        if (operand2 == null) return null;
 
         if (operand2.IsPointer())
         {
