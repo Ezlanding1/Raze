@@ -57,5 +57,5 @@ internal class RegisterState
 
 internal class NeedableRegisterState : RegisterState
 {
-    public Instruction.Register.RegisterSize neededSize;
+    public AssemblyExpr.Register.RegisterSize neededSize;
 }

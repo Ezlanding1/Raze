@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace Raze;
 
-public abstract class Instruction
+public abstract class AssemblyExpr
 {
     public abstract string Accept(IVisitor visitor);
 
@@ -25,7 +25,7 @@ public abstract class Instruction
         public string VisitComment(Comment instruction);
     }
 
-    public class Global : Instruction
+    public class Global : AssemblyExpr
     {
         public string name;
         public Global(string name)
@@ -39,7 +39,7 @@ public abstract class Instruction
         }
     }
 
-    public class Section : Instruction
+    public class Section : AssemblyExpr
     {
         public string name;
         public Section(string name)
@@ -53,7 +53,7 @@ public abstract class Instruction
         }
     }
 
-    public abstract class Value : Instruction
+    public abstract class Value : AssemblyExpr
     {
         // 0 = Register, 1 = Pointer, 2 = Literal
         public int valueType;
@@ -67,10 +67,10 @@ public abstract class Instruction
         public bool IsPointer() => valueType == 1;
         public bool IsLiteral() => valueType == 2;
 
-        internal Register NonPointerNonLiteral(Register.RegisterSize? size, Assembler assembler) =>
+        internal Register NonPointerNonLiteral(Register.RegisterSize? size, CodeGen assembler) =>
             (Register)this.NonPointer(assembler).NonLiteral(size, assembler);
 
-        public Value NonPointer(Assembler assembler)
+        public Value NonPointer(CodeGen assembler)
         {
             if (IsPointer())
             {
@@ -80,7 +80,7 @@ public abstract class Instruction
             }
             return this;
         }
-        internal SizedValue NonLiteral(Register.RegisterSize? size, Assembler assembler)
+        internal SizedValue NonLiteral(Register.RegisterSize? size, CodeGen assembler)
         {
             if (IsLiteral())
             {
@@ -97,7 +97,7 @@ public abstract class Instruction
     {
         public Register.RegisterSize size;
 
-        internal abstract Register AsRegister(Register.RegisterSize size, Assembler assembler);
+        internal abstract Register AsRegister(Register.RegisterSize size, CodeGen assembler);
 
         public SizedValue(int valueType) : base(valueType)
         {
@@ -160,7 +160,7 @@ public abstract class Instruction
             this.size = size;
         }
 
-        internal override Register AsRegister(RegisterSize size, Assembler assembler)
+        internal override Register AsRegister(RegisterSize size, CodeGen assembler)
         {
             return new Register(this.name, size);
         }
@@ -202,7 +202,7 @@ public abstract class Instruction
 
         public bool IsOnStack() => register.name == Register.RegisterName.RBP;
 
-        internal override Register AsRegister(Register.RegisterSize size, Assembler assembler)
+        internal override Register AsRegister(Register.RegisterSize size, CodeGen assembler)
         {
             if (!IsOnStack())
             {
@@ -235,7 +235,7 @@ public abstract class Instruction
         }
     }
 
-    public class Data : Instruction
+    public class Data : AssemblyExpr
     {
         public string name;
         public string size;
@@ -253,7 +253,7 @@ public abstract class Instruction
         }
     }
 
-    public class DataRef : Instruction
+    public class DataRef : AssemblyExpr
     {
         public string dataName;
 
@@ -268,7 +268,7 @@ public abstract class Instruction
         }
     }
 
-    public class Procedure : Instruction
+    public class Procedure : AssemblyExpr
     {
         public string name;
         public Procedure(string name)
@@ -282,7 +282,7 @@ public abstract class Instruction
         }
     }
 
-    public class LocalProcedure : Instruction
+    public class LocalProcedure : AssemblyExpr
     {
         public string name;
         public LocalProcedure(string name)
@@ -296,7 +296,7 @@ public abstract class Instruction
         }
     }
 
-    public class ProcedureRef : Instruction
+    public class ProcedureRef : AssemblyExpr
     {
         public string name;
 
@@ -311,7 +311,7 @@ public abstract class Instruction
         }
     }
 
-    public class LocalProcedureRef : Instruction
+    public class LocalProcedureRef : AssemblyExpr
     {
         public string name;
 
@@ -326,19 +326,19 @@ public abstract class Instruction
         }
     }
 
-    public class Binary : Instruction
+    public class Binary : AssemblyExpr
     {
         public string instruction;
-        public Instruction operand1, operand2;
+        public AssemblyExpr operand1, operand2;
 
-        public Binary(string instruction, Instruction operand1, Instruction operand2)
+        public Binary(string instruction, AssemblyExpr operand1, AssemblyExpr operand2)
         {
             this.instruction = instruction;
             this.operand1 = operand1;
             this.operand2 = operand2;
         }
 
-        internal Binary(string instruction, Register.RegisterName operand1, Instruction.Register.RegisterName operand2)
+        internal Binary(string instruction, Register.RegisterName operand1, AssemblyExpr.Register.RegisterName operand2)
             : this(instruction, new Register(operand1, Register.RegisterSize._64Bits), new Register(operand2, Register.RegisterSize._64Bits))
         {
         }
@@ -349,18 +349,18 @@ public abstract class Instruction
         }
     }
 
-    public class Unary : Instruction
+    public class Unary : AssemblyExpr
     {
-        public Instruction operand;
+        public AssemblyExpr operand;
         public string instruction;
 
-        public Unary(string instruction, Instruction operand)
+        public Unary(string instruction, AssemblyExpr operand)
         {
             this.instruction = instruction;
             this.operand = operand;
         }
 
-        internal Unary(string instruction, Instruction.Register.RegisterName operand) : this(instruction, new Instruction.Register(operand, Register.RegisterSize._64Bits))
+        internal Unary(string instruction, AssemblyExpr.Register.RegisterName operand) : this(instruction, new AssemblyExpr.Register(operand, Register.RegisterSize._64Bits))
         {
         }
 
@@ -370,7 +370,7 @@ public abstract class Instruction
         }
     }
 
-    public class Zero : Instruction
+    public class Zero : AssemblyExpr
     {
         public string instruction;
         public Zero(string instruction)
@@ -384,7 +384,7 @@ public abstract class Instruction
         }
     }
 
-    public class Comment : Instruction
+    public class Comment : AssemblyExpr
     {
         public string comment;
         public Comment(string comment)
@@ -398,7 +398,7 @@ public abstract class Instruction
         }
     }
 
-    internal abstract class CustomInstruction : Instruction
+    internal abstract class CustomInstruction : AssemblyExpr
     {
         public override string Accept(IVisitor visitor)
         {
@@ -411,7 +411,7 @@ public abstract class Instruction
 
 public class InstructionUtils
 {
-    internal const Instruction.Register.RegisterSize SYS_SIZE = Instruction.Register.RegisterSize._64Bits;
+    internal const AssemblyExpr.Register.RegisterSize SYS_SIZE = AssemblyExpr.Register.RegisterSize._64Bits;
 
     internal static string ToType(Token.TokenType input, bool unary=false)
     {
@@ -472,14 +472,14 @@ public class InstructionUtils
         { "SETLE" , "JG" },
     };
 
-    internal readonly static Instruction.Register.RegisterName[] paramRegister = new Instruction.Register.RegisterName[]
+    internal readonly static AssemblyExpr.Register.RegisterName[] paramRegister = new AssemblyExpr.Register.RegisterName[]
     {
-        Instruction.Register.RegisterName.RDI,
-        Instruction.Register.RegisterName.RSI,
-        Instruction.Register.RegisterName.RDX,
-        Instruction.Register.RegisterName.RCX,
-        Instruction.Register.RegisterName.R8,
-        Instruction.Register.RegisterName.R9
+        AssemblyExpr.Register.RegisterName.RDI,
+        AssemblyExpr.Register.RegisterName.RSI,
+        AssemblyExpr.Register.RegisterName.RDX,
+        AssemblyExpr.Register.RegisterName.RCX,
+        AssemblyExpr.Register.RegisterName.R8,
+        AssemblyExpr.Register.RegisterName.R9
     };
 
     internal readonly static string[] ReturnOverload = new string[]
@@ -491,108 +491,108 @@ public class InstructionUtils
         "rbx"
     };
 
-    internal readonly static Instruction.Register.RegisterName[] storageRegisters = new Instruction.Register.RegisterName[]
+    internal readonly static AssemblyExpr.Register.RegisterName[] storageRegisters = new AssemblyExpr.Register.RegisterName[]
     {
-        Instruction.Register.RegisterName.RAX,
-        Instruction.Register.RegisterName.RBX,
-        Instruction.Register.RegisterName.R12,
-        Instruction.Register.RegisterName.R13,
-        Instruction.Register.RegisterName.R14,
-        Instruction.Register.RegisterName.R15
+        AssemblyExpr.Register.RegisterName.RAX,
+        AssemblyExpr.Register.RegisterName.RBX,
+        AssemblyExpr.Register.RegisterName.R12,
+        AssemblyExpr.Register.RegisterName.R13,
+        AssemblyExpr.Register.RegisterName.R14,
+        AssemblyExpr.Register.RegisterName.R15
     };
 
-    internal readonly static Dictionary<string, (Instruction.Register.RegisterName, Instruction.Register.RegisterSize)> Registers = new()
+    internal readonly static Dictionary<string, (AssemblyExpr.Register.RegisterName, AssemblyExpr.Register.RegisterSize)> Registers = new()
     {
-        { "RAX", (Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits) }, // 64-Bits 
-        { "EAX", (Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._32Bits) }, // Lower 32-Bits
-        { "AX", (Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._16Bits) }, // Lower 16-Bits
-        { "AH", (Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._8BitsUpper) }, // Upper 16-Bits
-        { "AL", (Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._8Bits) }, // Lower 8-Bits
+        { "RAX", (AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits) }, // 64-Bits 
+        { "EAX", (AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._32Bits) }, // Lower 32-Bits
+        { "AX", (AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._16Bits) }, // Lower 16-Bits
+        { "AH", (AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._8BitsUpper) }, // Upper 16-Bits
+        { "AL", (AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._8Bits) }, // Lower 8-Bits
 
-        { "RCX", (Instruction.Register.RegisterName.RCX, Instruction.Register.RegisterSize._64Bits) },
-        { "ECX", (Instruction.Register.RegisterName.RCX, Instruction.Register.RegisterSize._32Bits) },
-        { "CX", (Instruction.Register.RegisterName.RCX, Instruction.Register.RegisterSize._16Bits) },
-        { "CH", (Instruction.Register.RegisterName.RCX, Instruction.Register.RegisterSize._8BitsUpper) },
-        { "CL", (Instruction.Register.RegisterName.RCX, Instruction.Register.RegisterSize._8Bits) },
+        { "RCX", (AssemblyExpr.Register.RegisterName.RCX, AssemblyExpr.Register.RegisterSize._64Bits) },
+        { "ECX", (AssemblyExpr.Register.RegisterName.RCX, AssemblyExpr.Register.RegisterSize._32Bits) },
+        { "CX", (AssemblyExpr.Register.RegisterName.RCX, AssemblyExpr.Register.RegisterSize._16Bits) },
+        { "CH", (AssemblyExpr.Register.RegisterName.RCX, AssemblyExpr.Register.RegisterSize._8BitsUpper) },
+        { "CL", (AssemblyExpr.Register.RegisterName.RCX, AssemblyExpr.Register.RegisterSize._8Bits) },
 
-        { "RDX", (Instruction.Register.RegisterName.RDX, Instruction.Register.RegisterSize._64Bits) },
-        { "EDX", (Instruction.Register.RegisterName.RDX, Instruction.Register.RegisterSize._32Bits) },
-        { "DX", (Instruction.Register.RegisterName.RDX, Instruction.Register.RegisterSize._16Bits) },
-        { "DH", (Instruction.Register.RegisterName.RDX, Instruction.Register.RegisterSize._8BitsUpper) },
-        { "DL", (Instruction.Register.RegisterName.RDX, Instruction.Register.RegisterSize._8Bits) },
+        { "RDX", (AssemblyExpr.Register.RegisterName.RDX, AssemblyExpr.Register.RegisterSize._64Bits) },
+        { "EDX", (AssemblyExpr.Register.RegisterName.RDX, AssemblyExpr.Register.RegisterSize._32Bits) },
+        { "DX", (AssemblyExpr.Register.RegisterName.RDX, AssemblyExpr.Register.RegisterSize._16Bits) },
+        { "DH", (AssemblyExpr.Register.RegisterName.RDX, AssemblyExpr.Register.RegisterSize._8BitsUpper) },
+        { "DL", (AssemblyExpr.Register.RegisterName.RDX, AssemblyExpr.Register.RegisterSize._8Bits) },
 
-        { "RBX", (Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._64Bits) },
-        { "EBX", (Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._32Bits) },
-        { "BX", (Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._16Bits) },
-        { "BH", (Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._8BitsUpper) },
-        { "BL", (Instruction.Register.RegisterName.RBX, Instruction.Register.RegisterSize._8Bits) },
+        { "RBX", (AssemblyExpr.Register.RegisterName.RBX, AssemblyExpr.Register.RegisterSize._64Bits) },
+        { "EBX", (AssemblyExpr.Register.RegisterName.RBX, AssemblyExpr.Register.RegisterSize._32Bits) },
+        { "BX", (AssemblyExpr.Register.RegisterName.RBX, AssemblyExpr.Register.RegisterSize._16Bits) },
+        { "BH", (AssemblyExpr.Register.RegisterName.RBX, AssemblyExpr.Register.RegisterSize._8BitsUpper) },
+        { "BL", (AssemblyExpr.Register.RegisterName.RBX, AssemblyExpr.Register.RegisterSize._8Bits) },
 
-        { "RSI", (Instruction.Register.RegisterName.RSI, Instruction.Register.RegisterSize._64Bits) },
-        { "ESI", (Instruction.Register.RegisterName.RSI, Instruction.Register.RegisterSize._32Bits) },
-        { "SI", (Instruction.Register.RegisterName.RSI, Instruction.Register.RegisterSize._16Bits) },
-        { "SIL", (Instruction.Register.RegisterName.RSI, Instruction.Register.RegisterSize._8Bits) },
+        { "RSI", (AssemblyExpr.Register.RegisterName.RSI, AssemblyExpr.Register.RegisterSize._64Bits) },
+        { "ESI", (AssemblyExpr.Register.RegisterName.RSI, AssemblyExpr.Register.RegisterSize._32Bits) },
+        { "SI", (AssemblyExpr.Register.RegisterName.RSI, AssemblyExpr.Register.RegisterSize._16Bits) },
+        { "SIL", (AssemblyExpr.Register.RegisterName.RSI, AssemblyExpr.Register.RegisterSize._8Bits) },
 
-        { "RDI", (Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits) },
-        { "EDI", (Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._32Bits) },
-        { "DI", (Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._16Bits) },
-        { "DIL", (Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._8Bits) },
+        { "RDI", (AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits) },
+        { "EDI", (AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._32Bits) },
+        { "DI", (AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._16Bits) },
+        { "DIL", (AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._8Bits) },
 
-        { "RSP", (Instruction.Register.RegisterName.RSP, Instruction.Register.RegisterSize._64Bits) },
-        { "ESP", (Instruction.Register.RegisterName.RSP, Instruction.Register.RegisterSize._32Bits) },
-        { "SP", (Instruction.Register.RegisterName.RSP, Instruction.Register.RegisterSize._16Bits) },
-        { "SPL", (Instruction.Register.RegisterName.RSP, Instruction.Register.RegisterSize._8Bits) },
+        { "RSP", (AssemblyExpr.Register.RegisterName.RSP, AssemblyExpr.Register.RegisterSize._64Bits) },
+        { "ESP", (AssemblyExpr.Register.RegisterName.RSP, AssemblyExpr.Register.RegisterSize._32Bits) },
+        { "SP", (AssemblyExpr.Register.RegisterName.RSP, AssemblyExpr.Register.RegisterSize._16Bits) },
+        { "SPL", (AssemblyExpr.Register.RegisterName.RSP, AssemblyExpr.Register.RegisterSize._8Bits) },
 
-        { "RBP", (Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._64Bits) },
-        { "EBP", (Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._32Bits) },
-        { "BP", (Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._16Bits) },
-        { "BPL", (Instruction.Register.RegisterName.RBP, Instruction.Register.RegisterSize._8Bits) },
+        { "RBP", (AssemblyExpr.Register.RegisterName.RBP, AssemblyExpr.Register.RegisterSize._64Bits) },
+        { "EBP", (AssemblyExpr.Register.RegisterName.RBP, AssemblyExpr.Register.RegisterSize._32Bits) },
+        { "BP", (AssemblyExpr.Register.RegisterName.RBP, AssemblyExpr.Register.RegisterSize._16Bits) },
+        { "BPL", (AssemblyExpr.Register.RegisterName.RBP, AssemblyExpr.Register.RegisterSize._8Bits) },
 
-        { "R8", (Instruction.Register.RegisterName.R8, Instruction.Register.RegisterSize._64Bits) },
-        { "R8D", (Instruction.Register.RegisterName.R8, Instruction.Register.RegisterSize._32Bits) },
-        { "R8W", (Instruction.Register.RegisterName.R8, Instruction.Register.RegisterSize._16Bits) },
-        { "R8B", (Instruction.Register.RegisterName.R8, Instruction.Register.RegisterSize._8Bits) },
+        { "R8", (AssemblyExpr.Register.RegisterName.R8, AssemblyExpr.Register.RegisterSize._64Bits) },
+        { "R8D", (AssemblyExpr.Register.RegisterName.R8, AssemblyExpr.Register.RegisterSize._32Bits) },
+        { "R8W", (AssemblyExpr.Register.RegisterName.R8, AssemblyExpr.Register.RegisterSize._16Bits) },
+        { "R8B", (AssemblyExpr.Register.RegisterName.R8, AssemblyExpr.Register.RegisterSize._8Bits) },
 
-        { "R9", (Instruction.Register.RegisterName.R9, Instruction.Register.RegisterSize._64Bits) },
-        { "R9D", (Instruction.Register.RegisterName.R9, Instruction.Register.RegisterSize._32Bits) },
-        { "R9W", (Instruction.Register.RegisterName.R9, Instruction.Register.RegisterSize._16Bits) },
-        { "R9B", (Instruction.Register.RegisterName.R9, Instruction.Register.RegisterSize._8Bits) },
+        { "R9", (AssemblyExpr.Register.RegisterName.R9, AssemblyExpr.Register.RegisterSize._64Bits) },
+        { "R9D", (AssemblyExpr.Register.RegisterName.R9, AssemblyExpr.Register.RegisterSize._32Bits) },
+        { "R9W", (AssemblyExpr.Register.RegisterName.R9, AssemblyExpr.Register.RegisterSize._16Bits) },
+        { "R9B", (AssemblyExpr.Register.RegisterName.R9, AssemblyExpr.Register.RegisterSize._8Bits) },
 
-        { "R10", (Instruction.Register.RegisterName.R10, Instruction.Register.RegisterSize._64Bits) },
-        { "R10D", (Instruction.Register.RegisterName.R10, Instruction.Register.RegisterSize._32Bits) },
-        { "R10W", (Instruction.Register.RegisterName.R10, Instruction.Register.RegisterSize._16Bits) },
-        { "R10B", (Instruction.Register.RegisterName.R10, Instruction.Register.RegisterSize._8Bits) },
+        { "R10", (AssemblyExpr.Register.RegisterName.R10, AssemblyExpr.Register.RegisterSize._64Bits) },
+        { "R10D", (AssemblyExpr.Register.RegisterName.R10, AssemblyExpr.Register.RegisterSize._32Bits) },
+        { "R10W", (AssemblyExpr.Register.RegisterName.R10, AssemblyExpr.Register.RegisterSize._16Bits) },
+        { "R10B", (AssemblyExpr.Register.RegisterName.R10, AssemblyExpr.Register.RegisterSize._8Bits) },
 
-        { "R11", (Instruction.Register.RegisterName.R11, Instruction.Register.RegisterSize._64Bits) },
-        { "R11D", (Instruction.Register.RegisterName.R11, Instruction.Register.RegisterSize._32Bits) },
-        { "R11W", (Instruction.Register.RegisterName.R11, Instruction.Register.RegisterSize._16Bits) },
-        { "R11B", (Instruction.Register.RegisterName.R11, Instruction.Register.RegisterSize._8Bits) },
+        { "R11", (AssemblyExpr.Register.RegisterName.R11, AssemblyExpr.Register.RegisterSize._64Bits) },
+        { "R11D", (AssemblyExpr.Register.RegisterName.R11, AssemblyExpr.Register.RegisterSize._32Bits) },
+        { "R11W", (AssemblyExpr.Register.RegisterName.R11, AssemblyExpr.Register.RegisterSize._16Bits) },
+        { "R11B", (AssemblyExpr.Register.RegisterName.R11, AssemblyExpr.Register.RegisterSize._8Bits) },
 
-        { "R12", (Instruction.Register.RegisterName.R12, Instruction.Register.RegisterSize._64Bits) },
-        { "R12D", (Instruction.Register.RegisterName.R12, Instruction.Register.RegisterSize._32Bits) },
-        { "R12W", (Instruction.Register.RegisterName.R12, Instruction.Register.RegisterSize._16Bits) },
-        { "R12B", (Instruction.Register.RegisterName.R12, Instruction.Register.RegisterSize._8Bits) },
+        { "R12", (AssemblyExpr.Register.RegisterName.R12, AssemblyExpr.Register.RegisterSize._64Bits) },
+        { "R12D", (AssemblyExpr.Register.RegisterName.R12, AssemblyExpr.Register.RegisterSize._32Bits) },
+        { "R12W", (AssemblyExpr.Register.RegisterName.R12, AssemblyExpr.Register.RegisterSize._16Bits) },
+        { "R12B", (AssemblyExpr.Register.RegisterName.R12, AssemblyExpr.Register.RegisterSize._8Bits) },
 
-        { "R13", (Instruction.Register.RegisterName.R13, Instruction.Register.RegisterSize._64Bits) },
-        { "R13D", (Instruction.Register.RegisterName.R13, Instruction.Register.RegisterSize._32Bits) },
-        { "R13W", (Instruction.Register.RegisterName.R13, Instruction.Register.RegisterSize._16Bits) },
-        { "R13B", (Instruction.Register.RegisterName.R13, Instruction.Register.RegisterSize._8Bits) },
+        { "R13", (AssemblyExpr.Register.RegisterName.R13, AssemblyExpr.Register.RegisterSize._64Bits) },
+        { "R13D", (AssemblyExpr.Register.RegisterName.R13, AssemblyExpr.Register.RegisterSize._32Bits) },
+        { "R13W", (AssemblyExpr.Register.RegisterName.R13, AssemblyExpr.Register.RegisterSize._16Bits) },
+        { "R13B", (AssemblyExpr.Register.RegisterName.R13, AssemblyExpr.Register.RegisterSize._8Bits) },
 
-        { "R14", (Instruction.Register.RegisterName.R14, Instruction.Register.RegisterSize._64Bits) },
-        { "R14D", (Instruction.Register.RegisterName.R14, Instruction.Register.RegisterSize._32Bits) },
-        { "R14W", (Instruction.Register.RegisterName.R14, Instruction.Register.RegisterSize._16Bits) },
-        { "R14B", (Instruction.Register.RegisterName.R14, Instruction.Register.RegisterSize._8Bits) },
+        { "R14", (AssemblyExpr.Register.RegisterName.R14, AssemblyExpr.Register.RegisterSize._64Bits) },
+        { "R14D", (AssemblyExpr.Register.RegisterName.R14, AssemblyExpr.Register.RegisterSize._32Bits) },
+        { "R14W", (AssemblyExpr.Register.RegisterName.R14, AssemblyExpr.Register.RegisterSize._16Bits) },
+        { "R14B", (AssemblyExpr.Register.RegisterName.R14, AssemblyExpr.Register.RegisterSize._8Bits) },
 
-        { "R15", (Instruction.Register.RegisterName.R15, Instruction.Register.RegisterSize._64Bits) },
-        { "R15D", (Instruction.Register.RegisterName.R15, Instruction.Register.RegisterSize._32Bits) },
-        { "R15W", (Instruction.Register.RegisterName.R15, Instruction.Register.RegisterSize._16Bits) },
-        { "R15B", (Instruction.Register.RegisterName.R15, Instruction.Register.RegisterSize._8Bits) },
+        { "R15", (AssemblyExpr.Register.RegisterName.R15, AssemblyExpr.Register.RegisterSize._64Bits) },
+        { "R15D", (AssemblyExpr.Register.RegisterName.R15, AssemblyExpr.Register.RegisterSize._32Bits) },
+        { "R15W", (AssemblyExpr.Register.RegisterName.R15, AssemblyExpr.Register.RegisterSize._16Bits) },
+        { "R15B", (AssemblyExpr.Register.RegisterName.R15, AssemblyExpr.Register.RegisterSize._8Bits) },
     };
 
-    internal static Instruction.Register.RegisterSize ToRegisterSize(int size)
+    internal static AssemblyExpr.Register.RegisterSize ToRegisterSize(int size)
     {
-        if (Enum.IsDefined(typeof(Instruction.Register.RegisterSize), size))
+        if (Enum.IsDefined(typeof(AssemblyExpr.Register.RegisterSize), size))
         {
-            return (Instruction.Register.RegisterSize)size;
+            return (AssemblyExpr.Register.RegisterSize)size;
         }
 
         Diagnostics.errors.Push(new Error.ImpossibleError($"Invalid Register Size ({size})"));
@@ -600,13 +600,13 @@ public class InstructionUtils
     }
 
 
-    internal readonly static Dictionary<Instruction.Register.RegisterSize?, string> wordSize = new()
+    internal readonly static Dictionary<AssemblyExpr.Register.RegisterSize?, string> wordSize = new()
     {
-        { Instruction.Register.RegisterSize._64Bits, "QWORD"}, // 64-Bits
-        { Instruction.Register.RegisterSize._32Bits, "DWORD"}, // 32-Bits
-        { Instruction.Register.RegisterSize._16Bits, "WORD"}, // 16-Bits
-        { Instruction.Register.RegisterSize._8BitsUpper, "BYTE"}, // 8-Bits
-        { Instruction.Register.RegisterSize._8Bits, "BYTE"}, // 8-Bits
+        { AssemblyExpr.Register.RegisterSize._64Bits, "QWORD"}, // 64-Bits
+        { AssemblyExpr.Register.RegisterSize._32Bits, "DWORD"}, // 32-Bits
+        { AssemblyExpr.Register.RegisterSize._16Bits, "WORD"}, // 16-Bits
+        { AssemblyExpr.Register.RegisterSize._8BitsUpper, "BYTE"}, // 8-Bits
+        { AssemblyExpr.Register.RegisterSize._8Bits, "BYTE"}, // 8-Bits
     };
 
     internal readonly static Dictionary<int, string> dataSize = new()

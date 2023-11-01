@@ -23,13 +23,13 @@ internal class RegisterAlloc
 
     RegisterState[] registerStates = { new NeedableRegisterState(), new(), new(), new(), new(), new(), new(), new() };
 
-    StrongBox<Instruction.Register.RegisterName>?[] registers = new StrongBox<Instruction.Register.RegisterName>[6];
+    StrongBox<AssemblyExpr.Register.RegisterName>?[] registers = new StrongBox<AssemblyExpr.Register.RegisterName>[6];
 
-    public Instruction.Register?[] paramRegisters = new Instruction.Register[6];
+    public AssemblyExpr.Register?[] paramRegisters = new AssemblyExpr.Register[6];
 
     public CustomInstructions.FunctionPushPreserved fncPushPreserved;
 
-    public Instruction.Register GetRegister(int idx, Instruction.Register.RegisterSize size)
+    public AssemblyExpr.Register GetRegister(int idx, AssemblyExpr.Register.RegisterSize size)
     {
         if (registers[idx] == null)
         {
@@ -37,10 +37,10 @@ internal class RegisterAlloc
         }
         registerStates[idx].SetState(RegisterState.RegisterStates.Used);
 
-        return new Instruction.Register(registers[idx], size);
+        return new AssemblyExpr.Register(registers[idx], size);
     }
 
-    public Instruction.Register NextRegister(Instruction.Register.RegisterSize size)
+    public AssemblyExpr.Register NextRegister(AssemblyExpr.Register.RegisterSize size)
     {
         if (RegisterIdx != 0)
         {
@@ -53,16 +53,16 @@ internal class RegisterAlloc
     public void NullReg() => registers[RegisterIdx] = null;
     public void NullReg(int idx) => registers[idx] = null;
 
-    public Instruction.Register CurrentRegister(Instruction.Register.RegisterSize size)
+    public AssemblyExpr.Register CurrentRegister(AssemblyExpr.Register.RegisterSize size)
     {
         if (registerStates[RegisterIdx].HasState(RegisterState.RegisterStates.Free))
         {
             registers[RegisterIdx] = new(InstructionUtils.storageRegisters[RegisterIdx]);
         }
-        return new Instruction.Register(registers[RegisterIdx], size);
+        return new AssemblyExpr.Register(registers[RegisterIdx], size);
     }
 
-    public void ReserveRegister(Assembler assembler, int i = 0)
+    public void ReserveRegister(CodeGen assembler, int i = 0)
     {
         if (registerStates[i].HasState(RegisterState.RegisterStates.Free))
         {
@@ -74,7 +74,7 @@ internal class RegisterAlloc
         if (registerStates[i].HasState(RegisterState.RegisterStates.Needed))
         {
             registers[i].Value = InstructionUtils.storageRegisters[newIdx];
-            assembler.Emit(new Instruction.Binary("MOV", NextRegister(((NeedableRegisterState)registerStates[i]).neededSize), new Instruction.Register(InstructionUtils.storageRegisters[i], ((NeedableRegisterState)registerStates[i]).neededSize)));
+            assembler.Emit(new AssemblyExpr.Binary("MOV", NextRegister(((NeedableRegisterState)registerStates[i]).neededSize), new AssemblyExpr.Register(InstructionUtils.storageRegisters[i], ((NeedableRegisterState)registerStates[i]).neededSize)));
             registers[i] = null;
         }
         else
@@ -90,28 +90,28 @@ internal class RegisterAlloc
         registerStates[i].SetState(RegisterState.RegisterStates.Free);
     }
 
-    public Instruction.Register AllocParam(int i, Instruction.Register.RegisterSize size, Instruction.Register?[] localParams, Assembler assembler)
+    public AssemblyExpr.Register AllocParam(int i, AssemblyExpr.Register.RegisterSize size, AssemblyExpr.Register?[] localParams, CodeGen assembler)
     {
         if (paramRegisters[i] != null)
         {
-            Instruction.Register newReg = NextRegister(paramRegisters[i].size);
-            assembler.Emit(new Instruction.Binary("MOV", newReg, paramRegisters[i]));
+            AssemblyExpr.Register newReg = NextRegister(paramRegisters[i].size);
+            assembler.Emit(new AssemblyExpr.Binary("MOV", newReg, paramRegisters[i]));
             localParams[i] = newReg;
         }
-        return (paramRegisters[i] = new Instruction.Register(InstructionUtils.paramRegister[i], size));
+        return (paramRegisters[i] = new AssemblyExpr.Register(InstructionUtils.paramRegister[i], size));
     }
 
-    public Instruction.Register CallAlloc(Instruction.Register.RegisterSize size)
+    public AssemblyExpr.Register CallAlloc(AssemblyExpr.Register.RegisterSize size)
     {
         ((NeedableRegisterState)registerStates[0]).neededSize = size;
         registerStates[0].SetState(RegisterState.RegisterStates.Needed);
         return GetRegister(0, size);
     }
 
-    public void Lock(Instruction.Register register) => Lock(NameToIdx(register.name));
+    public void Lock(AssemblyExpr.Register register) => Lock(NameToIdx(register.name));
     public void Lock(int idx) => registerStates[idx].SetState(RegisterState.RegisterStates.Used, RegisterState.RegisterStates.Locked);
 
-    public void Unlock(Instruction.Register register) => Unlock(NameToIdx(register.name));
+    public void Unlock(AssemblyExpr.Register register) => Unlock(NameToIdx(register.name));
     public void Unlock(int idx) => registerStates[idx].RemoveState(RegisterState.RegisterStates.Locked);
 
     public bool IsLocked(int idx) => registerStates[idx].HasState(RegisterState.RegisterStates.Locked);
@@ -125,39 +125,39 @@ internal class RegisterAlloc
         }
     }
 
-    public int NameToIdx(Instruction.Register.RegisterName name)
+    public int NameToIdx(AssemblyExpr.Register.RegisterName name)
     {
         int idx = -1;
         while (++idx < InstructionUtils.storageRegisters.Length && InstructionUtils.storageRegisters[idx] != name) ;
         return idx < InstructionUtils.storageRegisters.Length ? idx : -1;
     }
 
-    public void FreeParameter(int i, Instruction.Register? localParam, Assembler assembler)
+    public void FreeParameter(int i, AssemblyExpr.Register? localParam, CodeGen assembler)
     {
         if (i >= paramRegisters.Length || paramRegisters[i] == null) return;
         paramRegisters[i] = null;
 
         if (localParam != null)
         {
-            assembler.Emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionUtils.paramRegister[i], localParam.size), localParam));
+            assembler.Emit(new AssemblyExpr.Binary("MOV", new AssemblyExpr.Register(InstructionUtils.paramRegister[i], localParam.size), localParam));
             Free(NameToIdx(localParam.name));
         }
     }
 
 
-    public void Free(Instruction.Value value, bool force = false)
+    public void Free(AssemblyExpr.Value value, bool force = false)
     {
         if (value.IsPointer())
         {
-            FreePtr((Instruction.Pointer)value, force);
+            FreePtr((AssemblyExpr.Pointer)value, force);
         }
         else if (value.IsRegister())
         {
-            FreeRegister((Instruction.Register)value, force);
+            FreeRegister((AssemblyExpr.Register)value, force);
         }
     }
-    public void FreeRegister(Instruction.Register register, bool force = false) => Free(NameToIdx(register.name), force);
-    public void FreePtr(Instruction.Pointer ptr, bool force = false) => FreeRegister(ptr.register, force);
+    public void FreeRegister(AssemblyExpr.Register register, bool force = false) => Free(NameToIdx(register.name), force);
+    public void FreePtr(AssemblyExpr.Pointer ptr, bool force = false) => FreeRegister(ptr.register, force);
 
     // Frees a register by allowing it to be alloc-ed elsewhere, and making the other uses pull from a new instance
     private void Free(int idx, bool force=false)

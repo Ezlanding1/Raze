@@ -28,9 +28,9 @@ internal abstract partial class ExprUtils
 
             public bool returns;
 
-            public Instruction.Binary instruction;
+            public AssemblyExpr.Binary instruction;
 
-            public Binary(Instruction.Binary instruction, AssignType assignType, bool returns)
+            public Binary(AssemblyExpr.Binary instruction, AssignType assignType, bool returns)
             {
                 this.instruction = instruction;
                 this.assignType = assignType;
@@ -124,9 +124,9 @@ internal abstract partial class ExprUtils
 
             public bool returns;
 
-            public Instruction.Unary instruction;
+            public AssemblyExpr.Unary instruction;
 
-            public Unary(Instruction.Unary instruction, AssignType assignType, bool returns)
+            public Unary(AssemblyExpr.Unary instruction, AssignType assignType, bool returns)
             {
                 this.instruction = instruction;
                 this.assignType = assignType;
@@ -171,9 +171,9 @@ internal abstract partial class ExprUtils
 
         public class Zero : AssignableInstruction
         {
-            public Instruction.Zero instruction;
+            public AssemblyExpr.Zero instruction;
 
-            public Zero(Instruction.Zero instruction)
+            public Zero(AssemblyExpr.Zero instruction)
             {
                 this.instruction = instruction;
             }

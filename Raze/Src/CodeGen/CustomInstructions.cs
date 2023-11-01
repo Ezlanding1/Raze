@@ -11,7 +11,7 @@ namespace Raze;
 
 internal abstract class CustomInstructions
 {
-    internal class StackAlloc : Instruction.CustomInstruction
+    internal class StackAlloc : AssemblyExpr.CustomInstruction
     {
         Literal literal;
 
@@ -31,7 +31,7 @@ internal abstract class CustomInstructions
         }
     }
 
-    internal class FunctionPushPreserved : Instruction.CustomInstruction
+    internal class FunctionPushPreserved : AssemblyExpr.CustomInstruction
     {
         public bool leaf = true;
         public int size;

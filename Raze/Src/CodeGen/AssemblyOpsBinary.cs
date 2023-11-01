@@ -9,22 +9,22 @@ namespace Raze;
 
 internal partial class AssemblyOps
 {
-    Assembler assembler;
+    CodeGen assembler;
     public List<Expr.GetReference> vars;
     public int count;
 
-    public AssemblyOps(Assembler assembler)
+    public AssemblyOps(CodeGen assembler)
     {
         this.assembler = assembler;
     }
 
     internal static class Binary
     {
-        public static Instruction.Register.RegisterSize? GetOpSize(Instruction.Value operand, ExprUtils.AssignableInstruction.Binary.AssignType assignType, List<Expr.GetReference> vars, int count, bool first)
+        public static AssemblyExpr.Register.RegisterSize? GetOpSize(AssemblyExpr.Value operand, ExprUtils.AssignableInstruction.Binary.AssignType assignType, List<Expr.GetReference> vars, int count, bool first)
         {
             if (operand.IsRegister() || operand.IsPointer())
             {
-                return ((Instruction.SizedValue)operand).size;
+                return ((AssemblyExpr.SizedValue)operand).size;
             }
 
             int cOff = Convert.ToInt32(assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst))
@@ -44,46 +44,46 @@ internal partial class AssemblyOps
             return null;
         }
 
-        public static void ReturnOp(ref Instruction.Value operand, ExprUtils.AssignableInstruction.Binary.AssignType assignType, AssemblyOps assemblyOps, bool first)
+        public static void ReturnOp(ref AssemblyExpr.Value operand, ExprUtils.AssignableInstruction.Binary.AssignType assignType, AssemblyOps assemblyOps, bool first)
         {
-            if (((InlinedAssembler)assemblyOps.assembler).inlineState.inline)
+            if (((InlinedCodeGen)assemblyOps.assembler).inlineState.inline)
             {
                 operand = operand.NonLiteral(GetOpSize(operand, assignType, assemblyOps.vars, assemblyOps.count, first), assemblyOps.assembler);
-                ((InlinedAssembler.InlineStateInlined)((InlinedAssembler)assemblyOps.assembler).inlineState).callee = (Instruction.SizedValue)operand;
-                ((InlinedAssembler)assemblyOps.assembler).LockOperand((Instruction.SizedValue)operand);
+                ((InlinedCodeGen.InlineStateInlined)((InlinedCodeGen)assemblyOps.assembler).inlineState).callee = (AssemblyExpr.SizedValue)operand;
+                ((InlinedCodeGen)assemblyOps.assembler).LockOperand((AssemblyExpr.SizedValue)operand);
             }
             else
             {
                 if (operand.IsRegister())
                 {
-                    var op = (Instruction.Register)operand;
-                    if (op.name != Instruction.Register.RegisterName.RAX)
-                        assemblyOps.assembler.Emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, op.size), operand));
+                    var op = (AssemblyExpr.Register)operand;
+                    if (op.name != AssemblyExpr.Register.RegisterName.RAX)
+                        assemblyOps.assembler.Emit(new AssemblyExpr.Binary("MOV", new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, op.size), operand));
                 }
                 else if (operand.IsPointer())
                 {
-                    assemblyOps.assembler.Emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, ((Instruction.SizedValue)operand).size), operand));
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary("MOV", new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, ((AssemblyExpr.SizedValue)operand).size), operand));
                 }
                 else
                 {
                     var size = GetOpSize(operand, assignType, assemblyOps.vars, assemblyOps.count, first);
                     if (size != null)
                     {
-                        assemblyOps.assembler.Emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, (Instruction.Register.RegisterSize)size), operand));
+                        assemblyOps.assembler.Emit(new AssemblyExpr.Binary("MOV", new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, (AssemblyExpr.Register.RegisterSize)size), operand));
                     }
                 }
             }
         }
 
-        public static Instruction.Value HandleOperand1(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
+        public static AssemblyExpr.Value HandleOperand1(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst))
             {
                 return assemblyOps.vars[assemblyOps.count].Accept(assemblyOps.assembler).NonLiteral(InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count++].GetLastData().size), assemblyOps.assembler);
             }
-            return (Instruction.Value)instruction.instruction.operand1;
+            return (AssemblyExpr.Value)instruction.instruction.operand1;
         }
-        public static Instruction.Value HandleOperand2(ExprUtils.AssignableInstruction.Binary instruction, Instruction.Value operand1, AssemblyOps assemblyOps, bool ignoreSize=false)
+        public static AssemblyExpr.Value HandleOperand2(ExprUtils.AssignableInstruction.Binary instruction, AssemblyExpr.Value operand1, AssemblyOps assemblyOps, bool ignoreSize=false)
         {
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))
             {
@@ -92,14 +92,14 @@ internal partial class AssemblyOps
 
                 if (!operand1.IsLiteral() && !operand2.IsLiteral() && !ignoreSize)
                 {
-                    var op1size = ((Instruction.SizedValue)operand1).size;
-                    var op2size = ((Instruction.SizedValue)operand2).size;
+                    var op1size = ((AssemblyExpr.SizedValue)operand1).size;
+                    var op2size = ((AssemblyExpr.SizedValue)operand2).size;
 
                     if ((int)op1size > (int)op2size)
                     {
-                        Instruction.Register reg = ((Instruction.SizedValue)operand2).AsRegister(op1size, assemblyOps.assembler);
+                        AssemblyExpr.Register reg = ((AssemblyExpr.SizedValue)operand2).AsRegister(op1size, assemblyOps.assembler);
 
-                        assemblyOps.assembler.Emit(new Instruction.Binary("MOVSX", reg, operand2));
+                        assemblyOps.assembler.Emit(new AssemblyExpr.Binary("MOVSX", reg, operand2));
                         operand2 = reg;
                     }
                     else if ((int)op1size < (int)op2size)
@@ -107,18 +107,18 @@ internal partial class AssemblyOps
                         // WARNING: Loss of information from operand2, since the only a subsection of operand2 is used.
                         if (operand2.IsRegister())
                         {
-                            operand2 = ((Instruction.Register)operand2).AsRegister(op1size, assemblyOps.assembler);
+                            operand2 = ((AssemblyExpr.Register)operand2).AsRegister(op1size, assemblyOps.assembler);
                         }
                         else
                         {
-                            var ptr = (Instruction.Pointer)operand2;
-                            operand2 = new Instruction.Pointer(ptr.register, ptr.offset, op1size, ptr._operator);
+                            var ptr = (AssemblyExpr.Pointer)operand2;
+                            operand2 = new AssemblyExpr.Pointer(ptr.register, ptr.offset, op1size, ptr._operator);
                         }
                     }
                 }
                 return operand2;
             }
-            return (Instruction.Value)instruction.instruction.operand2;
+            return (AssemblyExpr.Value)instruction.instruction.operand2;
         }
 
         public static void DefaultBinOp(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
@@ -126,9 +126,9 @@ internal partial class AssemblyOps
             var operand1 = HandleOperand1(instruction, assemblyOps);
             var operand2 = HandleOperand2(instruction, operand1, assemblyOps);
 
-            assemblyOps.assembler.Emit(new Instruction.Binary(instruction.instruction.instruction, operand1, operand2));
+            assemblyOps.assembler.Emit(new AssemblyExpr.Binary(instruction.instruction.instruction, operand1, operand2));
 
-            if (instruction.returns && assemblyOps.assembler is InlinedAssembler)
+            if (instruction.returns && assemblyOps.assembler is InlinedCodeGen)
             {
                 ReturnOp(ref operand1, instruction.assignType, assemblyOps, true);
             }
@@ -140,7 +140,7 @@ internal partial class AssemblyOps
                 assemblyOps.assembler.alloc.Free(operand2);
         }
 
-        public static void CheckLEA(Instruction.Value operand1, Instruction.Value operand2)
+        public static void CheckLEA(AssemblyExpr.Value operand1, AssemblyExpr.Value operand2)
         {
             if (!operand1.IsRegister()) { Diagnostics.errors.Push(new Error.BackendError("Invalid Assembly Block", $"'LEA' Instruction's first operand must be a register. Got {operand1.GetType().Name}")); }
             if (!operand2.IsPointer()) { Diagnostics.errors.Push(new Error.BackendError("Invalid Assembly Block", $"'LEA' Instruction's second operand must be a pointer. Got {operand2.GetType().Name}")); }
@@ -148,16 +148,16 @@ internal partial class AssemblyOps
         public static void LEA(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
             var operand1 = HandleOperand1(instruction, assemblyOps);
-            Instruction.Value? operand2 =
+            AssemblyExpr.Value? operand2 =
                 (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond)) ?
                 assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler) :
-                (Instruction.Value)instruction.instruction.operand2;
+                (AssemblyExpr.Value)instruction.instruction.operand2;
 
             CheckLEA(operand1, operand2);
 
-            assemblyOps.assembler.Emit(new Instruction.Binary(instruction.instruction.instruction, operand1, operand2));
+            assemblyOps.assembler.Emit(new AssemblyExpr.Binary(instruction.instruction.instruction, operand1, operand2));
 
-            if (instruction.returns && assemblyOps.assembler is InlinedAssembler)
+            if (instruction.returns && assemblyOps.assembler is InlinedCodeGen)
             {
                 ReturnOp(ref operand1, instruction.assignType, assemblyOps, true);
             }
@@ -175,9 +175,9 @@ internal partial class AssemblyOps
 
             var operand2 = HandleOperand2(instruction, operand1, assemblyOps);
 
-            assemblyOps.assembler.Emit(new Instruction.Binary(instruction.instruction.instruction, operand1, operand2));
+            assemblyOps.assembler.Emit(new AssemblyExpr.Binary(instruction.instruction.instruction, operand1, operand2));
 
-            if (instruction.returns && assemblyOps.assembler is InlinedAssembler)
+            if (instruction.returns && assemblyOps.assembler is InlinedCodeGen)
             {
                 ReturnOp(ref operand1, instruction.assignType, assemblyOps, true);
             }
@@ -198,27 +198,27 @@ internal partial class AssemblyOps
             {
                 if (assemblyOps.assembler.alloc.paramRegisters[3] == null)
                 {
-                    var cl = new Instruction.Register(InstructionUtils.paramRegister[3], Instruction.Register.RegisterSize._8Bits);
+                    var cl = new AssemblyExpr.Register(InstructionUtils.paramRegister[3], AssemblyExpr.Register.RegisterSize._8Bits);
 
-                    if (((Instruction.SizedValue)operand2).size != Instruction.Register.RegisterSize._8Bits)
+                    if (((AssemblyExpr.SizedValue)operand2).size != AssemblyExpr.Register.RegisterSize._8Bits)
                     {
                         Diagnostics.errors.Push(new Error.BackendError("Invalid Assembly Block", "Instruction's operand sizes don't match"));
                     }
 
-                    assemblyOps.assembler.Emit(new Instruction.Binary("MOV", cl, operand2));
-                    assemblyOps.assembler.Emit(new Instruction.Binary(instruction.instruction.instruction, operand1, cl));
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary("MOV", cl, operand2));
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary(instruction.instruction.instruction, operand1, cl));
                 }
-                else if (operand2.IsRegister() && !assemblyOps.assembler.alloc.IsLocked(assemblyOps.assembler.alloc.NameToIdx(((Instruction.Register)operand2).name)))
+                else if (operand2.IsRegister() && !assemblyOps.assembler.alloc.IsLocked(assemblyOps.assembler.alloc.NameToIdx(((AssemblyExpr.Register)operand2).name)))
                 {
                     var reg = assemblyOps.assembler.alloc.NextRegister(assemblyOps.assembler.alloc.paramRegisters[3].size);
 
-                    assemblyOps.assembler.Emit(new Instruction.Binary("MOV", reg, assemblyOps.assembler.alloc.paramRegisters[3]));
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary("MOV", reg, assemblyOps.assembler.alloc.paramRegisters[3]));
 
-                    assemblyOps.assembler.alloc.FreeRegister((Instruction.Register)operand2);
+                    assemblyOps.assembler.alloc.FreeRegister((AssemblyExpr.Register)operand2);
 
-                    ((Instruction.Register)operand2).name = Instruction.Register.RegisterName.RCX;
-                    assemblyOps.assembler.Emit(new Instruction.Binary(instruction.instruction.instruction, operand1, new Instruction.Register(InstructionUtils.paramRegister[3], ((Instruction.SizedValue)operand2).size)));
-                    assemblyOps.assembler.Emit(new Instruction.Binary("MOV", assemblyOps.assembler.alloc.paramRegisters[3], reg));
+                    ((AssemblyExpr.Register)operand2).name = AssemblyExpr.Register.RegisterName.RCX;
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary(instruction.instruction.instruction, operand1, new AssemblyExpr.Register(InstructionUtils.paramRegister[3], ((AssemblyExpr.SizedValue)operand2).size)));
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary("MOV", assemblyOps.assembler.alloc.paramRegisters[3], reg));
 
                     assemblyOps.assembler.alloc.FreeRegister(reg);
                 }
@@ -226,17 +226,17 @@ internal partial class AssemblyOps
                 {
                     var reg = assemblyOps.assembler.alloc.NextRegister(assemblyOps.assembler.alloc.paramRegisters[3].size);
 
-                    assemblyOps.assembler.Emit(new Instruction.Binary("MOV", reg, assemblyOps.assembler.alloc.paramRegisters[3]));
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary("MOV", reg, assemblyOps.assembler.alloc.paramRegisters[3]));
 
-                    assemblyOps.assembler.Emit(new Instruction.Binary("MOV", new Instruction.Register(InstructionUtils.paramRegister[3], ((Instruction.SizedValue)operand2).size), operand2));
-                    assemblyOps.assembler.Emit(new Instruction.Binary(instruction.instruction.instruction, operand1, new Instruction.Register(InstructionUtils.paramRegister[3], ((Instruction.SizedValue)operand2).size)));
-                    assemblyOps.assembler.Emit(new Instruction.Binary("MOV", assemblyOps.assembler.alloc.paramRegisters[3], reg));
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary("MOV", new AssemblyExpr.Register(InstructionUtils.paramRegister[3], ((AssemblyExpr.SizedValue)operand2).size), operand2));
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary(instruction.instruction.instruction, operand1, new AssemblyExpr.Register(InstructionUtils.paramRegister[3], ((AssemblyExpr.SizedValue)operand2).size)));
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary("MOV", assemblyOps.assembler.alloc.paramRegisters[3], reg));
 
                     assemblyOps.assembler.alloc.FreeRegister(reg);
                 }
             }
 
-            if (instruction.returns && assemblyOps.assembler is InlinedAssembler)
+            if (instruction.returns && assemblyOps.assembler is InlinedCodeGen)
             {
                 ReturnOp(ref operand1, instruction.assignType, assemblyOps, true);
             }
@@ -252,13 +252,13 @@ internal partial class AssemblyOps
         {
             assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler);
 
-            var operand1 = (Instruction.Value)(instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst) ?
+            var operand1 = (AssemblyExpr.Value)(instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst) ?
                     assemblyOps.assembler.MovToRegister(assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count - 1].GetLastData().size)) :
                     instruction.instruction.operand1);
 
             var operand2 = (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond)) ?
                 assemblyOps.vars[assemblyOps.count].Accept(assemblyOps.assembler).NonLiteral(InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count++].GetLastData().size), assemblyOps.assembler) :
-                (Instruction.Value)instruction.instruction.operand2;
+                (AssemblyExpr.Value)instruction.instruction.operand2;
 
             string emitOp = "";
             switch (instruction.instruction.instruction)
@@ -278,47 +278,47 @@ internal partial class AssemblyOps
             var _size = GetOpSize(operand1, instruction.assignType, assemblyOps.vars, assemblyOps.count, true);
             if (_size == null) return;
 
-            var size = (Instruction.Register.RegisterSize)_size;
+            var size = (AssemblyExpr.Register.RegisterSize)_size;
             var rax = assemblyOps.assembler.alloc.CallAlloc(size);
-            var rdx = new Instruction.Register(Instruction.Register.RegisterName.RDX, size);
+            var rdx = new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDX, size);
 
-            Instruction.Register paramStoreReg = null;
+            AssemblyExpr.Register paramStoreReg = null;
 
             if (assemblyOps.assembler.alloc.paramRegisters[2] == null)
             {
-                if (!(operand1.IsRegister() && ((Instruction.Register)operand1).name == Instruction.Register.RegisterName.RAX))
+                if (!(operand1.IsRegister() && ((AssemblyExpr.Register)operand1).name == AssemblyExpr.Register.RegisterName.RAX))
                 {
-                    assemblyOps.assembler.Emit(new Instruction.Binary("MOV", rax, operand1));
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary("MOV", rax, operand1));
                 }
                 assemblyOps.assembler.alloc.NullReg(0);
 
-                assemblyOps.assembler.Emit(emitOp == "DIV" ? new Instruction.Binary("XOR", new Instruction.Register(Instruction.Register.RegisterName.RDX, size), new Instruction.Register(Instruction.Register.RegisterName.RDX, size)) : new Instruction.Zero("CDQ"));
-                assemblyOps.assembler.Emit(new Instruction.Unary(emitOp, operand2));
+                assemblyOps.assembler.Emit(emitOp == "DIV" ? new AssemblyExpr.Binary("XOR", new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDX, size), new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDX, size)) : new AssemblyExpr.Zero("CDQ"));
+                assemblyOps.assembler.Emit(new AssemblyExpr.Unary(emitOp, operand2));
             }
             else
             {
                 paramStoreReg = assemblyOps.assembler.alloc.NextRegister(assemblyOps.assembler.alloc.paramRegisters[2].size);
-                assemblyOps.assembler.Emit(new Instruction.Binary("MOV", paramStoreReg, assemblyOps.assembler.alloc.paramRegisters[2]));
+                assemblyOps.assembler.Emit(new AssemblyExpr.Binary("MOV", paramStoreReg, assemblyOps.assembler.alloc.paramRegisters[2]));
 
-                if (!(operand1.IsRegister() && ((Instruction.Register)operand1).name == Instruction.Register.RegisterName.RAX))
+                if (!(operand1.IsRegister() && ((AssemblyExpr.Register)operand1).name == AssemblyExpr.Register.RegisterName.RAX))
                 {
-                    assemblyOps.assembler.Emit(new Instruction.Binary("MOV", rax, operand1));
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary("MOV", rax, operand1));
                 }
                 assemblyOps.assembler.alloc.NullReg(0);
 
-                assemblyOps.assembler.Emit(emitOp == "DIV" ? new Instruction.Binary("XOR", new Instruction.Register(Instruction.Register.RegisterName.RDX, size), new Instruction.Register(Instruction.Register.RegisterName.RDX, size)) : new Instruction.Zero("CDQ"));
-                assemblyOps.assembler.Emit(new Instruction.Unary(emitOp, operand2));
+                assemblyOps.assembler.Emit(emitOp == "DIV" ? new AssemblyExpr.Binary("XOR", new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDX, size), new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDX, size)) : new AssemblyExpr.Zero("CDQ"));
+                assemblyOps.assembler.Emit(new AssemblyExpr.Unary(emitOp, operand2));
 
             }
 
-            if (instruction.returns && assemblyOps.assembler is InlinedAssembler inlinedAssembler)
+            if (instruction.returns && assemblyOps.assembler is InlinedCodeGen inlinedAssembler)
             {
                 if (instruction.instruction.instruction == "IDIV" || instruction.instruction.instruction == "DIV")
                 {
                     if (inlinedAssembler.inlineState.inline)
                     {
                         var ret = assemblyOps.assembler.alloc.GetRegister(0, rax.size);
-                        ((InlinedAssembler.InlineStateInlined)inlinedAssembler.inlineState).callee = ret;
+                        ((InlinedCodeGen.InlineStateInlined)inlinedAssembler.inlineState).callee = ret;
                         inlinedAssembler.LockOperand(ret);
                     }
                 }
@@ -326,10 +326,10 @@ internal partial class AssemblyOps
                 {
                     assemblyOps.assembler.alloc.FreeRegister(rax);
                     var reg = assemblyOps.assembler.alloc.NextRegister(rdx.size);
-                    assemblyOps.assembler.Emit(new Instruction.Binary("MOV", reg, rdx));
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary("MOV", reg, rdx));
                     if (inlinedAssembler.inlineState.inline)
                     {
-                        ((InlinedAssembler.InlineStateInlined)inlinedAssembler.inlineState).callee = reg;
+                        ((InlinedCodeGen.InlineStateInlined)inlinedAssembler.inlineState).callee = reg;
                         inlinedAssembler.LockOperand(reg);
                     }
                 }
@@ -337,7 +337,7 @@ internal partial class AssemblyOps
 
             if (paramStoreReg != null)
             {
-                assemblyOps.assembler.Emit(new Instruction.Binary("MOV", assemblyOps.assembler.alloc.paramRegisters[2], paramStoreReg));
+                assemblyOps.assembler.Emit(new AssemblyExpr.Binary("MOV", assemblyOps.assembler.alloc.paramRegisters[2], paramStoreReg));
                 assemblyOps.assembler.alloc.FreeRegister(paramStoreReg);
             }
 
@@ -354,7 +354,7 @@ internal partial class AssemblyOps
             var operand1 = HandleOperand1(instruction, assemblyOps);
             var operand2 = HandleOperand2(instruction, operand1, assemblyOps);
 
-            assemblyOps.assembler.Emit(new Instruction.Binary("CMP", operand1, operand2));
+            assemblyOps.assembler.Emit(new AssemblyExpr.Binary("CMP", operand1, operand2));
 
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst))
                 assemblyOps.assembler.alloc.Free(operand1);
@@ -362,32 +362,32 @@ internal partial class AssemblyOps
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))
                 assemblyOps.assembler.alloc.Free(operand2);
 
-            Instruction.Value reg = assemblyOps.assembler.alloc.NextRegister(Instruction.Register.RegisterSize._8Bits);
+            AssemblyExpr.Value reg = assemblyOps.assembler.alloc.NextRegister(AssemblyExpr.Register.RegisterSize._8Bits);
 
             switch (instruction.instruction.instruction)
             {
                 case "E_CMP":
                 case "CMP":
-                    assemblyOps.assembler.Emit(new Instruction.Unary("SETE", reg));
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Unary("SETE", reg));
                     break;
                 case "NE_CMP":
-                    assemblyOps.assembler.Emit(new Instruction.Unary("SETNE", reg));
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Unary("SETNE", reg));
                     break;
                 case "G_CMP":
-                    assemblyOps.assembler.Emit(new Instruction.Unary("SETG", reg));
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Unary("SETG", reg));
                     break;
                 case "GE_CMP":
-                    assemblyOps.assembler.Emit(new Instruction.Unary("SETGE", reg));
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Unary("SETGE", reg));
                     break;
                 case "L_CMP":
-                    assemblyOps.assembler.Emit(new Instruction.Unary("SETL", reg));
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Unary("SETL", reg));
                     break;
                 case "LE_CMP":
-                    assemblyOps.assembler.Emit(new Instruction.Unary("SETLE", reg));
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Unary("SETLE", reg));
                     break;
             }
 
-            if (instruction.returns && assemblyOps.assembler is InlinedAssembler)
+            if (instruction.returns && assemblyOps.assembler is InlinedCodeGen)
             {
                 ReturnOp(ref reg, instruction.assignType, assemblyOps, true);
             }

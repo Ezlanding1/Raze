@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Raze;
 
-public class InlinedAssembler : Assembler
+public class InlinedCodeGen : CodeGen
 {
     public class InlineStateNoInline
     {
@@ -26,7 +26,7 @@ public class InlinedAssembler : Assembler
         public int inlineLabelIdx = -1;
         public bool secondJump = false;
 
-        public Instruction.SizedValue? callee;
+        public AssemblyExpr.SizedValue? callee;
 
         public InlineStateInlined(InlineStateNoInline lastState) : base(lastState, true)
         {
@@ -35,15 +35,15 @@ public class InlinedAssembler : Assembler
 
     public InlineStateNoInline inlineState = new(null);
 
-    public InlinedAssembler(List<Expr> expressions) : base(expressions)
+    public InlinedCodeGen(List<Expr> expressions) : base(expressions)
     {
     }
 
-    public override Instruction.Value? VisitUnaryExpr(Expr.Unary expr)
+    public override AssemblyExpr.Value? VisitUnaryExpr(Expr.Unary expr)
     {
         if (expr.internalFunction == null)
         {
-            return Analyzer.Primitives.Operation(expr.op, (Instruction.Literal)expr.operand.Accept(this), this);
+            return Analyzer.Primitives.Operation(expr.op, (AssemblyExpr.Literal)expr.operand.Accept(this), this);
         }
 
         if (!expr.internalFunction.modifiers["inline"])
@@ -59,7 +59,7 @@ public class InlinedAssembler : Assembler
 
         inlineState = new InlineStateInlined(inlineState);
 
-        Instruction.Value operand = expr.operand.Accept(this);
+        AssemblyExpr.Value operand = expr.operand.Accept(this);
 
         expr.internalFunction.parameters[0].stack.stackRegister = true;
         ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = LockOperand(HandleParameterRegister(expr.internalFunction.parameters[0], operand));
@@ -73,19 +73,19 @@ public class InlinedAssembler : Assembler
         expr.internalFunction.parameters[0].stack.stackRegister = false;
         alloc.Free(((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register, true);
 
-        if (instructions[^1] is Instruction.Unary jmpInstruction && jmpInstruction.instruction == "JMP"
-            && jmpInstruction.operand is Instruction.LocalProcedureRef procRef && procRef.name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
+        if (instructions[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == "JMP"
+            && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
         {
             instructions.RemoveAt(instructions.Count - 1);
 
             if (((InlineStateInlined)inlineState).secondJump)
             {
-                Emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
+                Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
             }
         }
         else if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
         {
-            Emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
+            Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
         }
 
         var ret = ((InlineStateInlined)inlineState).callee;
@@ -96,11 +96,11 @@ public class InlinedAssembler : Assembler
         {
             if (ret.IsRegister())
             {
-                alloc.GetRegister(alloc.NameToIdx(((Instruction.Register)ret).name), ((Instruction.Register)ret).size);
+                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Register)ret).name), ((AssemblyExpr.Register)ret).size);
             }
-            else if (ret.IsPointer() && !((Instruction.Pointer)ret).IsOnStack())
+            else if (ret.IsPointer() && !((AssemblyExpr.Pointer)ret).IsOnStack())
             {
-                alloc.GetRegister(alloc.NameToIdx(((Instruction.Pointer)ret).register.name), ((Instruction.Pointer)ret).size);
+                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Pointer)ret).register.name), ((AssemblyExpr.Pointer)ret).size);
             }
         }
 
@@ -111,11 +111,11 @@ public class InlinedAssembler : Assembler
         return ret;
     }
 
-    public override Instruction.Value? VisitBinaryExpr(Expr.Binary expr)
+    public override AssemblyExpr.Value? VisitBinaryExpr(Expr.Binary expr)
     {
         if (expr.internalFunction == null)
         {
-            return Analyzer.Primitives.Operation(expr.op, (Instruction.Literal)expr.left.Accept(this), (Instruction.Literal)expr.right.Accept(this), this);
+            return Analyzer.Primitives.Operation(expr.op, (AssemblyExpr.Literal)expr.left.Accept(this), (AssemblyExpr.Literal)expr.right.Accept(this), this);
         }
 
         if (!expr.internalFunction.modifiers["inline"])
@@ -131,8 +131,8 @@ public class InlinedAssembler : Assembler
 
         inlineState = new InlineStateInlined(inlineState);
 
-        Instruction.Value operand1 = expr.left.Accept(this);
-        Instruction.Value operand2 = expr.right.Accept(this);
+        AssemblyExpr.Value operand1 = expr.left.Accept(this);
+        AssemblyExpr.Value operand2 = expr.right.Accept(this);
 
         expr.internalFunction.parameters[0].stack.stackRegister = true;
         ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = LockOperand(HandleParameterRegister(expr.internalFunction.parameters[0], operand1));
@@ -156,30 +156,30 @@ public class InlinedAssembler : Assembler
 
         UnlockOperand(ret);
 
-        if (instructions[^1] is Instruction.Unary jmpInstruction && jmpInstruction.instruction == "JMP"
-            && jmpInstruction.operand is Instruction.LocalProcedureRef procRef && procRef.name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
+        if (instructions[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == "JMP"
+            && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
         {
             instructions.RemoveAt(instructions.Count - 1);
 
             if (((InlineStateInlined)inlineState).secondJump)
             {
-                Emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
+                Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
             }
         }
         else if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
         {
-            Emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
+            Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
         }
 
         if (ret != null)
         {
             if (ret.IsRegister())
             {
-                alloc.GetRegister(alloc.NameToIdx(((Instruction.Register)ret).name), ((Instruction.Register)ret).size);
+                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Register)ret).name), ((AssemblyExpr.Register)ret).size);
             }
-            else if (ret.IsPointer() && !((Instruction.Pointer)ret).IsOnStack())
+            else if (ret.IsPointer() && !((AssemblyExpr.Pointer)ret).IsOnStack())
             {
-                alloc.GetRegister(alloc.NameToIdx(((Instruction.Pointer)ret).register.name), ((Instruction.Pointer)ret).size);
+                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Pointer)ret).register.name), ((AssemblyExpr.Pointer)ret).size);
             }
         }
 
@@ -188,7 +188,7 @@ public class InlinedAssembler : Assembler
         return ret;
     }
 
-    public override Instruction.Value? VisitCallExpr(Expr.Call expr)
+    public override AssemblyExpr.Value? VisitCallExpr(Expr.Call expr)
     {
         if (!expr.internalFunction.modifiers["inline"])
         {
@@ -203,7 +203,7 @@ public class InlinedAssembler : Assembler
 
         inlineState = new InlineStateInlined(inlineState);
 
-        Instruction.Value? instanceArg = null;
+        AssemblyExpr.Value? instanceArg = null;
 
         if (!expr.internalFunction.modifiers["static"])
         {
@@ -217,24 +217,24 @@ public class InlinedAssembler : Assembler
                 {
                     var enclosing = SymbolTableSingleton.SymbolTable.NearestEnclosingClass(expr.internalFunction);
                     var size = (enclosing?.definitionType == Expr.Definition.DefinitionType.Primitive) ? enclosing.size : 8;
-                    instanceArg = new Instruction.Pointer(8, size);
+                    instanceArg = new AssemblyExpr.Pointer(8, size);
                 }
             }
             else
             {
                 instanceArg = alloc.CurrentRegister(InstructionUtils.SYS_SIZE);
-                Emit(new Instruction.Binary("MOV", instanceArg, new Instruction.Register(Instruction.Register.RegisterName.RBX, InstructionUtils.SYS_SIZE)));
+                Emit(new AssemblyExpr.Binary("MOV", instanceArg, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RBX, InstructionUtils.SYS_SIZE)));
             }
 
             if (instanceArg.IsRegister())
             {
-                alloc.Lock((Instruction.Register)instanceArg);
+                alloc.Lock((AssemblyExpr.Register)instanceArg);
             }
         }
 
         for (int i = 0; i < expr.arguments.Count; i++)
         {
-            Instruction.Value arg = expr.arguments[i].Accept(this);
+            AssemblyExpr.Value arg = expr.arguments[i].Accept(this);
 
             expr.internalFunction.parameters[i].stack.stackRegister = true;
             ((Expr.StackRegister)expr.internalFunction.parameters[i].stack).register = LockOperand(HandleParameterRegister(expr.internalFunction.parameters[i], arg));
@@ -262,30 +262,30 @@ public class InlinedAssembler : Assembler
 
         UnlockOperand(ret);
 
-        if (instructions[^1] is Instruction.Unary jmpInstruction && jmpInstruction.instruction == "JMP"
-            && jmpInstruction.operand is Instruction.LocalProcedureRef procRef && procRef.name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
+        if (instructions[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == "JMP"
+            && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
         {
             instructions.RemoveAt(instructions.Count - 1);
 
             if (((InlineStateInlined)inlineState).secondJump)
             {
-                Emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
+                Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
             }
         }
         else if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
         {
-            Emit(new Instruction.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
+            Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
         }
 
         if (ret != null)
         {
             if (ret.IsRegister())
             {
-                alloc.GetRegister(alloc.NameToIdx(((Instruction.Register)ret).name), ((Instruction.Register)ret).size);
+                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Register)ret).name), ((AssemblyExpr.Register)ret).size);
             }
-            else if (ret.IsPointer() && !((Instruction.Pointer)ret).IsOnStack())
+            else if (ret.IsPointer() && !((AssemblyExpr.Pointer)ret).IsOnStack())
             {
-                alloc.GetRegister(alloc.NameToIdx(((Instruction.Pointer)ret).register.name), ((Instruction.Pointer)ret).size);
+                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Pointer)ret).register.name), ((AssemblyExpr.Pointer)ret).size);
             }
         }
 
@@ -294,14 +294,14 @@ public class InlinedAssembler : Assembler
         return ret;
     }
 
-    public override Instruction.Value? VisitAssignExpr(Expr.Assign expr)
+    public override AssemblyExpr.Value? VisitAssignExpr(Expr.Assign expr)
     {
         if (!expr.binary || !((Expr.Binary)expr.value).internalFunction.modifiers["inline"])
         {
             return base.VisitAssignExpr(expr);
         }
 
-        Instruction.Value operand2;
+        AssemblyExpr.Value operand2;
 
         if (((Expr.Binary)expr.value).internalFunction.parameters[0].modifiers["ref"] == false)
         {
@@ -316,7 +316,7 @@ public class InlinedAssembler : Assembler
 
         if (((Expr.StackRegister)((Expr.Binary)expr.value).internalFunction.parameters[0].stack).register != operand2)
         {
-            Emit(new Instruction.Binary("MOV", ((Expr.StackRegister)((Expr.Binary)expr.value).internalFunction.parameters[0].stack).register, operand2));
+            Emit(new AssemblyExpr.Binary("MOV", ((Expr.StackRegister)((Expr.Binary)expr.value).internalFunction.parameters[0].stack).register, operand2));
         }
 
         alloc.Free(operand2);
@@ -324,7 +324,7 @@ public class InlinedAssembler : Assembler
         return null;
     }
 
-    public override Instruction.Value? VisitReturnExpr(Expr.Return expr)
+    public override AssemblyExpr.Value? VisitReturnExpr(Expr.Return expr)
     {
         if (!inlineState.inline)
         {
@@ -333,7 +333,7 @@ public class InlinedAssembler : Assembler
 
         if (!expr._void)
         {
-            Instruction.Value operand = expr.value.Accept(this);
+            AssemblyExpr.Value operand = expr.value.Accept(this);
 
             if (((InlineStateInlined)inlineState).callee == null)
             {
@@ -343,53 +343,53 @@ public class InlinedAssembler : Assembler
             {
                 if (operand.IsRegister())
                 {
-                    var op = (Instruction.Register)operand;
-                    if (op.name != ((Instruction.Register)((InlineStateInlined)inlineState).callee).name)
+                    var op = (AssemblyExpr.Register)operand;
+                    if (op.name != ((AssemblyExpr.Register)((InlineStateInlined)inlineState).callee).name)
                     {
-                        if (!(HandleSeteOptimization((Instruction.Register)operand, ((InlineStateInlined)inlineState).callee)))
+                        if (!(HandleSeteOptimization((AssemblyExpr.Register)operand, ((InlineStateInlined)inlineState).callee)))
                         {
-                            Emit(new Instruction.Binary("MOV", new Instruction.Register(((Instruction.Register)((InlineStateInlined)inlineState).callee).name, op.size), operand));
+                            Emit(new AssemblyExpr.Binary("MOV", new AssemblyExpr.Register(((AssemblyExpr.Register)((InlineStateInlined)inlineState).callee).name, op.size), operand));
                         }
                     }
                 }
                 else if (operand.IsPointer())
                 {
-                    Emit(new Instruction.Binary("MOV", ((InlineStateInlined)inlineState).callee, operand));
+                    Emit(new AssemblyExpr.Binary("MOV", ((InlineStateInlined)inlineState).callee, operand));
                 }
                 else
                 {
-                    Emit(new Instruction.Binary("MOV", ((InlineStateInlined)inlineState).callee, operand));
+                    Emit(new AssemblyExpr.Binary("MOV", ((InlineStateInlined)inlineState).callee, operand));
                 }
             }
         }
         else
         {
-            Emit(new Instruction.Binary("MOV", ((InlineStateInlined)inlineState).callee, new Instruction.Literal(Parser.LiteralTokenType.INTEGER, "0")));
+            Emit(new AssemblyExpr.Binary("MOV", ((InlineStateInlined)inlineState).callee, new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "0")));
         }
 
         if (((InlineStateInlined)inlineState).inlineLabelIdx == -1)
         {
             ((InlineStateInlined)inlineState).inlineLabelIdx = conditionalCount;
-            Emit(new Instruction.Unary("JMP", new Instruction.LocalProcedureRef(CreateConditionalLabel(conditionalCount++))));
+            Emit(new AssemblyExpr.Unary("JMP", new AssemblyExpr.LocalProcedureRef(CreateConditionalLabel(conditionalCount++))));
         }
         else
         {
             ((InlineStateInlined)inlineState).secondJump = true;
-            Emit(new Instruction.Unary("JMP", new Instruction.LocalProcedureRef(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))));
+            Emit(new AssemblyExpr.Unary("JMP", new AssemblyExpr.LocalProcedureRef(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))));
         }
 
         return null;
     }
 
-    public Instruction.Value LockOperand(Instruction.Value operand)
+    public AssemblyExpr.Value LockOperand(AssemblyExpr.Value operand)
     {
         if (operand.IsRegister())
         {
-            alloc.Lock((Instruction.Register)operand);
+            alloc.Lock((AssemblyExpr.Register)operand);
         }
         else if (operand.IsPointer())
         {
-            var idx = alloc.NameToIdx(((Instruction.Pointer)operand).register.name);
+            var idx = alloc.NameToIdx(((AssemblyExpr.Pointer)operand).register.name);
             if (idx != -1)
             {
                 alloc.Lock(idx);
@@ -397,7 +397,7 @@ public class InlinedAssembler : Assembler
         }
         return operand;
     }
-    private void UnlockOperand(Instruction.Value? operand)
+    private void UnlockOperand(AssemblyExpr.Value? operand)
     {
         if (operand == null)
         {
@@ -406,19 +406,19 @@ public class InlinedAssembler : Assembler
 
         if (operand.IsRegister())
         {
-            alloc.Unlock((Instruction.Register)operand);
+            alloc.Unlock((AssemblyExpr.Register)operand);
         }
         else if (operand.IsPointer())
         {
-            var idx = alloc.NameToIdx(((Instruction.Pointer)operand).register.name);
+            var idx = alloc.NameToIdx(((AssemblyExpr.Pointer)operand).register.name);
             if (idx != -1)
             {
                 alloc.Unlock(idx);
             }
         }
     }
-
-    private Instruction.Value HandleParameterRegister(Expr.Parameter parameter, Instruction.Value arg)
+    
+    private AssemblyExpr.Value HandleParameterRegister(Expr.Parameter parameter, AssemblyExpr.Value arg)
     {
         return IsRefParameter(parameter) ? arg : MovToRegister(arg, InstructionUtils.ToRegisterSize(parameter.stack.size));
     }

@@ -434,7 +434,7 @@ public abstract class Expr
 
     public class StackRegister : StackData
     {
-        internal Instruction.Value register;
+        internal AssemblyExpr.Value register;
 
         public StackRegister() { }
 

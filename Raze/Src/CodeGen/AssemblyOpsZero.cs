@@ -12,7 +12,7 @@ internal partial class AssemblyOps
     {
         public static void DefaultZOp(ExprUtils.AssignableInstruction.Zero instruction, AssemblyOps assemblyOps)
         {
-            assemblyOps.assembler.Emit(new Instruction.Zero(instruction.instruction.instruction));
+            assemblyOps.assembler.Emit(new AssemblyExpr.Zero(instruction.instruction.instruction));
         }
     }
 }

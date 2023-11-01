@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Raze;
+namespace Raze.Tools;
 
 partial class Syntaxes
 {
@@ -12,13 +12,13 @@ partial class Syntaxes
     {
         public abstract class  ISyntaxFactory
         {
-            public abstract void Run(List<Instruction> instructions);
-            public abstract void Run(Instruction instruction);
+            public abstract void Run(List<AssemblyExpr> instructions);
+            public abstract void Run(AssemblyExpr instruction);
 
             public StringBuilder Output = new();
 
-            public Instruction.Comment header;
-            public abstract List<Instruction> GenerateHeaderInstructions(Expr.Function main);
+            public AssemblyExpr.Comment header;
+            public abstract List<AssemblyExpr> GenerateHeaderInstructions(Expr.Function main);
         }
 
         public class SyntaxTypeCreator

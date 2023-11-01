@@ -22,7 +22,7 @@ public partial class Analyzer
             BOOLEAN => false,
         };
 
-        private static dynamic ToType(Instruction.Literal literal) => literal.type switch
+        private static dynamic ToType(AssemblyExpr.Literal literal) => literal.type switch
         {
             INTEGER => int.Parse(literal.value),
             FLOATING => float.Parse(literal.value),
@@ -123,7 +123,7 @@ public partial class Analyzer
             return Parser.VoidTokenType;
         }
 
-        public static Instruction.Literal Operation(Token op, Instruction.Literal a, Instruction.Literal b, Assembler assembler)
+        public static AssemblyExpr.Literal Operation(Token op, AssemblyExpr.Literal a, AssemblyExpr.Literal b, CodeGen assembler)
         {
             string pName = SymbolToPrimitiveName(op);
 
@@ -151,10 +151,10 @@ public partial class Analyzer
                     }
                 ).ToString();
 
-            return new Instruction.Literal(OperationType(op, a.type, b.type), result);
+            return new AssemblyExpr.Literal(OperationType(op, a.type, b.type), result);
         }
 
-        private static string Add(dynamic a, dynamic b, bool stringAddition, Assembler assembler)
+        private static string Add(dynamic a, dynamic b, bool stringAddition, CodeGen assembler)
         {
             if (!stringAddition)
             {
@@ -167,18 +167,18 @@ public partial class Analyzer
             int i = 1;
             while (aData == null || bData == null)
             {
-                if (((Instruction.Data)assembler.data[i]).name == (string)a)
+                if (((AssemblyExpr.Data)assembler.data[i]).name == (string)a)
                 {
-                    aData = ((Instruction.Data)assembler.data[i]).value;
+                    aData = ((AssemblyExpr.Data)assembler.data[i]).value;
                 }
-                if (((Instruction.Data)assembler.data[i]).name == (string)b)
+                if (((AssemblyExpr.Data)assembler.data[i]).name == (string)b)
                 {
-                    bData = ((Instruction.Data)assembler.data[i]).value;
+                    bData = ((AssemblyExpr.Data)assembler.data[i]).value;
                 }
                 i++;
             }
 
-            assembler.EmitData(new Instruction.Data(assembler.DataLabel, InstructionUtils.dataSize[1], aData[..^4] + bData[1..]));
+            assembler.EmitData(new AssemblyExpr.Data(assembler.DataLabel, InstructionUtils.dataSize[1], aData[..^4] + bData[1..]));
 
             return assembler.CreateDatalLabel(assembler.dataCount++);
         }
@@ -234,7 +234,7 @@ public partial class Analyzer
             return Parser.VoidTokenType;
         }
 
-        public static Instruction.Value Operation(Token op, Instruction.Literal a, Assembler assembler)
+        public static AssemblyExpr.Value Operation(Token op, AssemblyExpr.Literal a, CodeGen assembler)
         {
             string pName = SymbolToPrimitiveName(op);
 
@@ -249,7 +249,7 @@ public partial class Analyzer
                     }
                 ).ToString();
 
-            return new Instruction.Literal(OperationType(op, a.type), result);
+            return new AssemblyExpr.Literal(OperationType(op, a.type), result);
         }
 
         public static Error.AnalyzerError InvalidOperation(Token op, Parser.LiteralTokenType type)
