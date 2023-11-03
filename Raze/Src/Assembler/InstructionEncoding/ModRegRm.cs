@@ -66,7 +66,8 @@ public partial class Assembler
             internal enum OpCodeExtension
             {
                 ADD = 0x0,
-                MOV = 0x0
+                MOV = 0x0,
+                INC = 0x0
             }
 
             public ModRegRm(Mod MOD, RegisterCode REG, bit RM)
@@ -82,11 +83,11 @@ public partial class Assembler
                 this.RM = (byte)RM;
             }
 
-            public ModRegRm(Mod MOD, OpCodeExtension REG, bit RM)
+            public ModRegRm(Mod MOD, OpCodeExtension REG, RegisterCode RM)
             {
                 this.MOD = (byte)MOD;
                 this.REG = (byte)REG;
-                this.RM = RM;
+                this.RM = (byte)RM;
             }
 
             public byte ToByte()
