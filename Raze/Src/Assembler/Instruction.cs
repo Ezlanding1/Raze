@@ -214,11 +214,31 @@ public partial class Assembler
     // Displacement (1, 2, or 4 bytes). Optional
     // NOT CURRENTLY SUPPORTED
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    internal struct Displacement : IInstruction
+    internal struct Displacement8 : IInstruction
     {
-        // 1, 2, or 4 byte displacement
-        byte[] _data;
-        
+        // 1 byte displacement
+        byte _data;
+
+        public byte ToByte()
+        {
+            throw new NotImplementedException();
+        }
+    }
+    internal struct Displacement16 : IInstruction
+    {
+        // 2 byte displacement
+        unsafe fixed byte _data[2];
+
+        public byte ToByte()
+        {
+            throw new NotImplementedException();
+        }
+    }
+    internal struct Displacement32 : IInstruction
+    {
+        // 4 byte displacement
+        unsafe fixed byte _data[4];
+
         public byte ToByte()
         {
             throw new NotImplementedException();
@@ -228,10 +248,30 @@ public partial class Assembler
     // Immediate Data. (1, 2, or 4 bytes). Optional
     // NOT CURRENTLY SUPPORTED
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    internal struct Immediate : IInstruction
+    internal struct Immediate8 : IInstruction
     {
-        // 1, 2, or 4 byte immediate
-        byte[] _data;
+        // 1 byte immediate
+        byte _data;
+
+        public byte ToByte()
+        {
+            throw new NotImplementedException();
+        }
+    }
+    internal struct Immediate16 : IInstruction
+    {
+        // 2 byte immediate
+        unsafe fixed byte _data[2];
+
+        public byte ToByte()
+        {
+            throw new NotImplementedException();
+        }
+    }
+    internal struct Immediate32 : IInstruction
+    {
+        // 4 byte immediate
+        unsafe fixed byte _data[4];
 
         public byte ToByte()
         {
