@@ -9,7 +9,7 @@ namespace Raze;
 
 public partial class Assembler
 {
-    internal partial struct Instruction
+    public partial struct Instruction
     {
         // Instruction Opcode Expansion Prefix (1 byte). Optional
         [StructLayout(LayoutKind.Sequential, Pack = 1)]

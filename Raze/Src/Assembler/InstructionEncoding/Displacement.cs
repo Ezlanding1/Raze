@@ -10,7 +10,7 @@ namespace Raze;
 
 public partial class Assembler
 {
-    internal partial struct Instruction
+    public partial struct Instruction
     {
         // Displacement (1, 2, or 4 bytes). Optional
         // NOT CURRENTLY SUPPORTED

@@ -9,7 +9,7 @@ namespace Raze;
 
 public partial class Assembler
 {
-    internal partial struct Instruction
+    public partial struct Instruction
     {
         // Scaled Index Byte (1 byte). Optional
         // NOT CURRENTLY SUPPORTED

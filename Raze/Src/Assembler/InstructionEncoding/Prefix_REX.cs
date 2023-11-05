@@ -10,7 +10,7 @@ namespace Raze;
 
 public partial class Assembler
 {
-    internal partial struct Instruction
+    public partial struct Instruction
     {
         // REX Prefix Byte (1 byte). Optional
         [StructLayout(LayoutKind.Sequential, Pack = 1)]

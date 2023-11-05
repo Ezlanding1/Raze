@@ -9,7 +9,7 @@ namespace Raze;
 
 public partial class Assembler
 {
-    internal partial struct Instruction
+    public partial struct Instruction
     {
         // Raw Instruction Byte Data. (1 byte). Required
         // For instructions that do not match any existing pattern, and must be encoded as raw bits

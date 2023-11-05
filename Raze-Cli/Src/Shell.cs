@@ -62,8 +62,8 @@ internal class Shell
             Raze.Diagnostics.ThrowCompilerErrors();
 
             // Lower AST to ASM
-            Raze.CodeGen assembler = new Raze.InlinedCodeGen(expressions);
-            var output = assembler.Assemble();
+            Raze.CodeGen codeGen = new Raze.InlinedCodeGen(expressions);
+            var output = codeGen.Generate();
             var instructions = output.Item1;
             var data = output.Item2;
 
@@ -71,6 +71,10 @@ internal class Shell
             #if DEBUG
             Raze.Tools.AssemblyPrinter.PrintAssembly(instructions, data);
             #endif
+
+            // Assemble, Link, and Output Assembly Code
+            Raze.Assembler assembler = new Raze.Assembler();
+            assembler.Assemble("output.elf", instructions, data);
 
             // Throw any encountered assembling errors
             Raze.Diagnostics.ThrowCompilerErrors();

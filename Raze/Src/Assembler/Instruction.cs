@@ -19,8 +19,19 @@ public partial class Assembler
     // Instruction (1-15 bytes)
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
 
-    internal partial struct Instruction
+    public partial struct Instruction
     {
         internal IInstruction[] Bytes { get; set; }
+
+        public byte[] ToByteArr()
+        {
+            byte[] bytes = new byte[Bytes.Length];
+
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                bytes[i] = Bytes[i].ToByte();
+            }
+            return bytes;
+        }
     }
 }

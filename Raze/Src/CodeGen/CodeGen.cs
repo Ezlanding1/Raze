@@ -39,7 +39,7 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         this.assemblyOps = new(this);
     }
     
-    public (List<AssemblyExpr>, List<AssemblyExpr>) Assemble()
+    public (List<AssemblyExpr>, List<AssemblyExpr>) Generate()
     {
         foreach (Expr expr in expressions)
         {

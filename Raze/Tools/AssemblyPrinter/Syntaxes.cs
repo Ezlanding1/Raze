@@ -12,7 +12,7 @@ partial class Syntaxes
     partial class SyntaxFactory 
     {
 
-        class IntelSyntax : ISyntaxFactory, AssemblyExpr.IVisitor
+        class IntelSyntax : ISyntaxFactory, AssemblyExpr.IVisitor<string>
         {
             public IntelSyntax()
             {
@@ -259,7 +259,7 @@ partial class Syntaxes
             };
         }
 
-        partial class AttSyntax : ISyntaxFactory, AssemblyExpr.IVisitor
+        partial class AttSyntax : ISyntaxFactory, AssemblyExpr.IVisitor<string>
         {
             public AttSyntax()
             {

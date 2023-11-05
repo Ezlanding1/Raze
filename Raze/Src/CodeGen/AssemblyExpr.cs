@@ -4,25 +4,25 @@ namespace Raze;
 
 public abstract class AssemblyExpr
 {
-    public abstract string Accept(IVisitor visitor);
+    public abstract T Accept<T>(IVisitor<T> visitor);
 
-    public interface IVisitor
+    public interface IVisitor<T>
     {
-        public string VisitGlobal(Global instruction);
-        public string VisitSection(Section instruction);
-        public string VisitRegister(Register instruction);
-        public string VisitPointer(Pointer instruction);
-        public string VisitLiteral(Literal instruction);
-        public string VisitData(Data instruction);
-        public string VisitDataRef(DataRef instruction);
-        public string VisitProcedure(Procedure instruction);
-        public string VisitLocalProcedure(LocalProcedure instruction);
-        public string VisitLocalProcedureRef(LocalProcedureRef instruction);
-        public string VisitProcedureRef(ProcedureRef instruction);
-        public string VisitBinary(Binary instruction);
-        public string VisitUnary(Unary instruction);
-        public string VisitZero(Zero instruction);
-        public string VisitComment(Comment instruction);
+        public T VisitGlobal(Global instruction);
+        public T VisitSection(Section instruction);
+        public T VisitRegister(Register instruction);
+        public T VisitPointer(Pointer instruction);
+        public T VisitLiteral(Literal instruction);
+        public T VisitData(Data instruction);
+        public T VisitDataRef(DataRef instruction);
+        public T VisitProcedure(Procedure instruction);
+        public T VisitLocalProcedure(LocalProcedure instruction);
+        public T VisitLocalProcedureRef(LocalProcedureRef instruction);
+        public T VisitProcedureRef(ProcedureRef instruction);
+        public T VisitBinary(Binary instruction);
+        public T VisitUnary(Unary instruction);
+        public T VisitZero(Zero instruction);
+        public T VisitComment(Comment instruction);
     }
 
     public class Global : AssemblyExpr
@@ -33,7 +33,7 @@ public abstract class AssemblyExpr
             this.name = name;
         }
 
-        public override string Accept(IVisitor visitor)
+        public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitGlobal(this);
         }
@@ -47,7 +47,7 @@ public abstract class AssemblyExpr
             this.name = name;
         }
 
-        public override string Accept(IVisitor visitor)
+        public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitSection(this);
         }
@@ -165,7 +165,7 @@ public abstract class AssemblyExpr
             return new Register(this.name, size);
         }
 
-        public override string Accept(IVisitor visitor)
+        public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitRegister(this);
         }
@@ -212,7 +212,7 @@ public abstract class AssemblyExpr
         }
 
 
-        public override string Accept(IVisitor visitor)
+        public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitPointer(this);
         }
@@ -229,7 +229,7 @@ public abstract class AssemblyExpr
             this.value = value;
         }
 
-        public override string Accept(IVisitor visitor)
+        public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitLiteral(this);
         }
@@ -247,7 +247,7 @@ public abstract class AssemblyExpr
             this.value = value;
         }
 
-        public override string Accept(IVisitor visitor)
+        public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitData(this);
         }
@@ -262,7 +262,7 @@ public abstract class AssemblyExpr
             this.dataName = dataName;
         }
 
-        public override string Accept(IVisitor visitor)
+        public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitDataRef(this);
         }
@@ -276,7 +276,7 @@ public abstract class AssemblyExpr
             this.name = name;
         }
 
-        public override string Accept(IVisitor visitor)
+        public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitProcedure(this);
         }
@@ -290,7 +290,7 @@ public abstract class AssemblyExpr
             this.name = name;
         }
 
-        public override string Accept(IVisitor visitor)
+        public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitLocalProcedure(this);
         }
@@ -305,7 +305,7 @@ public abstract class AssemblyExpr
             this.name = name;
         }
 
-        public override string Accept(IVisitor visitor)
+        public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitProcedureRef(this);
         }
@@ -320,7 +320,7 @@ public abstract class AssemblyExpr
             this.name = name;
         }
 
-        public override string Accept(IVisitor visitor)
+        public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitLocalProcedureRef(this);
         }
@@ -343,7 +343,7 @@ public abstract class AssemblyExpr
         {
         }
 
-        public override string Accept(IVisitor visitor)
+        public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitBinary(this);
         }
@@ -364,7 +364,7 @@ public abstract class AssemblyExpr
         {
         }
 
-        public override string Accept(IVisitor visitor)
+        public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitUnary(this);
         }
@@ -378,7 +378,7 @@ public abstract class AssemblyExpr
             this.instruction = instruction;
         }
 
-        public override string Accept(IVisitor visitor)
+        public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitZero(this);
         }
@@ -392,7 +392,7 @@ public abstract class AssemblyExpr
             this.comment = comment;
         }
 
-        public override string Accept(IVisitor visitor)
+        public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitComment(this);
         }
