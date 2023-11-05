@@ -18,15 +18,15 @@ public partial class Assembler
         {
             byte _data = 0;
 
-            // 6 bit Instruction Opcode
+            // 6 bit Instruction Opcode (Non-Overriding _data)
             OpCode opCode
             {
-                set => _data = (byte)((_data & 0x3) | ((byte)value << 2));
+                set => _data = (byte)((_data & 0x3) | (byte)value);
             }
-            // 7 bit Instruction Opcode
+            // 7 bit Instruction Opcode (Non-Overriding _data)
             OpCode opCode7Bit
             {
-                set => _data = (byte)((_data & 0x1) | ((byte)value << 1));
+                set => _data = (byte)((_data & 0x1) | (byte)value);
             }
             // 8 bit Instruction Opcode
             OpCode opCode8Bit
@@ -44,7 +44,7 @@ public partial class Assembler
                 set => _data = (byte)((_data & 0xFE) | value);
             }
 
-            // 6-8 bit OpCode
+            // 8 bit OpCode
             internal enum OpCode : byte
             {
                 ADD = 0x0,
@@ -66,22 +66,15 @@ public partial class Assembler
                 _32Bit = 1
             }
 
-            public InstructionOpCode(byte _data)
+            public InstructionOpCode(OpCode opCode, Destination d, Size s)
             {
-                this._data = _data;
-            }
-            public InstructionOpCode(OpCode opCode, bit d, bit s)
-            {
-                this.opCode = opCode;
-                this.d = d;
-                this.s = s;
-            }
-            public InstructionOpCode(OpCode opCode, Destination d, Size s) : this(opCode, (byte)d, (byte)s)
-            {
+                this._data = (byte)opCode;
+                this.d = (byte)d;
+                this.s = (byte)s;
             }
             public InstructionOpCode(OpCode opCode, Size s)
             {
-                this.opCode7Bit = opCode;
+                this._data = (byte)opCode;
                 this.s = (byte)s;
             }
             public InstructionOpCode(OpCode opCode)
