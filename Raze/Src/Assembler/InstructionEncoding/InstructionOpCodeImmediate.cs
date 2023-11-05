@@ -37,7 +37,8 @@ public partial class Assembler
             // 8 bit OpCode for immediate
             internal enum OpCode : byte
             {
-                ADD = 0x80
+                ADD = 0x80,
+                MOV = 0xC6
             }
 
             internal enum SignExtend : byte

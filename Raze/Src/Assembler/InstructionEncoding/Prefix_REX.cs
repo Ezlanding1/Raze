@@ -22,7 +22,7 @@ public partial class Assembler
 
             internal bit WRXB
             {
-                set => _data = (byte)((_data & 0xF) | (value << 4));
+                set => _data = (byte)((_data & 0xF0) | value);
             }
 
             public Prefix_REX(bit WRXB)
