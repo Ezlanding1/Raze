@@ -273,7 +273,7 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         Emit(new AssemblyExpr.Procedure(ToMangledName(expr)));
 
-        Emit(alloc.fncPushPreserved = new(expr.size));
+        alloc.fncPushPreserved = new(expr.size, instructions.Count);
 
         int count = 0;
 
@@ -308,6 +308,9 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         {
             DoFooter();
         }
+
+        alloc.fncPushPreserved.GenerateHeader(instructions);
+
         return null;
     }
 
@@ -843,7 +846,7 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     private void DoFooter()
     {
-        Emit(alloc.fncPushPreserved);
+        alloc.fncPushPreserved.GenerateFooter(instructions);
     }
 
     internal void EmitCall(AssemblyExpr instruction)

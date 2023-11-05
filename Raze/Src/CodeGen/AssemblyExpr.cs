@@ -397,16 +397,6 @@ public abstract class AssemblyExpr
             return visitor.VisitComment(this);
         }
     }
-
-    internal abstract class CustomInstruction : AssemblyExpr
-    {
-        public override string Accept(IVisitor visitor)
-        {
-            return GetInstruction(visitor);
-        }
-
-        public abstract string GetInstruction(IVisitor visitor);
-    }
 }
 
 public class InstructionUtils

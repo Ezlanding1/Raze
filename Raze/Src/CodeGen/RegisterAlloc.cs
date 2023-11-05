@@ -27,7 +27,7 @@ internal class RegisterAlloc
 
     public AssemblyExpr.Register?[] paramRegisters = new AssemblyExpr.Register[6];
 
-    public CustomInstructions.FunctionPushPreserved fncPushPreserved;
+    public FunctionPushPreserved fncPushPreserved;
 
     public AssemblyExpr.Register GetRegister(int idx, AssemblyExpr.Register.RegisterSize size)
     {
