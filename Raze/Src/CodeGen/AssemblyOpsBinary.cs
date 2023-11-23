@@ -112,7 +112,7 @@ internal partial class AssemblyOps
                         else
                         {
                             var ptr = (AssemblyExpr.Pointer)operand2;
-                            operand2 = new AssemblyExpr.Pointer(ptr.register, ptr.offset, op1size, ptr._operator);
+                            operand2 = new AssemblyExpr.Pointer(ptr.register, ptr.offset, op1size);
                         }
                     }
                 }

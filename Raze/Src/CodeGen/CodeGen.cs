@@ -343,7 +343,7 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             }
             else if (stack._ref)
             {
-                Emit(new AssemblyExpr.Binary("MOV", alloc.CurrentRegister(InstructionUtils.SYS_SIZE), new AssemblyExpr.Pointer(new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RBP, InstructionUtils.SYS_SIZE), stack.stackOffset, InstructionUtils.SYS_SIZE, stack.plus ? '+' : '-')));
+                Emit(new AssemblyExpr.Binary("MOV", alloc.CurrentRegister(InstructionUtils.SYS_SIZE), new AssemblyExpr.Pointer(new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RBP, InstructionUtils.SYS_SIZE), stack.plus ? -stack.stackOffset : stack.stackOffset, InstructionUtils.SYS_SIZE)));
                 alloc.NullReg();
                 register = alloc.NextRegister(InstructionUtils.SYS_SIZE);
 
@@ -356,10 +356,10 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             {
                 if (expr.datas.Length == 1)
                 {
-                    return new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, stack.stackOffset, stack.size, stack.plus ? '+' : '-');
+                    return new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, stack.plus ? -stack.stackOffset : stack.stackOffset, stack.size);
                 }
                 register = alloc.NextRegister(InstructionUtils.SYS_SIZE);
-                Emit(new AssemblyExpr.Binary("MOV", register, new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, stack.stackOffset, stack.size, stack.plus ? '+' : '-')));
+                Emit(new AssemblyExpr.Binary("MOV", register, new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, stack.plus ? -stack.stackOffset : stack.stackOffset, stack.size)));
             }
             else
             {
@@ -758,8 +758,8 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                 if (chunks.Item1 != -1)
                 {
                     var ptr = (AssemblyExpr.Pointer)operand1;
-                    Emit(new AssemblyExpr.Binary("MOV", new AssemblyExpr.Pointer(ptr.register, ptr.offset - 4, AssemblyExpr.Register.RegisterSize._32Bits, ptr._operator), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, chunks.Item1.ToString())));
-                    Emit(new AssemblyExpr.Binary("MOV", new AssemblyExpr.Pointer(ptr.register, ptr.offset, InstructionUtils.ToRegisterSize((int)ptr.size-4), ptr._operator), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, chunks.Item2.ToString())));
+                    Emit(new AssemblyExpr.Binary("MOV", new AssemblyExpr.Pointer(ptr.register, ptr.offset - 4, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, chunks.Item1.ToString())));
+                    Emit(new AssemblyExpr.Binary("MOV", new AssemblyExpr.Pointer(ptr.register, ptr.offset, InstructionUtils.ToRegisterSize((int)ptr.size-4)), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, chunks.Item2.ToString())));
 
                     goto dealloc;
                 }
@@ -817,7 +817,7 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         Emit(new AssemblyExpr.Binary("MOV", new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "0")));
         Emit(new AssemblyExpr.Zero("SYSCALL"));
 
-        var ptr = new AssemblyExpr.Pointer(rax, expr.internalClass.size, 8, '+');
+        var ptr = new AssemblyExpr.Pointer(rax, -expr.internalClass.size, 8);
         Emit(new AssemblyExpr.Binary("LEA", rbx, ptr));
 
         Emit(new AssemblyExpr.Binary("LEA", new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits), ptr));
@@ -930,7 +930,7 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         }
     }
 
-    internal int SizeOfLiteral(Parser.LiteralTokenType type, string value)
+    internal static int SizeOfLiteral(Parser.LiteralTokenType type, string value)
     {
         switch (type)
         {

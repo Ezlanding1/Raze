@@ -99,7 +99,7 @@ partial class Syntaxes
                 {
                     return $"{InstructionUtils.wordSize[instruction.size]} [{instruction.register.Accept(this)}]";
                 }
-                return $"{InstructionUtils.wordSize[instruction.size]} [{instruction.register.Accept(this)} {instruction._operator} {instruction.offset}]";
+                return $"{InstructionUtils.wordSize[instruction.size]} [{instruction.register.Accept(this)} {((instruction.offset < 0) ? '-' : '+')} {Math.Abs(instruction.offset)}]";
             }
 
             public string VisitProcedureRef(AssemblyExpr.ProcedureRef instruction)
@@ -148,7 +148,7 @@ partial class Syntaxes
                 {
                     return $"[{instruction.register.Accept(this)}]";
                 }
-                return $"[{instruction.register.Accept(this)} {instruction._operator} {instruction.offset}]";
+                return $"[{instruction.register.Accept(this)} {((instruction.offset < 0) ? '-' : '+')} {Math.Abs(instruction.offset)}]";
             }
 
             public string VisitLiteral(AssemblyExpr.Literal instruction)

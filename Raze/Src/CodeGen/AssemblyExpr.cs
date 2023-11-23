@@ -175,28 +175,26 @@ public abstract class AssemblyExpr
     {
         internal Register register;
         public int offset;
-        public char _operator;
 
-        internal Pointer(Register register, int offset, Register.RegisterSize size, char _operator ='-') : base(1)
+        internal Pointer(Register register, int offset, Register.RegisterSize size) : base(1)
         {
             this.register = register;
             this.size = size;
-            this.offset = offset;
-            this._operator = _operator;
+            this.offset = -offset;
         }
-        internal Pointer(Register register, int offset, int size, char _operator ='-') : this(register, offset, InstructionUtils.ToRegisterSize(size), _operator)
+        internal Pointer(Register register, int offset, int size) : this(register, offset, InstructionUtils.ToRegisterSize(size))
         {
         }
-        internal Pointer(Register.RegisterName register, int offset, Register.RegisterSize size, char _operator = '-') : this(new Register(register, Register.RegisterSize._64Bits), offset, size, _operator)
+        internal Pointer(Register.RegisterName register, int offset, Register.RegisterSize size) : this(new Register(register, Register.RegisterSize._64Bits), offset, size)
         {
         }
-        internal Pointer(Register.RegisterName register, int offset, int size, char _operator='-') : this(new Register(register, Register.RegisterSize._64Bits), offset, size, _operator)
+        internal Pointer(Register.RegisterName register, int offset, int size) : this(new Register(register, Register.RegisterSize._64Bits), offset, size)
         {
         }
-        internal Pointer(int offset, Register.RegisterSize size) : this(Register.RegisterName.RBP, offset, size, '-')
+        internal Pointer(int offset, Register.RegisterSize size) : this(Register.RegisterName.RBP, offset, size)
         {
         }
-        public Pointer(int offset, int size) : this(Register.RegisterName.RBP, offset, size, '-')
+        public Pointer(int offset, int size) : this(Register.RegisterName.RBP, offset, size)
         {
         }
 
