@@ -17,7 +17,13 @@ public partial class Assembler
                 List<IInstruction> instructions = new();
 
                 if (EncodingUtils.SetRexW(encodingType))
+                {
                     instructions.Add(new Instruction.RexPrefix(0b1000));
+                }
+                else if (EncodingUtils.SetRex(encodingType))
+                {
+                    instructions.Add(new Instruction.RexPrefix(0b0000));
+                }
 
                 if (EncodingUtils.SetSizePrefix(encodingType))
                     instructions.Add(new Instruction.InstructionOpCodeSizePrefix());
@@ -26,7 +32,7 @@ public partial class Assembler
 
                 return op1.operandType switch
                 {
-                    _ when op1.operandType.HasFlag(Operand.OperandType.A) => EncodeRegister(instructions, op1, op2, op1Expr, op2Expr),
+                    _ when EncodingUtils.IsRegister(op1) => EncodeRegister(instructions, op1, op2, op1Expr, op2Expr),
                     Operand.OperandType.M => EncodeMemory(instructions, op1, op2, op1Expr, op2Expr),
                     _ => EncodingUtils.EncodingError()
                 };
@@ -34,11 +40,11 @@ public partial class Assembler
 
             private Instruction EncodeRegister(List<IInstruction> instructions, Operand op1, Operand op2, AssemblyExpr op1Expr, AssemblyExpr op2Expr)
             {
-                if (op2.operandType.HasFlag(Operand.OperandType.A))
+                if (EncodingUtils.IsRegister(op2))
                 {
                     instructions.Add(new Instruction.ModRegRm(Assembler.Instruction.ModRegRm.Mod.RegisterAdressingMode,
-                        exprRegisterToModRegRmRegister[((AssemblyExpr.Register)op2Expr).name],
-                        exprRegisterToModRegRmRegister[((AssemblyExpr.Register)op1Expr).name]
+                        ExprRegisterToModRegRmRegister((AssemblyExpr.Register)op2Expr),
+                        ExprRegisterToModRegRmRegister((AssemblyExpr.Register)op1Expr)
                     ));
                 }
                 else if (op2.operandType == Operand.OperandType.M)
@@ -57,15 +63,15 @@ public partial class Assembler
                     if (ptr.offset == 0 && EncodingUtils.CanHaveZeroByteDisplacement(ptr.register))
                     {
                         instructions.Add(new Instruction.ModRegRm(Assembler.Instruction.ModRegRm.Mod.ZeroByteDisplacement,
-                            exprRegisterToModRegRmRegister[((AssemblyExpr.Register)op1Expr).name],
-                            exprRegisterToModRegRmRegister[ptr.register.name]
+                            ExprRegisterToModRegRmRegister((AssemblyExpr.Register)op1Expr),
+                            ExprRegisterToModRegRmRegister(ptr.register)
                         ));
                     }
                     else
                     {
                         instructions.Add(new Instruction.ModRegRm(EncodingUtils.GetDispSize(ptr.offset),
-                            exprRegisterToModRegRmRegister[((AssemblyExpr.Register)op1Expr).name],
-                            exprRegisterToModRegRmRegister[ptr.register.name]
+                            ExprRegisterToModRegRmRegister((AssemblyExpr.Register)op1Expr),
+                            ExprRegisterToModRegRmRegister(ptr.register)
                         ));
                         instructions.Add(EncodingUtils.GetDispInstruction(ptr.offset));
                     }
@@ -74,7 +80,7 @@ public partial class Assembler
                 {
                     instructions.Add(new Instruction.ModRegRm(Assembler.Instruction.ModRegRm.Mod.RegisterAdressingMode,
                         (Instruction.ModRegRm.OpCodeExtension)OpCodeExtension,
-                        exprRegisterToModRegRmRegister[((AssemblyExpr.Register)op1Expr).name]
+                        ExprRegisterToModRegRmRegister((AssemblyExpr.Register)op1Expr)
                     ));
 
                     instructions.Add(EncodingUtils.GetImmInstruction(this.operands[1].size, (AssemblyExpr.Literal)op2Expr));
@@ -99,20 +105,20 @@ public partial class Assembler
                     return EncodingUtils.EncodingError();
                 }
 
-                if (op2.operandType.HasFlag(Operand.OperandType.A))
+                if (EncodingUtils.IsRegister(op2))
                 {
                     if (ptr.offset == 0 && EncodingUtils.CanHaveZeroByteDisplacement(ptr.register))
                     {
                         instructions.Add(new Instruction.ModRegRm(Assembler.Instruction.ModRegRm.Mod.ZeroByteDisplacement,
-                            exprRegisterToModRegRmRegister[((AssemblyExpr.Register)op2Expr).name],
-                            exprRegisterToModRegRmRegister[ptr.register.name]
+                            ExprRegisterToModRegRmRegister((AssemblyExpr.Register)op2Expr),
+                            ExprRegisterToModRegRmRegister(ptr.register)
                         ));
                     }
                     else
                     {
                         instructions.Add(new Instruction.ModRegRm(EncodingUtils.GetDispSize(ptr.offset),
-                            exprRegisterToModRegRmRegister[((AssemblyExpr.Register)op2Expr).name],
-                            exprRegisterToModRegRmRegister[ptr.register.name]
+                            ExprRegisterToModRegRmRegister((AssemblyExpr.Register)op2Expr),
+                            ExprRegisterToModRegRmRegister(ptr.register)
                         ));
                         instructions.Add(EncodingUtils.GetDispInstruction(ptr.offset));
                     }
@@ -127,14 +133,14 @@ public partial class Assembler
                     {
                         instructions.Add(new Instruction.ModRegRm(Assembler.Instruction.ModRegRm.Mod.ZeroByteDisplacement,
                             (Instruction.ModRegRm.OpCodeExtension)OpCodeExtension,
-                            exprRegisterToModRegRmRegister[ptr.register.name]
+                            ExprRegisterToModRegRmRegister(ptr.register)
                         ));
                     }
                     else
                     {
                         instructions.Add(new Instruction.ModRegRm(EncodingUtils.GetDispSize(ptr.offset),
                             (Instruction.ModRegRm.OpCodeExtension)OpCodeExtension,
-                            exprRegisterToModRegRmRegister[ptr.register.name]
+                            ExprRegisterToModRegRmRegister(ptr.register)
                         ));
                         instructions.Add(EncodingUtils.GetDispInstruction(ptr.offset));
                     }

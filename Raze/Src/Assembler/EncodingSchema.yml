@@ -1,26 +1,36 @@
 # OperandType:
+  # P = Prefixed Register (SIL, DIL, BPL, SPL)
+  # P = Prefixed Register 8 bit
+
   # A = A-Register
   # AL/AX/EAX/RAX = A-Register 8/16/32/64 bit
 
   # R = Register
-  # R8/R16/R32/R64 = Register 8/16/32/64 bit
+  # R8U/R8/R16/R32/R64 = Register 8U/8/16/32/64 bit
 
   # M = Memory
-  # M8/M16/M32/M64 = Memory 8/16/32/64 bit
+  # M8U/M8/M16/M32/M64 = Memory 8U/8/16/32/64 bit
 
   # IMM = Immediate
-  # IMM8/IMM16/IMM32/IMM64 = Immediate 8/16/32/64 bit
+  # IMM8U/IMM8/IMM16/IMM32/IMM64 = Immediate 8U/8/16/32/64 bit
 
   # RM = Register/Memory
-  # RM8/RM16/RM32/RM64 = Register/Memory 8/16/32/64 bit
+  # RM8U/RM8/RM16/RM32/RM64 = Register/Memory 8U/8/16/32/64 bit
 
 # EncodingTypes:
-  # RexWPrefix = Emit a REX Prefix with the W bit set (0b01001000)
+  # RexPrefix = Emit REX Prefix (0b01000000)
+  # RexWPrefix = Emit REX Prefix with the W bit set (0b01001000)
   # ExpansionPrefix = Emit Expansion Prefix (0x0F)
   # SizePrefix = Emit Size Prefix (0x66)
   # Any combination of these flags can be encoded by separating two EncodingTypes with bitwise or '|' or comma ','
   
 ADD:
+- Instruction: ADD R8U, IMM8
+  OpCode: 128
+- Instruction: ADD P, IMM8
+  EncodingType: RexPrefix
+  OpCode: 128
+
 - Instruction: ADD AL, IMM8
   OpCode: 0x4
 - Instruction: ADD AX, IMM16

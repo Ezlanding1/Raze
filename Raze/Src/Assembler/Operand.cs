@@ -30,10 +30,11 @@ public partial class Assembler
             [Flags]
             internal enum OperandType
             {
-                R = 1 | A,
+                R = 1 | A | P,
                 M = 2,
                 IMM = 4,
                 A = 8,
+                P = 16,
             }
             internal enum OperandSize
             {

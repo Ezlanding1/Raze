@@ -18,6 +18,8 @@ public partial class Assembler
                 return new Instruction();
             }
 
+            internal static bool SetRex(Encoding.EncodingTypes encodingType) => encodingType.HasFlag(Encoding.EncodingTypes.RexPrefix);
+
             internal static bool SetRexW(Encoding.EncodingTypes encodingType) => encodingType.HasFlag(Encoding.EncodingTypes.RexWPrefix);
 
             internal static bool SetSizePrefix(Encoding.EncodingTypes encodingType) => encodingType.HasFlag(Encoding.EncodingTypes.SizePrefix);
@@ -55,6 +57,9 @@ public partial class Assembler
                 }
                 return new Instruction.Displacement32(disp);
             }
+
+            internal static bool IsRegister(Operand op)
+                => op.operandType.HasFlag(Operand.OperandType.A) || op.operandType.HasFlag(Operand.OperandType.P);
         }
     }
 }

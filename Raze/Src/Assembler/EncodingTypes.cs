@@ -16,9 +16,10 @@ public partial class Assembler
             internal enum EncodingTypes : byte
             {
                 None = 0,
-                RexWPrefix = 1,
-                ExpansionPrefix = 2,
-                SizePrefix = 4
+                RexPrefix = 1,
+                RexWPrefix = 2,
+                ExpansionPrefix = 4,
+                SizePrefix = 8
             }
         }
     }

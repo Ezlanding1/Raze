@@ -53,6 +53,9 @@ public partial class Assembler
                             case "RAX":
                                 operands[i] = new Operand(Operand.OperandType.A, Operand.OperandSize._64Bits);
                                 break;
+                            case "P":
+                                operands[i] = new Operand(Operand.OperandType.P, Operand.OperandSize._8Bits);
+                                break;
                             default: Diagnostics.errors.Push(new Error.ImpossibleError($"Invalid Encoding Type '{value}'")); break;
                         };
                     }
@@ -65,6 +68,7 @@ public partial class Assembler
                             case "32": return Operand.OperandSize._32Bits;
                             case "16": return Operand.OperandSize._16Bits;
                             case "8": return Operand.OperandSize._8Bits;
+                            case "8U": return Operand.OperandSize._8BitsUpper;
                             default: Diagnostics.errors.Push(new Error.ImpossibleError($"Invalid Encoding Type '{value}'")); return 0;
                         }
                     }
@@ -123,14 +127,15 @@ public partial class Assembler
                 return new();
             }
 
-            private static Operand.OperandType RegisterOperandType(AssemblyExpr.Register reg) 
+            private static Operand.OperandType RegisterOperandType(AssemblyExpr.Register reg) => reg.name switch
             {
-                if (reg.name == AssemblyExpr.Register.RegisterName.RAX)
-                {
-                    return Operand.OperandType.A;
-                }
-                return Operand.OperandType.R;
-            }
+                AssemblyExpr.Register.RegisterName.RAX => Operand.OperandType.A,
+                AssemblyExpr.Register.RegisterName.RSP => Operand.OperandType.P,
+                AssemblyExpr.Register.RegisterName.RBP => Operand.OperandType.P,
+                AssemblyExpr.Register.RegisterName.RSI => Operand.OperandType.P,
+                AssemblyExpr.Register.RegisterName.RDI => Operand.OperandType.P,
+                _ => Operand.OperandType.R
+            };
         }
     }
 }

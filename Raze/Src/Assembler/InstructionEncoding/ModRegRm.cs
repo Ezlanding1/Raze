@@ -55,7 +55,7 @@ public partial class Assembler
                 // bl     | bx | ebx
                 BL = 0b011, BX = 0b011, EBX = 0b011,
                 // ah/spl | sp | esp
-                AP = 0b100, SPL = 0b100, SP = 0b100, ESP = 0b100,
+                AH = 0b100, SPL = 0b100, SP = 0b100, ESP = 0b100,
                 // ch/bpl | bp | ebp
                 CH = 0b101, BPL = 0b101, BP = 0b101, EBP = 0b101,
                 // dh/sil | si | esi
