@@ -9,6 +9,8 @@ namespace Raze;
 
 public partial class Assembler : AssemblyExpr.IVisitor<Assembler.Instruction>
 {
+    Encoder encoder = new Encoder();
+
     public void Assemble(string fn, List<AssemblyExpr> textExprs, List<AssemblyExpr> dataExprs)
     {
         using (var fs = new FileStream(fn, FileMode.Create, FileAccess.Write))
@@ -27,7 +29,7 @@ public partial class Assembler : AssemblyExpr.IVisitor<Assembler.Instruction>
 
     public Instruction VisitBinary(AssemblyExpr.Binary instruction)
     {
-        throw new NotImplementedException();
+        return encoder.Encode(instruction);
     }
 
     public Instruction VisitComment(AssemblyExpr.Comment instruction)
