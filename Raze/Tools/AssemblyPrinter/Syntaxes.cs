@@ -92,7 +92,7 @@ partial class Syntaxes
             {
                 if (instruction.register.name == AssemblyExpr.Register.RegisterName.TMP)
                 {
-                    Diagnostics.errors.Push(new Error.ImpossibleError("TMP Register Cannot Be Emitted"));
+                    Diagnostics.errors.Push(new Error.ImpossibleError("TMP Register Emitted"));
                 }
 
                 if (instruction.offset == 0)

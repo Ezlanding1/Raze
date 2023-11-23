@@ -24,10 +24,35 @@ public partial class Assembler
                 set => _data = (byte)((_data & 0xF0) | value);
             }
 
+            public bool W
+            {
+                set => _data = (byte)((_data & 0xF7) | Convert.ToByte(value) << 3);
+            }
+            public bool R
+            {
+                set => _data = (byte)((_data & 0xFB) | Convert.ToByte(value) << 2);
+            }
+            public bool X
+            {
+                set => _data = (byte)((_data & 0xFD) | Convert.ToByte(value) << 1);
+            }
+            public bool B
+            {
+                set => _data = (byte)((_data & 0xFE) | Convert.ToByte(value));
+            }
+
             public RexPrefix(byte WRXB)
             {
                 _data = fixedPrefix;
                 this.WRXB = WRXB;
+            }
+            public RexPrefix(bool W, bool R, bool X, bool B)
+            {
+                _data = fixedPrefix;
+                this.W = W;
+                this.R = R;
+                this.X = X;
+                this.B = B;
             }
         }
 

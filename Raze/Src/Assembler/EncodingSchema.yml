@@ -49,6 +49,17 @@ ADD:
 
 
 MOV:
+- Instruction: MOV RM8, R8
+  OpCode: 136
+- Instruction: MOV RM16, R16
+  EncodingType: SizePrefix
+  OpCode: 137
+- Instruction: MOV RM32, R32
+  OpCode: 137
+- Instruction: MOV RM64, R64
+  EncodingType: RexWPrefix
+  OpCode: 137
+
 - Instruction: MOV M8, IMM8
   OpCodeExtension: 0
   OpCode: 0xC6

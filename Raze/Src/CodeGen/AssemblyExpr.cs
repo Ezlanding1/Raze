@@ -116,25 +116,26 @@ public abstract class AssemblyExpr
             _8Bits = 1
         }
 
-        public enum RegisterName
+        // Register Encoding => if RRegister: -RegCode-1 else: RegCode. TMP = -9
+        public enum RegisterName : sbyte
         {
-            TMP,
-            RAX,
-            RCX,
-            RDX,
-            RBX,
-            RSI,
-            RDI,
-            RSP,
-            RBP,
-            R8,
-            R9,
-            R10,
-            R11,
-            R12,
-            R13,
-            R14,
-            R15
+            TMP = -9,
+            RAX = 0b000,
+            RCX = 0b001,
+            RDX = 0b010,
+            RBX = 0b011,
+            RSI = 0b110,
+            RDI = 0b111,
+            RSP = 0b100,
+            RBP = 0b101,
+            R8 = -0b000 - 1,
+            R9 = -0b001 - 1,
+            R10 = -0b010 - 1,
+            R11 = -0b011 - 1,
+            R12 = -0b100 - 1,
+            R13 = -0b101 - 1,
+            R14 = -0b110 - 1,
+            R15 = -0b111 - 1
         }
 
         private StrongBox<RegisterName> _name;

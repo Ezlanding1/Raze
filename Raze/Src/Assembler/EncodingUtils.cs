@@ -18,6 +18,17 @@ public partial class Assembler
                 return new Instruction();
             }
 
+            internal static Instruction.ModRegRm.RegisterCode ExprRegisterToModRegRmRegister(AssemblyExpr.Register register) => (register.name, register.size) switch
+            {
+                (AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._8BitsUpper) => Instruction.ModRegRm.RegisterCode.AH,
+                (AssemblyExpr.Register.RegisterName.RBX, AssemblyExpr.Register.RegisterSize._8BitsUpper) => Instruction.ModRegRm.RegisterCode.BH,
+                (AssemblyExpr.Register.RegisterName.RCX, AssemblyExpr.Register.RegisterSize._8BitsUpper) => Instruction.ModRegRm.RegisterCode.CH,
+                (AssemblyExpr.Register.RegisterName.RDX, AssemblyExpr.Register.RegisterSize._8BitsUpper) => Instruction.ModRegRm.RegisterCode.DH,
+                _ => (Instruction.ModRegRm.RegisterCode)ToRegCode((int)register.name)
+            };
+
+            private static int ToRegCode(int register) => (register < 0) ? -register - 1 : register;
+
             internal static bool SetRex(Encoding.EncodingTypes encodingType) => encodingType.HasFlag(Encoding.EncodingTypes.RexPrefix);
 
             internal static bool SetRexW(Encoding.EncodingTypes encodingType) => encodingType.HasFlag(Encoding.EncodingTypes.RexWPrefix);
@@ -60,6 +71,22 @@ public partial class Assembler
 
             internal static bool IsRegister(Operand op)
                 => op.operandType.HasFlag(Operand.OperandType.A) || op.operandType.HasFlag(Operand.OperandType.P);
+
+            internal static void AddRexPrefix(List<IInstruction> instructions, Encoding.EncodingTypes encodingType, Operand op1, Operand op2, AssemblyExpr op1Expr, AssemblyExpr op2Expr)
+            {
+                bool rexw = SetRexW(encodingType);
+                bool op1R = IsRRegister(op1, op1Expr);
+                bool op2R = IsRRegister(op2, op2Expr);
+
+                if (SetRex(encodingType) | rexw | op1R | op2R)
+                {
+                    instructions.Add(new Instruction.RexPrefix(rexw, op2R, false, op1R));
+                }
+            }
+
+            private static bool IsRRegister(Operand op, AssemblyExpr opExpr)
+                => op.operandType.HasFlag(Operand.OperandType.A) && (int)((AssemblyExpr.Register)opExpr).name < 0
+                    || op.operandType.HasFlag(Operand.OperandType.M) && (int)((AssemblyExpr.Pointer)opExpr).register.name < 0;
         }
     }
 }
