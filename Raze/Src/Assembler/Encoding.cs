@@ -117,9 +117,14 @@ public partial class Assembler
                     {
                         operand = new(Operand.OperandType.IMM, CodeGen.SizeOfLiteral((AssemblyExpr.Literal)value));
                     }
+                    else if (value.IsRegister())
+                    {
+                        operand = new(RegisterOperandType((AssemblyExpr.Register)value), (int)((AssemblyExpr.SizedValue)value).size);
+                    }
                     else
                     {
-                        operand = new(value.IsRegister() ? RegisterOperandType((AssemblyExpr.Register)assemblyExpr) : Operand.OperandType.M, (int)((AssemblyExpr.SizedValue)value).size);
+                        operand = new(Operand.OperandType.M, (int)((AssemblyExpr.SizedValue)value).size);
+                        ThrowTMP(((AssemblyExpr.Pointer)value).register);
                     }
                     return operand;
                 }
@@ -127,7 +132,11 @@ public partial class Assembler
                 return new();
             }
 
-            private static Operand.OperandType RegisterOperandType(AssemblyExpr.Register reg) => reg.name switch
+            private static Operand.OperandType RegisterOperandType(AssemblyExpr.Register reg)
+            {
+                ThrowTMP(reg);
+
+                return reg.name switch
             {
                 AssemblyExpr.Register.RegisterName.RAX => Operand.OperandType.A,
                 AssemblyExpr.Register.RegisterName.RSP => Operand.OperandType.P,
@@ -136,6 +145,15 @@ public partial class Assembler
                 AssemblyExpr.Register.RegisterName.RDI => Operand.OperandType.P,
                 _ => Operand.OperandType.R
             };
+        }
+
+            private static void ThrowTMP(AssemblyExpr.Register reg)
+            {
+                if (reg.name == AssemblyExpr.Register.RegisterName.TMP)
+                {
+                    Diagnostics.errors.Push(new Error.ImpossibleError("TMP Register Emitted"));
+                }
+            }
         }
     }
 }
