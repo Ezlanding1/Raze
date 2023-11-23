@@ -17,11 +17,6 @@ public partial class Assembler
         internal struct SIB : IInstruction
         {
             public byte _data;
-
-            public byte ToByte()
-            {
-                throw new NotImplementedException();
-            }
         }
     }
 }

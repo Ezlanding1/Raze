@@ -17,11 +17,12 @@ public partial class Assembler : AssemblyExpr.IVisitor<Assembler.Instruction>
             {
                 var instruction = assemblyExpr.Accept(this);
 
-                byte[] bytes = instruction.ToByteArr();
-
+                foreach (byte[] bytes in instruction.ToBytes())
+                {
                 fs.Write(bytes, 0, bytes.Length);
             }
         }
+    }
     }
 
     public Instruction VisitBinary(AssemblyExpr.Binary instruction)

@@ -62,11 +62,6 @@ public partial class Assembler
                 this.x = (byte)x;
                 this.s = (byte)s;
             }
-
-            public byte ToByte()
-            {
-                return _data;
-            }
         }
     }
 }

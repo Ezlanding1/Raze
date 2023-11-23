@@ -22,11 +22,6 @@ public partial class Assembler
             {
                 this._data = _data;
             }
-
-            public byte ToByte()
-            {
-                return _data;
-            }
         }
     }
 }

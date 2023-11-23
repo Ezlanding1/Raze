@@ -13,7 +13,6 @@ public partial class Assembler
 {
     internal interface IInstruction
     {
-        public byte ToByte();
     }
 
     // Instruction (1-15 bytes)
@@ -21,17 +20,37 @@ public partial class Assembler
 
     public partial struct Instruction
     {
-        internal IInstruction[] Bytes { get; set; }
+        internal IInstruction[] Instructions { get; set; }
 
-        public byte[] ToByteArr()
+        internal Instruction(IInstruction[] instructions)
         {
-            byte[] bytes = new byte[Bytes.Length];
+            this.Instructions = instructions;
+        }
 
-            for (int i = 0; i < bytes.Length; i++)
+        public IEnumerable<byte[]> ToBytes()
+        {   
+            int len = Instructions.Length;
+            for (int i = 0; i < len; ++i)
             {
-                bytes[i] = Bytes[i].ToByte();
+                int size = Marshal.SizeOf(Instructions[i]);
+                byte[] bytes = new byte[size];
+
+                IntPtr ptr = Marshal.AllocHGlobal(size);
+                try
+                {
+                    Marshal.StructureToPtr(Instructions[i], ptr, true);
+                    Marshal.Copy(ptr, bytes, 0, size);
+                }
+                catch (Exception e)
+                {
+                    throw e;
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(ptr);
+                }
+                yield return bytes;
             }
-            return bytes;
         }
     }
 }

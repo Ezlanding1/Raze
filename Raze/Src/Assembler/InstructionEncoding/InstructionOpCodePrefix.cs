@@ -11,15 +11,34 @@ public partial class Assembler
 {
     public partial struct Instruction
     {
+        // REX Prefix (1 byte). Optional
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        internal struct RexPrefix : IInstruction
+        {
+            private byte _data;
+
+            internal const byte fixedPrefix = 0b0100 << 4;
+
+            internal byte WRXB
+            {
+                set => _data = (byte)((_data & 0xF0) | value);
+            }
+
+            public RexPrefix(byte WRXB)
+            {
+                _data = fixedPrefix;
+                this.WRXB = WRXB;
+            }
+        }
+
         // Instruction Opcode Expansion Prefix (1 byte). Optional
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct InstructionOpCodeExpansionPrefix : IInstruction
         {
-            const byte _data = 0x0F;
+            byte _data = 0x0F;
 
-            public byte ToByte()
-            {
-                return _data;
+            public InstructionOpCodeExpansionPrefix()
+            {     
             }
         }
 
@@ -27,11 +46,21 @@ public partial class Assembler
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct InstructionOpCodeSizePrefix : IInstruction
         {
-            const byte _data = 0x66;
+            byte _data = 0x66;
 
-            public byte ToByte()
+            public InstructionOpCodeSizePrefix() 
             {
-                return _data;
+            }
+        }
+
+        // Address Size Override Prefix (1 byte). Optional
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        internal struct AddressSizeOverridePrefix : IInstruction
+        {
+            byte _data = 0x67;
+
+            public AddressSizeOverridePrefix()
+            {
             }
         }
     }

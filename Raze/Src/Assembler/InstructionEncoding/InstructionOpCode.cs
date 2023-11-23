@@ -66,6 +66,16 @@ public partial class Assembler
                 _32Bit = 1
             }
 
+            public InstructionOpCode(byte opCode)
+            {
+                this._data = opCode;
+            }
+            public InstructionOpCode(byte opCode, Destination d, Size s)
+            {
+                this._data = opCode;
+                this.d = (byte)d;
+                this.s = (byte)s;
+            }
             public InstructionOpCode(OpCode opCode, Destination d, Size s)
             {
                 this._data = (byte)opCode;
@@ -80,11 +90,6 @@ public partial class Assembler
             public InstructionOpCode(OpCode opCode)
             {
                 this.opCode8Bit = opCode;
-            }
-
-            public byte ToByte()
-            {
-                return _data;
             }
         }
     }

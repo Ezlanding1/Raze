@@ -38,6 +38,7 @@ public partial class Assembler
                 RegisterIndirectAdressingMode = 0b00,
                 SibNoDisplacement = 0b00,
                 DisplacementAdressingMode = 0b00,
+                ZeroByteDisplacement = 0b00,
                 OneByteDisplacement = 0b01,
                 FourByteDisplacement = 0b10,
                 RegisterAdressingMode = 0b11
@@ -47,8 +48,8 @@ public partial class Assembler
             {
                 // al     | ax | eax
                 AL = 0b000, AX = 0b000, EAX = 0b000,
-                // cl     | cd | ecx
-                CL = 0b001, CD = 0b001, ECX = 0b001,
+                // cl     | cx | ecx
+                CL = 0b001, CX = 0b001, ECX = 0b001,
                 // dl     | dx | edx
                 DL = 0b010, DX = 0b010, EDX = 0b010,
                 // bl     | bx | ebx
@@ -88,11 +89,6 @@ public partial class Assembler
                 this.MOD = (byte)MOD;
                 this.REG = (byte)REG;
                 this.RM = (byte)RM;
-            }
-
-            public byte ToByte()
-            {
-                return _data;
             }
         }
     }

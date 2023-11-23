@@ -16,58 +16,47 @@ public partial class Assembler
         internal struct Immediate8 : IInstruction
         {
             // 1 byte immediate
-            byte _data;
+            sbyte _data;
 
-            public Immediate8(byte _data)
+            public Immediate8(sbyte _data)
             {
                 this._data = _data;
             }
-
-            public byte ToByte()
-            {
-                return _data;
-            }
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Immediate16 : IInstruction
         {
             // 2 byte immediate
-            unsafe fixed byte _data[2];
+            short _data;
 
-            public Immediate16(params byte[] _data) 
+            public Immediate16(short _data) 
             {
-                unsafe
-                {
-                    this._data[0] = _data[0];
-                    this._data[1] = _data[1];
-                }
-            }
-
-            public byte ToByte()
-            {
-                throw new NotImplementedException();
+                this._data = _data;
             }
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Immediate32 : IInstruction
         {
             // 4 byte immediate
-            unsafe fixed byte _data[4];
+            int _data;
 
-            public Immediate32(params byte[] _data)
+            public Immediate32(int _data)
             {
-                unsafe
-                {
-                    this._data[0] = _data[0];
-                    this._data[1] = _data[1];
-                    this._data[2] = _data[2];
-                    this._data[3] = _data[3];
-                }
+                this._data = _data;
             }
+        }
 
-            public byte ToByte()
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        internal struct Immediate64 : IInstruction
+        {
+            // 8 byte immediate
+            long _data;
+
+            public Immediate64(long _data)
             {
-                throw new NotImplementedException();
+                this._data = _data;
             }
         }
     }

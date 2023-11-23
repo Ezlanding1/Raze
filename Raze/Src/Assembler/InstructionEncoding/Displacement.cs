@@ -12,39 +12,28 @@ public partial class Assembler
 {
     public partial struct Instruction
     {
-        // Displacement (1, 2, or 4 bytes). Optional
-        // NOT CURRENTLY SUPPORTED
+        // Displacement. (1 or 4 bytes). Optional
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Displacement8 : IInstruction
         {
-            // 1 byte displacement
-            byte _data;
+            // 1 byte Displacement
+            sbyte _data;
 
-            public byte ToByte()
+            public Displacement8(sbyte _data)
             {
-                throw new NotImplementedException();
+                this._data = _data;
             }
         }
 
-        internal struct Displacement16 : IInstruction
-        {
-            // 2 byte displacement
-            unsafe fixed byte _data[2];
-
-            public byte ToByte()
-            {
-                throw new NotImplementedException();
-            }
-        }
-
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Displacement32 : IInstruction
         {
-            // 4 byte displacement
-            unsafe fixed byte _data[4];
+            // 4 byte Displacement
+            int _data;
 
-            public byte ToByte()
+            public Displacement32(int _data)
             {
-                throw new NotImplementedException();
+                this._data = _data;
             }
         }
     }
