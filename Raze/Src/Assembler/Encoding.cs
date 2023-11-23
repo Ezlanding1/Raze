@@ -111,7 +111,7 @@ public partial class Assembler
 
                     if (value.IsLiteral())
                     {
-                        operand = new(Operand.OperandType.IMM, CodeGen.SizeOfLiteral(((AssemblyExpr.Literal)value).type, ((AssemblyExpr.Literal)value).value));
+                        operand = new(Operand.OperandType.IMM, CodeGen.SizeOfLiteral((AssemblyExpr.Literal)value));
                     }
                     else
                     {

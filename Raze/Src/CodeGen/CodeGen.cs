@@ -115,7 +115,7 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             if (arg.IsLiteral())
             {
                 AssemblyExpr.Literal literal = (AssemblyExpr.Literal)arg;
-                if (expr.internalFunction.parameters[i].stack.size < SizeOfLiteral(literal.type, literal.value))
+                if (expr.internalFunction.parameters[i].stack.size < SizeOfLiteral(literal))
                 {
                     Diagnostics.errors.Push(new Error.BackendError("Invalid Literal", $"The size of literal '{literal.value}' exceeds size of assigned data type '{expr.internalFunction.parameters[i].stack.size}'"));
                 }
@@ -226,7 +226,7 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         else
         {
             AssemblyExpr.Literal literal = (AssemblyExpr.Literal)operand;
-            if (expr.stack.size < SizeOfLiteral(literal.type, literal.value))
+            if (expr.stack.size < SizeOfLiteral(literal))
             {
                 Diagnostics.errors.Push(new Error.BackendError("Invalid Literal", $"The size of literal '{literal.value}' exceeds size of assigned data type '{expr.stack.size}'"));
             }
@@ -704,7 +704,7 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             else
             {
                 AssemblyExpr.Literal literal = (AssemblyExpr.Literal)operand;
-                if (expr.size < SizeOfLiteral(literal.type, literal.value))
+                if (expr.size < SizeOfLiteral(literal))
                 {
                     Diagnostics.errors.Push(new Error.BackendError("Invalid Literal", $"The size of literal '{literal.value}' exceeds size of assigned data type '{expr.size}'"));
                 }
@@ -747,7 +747,7 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         {
             AssemblyExpr.Literal literal = (AssemblyExpr.Literal)operand2;
             var size = expr.member.GetLastSize();
-            if (size < SizeOfLiteral(literal.type, literal.value))
+            if (size < SizeOfLiteral(literal))
             {
                 Diagnostics.errors.Push(new Error.BackendError("Invalid Literal", $"The size of literal '{literal.value}' exceeds size of assigned data type '{size}'"));
             }
@@ -930,15 +930,15 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         }
     }
 
-    internal static int SizeOfLiteral(Parser.LiteralTokenType type, string value)
+    internal static int SizeOfLiteral(AssemblyExpr.Literal literal)
     {
-        switch (type)
+        switch (literal.type)
         {
             case Parser.LiteralTokenType.INTEGER:
-                return GetIntegralSize(long.Parse(value));
+                return GetIntegralSize(long.Parse(literal.value));
             case Parser.LiteralTokenType.FLOATING:
             {
-                double val = double.Parse(value);
+                double val = double.Parse(literal.value);
                 if (val <= 480 && val >= 0.0078)
                 {
                     return (int)AssemblyExpr.Register.RegisterSize._8Bits;
@@ -958,7 +958,7 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             }
             case Parser.LiteralTokenType.STRING:
             {
-                return value.Length;
+                return literal.value.Length;
             }
             case Parser.LiteralTokenType.REF_STRING:
             {
@@ -966,7 +966,7 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             }
             case Parser.LiteralTokenType.BINARY:
             {
-                int length = value.Length-2;
+                int length = literal.value.Length-2;
                 length--;
                 length |= length >> 1;
                 length |= length >> 2;
@@ -978,7 +978,7 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                 return length;
             }
             case Parser.LiteralTokenType.HEX:
-                return GetIntegralSize(long.Parse(value, NumberStyles.AllowHexSpecifier));
+                return GetIntegralSize(long.Parse(literal.value, NumberStyles.AllowHexSpecifier));
             case Parser.LiteralTokenType.BOOLEAN:
                 return (int)AssemblyExpr.Register.RegisterSize._8Bits;
             default:
