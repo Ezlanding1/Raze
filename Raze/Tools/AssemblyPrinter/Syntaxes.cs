@@ -25,10 +25,10 @@ partial class Syntaxes
                     { new AssemblyExpr.Global("_start") },
                     { new AssemblyExpr.Section("text") },
                     { new AssemblyExpr.Procedure("_start") },
-                    { new AssemblyExpr.Unary("CALL", new AssemblyExpr.ProcedureRef(CodeGen.ToMangledName(main))) },
-                    { new AssemblyExpr.Binary("MOV", new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits), (Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.INTEGER].Matches(main._returnType.type)) ? new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits) : new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "0")) },
-                    { new AssemblyExpr.Binary("MOV", new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "60")) },
-                    { new AssemblyExpr.Zero("SYSCALL") }
+                    { new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL, new AssemblyExpr.ProcedureRef(CodeGen.ToMangledName(main))) },
+                    { new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits), (Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.INTEGER].Matches(main._returnType.type)) ? new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits) : new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "0")) },
+                    { new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "60")) },
+                    { new AssemblyExpr.Zero(AssemblyExpr.Instruction.SYSCALL) }
                 };
             }
 
@@ -52,7 +52,7 @@ partial class Syntaxes
 
             public string VisitBinary(AssemblyExpr.Binary instruction)
             {
-                if (instruction.operand2 is AssemblyExpr.Pointer && instruction.instruction != "MOVSX")
+                if (instruction.operand2 is AssemblyExpr.Pointer && instruction.instruction != AssemblyExpr.Instruction.MOVSX)
                     return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, {PointerToString((AssemblyExpr.Pointer)instruction.operand2)}";
 
                 return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, {instruction.operand2.Accept(this)}";
@@ -271,10 +271,10 @@ partial class Syntaxes
                     { new AssemblyExpr.Global("_start") },
                     { new AssemblyExpr.Section("text") },
                     { new AssemblyExpr.Procedure("_start") },
-                    { new AssemblyExpr.Unary("CALL", new AssemblyExpr.ProcedureRef(CodeGen.ToMangledName(main))) },
-                    { new AssemblyExpr.Binary("MOV", new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits), (Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.INTEGER].Matches(main._returnType.type)) ? new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits) : new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "0")) },
-                    { new AssemblyExpr.Binary("MOV", new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "60")) },
-                    { new AssemblyExpr.Zero("SYSCALL") }
+                    { new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL, new AssemblyExpr.ProcedureRef(CodeGen.ToMangledName(main))) },
+                    { new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits), (Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.INTEGER].Matches(main._returnType.type)) ? new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits) : new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "0")) },
+                    { new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "60")) },
+                    { new AssemblyExpr.Zero(AssemblyExpr.Instruction.SYSCALL) }
                 };
             }
 

@@ -39,18 +39,18 @@ internal partial class AssemblyOps
                 {
                     var op = (AssemblyExpr.Register)operand;
                     if (op.name != AssemblyExpr.Register.RegisterName.RAX)
-                        assemblyOps.assembler.Emit(new AssemblyExpr.Binary("MOV", new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, op.size), operand));
+                        assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, op.size), operand));
                 }
                 else if (operand.IsPointer())
                 {
-                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary("MOV", new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, ((AssemblyExpr.SizedValue)operand).size), operand));
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, ((AssemblyExpr.SizedValue)operand).size), operand));
                 }
                 else
                 {
                     var size = GetOpSize(operand, assignType, assemblyOps.vars, assemblyOps.count);
                     if (size != null)
                     {
-                        assemblyOps.assembler.Emit(new AssemblyExpr.Binary("MOV", new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, (AssemblyExpr.Register.RegisterSize)size), operand));
+                        assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, (AssemblyExpr.Register.RegisterSize)size), operand));
                     }
                 }
             }

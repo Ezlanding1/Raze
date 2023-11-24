@@ -24,8 +24,8 @@ internal class FunctionPushPreserved
 
     public void GenerateHeader(List<AssemblyExpr> assemblyExprs)
     {
-        assemblyExprs.Insert(count++, new AssemblyExpr.Unary("PUSH", AssemblyExpr.Register.RegisterName.RBP));
-        assemblyExprs.Insert(count++, new AssemblyExpr.Binary("MOV", AssemblyExpr.Register.RegisterName.RBP, AssemblyExpr.Register.RegisterName.RSP));
+        assemblyExprs.Insert(count++, new AssemblyExpr.Unary(AssemblyExpr.Instruction.PUSH, AssemblyExpr.Register.RegisterName.RBP));
+        assemblyExprs.Insert(count++, new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, AssemblyExpr.Register.RegisterName.RBP, AssemblyExpr.Register.RegisterName.RSP));
 
         if (!((leaf || size == 0) && size <= 128))
         {
@@ -36,7 +36,7 @@ internal class FunctionPushPreserved
         {
             if (registers[i])
                 assemblyExprs.Insert(count++, 
-                    new AssemblyExpr.Unary("PUSH", new AssemblyExpr.Register(InstructionUtils.storageRegisters[i + 1], AssemblyExpr.Register.RegisterSize._64Bits)));
+                    new AssemblyExpr.Unary(AssemblyExpr.Instruction.PUSH, new AssemblyExpr.Register(InstructionUtils.storageRegisters[i + 1], AssemblyExpr.Register.RegisterSize._64Bits)));
         }
     }
         
@@ -45,23 +45,23 @@ internal class FunctionPushPreserved
         for (int i = registers.Length - 1; i >= 0; i--)
         {
             if (registers[i])
-                assemblyExprs.Add(new AssemblyExpr.Unary("POP", new AssemblyExpr.Register(InstructionUtils.storageRegisters[i + 1], AssemblyExpr.Register.RegisterSize._64Bits)));
+                assemblyExprs.Add(new AssemblyExpr.Unary(AssemblyExpr.Instruction.POP, new AssemblyExpr.Register(InstructionUtils.storageRegisters[i + 1], AssemblyExpr.Register.RegisterSize._64Bits)));
         }
 
         assemblyExprs.Add(
             leaf ?
-            new AssemblyExpr.Unary("POP", AssemblyExpr.Register.RegisterName.RBP) : 
-            new AssemblyExpr.Zero("LEAVE")
+            new AssemblyExpr.Unary(AssemblyExpr.Instruction.POP, AssemblyExpr.Register.RegisterName.RBP) : 
+            new AssemblyExpr.Zero(AssemblyExpr.Instruction.LEAVE)
         );
 
-        assemblyExprs.Add(new AssemblyExpr.Zero("RET"));
+        assemblyExprs.Add(new AssemblyExpr.Zero(AssemblyExpr.Instruction.RET));
     }
 
     internal class StackAlloc
     {
         public static AssemblyExpr.Binary GenerateStackAlloc(int allocSize)
         {
-            return new AssemblyExpr.Binary("SUB", new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE),
+            return new AssemblyExpr.Binary(AssemblyExpr.Instruction.SUB, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE),
                 new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, AlignTo16(allocSize).ToString()));
         }
 

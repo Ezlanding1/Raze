@@ -794,17 +794,17 @@ public class Parser
                             var identifier = Previous();
                             if (InstructionUtils.Registers.TryGetValue(identifier.lexeme, out var reg))
                             {
-                                instructions.Add(new ExprUtils.AssignableInstruction.Binary(new AssemblyExpr.Binary(op.lexeme, value, new AssemblyExpr.Register(reg.Item1, reg.Item2)), ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
+                                instructions.Add(new ExprUtils.AssignableInstruction.Binary(new AssemblyExpr.Binary(ConvertToInstruction(op.lexeme), value, new AssemblyExpr.Register(reg.Item1, reg.Item2)), ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
                             }
                             else
                             {
                                 Diagnostics.errors.Push(new Error.ParseError("Invalid Assembly Register", $"Invalid assembly register given '{identifier.lexeme}'"));
-                                instructions.Add(new ExprUtils.AssignableInstruction.Binary(new AssemblyExpr.Binary(op.lexeme, value, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.TMP, AssemblyExpr.Register.RegisterSize._8Bits)), ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
+                                instructions.Add(new ExprUtils.AssignableInstruction.Binary(new AssemblyExpr.Binary(ConvertToInstruction(op.lexeme), value, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.TMP, AssemblyExpr.Register.RegisterSize._8Bits)), ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
                             }
                         }
                         else if (TypeMatch(Token.TokenType.INTEGER, Token.TokenType.FLOATING, Token.TokenType.STRING, Token.TokenType.REF_STRING, Token.TokenType.HEX, Token.TokenType.BINARY))
                         {
-                            instructions.Add(new ExprUtils.AssignableInstruction.Binary(new AssemblyExpr.Binary(op.lexeme, value, new AssemblyExpr.Literal((LiteralTokenType)Previous().type, Previous().lexeme)), (value == null) ? ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst : ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
+                            instructions.Add(new ExprUtils.AssignableInstruction.Binary(new AssemblyExpr.Binary(ConvertToInstruction(op.lexeme), value, new AssemblyExpr.Literal((LiteralTokenType)Previous().type, Previous().lexeme)), (value == null) ? ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst : ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
                         }
                         else if (TypeMatch(Token.TokenType.DOLLAR))
                         {
@@ -813,7 +813,7 @@ public class Parser
                                 Expected("IDENTIFIER, 'this'", "after escape '$'");
                             }
                             variables.Add(new Expr.AmbiguousGetReference(Previous(), true));
-                            instructions.Add(new ExprUtils.AssignableInstruction.Binary(new AssemblyExpr.Binary(op.lexeme, value, null), (value == null) ? (ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst | ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond) : ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond, localReturn));
+                            instructions.Add(new ExprUtils.AssignableInstruction.Binary(new AssemblyExpr.Binary(ConvertToInstruction(op.lexeme), value, null), (value == null) ? (ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst | ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond) : ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond, localReturn));
                         }
                         else
                         {
@@ -822,14 +822,14 @@ public class Parser
                     }
                     else
                     {
-                        instructions.Add(new ExprUtils.AssignableInstruction.Unary(new AssemblyExpr.Unary(op.lexeme, value), (value == null) ? ExprUtils.AssignableInstruction.Unary.AssignType.AssignFirst : ExprUtils.AssignableInstruction.Unary.AssignType.AssignNone, localReturn));
+                        instructions.Add(new ExprUtils.AssignableInstruction.Unary(new AssemblyExpr.Unary(ConvertToInstruction(op.lexeme), value), (value == null) ? ExprUtils.AssignableInstruction.Unary.AssignType.AssignFirst : ExprUtils.AssignableInstruction.Unary.AssignType.AssignNone, localReturn));
                     }
                 }
                 else
                 {
                     if (localReturn) { Diagnostics.errors.Push(new Error.ParseError("Invalid Assembly Block", "Return on a zero instruction is not allowed")); }
                     // Zero
-                    instructions.Add(new ExprUtils.AssignableInstruction.Zero(new AssemblyExpr.Zero(op.lexeme)));
+                    instructions.Add(new ExprUtils.AssignableInstruction.Zero(new AssemblyExpr.Zero(ConvertToInstruction(op.lexeme))));
                 }
                 Expect(Token.TokenType.SEMICOLON, "';' after Assembly statement");
             }
@@ -850,6 +850,16 @@ public class Parser
             }
         }
         return (instructions, variables);
+    }
+
+    private AssemblyExpr.Instruction ConvertToInstruction(string strInstruction)
+    {
+        if (Enum.TryParse(strInstruction, out AssemblyExpr.Instruction instruction))
+        {
+            return instruction;
+        }
+        Diagnostics.errors.Push(new Error.ParseError("Invalid Assembly Block", $"Instruction '{strInstruction}' not supported"));
+        return 0;
     }
 
     private bool TypeMatch(params Token.TokenType[] types)

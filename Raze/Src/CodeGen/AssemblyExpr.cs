@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 
 namespace Raze;
 
-public abstract class AssemblyExpr
+public abstract partial class AssemblyExpr
 {
     public abstract T Accept<T>(IVisitor<T> visitor);
 
@@ -75,7 +75,7 @@ public abstract class AssemblyExpr
             if (IsPointer())
             {
                 Register reg = ((Pointer)this).AsRegister(((Pointer)this).size, assembler);
-                assembler.Emit(new Binary("MOV", reg, this));
+                assembler.Emit(new Binary(Instruction.MOV, reg, this));
                 return reg;
             }
             return this;
@@ -86,7 +86,7 @@ public abstract class AssemblyExpr
             {
                 if (size == null) { Diagnostics.errors.Push(new Error.ImpossibleError("Null size in NonLiteral when operand is literal")); }
 
-                assembler.Emit(new Binary("MOV", assembler.alloc.CurrentRegister((Register.RegisterSize)size), this));
+                assembler.Emit(new Binary(Instruction.MOV, assembler.alloc.CurrentRegister((Register.RegisterSize)size), this));
                 return assembler.alloc.NextRegister((Register.RegisterSize)size);
             }
             return (SizedValue)this;
@@ -327,17 +327,17 @@ public abstract class AssemblyExpr
 
     public class Binary : AssemblyExpr
     {
-        public string instruction;
+        public Instruction instruction;
         public AssemblyExpr operand1, operand2;
 
-        public Binary(string instruction, AssemblyExpr operand1, AssemblyExpr operand2)
+        public Binary(Instruction instruction, AssemblyExpr operand1, AssemblyExpr operand2)
         {
             this.instruction = instruction;
             this.operand1 = operand1;
             this.operand2 = operand2;
         }
 
-        internal Binary(string instruction, Register.RegisterName operand1, AssemblyExpr.Register.RegisterName operand2)
+        internal Binary(Instruction instruction, Register.RegisterName operand1, AssemblyExpr.Register.RegisterName operand2)
             : this(instruction, new Register(operand1, Register.RegisterSize._64Bits), new Register(operand2, Register.RegisterSize._64Bits))
         {
         }
@@ -351,15 +351,15 @@ public abstract class AssemblyExpr
     public class Unary : AssemblyExpr
     {
         public AssemblyExpr operand;
-        public string instruction;
+        public Instruction instruction;
 
-        public Unary(string instruction, AssemblyExpr operand)
+        public Unary(Instruction instruction, AssemblyExpr operand)
         {
             this.instruction = instruction;
             this.operand = operand;
         }
 
-        internal Unary(string instruction, AssemblyExpr.Register.RegisterName operand) : this(instruction, new AssemblyExpr.Register(operand, Register.RegisterSize._64Bits))
+        internal Unary(Instruction instruction, AssemblyExpr.Register.RegisterName operand) : this(instruction, new AssemblyExpr.Register(operand, Register.RegisterSize._64Bits))
         {
         }
 
@@ -371,8 +371,8 @@ public abstract class AssemblyExpr
 
     public class Zero : AssemblyExpr
     {
-        public string instruction;
-        public Zero(string instruction)
+        public Instruction instruction;
+        public Zero(Instruction instruction)
         {
             this.instruction = instruction;
         }
@@ -402,7 +402,7 @@ public class InstructionUtils
 {
     internal const AssemblyExpr.Register.RegisterSize SYS_SIZE = AssemblyExpr.Register.RegisterSize._64Bits;
 
-    internal static string ToType(Token.TokenType input, bool unary=false)
+    internal static AssemblyExpr.Instruction ToType(Token.TokenType input, bool unary = false)
     {
         if (!unary)
         {
@@ -414,51 +414,51 @@ public class InstructionUtils
         }
     }
 
-    private readonly static Dictionary<Token.TokenType, string> StringToOperatorTypeBinary = new()
+    private readonly static Dictionary<Token.TokenType, AssemblyExpr.Instruction> StringToOperatorTypeBinary = new()
     {
         // Binary
-        { Token.TokenType.SHIFTRIGHT , "SHR" },
-        { Token.TokenType.SHIFTLEFT , "SHL" },
-        { Token.TokenType.DIVIDE , "DIV" },
-        { Token.TokenType.MULTIPLY , "IMUL" },
-        { Token.TokenType.B_NOT , "NOT" },
-        { Token.TokenType.B_OR , "OR" },
-        { Token.TokenType.B_AND , "AND" },
-        { Token.TokenType.B_XOR , "XOR" },
-        { Token.TokenType.PLUS , "ADD" },
-        { Token.TokenType.MINUS , "SUB" },
-        { Token.TokenType.EQUALTO , "CMP" },
-        { Token.TokenType.NOTEQUALTO , "CMP" },
-        { Token.TokenType.GREATER , "CMP" },
-        { Token.TokenType.LESS , "CMP" },
-        { Token.TokenType.GREATEREQUAL , "CMP" },
-        { Token.TokenType.LESSEQUAL , "CMP" },
+        { Token.TokenType.SHIFTRIGHT , AssemblyExpr.Instruction.SHR },
+        { Token.TokenType.SHIFTLEFT , AssemblyExpr.Instruction.SHL },
+        { Token.TokenType.DIVIDE , AssemblyExpr.Instruction.DIV },
+        { Token.TokenType.MULTIPLY , AssemblyExpr.Instruction.IMUL },
+        { Token.TokenType.B_NOT , AssemblyExpr.Instruction.NOT },
+        { Token.TokenType.B_OR , AssemblyExpr.Instruction.OR },
+        { Token.TokenType.B_AND , AssemblyExpr.Instruction.AND },
+        { Token.TokenType.B_XOR , AssemblyExpr.Instruction.XOR },
+        { Token.TokenType.PLUS , AssemblyExpr.Instruction.ADD },
+        { Token.TokenType.MINUS , AssemblyExpr.Instruction.SUB },
+        { Token.TokenType.EQUALTO , AssemblyExpr.Instruction.CMP },
+        { Token.TokenType.NOTEQUALTO , AssemblyExpr.Instruction.CMP },
+        { Token.TokenType.GREATER , AssemblyExpr.Instruction.CMP },
+        { Token.TokenType.LESS , AssemblyExpr.Instruction.CMP },
+        { Token.TokenType.GREATEREQUAL , AssemblyExpr.Instruction.CMP },
+        { Token.TokenType.LESSEQUAL , AssemblyExpr.Instruction.CMP },
     };
-    private readonly static Dictionary<Token.TokenType, string> StringToOperatorTypeUnary = new()
+    private readonly static Dictionary<Token.TokenType, AssemblyExpr.Instruction> StringToOperatorTypeUnary = new()
     {
         // Unary
-        { Token.TokenType.PLUSPLUS,  "INC" },
-        { Token.TokenType.MINUSMINUS,  "DEC" },
-        { Token.TokenType.MINUS,  "NEG" },
+        { Token.TokenType.PLUSPLUS,  AssemblyExpr.Instruction.INC },
+        { Token.TokenType.MINUSMINUS,  AssemblyExpr.Instruction.DEC },
+        { Token.TokenType.MINUS,  AssemblyExpr.Instruction.NEG },
     };
 
-    internal readonly static Dictionary<string, string> ConditionalJump = new()
+    internal readonly static Dictionary<AssemblyExpr.Instruction, AssemblyExpr.Instruction> ConditionalJump = new()
     {
-        { "SETE" , "JE" },
-        { "SETNE" , "JNE" },
-        { "SETG" , "JG" },
-        { "SETL" , "JL" },
-        { "SETGE" , "JGE" },
-        { "SETLE" , "JLE" },
+        { AssemblyExpr.Instruction.SETE , AssemblyExpr.Instruction.JE },
+        { AssemblyExpr.Instruction.SETNE , AssemblyExpr.Instruction.JNE },
+        { AssemblyExpr.Instruction.SETG , AssemblyExpr.Instruction.JG },
+        { AssemblyExpr.Instruction.SETL , AssemblyExpr.Instruction.JL },
+        { AssemblyExpr.Instruction.SETGE , AssemblyExpr.Instruction.JGE },
+        { AssemblyExpr.Instruction.SETLE , AssemblyExpr.Instruction.JLE },
     };
-    internal readonly static Dictionary<string, string> ConditionalJumpReversed = new()
+    internal readonly static Dictionary<AssemblyExpr.Instruction, AssemblyExpr.Instruction> ConditionalJumpReversed = new()
     {
-        { "SETE" , "JNE" },
-        { "SETNE" , "JE" },
-        { "SETG" , "JLE" },
-        { "SETL" , "JGE" },
-        { "SETGE" , "JE" },
-        { "SETLE" , "JG" },
+        { AssemblyExpr.Instruction.SETE , AssemblyExpr.Instruction.JNE },
+        { AssemblyExpr.Instruction.SETNE , AssemblyExpr.Instruction.JE },
+        { AssemblyExpr.Instruction.SETG , AssemblyExpr.Instruction.JLE },
+        { AssemblyExpr.Instruction.SETL , AssemblyExpr.Instruction.JGE },
+        { AssemblyExpr.Instruction.SETGE , AssemblyExpr.Instruction.JE },
+        { AssemblyExpr.Instruction.SETLE , AssemblyExpr.Instruction.JG },
     };
 
     internal readonly static AssemblyExpr.Register.RegisterName[] paramRegister = new AssemblyExpr.Register.RegisterName[]

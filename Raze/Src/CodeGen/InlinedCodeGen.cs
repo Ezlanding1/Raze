@@ -73,7 +73,7 @@ public class InlinedCodeGen : CodeGen
         expr.internalFunction.parameters[0].stack.stackRegister = false;
         alloc.Free(((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register, true);
 
-        if (instructions[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == "JMP"
+        if (instructions[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == AssemblyExpr.Instruction.JMP
             && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
         {
             instructions.RemoveAt(instructions.Count - 1);
@@ -156,7 +156,7 @@ public class InlinedCodeGen : CodeGen
 
         UnlockOperand(ret);
 
-        if (instructions[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == "JMP"
+        if (instructions[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == AssemblyExpr.Instruction.JMP
             && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
         {
             instructions.RemoveAt(instructions.Count - 1);
@@ -223,7 +223,7 @@ public class InlinedCodeGen : CodeGen
             else
             {
                 instanceArg = alloc.CurrentRegister(InstructionUtils.SYS_SIZE);
-                Emit(new AssemblyExpr.Binary("MOV", instanceArg, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RBX, InstructionUtils.SYS_SIZE)));
+                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, instanceArg, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RBX, InstructionUtils.SYS_SIZE)));
             }
 
             if (instanceArg.IsRegister())
@@ -262,7 +262,7 @@ public class InlinedCodeGen : CodeGen
 
         UnlockOperand(ret);
 
-        if (instructions[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == "JMP"
+        if (instructions[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == AssemblyExpr.Instruction.JMP
             && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
         {
             instructions.RemoveAt(instructions.Count - 1);
@@ -316,7 +316,7 @@ public class InlinedCodeGen : CodeGen
 
         if (((Expr.StackRegister)((Expr.Binary)expr.value).internalFunction.parameters[0].stack).register != operand2)
         {
-            Emit(new AssemblyExpr.Binary("MOV", ((Expr.StackRegister)((Expr.Binary)expr.value).internalFunction.parameters[0].stack).register, operand2));
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, ((Expr.StackRegister)((Expr.Binary)expr.value).internalFunction.parameters[0].stack).register, operand2));
         }
 
         alloc.Free(operand2);
@@ -348,34 +348,34 @@ public class InlinedCodeGen : CodeGen
                     {
                         if (!(HandleSeteOptimization((AssemblyExpr.Register)operand, ((InlineStateInlined)inlineState).callee)))
                         {
-                            Emit(new AssemblyExpr.Binary("MOV", new AssemblyExpr.Register(((AssemblyExpr.Register)((InlineStateInlined)inlineState).callee).name, op.size), operand));
+                            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(((AssemblyExpr.Register)((InlineStateInlined)inlineState).callee).name, op.size), operand));
                         }
                     }
                 }
                 else if (operand.IsPointer())
                 {
-                    Emit(new AssemblyExpr.Binary("MOV", ((InlineStateInlined)inlineState).callee, operand));
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, ((InlineStateInlined)inlineState).callee, operand));
                 }
                 else
                 {
-                    Emit(new AssemblyExpr.Binary("MOV", ((InlineStateInlined)inlineState).callee, operand));
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, ((InlineStateInlined)inlineState).callee, operand));
                 }
             }
         }
         else
         {
-            Emit(new AssemblyExpr.Binary("MOV", ((InlineStateInlined)inlineState).callee, new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "0")));
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, ((InlineStateInlined)inlineState).callee, new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "0")));
         }
 
         if (((InlineStateInlined)inlineState).inlineLabelIdx == -1)
         {
             ((InlineStateInlined)inlineState).inlineLabelIdx = conditionalCount;
-            Emit(new AssemblyExpr.Unary("JMP", new AssemblyExpr.LocalProcedureRef(CreateConditionalLabel(conditionalCount++))));
+            Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.JMP, new AssemblyExpr.LocalProcedureRef(CreateConditionalLabel(conditionalCount++))));
         }
         else
         {
             ((InlineStateInlined)inlineState).secondJump = true;
-            Emit(new AssemblyExpr.Unary("JMP", new AssemblyExpr.LocalProcedureRef(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))));
+            Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.JMP, new AssemblyExpr.LocalProcedureRef(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))));
         }
 
         return null;

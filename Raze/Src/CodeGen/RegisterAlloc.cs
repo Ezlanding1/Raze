@@ -74,7 +74,7 @@ internal class RegisterAlloc
         if (registerStates[i].HasState(RegisterState.RegisterStates.Needed))
         {
             registers[i].Value = InstructionUtils.storageRegisters[newIdx];
-            assembler.Emit(new AssemblyExpr.Binary("MOV", NextRegister(((NeedableRegisterState)registerStates[i]).neededSize), new AssemblyExpr.Register(InstructionUtils.storageRegisters[i], ((NeedableRegisterState)registerStates[i]).neededSize)));
+            assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, NextRegister(((NeedableRegisterState)registerStates[i]).neededSize), new AssemblyExpr.Register(InstructionUtils.storageRegisters[i], ((NeedableRegisterState)registerStates[i]).neededSize)));
             registers[i] = null;
         }
         else
@@ -95,7 +95,7 @@ internal class RegisterAlloc
         if (paramRegisters[i] != null)
         {
             AssemblyExpr.Register newReg = NextRegister(paramRegisters[i].size);
-            assembler.Emit(new AssemblyExpr.Binary("MOV", newReg, paramRegisters[i]));
+            assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, newReg, paramRegisters[i]));
             localParams[i] = newReg;
         }
         return (paramRegisters[i] = new AssemblyExpr.Register(InstructionUtils.paramRegister[i], size));
@@ -139,7 +139,7 @@ internal class RegisterAlloc
 
         if (localParam != null)
         {
-            assembler.Emit(new AssemblyExpr.Binary("MOV", new AssemblyExpr.Register(InstructionUtils.paramRegister[i], localParam.size), localParam));
+            assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(InstructionUtils.paramRegister[i], localParam.size), localParam));
             Free(NameToIdx(localParam.name));
         }
     }

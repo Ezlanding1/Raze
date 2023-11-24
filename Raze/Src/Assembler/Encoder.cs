@@ -32,7 +32,7 @@ public partial class Assembler
             var encoding1 = Encoding.ToEncodingType(binary.operand1);
             var encoding2 = Encoding.ToEncodingType(binary.operand2);
 
-            if (instructionEncodings.TryGetValue(binary.instruction, out var encodings))
+            if (instructionEncodings.TryGetValue(binary.instruction.ToString(), out var encodings))
             {
                 foreach (Encoding encoding in encodings)
                 {

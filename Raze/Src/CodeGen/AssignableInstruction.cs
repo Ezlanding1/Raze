@@ -41,37 +41,37 @@ internal abstract partial class ExprUtils
             {
                 switch (instruction.instruction)
                 {
-                    case "MOV":
-                    case "ADD":
-                    case "SUB":
-                    case "AND":
-                    case "OR":
-                    case "XOR":
+                    case AssemblyExpr.Instruction.MOV:
+                    case AssemblyExpr.Instruction.ADD:
+                    case AssemblyExpr.Instruction.SUB:
+                    case AssemblyExpr.Instruction.AND:
+                    case AssemblyExpr.Instruction.OR:
+                    case AssemblyExpr.Instruction.XOR:
                         AssemblyOps.Binary.DefaultBinOp(this, assemblyOps);
                         return;
-                    case "LEA":
+                    case AssemblyExpr.Instruction.LEA:
                         AssemblyOps.Binary.LEA(this, assemblyOps);
                         return;
-                    case "IMUL":
+                    case AssemblyExpr.Instruction.IMUL:
                         AssemblyOps.Binary.IMUL(this, assemblyOps);
                         return;
-                    case "SAL":
-                    case "SAR":
+                    case AssemblyExpr.Instruction.SAL:
+                    case AssemblyExpr.Instruction.SAR:
                         AssemblyOps.Binary.SAL_SAR(this, assemblyOps);
                         return;
-                    case "IDIV":
-                    case "DIV":
-                    case "IMOD":
-                    case "MOD":
+                    case AssemblyExpr.Instruction.IDIV:
+                    case AssemblyExpr.Instruction.DIV:
+                    case AssemblyExpr.Instruction.IMOD:
+                    case AssemblyExpr.Instruction.MOD:
                         AssemblyOps.Binary.IDIV_DIV_IMOD_MOD(this, assemblyOps);
                         return;
-                    case "E_CMP":
-                    case "CMP":
-                    case "NE_CMP":
-                    case "G_CMP":
-                    case "GE_CMP":
-                    case "L_CMP":
-                    case "LE_CMP":
+                    case AssemblyExpr.Instruction.E_CMP:
+                    case AssemblyExpr.Instruction.CMP:
+                    case AssemblyExpr.Instruction.NE_CMP:
+                    case AssemblyExpr.Instruction.G_CMP:
+                    case AssemblyExpr.Instruction.GE_CMP:
+                    case AssemblyExpr.Instruction.L_CMP:
+                    case AssemblyExpr.Instruction.LE_CMP:
                         AssemblyOps.Binary.CMP(this, assemblyOps);
                         return;
                     default:
@@ -86,16 +86,16 @@ internal abstract partial class ExprUtils
 
                 switch (instruction.instruction)
                 {
-                    case "MOV":
-                    case "ADD":
-                    case "SUB":
-                    case "AND":
-                    case "OR":
-                    case "XOR":
-                    case "LEA":
+                    case AssemblyExpr.Instruction.MOV:
+                    case AssemblyExpr.Instruction.ADD:
+                    case AssemblyExpr.Instruction.SUB:
+                    case AssemblyExpr.Instruction.AND:
+                    case AssemblyExpr.Instruction.OR:
+                    case AssemblyExpr.Instruction.XOR:
+                    case AssemblyExpr.Instruction.LEA:
                     //case "IMUL":
-                    case "SAL":
-                    case "SAR":
+                    case AssemblyExpr.Instruction.SAL:
+                    case AssemblyExpr.Instruction.SAR:
                     //case "IDIV":
                     //case "DIV":
                     //case "IMOD":
@@ -137,10 +137,10 @@ internal abstract partial class ExprUtils
             {
                 switch (instruction.instruction)
                 {
-                    case "INC":
+                    case AssemblyExpr.Instruction.INC:
                         AssemblyOps.Unary.DefaultUnOp(this, assemblyOps);
                         return;
-                    case "DEREF":
+                    case AssemblyExpr.Instruction.DEREF:
                         AssemblyOps.Unary.DEREF(this, assemblyOps);
                         return;
                     default:
@@ -155,7 +155,7 @@ internal abstract partial class ExprUtils
 
                 switch (instruction.instruction)
                 {
-                    case "INC":
+                    case AssemblyExpr.Instruction.INC:
                     //case "DEREF":
                         return (variablesUsed, (int)AssignType.AssignFirst);
                     default:
@@ -182,7 +182,7 @@ internal abstract partial class ExprUtils
             {
                 switch (instruction.instruction)
                 {
-                    case "SYSCALL":
+                    case AssemblyExpr.Instruction.SYSCALL:
                         AssemblyOps.Zero.DefaultZOp(this, assemblyOps);
                         break;
                     default:
