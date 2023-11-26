@@ -53,7 +53,7 @@ public abstract partial class AssemblyExpr
         }
     }
 
-    public abstract class Value : AssemblyExpr
+    public abstract class Value : Operand
     {
         // 0 = Register, 1 = Pointer, 2 = Literal
         public int valueType;
@@ -170,6 +170,11 @@ public abstract partial class AssemblyExpr
         {
             return visitor.VisitRegister(this);
         }
+
+        public override Assembler.Encoder.Operand ToAssemblerOperand()
+        {
+            return new(Assembler.Encoder.Operand.RegisterOperandType(this), (int)size);
+        }
     }
 
     public class Pointer : SizedValue
@@ -210,10 +215,15 @@ public abstract partial class AssemblyExpr
             return assembler.alloc.NextRegister(size);
         }
 
-
         public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitPointer(this);
+        }
+
+        public override Assembler.Encoder.Operand ToAssemblerOperand()
+        {
+            Assembler.Encoder.Operand.ThrowTMP(register);
+            return new(Assembler.Encoder.Operand.OperandType.M, (int)size);
         }
     }
 
@@ -231,6 +241,11 @@ public abstract partial class AssemblyExpr
         public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitLiteral(this);
+        }
+
+        public override Assembler.Encoder.Operand ToAssemblerOperand()
+        {
+            return new(Assembler.Encoder.Operand.OperandType.IMM, CodeGen.SizeOfLiteral(this));
         }
     }
 
@@ -325,12 +340,22 @@ public abstract partial class AssemblyExpr
         }
     }
 
+    public interface IOperand
+    {
+        Assembler.Encoder.Operand ToAssemblerOperand();
+    }
+    public abstract class Operand : AssemblyExpr, IOperand
+    {
+        public abstract Assembler.Encoder.Operand ToAssemblerOperand();
+    }
+
+
     public class Binary : AssemblyExpr
     {
         public Instruction instruction;
-        public AssemblyExpr operand1, operand2;
+        public Operand operand1, operand2;
 
-        public Binary(Instruction instruction, AssemblyExpr operand1, AssemblyExpr operand2)
+        public Binary(Instruction instruction, Operand operand1, Operand operand2)
         {
             this.instruction = instruction;
             this.operand1 = operand1;

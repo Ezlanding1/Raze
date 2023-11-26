@@ -8,7 +8,7 @@ namespace Raze;
 
 public partial class Assembler
 {
-    internal partial class Encoder
+    public partial class Encoder
     {
         private partial class Encoding
         {

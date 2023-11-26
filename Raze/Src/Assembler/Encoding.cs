@@ -8,7 +8,7 @@ namespace Raze;
 
 public partial class Assembler
 {
-    internal partial class Encoder
+    public partial class Encoder
     {
         private partial class Encoding
         {
@@ -86,7 +86,7 @@ public partial class Assembler
                     }
                 }
             }
-            private EncodingTypes encodingType = Encoding.EncodingTypes.None;
+            private EncodingTypes encodingType = EncodingTypes.None;
 
             public byte OpCodeExtension { get; set; }
             public byte OpCode { get; set; }
@@ -107,52 +107,9 @@ public partial class Assembler
                 return true;
             }
 
-            public static Operand ToEncodingType(AssemblyExpr assemblyExpr)
+            public static Operand ToEncodingType(AssemblyExpr.Operand operand)
             {
-                if (assemblyExpr is AssemblyExpr.Value value)
-                {
-                    Operand operand;
-
-                    if (value.IsLiteral())
-                    {
-                        operand = new(Operand.OperandType.IMM, CodeGen.SizeOfLiteral((AssemblyExpr.Literal)value));
-                    }
-                    else if (value.IsRegister())
-                    {
-                        operand = new(RegisterOperandType((AssemblyExpr.Register)value), (int)((AssemblyExpr.SizedValue)value).size);
-                    }
-                    else
-                    {
-                        operand = new(Operand.OperandType.M, (int)((AssemblyExpr.SizedValue)value).size);
-                        ThrowTMP(((AssemblyExpr.Pointer)value).register);
-                    }
-                    return operand;
-                }
-                Diagnostics.errors.Push(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
-                return new();
-            }
-
-            private static Operand.OperandType RegisterOperandType(AssemblyExpr.Register reg)
-            {
-                ThrowTMP(reg);
-
-                return reg.name switch
-            {
-                AssemblyExpr.Register.RegisterName.RAX => Operand.OperandType.A,
-                AssemblyExpr.Register.RegisterName.RSP => Operand.OperandType.P,
-                AssemblyExpr.Register.RegisterName.RBP => Operand.OperandType.P,
-                AssemblyExpr.Register.RegisterName.RSI => Operand.OperandType.P,
-                AssemblyExpr.Register.RegisterName.RDI => Operand.OperandType.P,
-                _ => Operand.OperandType.R
-            };
-        }
-
-            private static void ThrowTMP(AssemblyExpr.Register reg)
-            {
-                if (reg.name == AssemblyExpr.Register.RegisterName.TMP)
-                {
-                    Diagnostics.errors.Push(new Error.ImpossibleError("TMP Register Emitted"));
-                }
+                return operand.ToAssemblerOperand();
             }
         }
     }

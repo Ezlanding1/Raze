@@ -8,24 +8,24 @@ namespace Raze;
 
 public partial class Assembler
 {
-    internal partial class Encoder
+    public partial class Encoder
     {
-        internal struct Operand
+        public struct Operand
         {
             internal OperandType operandType { get; private set; }
             internal OperandSize size { get; private set; }
 
-            public Operand(OperandType operandType, OperandSize size)
+            internal Operand(OperandType operandType, OperandSize size)
             {
                 this.operandType = operandType;
                 this.size = size;
             }
-            public Operand(OperandType operandType, int size) : this(operandType, (OperandSize)size)
+            internal Operand(OperandType operandType, int size) : this(operandType, (OperandSize)size)
             {
             }
 
-            public bool Matches(Operand operand) => operand.operandType.HasFlag(this.operandType) && (operandType == OperandType.IMM ? (int)operand.size >= (int)this.size : operand.size == this.size);
-            public bool Matches(OperandType operandType) => operandType.HasFlag(this.operandType);
+            internal bool Matches(Operand operand) => operand.operandType.HasFlag(this.operandType) && (operandType == OperandType.IMM ? (int)operand.size >= (int)this.size : operand.size == this.size);
+            internal bool Matches(OperandType operandType) => operandType.HasFlag(this.operandType);
 
             [Flags]
             internal enum OperandType
@@ -43,6 +43,29 @@ public partial class Assembler
                 _16Bits = 2,
                 _8Bits = 1,
                 _8BitsUpper = 0
+            }
+
+            internal static OperandType RegisterOperandType(AssemblyExpr.Register reg)
+            {
+                ThrowTMP(reg);
+
+                return reg.name switch
+                {
+                    AssemblyExpr.Register.RegisterName.RAX => OperandType.A,
+                    AssemblyExpr.Register.RegisterName.RSP => OperandType.P,
+                    AssemblyExpr.Register.RegisterName.RBP => OperandType.P,
+                    AssemblyExpr.Register.RegisterName.RSI => OperandType.P,
+                    AssemblyExpr.Register.RegisterName.RDI => OperandType.P,
+                    _ => OperandType.R
+                };
+            }
+
+            internal static void ThrowTMP(AssemblyExpr.Register reg)
+            {
+                if (reg.name == AssemblyExpr.Register.RegisterName.TMP)
+                {
+                    Diagnostics.errors.Push(new Error.ImpossibleError("TMP Register Emitted"));
+                }
             }
         }
     }
