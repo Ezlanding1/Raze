@@ -21,10 +21,10 @@ public partial class Assembler : AssemblyExpr.IVisitor<Assembler.Instruction>
 
                 foreach (byte[] bytes in instruction.ToBytes())
                 {
-                fs.Write(bytes, 0, bytes.Length);
+                    fs.Write(bytes, 0, bytes.Length);
+                }
             }
         }
-    }
     }
 
     public Instruction VisitBinary(AssemblyExpr.Binary instruction)

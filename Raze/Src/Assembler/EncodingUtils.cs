@@ -10,7 +10,7 @@ public partial class Assembler
 {
     public partial class Encoder
     {
-        private static class EncodingUtils
+        private static partial class EncodingUtils
         {
             internal static Instruction EncodingError()
             {
@@ -48,10 +48,10 @@ public partial class Assembler
 
             internal static IInstruction GetImmInstruction(Operand.OperandSize size, AssemblyExpr.Literal op2Expr) => size switch
             {
-                Operand.OperandSize._8Bits => new Instruction.Immediate8(sbyte.Parse(op2Expr.value)),
-                Operand.OperandSize._16Bits => new Instruction.Immediate16(short.Parse(op2Expr.value)),
-                Operand.OperandSize._32Bits => new Instruction.Immediate32(int.Parse(op2Expr.value)),
-                Operand.OperandSize._64Bits => new Instruction.Immediate64(long.Parse(op2Expr.value)),
+                Operand.OperandSize._8Bits => ImmediateGenerator.GenerateImm8(op2Expr),
+                Operand.OperandSize._16Bits => ImmediateGenerator.GenerateImm16(op2Expr),
+                Operand.OperandSize._32Bits => ImmediateGenerator.GenerateImm32(op2Expr),
+                Operand.OperandSize._64Bits => ImmediateGenerator.GenerateImm64(op2Expr),
             };
 
             private static bool Disp8Bit(int disp) 

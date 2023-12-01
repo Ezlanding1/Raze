@@ -988,7 +988,19 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         int GetIntegralSize(long value)
         {
-            if (value <= byte.MaxValue && value >= byte.MinValue)
+            if (value < 0)
+            {
+                return GetIntegralSizeSigned(value);
+            }
+            else
+            {
+                return GetIntegralSizeUnSigned(value);
+            }
+        }
+
+        int GetIntegralSizeSigned(long value)
+        {
+            if (value <= sbyte.MaxValue && value >= sbyte.MinValue)
             {
                 return (int)AssemblyExpr.Register.RegisterSize._8Bits;
             }
@@ -997,6 +1009,25 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                 return (int)AssemblyExpr.Register.RegisterSize._16Bits;
             }
             else if (value <= int.MaxValue && value >= int.MinValue)
+            {
+                return (int)AssemblyExpr.Register.RegisterSize._32Bits;
+            }
+            else
+            {
+                return (int)AssemblyExpr.Register.RegisterSize._64Bits;
+            }
+        }
+        int GetIntegralSizeUnSigned(long value)
+        {
+            if (value <= byte.MaxValue)
+            {
+                return (int)AssemblyExpr.Register.RegisterSize._8Bits;
+            }
+            else if (value <= ushort.MaxValue)
+            {
+                return (int)AssemblyExpr.Register.RegisterSize._16Bits;
+            }
+            else if (value <= uint.MaxValue)
             {
                 return (int)AssemblyExpr.Register.RegisterSize._32Bits;
             }
