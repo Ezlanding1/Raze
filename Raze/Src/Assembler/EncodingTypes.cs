@@ -19,7 +19,9 @@ public partial class Assembler
                 RexPrefix = 1,
                 RexWPrefix = 2,
                 ExpansionPrefix = 4,
-                SizePrefix = 8
+                SizePrefix = 8,
+                NoModRegRM = 16,
+                SignExtends = 32
             }
         }
     }

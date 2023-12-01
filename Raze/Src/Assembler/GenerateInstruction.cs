@@ -71,11 +71,13 @@ public partial class Assembler
                 }
                 else if (op2.operandType == Operand.OperandType.IMM)
                 {
+                    if (!encodingType.HasFlag(EncodingTypes.NoModRegRM))
+                    {
                     instructions.Add(new Instruction.ModRegRm(Assembler.Instruction.ModRegRm.Mod.RegisterAdressingMode,
                         (Instruction.ModRegRm.OpCodeExtension)OpCodeExtension,
                         EncodingUtils.ExprRegisterToModRegRmRegister((AssemblyExpr.Register)op1Expr)
                     ));
-
+                    }
                     instructions.Add(EncodingUtils.GetImmInstruction(this.operands[1].size, (AssemblyExpr.Literal)op2Expr));
                 }
                 else

@@ -22,6 +22,7 @@
   // RexWPrefix = Emit REX Prefix with the W bit set (0b01001000)
   // ExpansionPrefix = Emit Expansion Prefix (0x0F)
   // SizePrefix = Emit Size Prefix (0x66)
+  // NoModRegRM = Do not emit ModRegRM byte when operand1 is a register (R), and operand2 is an immediate (IMM)
   // Any combination of these flags can be encoded by separating two EncodingTypes with bitwise or '|' or comma ','
 
 {
@@ -37,14 +38,17 @@
     },
     {
       "Instruction": "ADD AL, IMM8",
+      "EncodingType": "NoModRegRM",
       "OpCode": 4
     },
     {
       "Instruction": "ADD AX, IMM16",
+      "EncodingType": "SizePrefix | NoModRegRM",
       "OpCode": 5
     },
     {
       "Instruction": "ADD EAX, IMM32",
+      "EncodingType": "NoModRegRM",
       "OpCode": 5
     },
     {
