@@ -23,6 +23,7 @@
   // ExpansionPrefix = Emit Expansion Prefix (0x0F)
   // SizePrefix = Emit Size Prefix (0x66)
   // NoModRegRM = Do not emit ModRegRM byte when operand1 is a register (R), and operand2 is an immediate (IMM)
+  // SignExtends = Indicates that the immediate (IMM) operand2 will be sign extended. Will only match if MSB is 0
   // Any combination of these flags can be encoded by separating two EncodingTypes with bitwise or '|' or comma ','
 
 {
@@ -35,6 +36,25 @@
       "Instruction": "ADD P, IMM8",
       "EncodingType": "RexPrefix",
       "OpCode": 128
+    },
+    {
+      "Instruction": "ADD RM8, R8",
+      "OpCode": 0
+    },
+    {
+      "Instruction": "ADD RM64, R64",
+      "EncodingType": "RexWPrefix",
+      "OpCode": 1
+    },
+    {
+      "Instruction": "ADD RM16, IMM8",
+      "EncodingType": "SizePrefix | SignExtends",
+      "OpCode": 131
+    },
+    {
+      "Instruction": "ADD RM16, IMM16",
+      "EncodingType": "SizePrefix",
+      "OpCode": 129
     },
     {
       "Instruction": "ADD AL, IMM8",
@@ -53,17 +73,8 @@
     },
     {
       "Instruction": "ADD RAX, IMM32",
-      "EncodingType": "RexWPrefix",
+      "EncodingType": "RexWPrefix | NoModRegRM",
       "OpCode": 5
-    },
-    {
-      "Instruction": "ADD RM64, R64",
-      "EncodingType": "RexWPrefix",
-      "OpCode": 1
-    },
-    {
-      "Instruction": "ADD RM8, R8",
-      "OpCode": 0
     }
   ],
   "MOV": [

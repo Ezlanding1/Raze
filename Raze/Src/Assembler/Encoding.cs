@@ -107,6 +107,26 @@ public partial class Assembler
                 return true;
             }
 
+            public bool SpecialMatch(Operand[] operands, AssemblyExpr assemblyExpr)
+            {
+                if (encodingType.HasFlag(EncodingTypes.SignExtends) && operands.Length == 2 && operands[1].operandType == Operand.OperandType.IMM)
+                {
+                    switch (this.operands[1].size)
+                    {
+                        case Operand.OperandSize._8Bits:
+                        case Operand.OperandSize._8BitsUpper:
+                            return sbyte.TryParse(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value, out _);
+                        case Operand.OperandSize._16Bits:
+                            return short.TryParse(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value, out _);
+                        case Operand.OperandSize._32Bits:
+                            return int.TryParse(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value, out _);
+                        default:
+                            return long.TryParse(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value, out _);
+                    }
+                }
+                return true;
+            }
+
             public static Operand ToEncodingType(AssemblyExpr.Operand operand)
             {
                 return operand.ToAssemblerOperand();

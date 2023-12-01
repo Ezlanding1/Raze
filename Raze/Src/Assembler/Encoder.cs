@@ -36,7 +36,7 @@ public partial class Assembler
             {
                 foreach (Encoding encoding in encodings)
                 {
-                    if (encoding.Matches(encoding1, encoding2))
+                    if (encoding.Matches(encoding1, encoding2) && encoding.SpecialMatch(new Operand[] { encoding1, encoding2 },  binary))
                     {
                         return encoding.GenerateInstruction(encoding1, encoding2, binary.operand1, binary.operand2);
                     }
