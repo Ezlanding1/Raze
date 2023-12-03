@@ -11,7 +11,7 @@ public partial class Assembler : AssemblyExpr.IVisitor<Assembler.Instruction>
 {
     Encoder encoder = new Encoder();
 
-    public void Assemble(string fn, List<AssemblyExpr> textExprs, List<AssemblyExpr> dataExprs)
+    public void Assemble(string fn, CodeGen.Assembly assembly)
     {
         using (var fs = new FileStream(fn, FileMode.Create, FileAccess.Write))
         {

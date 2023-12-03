@@ -25,7 +25,11 @@ public abstract partial class AssemblyExpr
         public T VisitComment(Comment instruction);
     }
 
-    public class Global : AssemblyExpr
+    public abstract class TopLevelExpr : AssemblyExpr { }
+    public abstract class TextExpr : AssemblyExpr { }
+    public abstract class DataExpr : AssemblyExpr { }
+
+    public class Global : TopLevelExpr
     {
         public string name;
         public Global(string name)
@@ -39,7 +43,7 @@ public abstract partial class AssemblyExpr
         }
     }
 
-    public class Section : AssemblyExpr
+    public class Section : TopLevelExpr
     {
         public string name;
         public Section(string name)
@@ -249,7 +253,7 @@ public abstract partial class AssemblyExpr
         }
     }
 
-    public class Data : AssemblyExpr
+    public class Data : DataExpr
     {
         public string name;
         public string size;
@@ -267,7 +271,7 @@ public abstract partial class AssemblyExpr
         }
     }
 
-    public class DataRef : AssemblyExpr
+    public class DataRef : TextExpr
     {
         public string dataName;
 
@@ -282,7 +286,7 @@ public abstract partial class AssemblyExpr
         }
     }
 
-    public class Procedure : AssemblyExpr
+    public class Procedure : TextExpr
     {
         public string name;
         public Procedure(string name)
@@ -296,7 +300,7 @@ public abstract partial class AssemblyExpr
         }
     }
 
-    public class LocalProcedure : AssemblyExpr
+    public class LocalProcedure : TextExpr
     {
         public string name;
         public LocalProcedure(string name)
@@ -309,8 +313,8 @@ public abstract partial class AssemblyExpr
             return visitor.VisitLocalProcedure(this);
         }
     }
-
-    public class ProcedureRef : AssemblyExpr
+    
+    public class ProcedureRef : TextExpr
     {
         public string name;
 
@@ -325,7 +329,7 @@ public abstract partial class AssemblyExpr
         }
     }
 
-    public class LocalProcedureRef : AssemblyExpr
+    public class LocalProcedureRef : TextExpr
     {
         public string name;
 
@@ -344,13 +348,13 @@ public abstract partial class AssemblyExpr
     {
         Assembler.Encoder.Operand ToAssemblerOperand();
     }
-    public abstract class Operand : AssemblyExpr, IOperand
+    public abstract class Operand : TextExpr, IOperand
     {
         public abstract Assembler.Encoder.Operand ToAssemblerOperand();
     }
 
 
-    public class Binary : AssemblyExpr
+    public class Binary : TextExpr
     {
         public Instruction instruction;
         public Operand operand1, operand2;
@@ -373,7 +377,7 @@ public abstract partial class AssemblyExpr
         }
     }
 
-    public class Unary : AssemblyExpr
+    public class Unary : TextExpr
     {
         public AssemblyExpr operand;
         public Instruction instruction;
@@ -394,7 +398,7 @@ public abstract partial class AssemblyExpr
         }
     }
 
-    public class Zero : AssemblyExpr
+    public class Zero : TextExpr
     {
         public Instruction instruction;
         public Zero(Instruction instruction)
@@ -408,7 +412,7 @@ public abstract partial class AssemblyExpr
         }
     }
 
-    public class Comment : AssemblyExpr
+    public class Comment : TopLevelExpr
     {
         public string comment;
         public Comment(string comment)

@@ -10,21 +10,20 @@ namespace Raze.Tools;
 
 public class AssemblyPrinter
 {
-    List<AssemblyExpr> instructions;
-    List<AssemblyExpr> data;
-    public AssemblyPrinter(List<AssemblyExpr> instructions, List<AssemblyExpr> data)
+    CodeGen.Assembly assembly;
+
+    public AssemblyPrinter(CodeGen.Assembly assembly)
     {
-        this.instructions = instructions;
-        this.data = data;
+        this.assembly = assembly;
     }
 
-    public static void PrintAssembly(List<AssemblyExpr> instructions, List<AssemblyExpr> data)
+    public static void PrintAssembly(CodeGen.Assembly assembly)
     {
-        AssemblyPrinter printer = new(instructions, data);
-        printer.PrintAssembly(SymbolTableSingleton.SymbolTable.main);
+        AssemblyPrinter printer = new(assembly);
+        printer.PrintAssembly();
     }
 
-    public void PrintAssembly(Expr.Function main)
+    public void PrintAssembly()
     {
         Syntaxes.SyntaxFactory.ISyntaxFactory Syntax;
         #if Intel_x86_64_NASM
@@ -34,12 +33,15 @@ public class AssemblyPrinter
         if (Syntax == null)
         {
             Diagnostics.errors.Push(new Error.ImpossibleError("No Syntax Type Defined"));
+            return;
         }
         
         Syntax.Run(Syntax.header);
-        Syntax.Run(Syntax.GenerateHeaderInstructions(main));
-        Syntax.Run(instructions);
-        Syntax.Run(data);
+        Syntax.Run(CodeGen.ISection.Text.GenerateHeaderInstructions());
+        Syntax.Run(CodeGen.ISection.Text.GenerateDriverInstructions(SymbolTableSingleton.SymbolTable.main));
+        Syntax.Run(assembly.text);
+        Syntax.Run(CodeGen.ISection.Data.GenerateHeaderInstructions());
+        Syntax.Run(assembly.data);
         Console.WriteLine(Syntax.Output);
     }
 }

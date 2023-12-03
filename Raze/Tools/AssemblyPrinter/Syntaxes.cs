@@ -18,21 +18,8 @@ partial class Syntaxes
             {
                 header = new AssemblyExpr.Comment("Raze Compiler Version ALPHA 0.0.0 Intel_x86-64 NASM");
             }
-            public override List<AssemblyExpr> GenerateHeaderInstructions(Expr.Function main)
-            {
-                return new List<AssemblyExpr>()
-                {
-                    { new AssemblyExpr.Global("_start") },
-                    { new AssemblyExpr.Section("text") },
-                    { new AssemblyExpr.Procedure("_start") },
-                    { new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL, new AssemblyExpr.ProcedureRef(CodeGen.ToMangledName(main))) },
-                    { new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits), (Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.INTEGER].Matches(main._returnType.type)) ? new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits) : new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "0")) },
-                    { new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "60")) },
-                    { new AssemblyExpr.Zero(AssemblyExpr.Instruction.SYSCALL) }
-                };
-            }
 
-            public override void Run(List<AssemblyExpr> instructions)
+            public override void Run(CodeGen.ISection instructions)
             {
                 foreach (var instruction in instructions)
                 {
@@ -85,7 +72,7 @@ partial class Syntaxes
 
             public string VisitGlobal(AssemblyExpr.Global instruction)
             {
-                return $"global {instruction.name}\n";
+                return $"global {instruction.name}";
             }
 
             public string VisitPointer(AssemblyExpr.Pointer instruction)
@@ -124,7 +111,7 @@ partial class Syntaxes
 
             public string VisitSection(AssemblyExpr.Section instruction)
             {
-                return $"section .{instruction.name}\n";
+                return $"\nsection .{instruction.name}";
             }
 
             public string VisitUnary(AssemblyExpr.Unary instruction)
@@ -265,20 +252,8 @@ partial class Syntaxes
             {
                 header = new AssemblyExpr.Comment("Raze Compiler Version ALPHA 0.0.0 Intel_x86-64 GAS");
             }
-            public override List<AssemblyExpr> GenerateHeaderInstructions(Expr.Function main){
-                return new List<AssemblyExpr>()
-                {
-                    { new AssemblyExpr.Global("_start") },
-                    { new AssemblyExpr.Section("text") },
-                    { new AssemblyExpr.Procedure("_start") },
-                    { new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL, new AssemblyExpr.ProcedureRef(CodeGen.ToMangledName(main))) },
-                    { new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits), (Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.INTEGER].Matches(main._returnType.type)) ? new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits) : new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "0")) },
-                    { new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "60")) },
-                    { new AssemblyExpr.Zero(AssemblyExpr.Instruction.SYSCALL) }
-                };
-            }
 
-            public override void Run(List<AssemblyExpr> instructions)
+            public override void Run(CodeGen.ISection instructions)
             {
                 foreach (var instruction in instructions)
                 {

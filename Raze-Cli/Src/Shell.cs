@@ -63,18 +63,16 @@ internal class Shell
 
             // Lower AST to ASM
             Raze.CodeGen codeGen = new Raze.InlinedCodeGen(expressions);
-            var output = codeGen.Generate();
-            var instructions = output.Item1;
-            var data = output.Item2;
+            var assembly = codeGen.Generate();
 
 
             #if DEBUG
-            Raze.Tools.AssemblyPrinter.PrintAssembly(instructions, data);
+            Raze.Tools.AssemblyPrinter.PrintAssembly(assembly);
             #endif
 
             // Assemble, Link, and Output Assembly Code
             Raze.Assembler assembler = new Raze.Assembler();
-            assembler.Assemble("output.elf", instructions, data);
+            assembler.Assemble("output.elf", assembly);
 
             // Throw any encountered assembling errors
             Raze.Diagnostics.ThrowCompilerErrors();

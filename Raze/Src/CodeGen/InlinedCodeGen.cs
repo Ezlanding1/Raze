@@ -73,10 +73,10 @@ public class InlinedCodeGen : CodeGen
         expr.internalFunction.parameters[0].stack.stackRegister = false;
         alloc.Free(((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register, true);
 
-        if (instructions[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == AssemblyExpr.Instruction.JMP
+        if (assembly.text[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == AssemblyExpr.Instruction.JMP
             && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
         {
-            instructions.RemoveAt(instructions.Count - 1);
+            assembly.text.RemoveAt(assembly.text.Count - 1);
 
             if (((InlineStateInlined)inlineState).secondJump)
             {
@@ -156,10 +156,10 @@ public class InlinedCodeGen : CodeGen
 
         UnlockOperand(ret);
 
-        if (instructions[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == AssemblyExpr.Instruction.JMP
+        if (assembly.text[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == AssemblyExpr.Instruction.JMP
             && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
         {
-            instructions.RemoveAt(instructions.Count - 1);
+            assembly.text.RemoveAt(assembly.text.Count - 1);
 
             if (((InlineStateInlined)inlineState).secondJump)
             {
@@ -262,10 +262,10 @@ public class InlinedCodeGen : CodeGen
 
         UnlockOperand(ret);
 
-        if (instructions[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == AssemblyExpr.Instruction.JMP
+        if (assembly.text[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == AssemblyExpr.Instruction.JMP
             && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
         {
-            instructions.RemoveAt(instructions.Count - 1);
+            assembly.text.RemoveAt(assembly.text.Count - 1);
 
             if (((InlineStateInlined)inlineState).secondJump)
             {

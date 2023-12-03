@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace Raze;
 
-public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
+public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 {
     List<Expr> expressions;
-    public List<AssemblyExpr> data = new();
-    private protected List<AssemblyExpr> instructions = new();
+    
+    internal Assembly assembly = new();
 
     private protected int conditionalCount;
     private protected string ConditionalLabel
@@ -35,18 +35,17 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
     public CodeGen(List<Expr> expressions)
     {
         this.expressions = expressions;
-        data.Add(new AssemblyExpr.Section("data"));
         this.assemblyOps = new(this);
     }
     
-    public (List<AssemblyExpr>, List<AssemblyExpr>) Generate()
+    public Assembly Generate()
     {
         foreach (Expr expr in expressions)
         {
             expr.Accept(this);
             alloc.FreeAll();
         }
-        return (instructions, data);
+        return assembly;
     }
 
     public virtual AssemblyExpr.Value? VisitBinaryExpr(Expr.Binary expr)
@@ -273,7 +272,7 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         Emit(new AssemblyExpr.Procedure(ToMangledName(expr)));
 
-        alloc.fncPushPreserved = new(expr.size, instructions.Count);
+        alloc.fncPushPreserved = new(expr.size, assembly.text.Count);
 
         int count = 0;
 
@@ -309,7 +308,7 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             DoFooter();
         }
 
-        alloc.fncPushPreserved.GenerateHeader(instructions);
+        alloc.fncPushPreserved.GenerateHeader(assembly.text);
 
         return null;
     }
@@ -448,7 +447,7 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             if (SafeGetCmpTypeRaw((AssemblyExpr.Register)operand1, out AssemblyExpr.Unary instruction))
             {
                 alloc.Free((AssemblyExpr.Value)instruction.operand);
-                instructions.RemoveAt(instructions.Count - 1);
+                assembly.text.RemoveAt(assembly.text.Count - 1);
 
                 Emit(new AssemblyExpr.Unary(
                     (expr.op.type == Token.TokenType.AND) ? 
@@ -470,7 +469,7 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         if (operand2.IsLiteral())
         {
-            instructions.RemoveRange(instructions.Count-2, 2);
+            assembly.text.RemoveRange(assembly.text.Count-2, 2);
 
             if ((expr.op.type == Token.TokenType.AND) ^ (((AssemblyExpr.Literal)operand2).value == "1"))
             {
@@ -495,7 +494,7 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             else if (SafeGetCmpTypeRaw((AssemblyExpr.Register)operand2, out AssemblyExpr.Unary instruction))
             {
                 alloc.Free((AssemblyExpr.Value)instruction.operand);
-                instructions.RemoveAt(instructions.Count - 1);
+                assembly.text.RemoveAt(assembly.text.Count - 1);
 
                 Emit(new AssemblyExpr.Unary(InstructionUtils.ConditionalJumpReversed[instruction.instruction], new AssemblyExpr.LocalProcedureRef(cLabel)));
             }
@@ -846,30 +845,30 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     private void DoFooter()
     {
-        alloc.fncPushPreserved.GenerateFooter(instructions);
+        alloc.fncPushPreserved.GenerateFooter(assembly.text);
     }
 
-    internal void EmitCall(AssemblyExpr instruction)
+    internal void EmitCall(AssemblyExpr.TextExpr instruction)
     {
         alloc.fncPushPreserved.leaf = false;
         Emit(instruction);
     }
 
-    internal void Emit(AssemblyExpr instruction)
+    internal void Emit(AssemblyExpr.TextExpr instruction)
     {
-        instructions.Add(instruction);
+        assembly.text.Add(instruction);
     }
 
-    internal void EmitData(AssemblyExpr.Data instruction)
+    internal void EmitData(AssemblyExpr.DataExpr instruction)
     {
-        data.Add(instruction);
+        assembly.data.Add(instruction);
     }
 
     internal AssemblyExpr.Instruction HandleConditionalCmpType(AssemblyExpr.Value conditional)
     {
         if (conditional.IsRegister() && SafeGetCmpTypeRaw((AssemblyExpr.Register)conditional, out var res))
         {
-            instructions.RemoveAt(instructions.Count - 1);
+            assembly.text.RemoveAt(assembly.text.Count - 1);
             return res.instruction;
         }
         else if (!conditional.IsLiteral())
@@ -895,7 +894,7 @@ public class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     internal bool SafeGetCmpTypeRaw(AssemblyExpr.Register register, out AssemblyExpr.Unary? res)
     {
-        if (instructions[^1] is AssemblyExpr.Unary instruction)
+        if (assembly.text[^1] is AssemblyExpr.Unary instruction)
         {
             if (instruction.instruction.ToString()[..3] == "SET" && instruction.operand == register)
             {

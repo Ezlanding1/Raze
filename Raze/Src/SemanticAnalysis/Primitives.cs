@@ -167,13 +167,13 @@ public partial class Analyzer
             int i = 1;
             while (aData == null || bData == null)
             {
-                if (((AssemblyExpr.Data)assembler.data[i]).name == (string)a)
+                if (((AssemblyExpr.Data)assembler.assembly.data[i]).name == (string)a)
                 {
-                    aData = ((AssemblyExpr.Data)assembler.data[i]).value;
+                    aData = ((AssemblyExpr.Data)assembler.assembly.data[i]).value;
                 }
-                if (((AssemblyExpr.Data)assembler.data[i]).name == (string)b)
+                if (((AssemblyExpr.Data)assembler.assembly.data[i]).name == (string)b)
                 {
-                    bData = ((AssemblyExpr.Data)assembler.data[i]).value;
+                    bData = ((AssemblyExpr.Data)assembler.assembly.data[i]).value;
                 }
                 i++;
             }

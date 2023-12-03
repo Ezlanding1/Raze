@@ -12,13 +12,12 @@ partial class Syntaxes
     {
         public abstract class  ISyntaxFactory
         {
-            public abstract void Run(List<AssemblyExpr> instructions);
+            public abstract void Run(CodeGen.ISection instructions);
             public abstract void Run(AssemblyExpr instruction);
 
             public StringBuilder Output = new();
 
             public AssemblyExpr.Comment header;
-            public abstract List<AssemblyExpr> GenerateHeaderInstructions(Expr.Function main);
         }
 
         public class SyntaxTypeCreator
