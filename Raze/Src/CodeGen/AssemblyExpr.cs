@@ -256,9 +256,10 @@ public abstract partial class AssemblyExpr
     public class Data : DataExpr
     {
         public string name;
-        public string size;
-        public string value;
-        public Data(string name, string size, string value)
+        public Register.RegisterSize size;
+        internal (Parser.LiteralTokenType type, string) value;
+
+        internal Data(string name, Register.RegisterSize size, (Parser.LiteralTokenType type, string) value)
         {
             this.name = name;
             this.size = size;
@@ -271,18 +272,20 @@ public abstract partial class AssemblyExpr
         }
     }
 
-    public class DataRef : TextExpr
+    public class DataRef : Literal
     {
-        public string dataName;
-
-        public DataRef(string dataName)
+        public DataRef(string dataName) : base(Parser.LiteralTokenType.REF_STRING, dataName)
         {
-            this.dataName = dataName;
         }
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitDataRef(this);
+        }
+
+        public override Assembler.Encoder.Operand ToAssemblerOperand()
+        {
+            return new(Assembler.Encoder.Operand.OperandType.D, CodeGen.SizeOfLiteral(this));
         }
     }
 

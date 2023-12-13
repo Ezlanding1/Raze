@@ -17,6 +17,8 @@ public partial class Assembler
         internal struct SIB : IInstruction
         {
             public byte _data;
+
+            public byte[] GetBytes() => new byte[] { this._data };
         }
     }
 }

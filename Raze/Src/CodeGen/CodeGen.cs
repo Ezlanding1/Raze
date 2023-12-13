@@ -543,9 +543,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         {
             case Parser.LiteralTokenType.REF_STRING:
                 string name = DataLabel;
-                EmitData(new AssemblyExpr.Data(name, InstructionUtils.dataSize[1], expr.literal.lexeme + ", 0"));
+                EmitData(new AssemblyExpr.Data(name, AssemblyExpr.Register.RegisterSize._8Bits, (Parser.LiteralTokenType.REF_STRING, expr.literal.lexeme + ", 0")));
                 dataCount++;
-                return new AssemblyExpr.Literal(expr.literal.type, name);
+                return new AssemblyExpr.DataRef(name);
             case Parser.LiteralTokenType.STRING:
             case Parser.LiteralTokenType.INTEGER:
             case Parser.LiteralTokenType.FLOATING:

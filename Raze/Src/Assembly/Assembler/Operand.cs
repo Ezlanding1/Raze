@@ -32,9 +32,10 @@ public partial class Assembler
             {
                 R = 1 | A | P,
                 M = 2,
-                IMM = 4,
+                IMM = 4 | D,
                 A = 8,
                 P = 16,
+                D = 32
             }
             internal enum OperandSize
             {

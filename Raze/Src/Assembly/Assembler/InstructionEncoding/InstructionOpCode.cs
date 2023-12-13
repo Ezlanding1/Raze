@@ -91,6 +91,8 @@ public partial class Assembler
             {
                 this.opCode8Bit = opCode;
             }
+
+            public byte[] GetBytes() => new byte[] { this._data };
         }
     }
 }

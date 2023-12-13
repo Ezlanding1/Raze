@@ -27,18 +27,24 @@ public partial class Assembler
         {
             sbyte _data;
             internal Immediate8SByte(sbyte _data) { this._data = _data; }
+
+            public byte[] GetBytes() => BitConverter.GetBytes(this._data);
         }
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Immediate8Half : Immediate8
-            {
+        {
             Half _data;
             internal Immediate8Half(Half _data) { this._data = _data; }
-            }
+
+            public byte[] GetBytes() => BitConverter.GetBytes(this._data);
+        }
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Immediate8Byte : Immediate8
         {
             byte _data;
             internal Immediate8Byte(byte _data) { this._data = _data; }
+
+            public byte[] GetBytes() => BitConverter.GetBytes(this._data);
         }
 
 
@@ -62,18 +68,24 @@ public partial class Assembler
         {
             short _data;
             internal Immediate16Short(short _data) { this._data = _data; }
+
+            public byte[] GetBytes() => BitConverter.GetBytes(this._data);
         }
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Immediate16Half : Immediate16
-            {
+        {
             Half _data;
             internal Immediate16Half(Half _data) { this._data = _data; }
-            }
+
+            public byte[] GetBytes() => BitConverter.GetBytes(this._data);
+        }
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Immediate16UShort : Immediate16
         {
             ushort _data;
             internal Immediate16UShort(ushort _data) { this._data = _data; }
+
+            public byte[] GetBytes() => BitConverter.GetBytes(this._data);
         }
 
 
@@ -97,24 +109,30 @@ public partial class Assembler
         {
             int _data;
             internal Immediate32Int(int _data) { this._data = _data; }
+
+            public byte[] GetBytes() => BitConverter.GetBytes(this._data);
         }
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Immediate32Float : Immediate32
         {
             float _data;
             internal Immediate32Float(float _data) { this._data = _data; }
+
+            public byte[] GetBytes() => BitConverter.GetBytes(this._data);
         }
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Immediate32UInt : Immediate32
         {
             uint _data;
             internal Immediate32UInt(uint _data) { this._data = _data; }
+
+            public byte[] GetBytes() => BitConverter.GetBytes(this._data);
         }
 
 
         // 8 byte immediate
         internal interface Immediate64 : IInstruction
-            {
+        {
             public static Immediate64Long Generate(long _data) => new(_data);
             public static Immediate64Double Generate(double _data) => new(_data);
             public static Immediate64ULong Generate(string _data)
@@ -132,18 +150,24 @@ public partial class Assembler
         {
             long _data;
             internal Immediate64Long(long _data) { this._data = _data; }
+
+            public byte[] GetBytes() => BitConverter.GetBytes(this._data);
         }
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Immediate64Double : Immediate64
-            {
+        {
             double _data;
             internal Immediate64Double(double _data) { this._data = _data; }
-            }
+
+            public byte[] GetBytes() => BitConverter.GetBytes(this._data);
+        }
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Immediate64ULong : Immediate64
         {
             ulong _data;
             internal Immediate64ULong(ulong _data) { this._data = _data; }
+
+            public byte[] GetBytes() => BitConverter.GetBytes(this._data);
         }
     }
 }

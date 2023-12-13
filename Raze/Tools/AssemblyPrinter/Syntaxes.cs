@@ -52,12 +52,12 @@ partial class Syntaxes
 
             public string VisitData(AssemblyExpr.Data instruction)
             {
-                return $"{instruction.name}: {instruction.size} {instruction.value}";
+                return $"{instruction.name}: {InstructionUtils.dataSize[(int)instruction.size]} {instruction.value.Item2}";
             }
 
             public string VisitDataRef(AssemblyExpr.DataRef instruction)
             {
-                return $"{instruction.dataName}";
+                return $"{instruction.value}";
             }
 
             public string VisitProcedure(AssemblyExpr.Procedure instruction)

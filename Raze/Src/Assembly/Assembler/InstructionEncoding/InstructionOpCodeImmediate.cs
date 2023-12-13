@@ -62,6 +62,8 @@ public partial class Assembler
                 this.x = (byte)x;
                 this.s = (byte)s;
             }
+
+            public byte[] GetBytes() => new byte[] { this._data };
         }
     }
 }

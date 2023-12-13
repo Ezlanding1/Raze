@@ -54,6 +54,8 @@ public partial class Assembler
                 this.X = X;
                 this.B = B;
             }
+
+            public byte[] GetBytes() => new byte[] { this._data };
         }
 
         // Instruction Opcode Expansion Prefix (1 byte). Optional
@@ -63,8 +65,10 @@ public partial class Assembler
             byte _data = 0x0F;
 
             public InstructionOpCodeExpansionPrefix()
-            {     
+            {
             }
+
+            public byte[] GetBytes() => new byte[] { this._data };
         }
 
         // Instruction Opcode Size Prefix (1 byte). Optional
@@ -76,6 +80,8 @@ public partial class Assembler
             public InstructionOpCodeSizePrefix() 
             {
             }
+
+            public byte[] GetBytes() => new byte[] { this._data };
         }
 
         // Address Size Override Prefix (1 byte). Optional
@@ -87,6 +93,8 @@ public partial class Assembler
             public AddressSizeOverridePrefix()
             {
             }
+
+            public byte[] GetBytes() => new byte[] { this._data };
         }
     }
 }

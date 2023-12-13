@@ -169,16 +169,16 @@ public partial class Analyzer
             {
                 if (((AssemblyExpr.Data)assembler.assembly.data[i]).name == (string)a)
                 {
-                    aData = ((AssemblyExpr.Data)assembler.assembly.data[i]).value;
+                    aData = ((AssemblyExpr.Data)assembler.assembly.data[i]).value.Item2;
                 }
                 if (((AssemblyExpr.Data)assembler.assembly.data[i]).name == (string)b)
                 {
-                    bData = ((AssemblyExpr.Data)assembler.assembly.data[i]).value;
+                    bData = ((AssemblyExpr.Data)assembler.assembly.data[i]).value.Item2;
                 }
                 i++;
             }
 
-            assembler.EmitData(new AssemblyExpr.Data(assembler.DataLabel, InstructionUtils.dataSize[1], aData[..^4] + bData[1..]));
+            assembler.EmitData(new AssemblyExpr.Data(assembler.DataLabel, AssemblyExpr.Register.RegisterSize._8Bits, (Parser.LiteralTokenType.REF_STRING, aData[..^4] + bData[1..])));
 
             return assembler.CreateDatalLabel(assembler.dataCount++);
         }

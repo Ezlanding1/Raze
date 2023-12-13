@@ -90,6 +90,8 @@ public partial class Assembler
                 this.REG = (byte)REG;
                 this.RM = (byte)RM;
             }
+
+            public byte[] GetBytes() => new byte[] { this._data };
         }
     }
 }

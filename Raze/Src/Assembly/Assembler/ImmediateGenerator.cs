@@ -52,7 +52,7 @@ public partial class Assembler
                     Parser.LiteralTokenType.INTEGER => ParseSigned64(literal.value),
                     Parser.LiteralTokenType.FLOATING => Instruction.Immediate64.Generate(double.Parse(literal.value)),
                     Parser.LiteralTokenType.STRING => Instruction.Immediate64.Generate(literal.value[0]),
-                    // TODO: REF_STRING
+                    Parser.LiteralTokenType.REF_STRING => new Instruction.Immediate64Long(),
                     Parser.LiteralTokenType.BINARY => Instruction.Immediate64.Generate(Convert.ToUInt64(literal.value, 2)),
                     Parser.LiteralTokenType.HEX => ParseSigned64(literal.value, 16),
                     Parser.LiteralTokenType.BOOLEAN => Instruction.Immediate64.Generate(literal.value == "true" ? (ulong)1 : (ulong)0)

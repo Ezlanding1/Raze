@@ -23,6 +23,8 @@ public partial class Assembler
             {
                 this._data = _data;
             }
+
+            public byte[] GetBytes() => BitConverter.GetBytes(this._data);
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -35,6 +37,8 @@ public partial class Assembler
             {
                 this._data = _data;
             }
+
+            public byte[] GetBytes() => BitConverter.GetBytes(this._data);
         }
     }
 }

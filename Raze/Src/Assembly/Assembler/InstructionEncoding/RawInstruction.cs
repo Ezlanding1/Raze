@@ -11,17 +11,19 @@ public partial class Assembler
 {
     public partial struct Instruction
     {
-        // Raw Instruction Byte Data. (1 byte). Required
+        // Raw Instruction Byte Data. (1-15 bytes). Required
         // For instructions that do not match any existing pattern, and must be encoded as raw bits
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct RawInstruction : IInstruction
         {
-            byte _data;
+            byte[] _data;
 
-            public RawInstruction(byte _data)
+            public RawInstruction(byte[] _data)
             {
                 this._data = _data;
             }
+
+            public byte[] GetBytes() => this._data;
         }
     }
 }

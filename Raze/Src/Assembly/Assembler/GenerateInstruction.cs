@@ -12,7 +12,7 @@ public partial class Assembler
     {
         private partial class Encoding
         {
-            public Instruction GenerateInstruction(Operand op1, Operand op2, AssemblyExpr op1Expr, AssemblyExpr op2Expr)
+            public Instruction GenerateInstruction(Operand op1, Operand op2, AssemblyExpr op1Expr, AssemblyExpr op2Expr, Assembler assembler)
             {
                 List<IInstruction> instructions = new();
 
@@ -25,13 +25,13 @@ public partial class Assembler
 
                 return op1.operandType switch
                 {
-                    _ when EncodingUtils.IsRegister(op1) => EncodeRegister(instructions, op1, op2, op1Expr, op2Expr),
-                    Operand.OperandType.M => EncodeMemory(instructions, op1, op2, op1Expr, op2Expr),
+                    _ when EncodingUtils.IsRegister(op1) => EncodeRegister(instructions, op1, op2, op1Expr, op2Expr, assembler),
+                    Operand.OperandType.M => EncodeMemory(instructions, op1, op2, op1Expr, op2Expr, assembler),
                     _ => EncodingUtils.EncodingError()
                 };
             }
 
-            private Instruction EncodeRegister(List<IInstruction> instructions, Operand op1, Operand op2, AssemblyExpr op1Expr, AssemblyExpr op2Expr)
+            private Instruction EncodeRegister(List<IInstruction> instructions, Operand op1, Operand op2, AssemblyExpr op1Expr, AssemblyExpr op2Expr, Assembler assembler)
             {
                 if (EncodingUtils.IsRegister(op2))
                 {
@@ -69,15 +69,19 @@ public partial class Assembler
                         instructions.Add(EncodingUtils.GetDispInstruction(ptr.offset));
                     }
                 }
-                else if (op2.operandType == Operand.OperandType.IMM)
+                else if (op2.operandType.HasFlag(Operand.OperandType.D))
                 {
                     if (!encodingType.HasFlag(EncodingTypes.NoModRegRM))
                     {
-                    instructions.Add(new Instruction.ModRegRm(Assembler.Instruction.ModRegRm.Mod.RegisterAdressingMode,
-                        (Instruction.ModRegRm.OpCodeExtension)OpCodeExtension,
-                        EncodingUtils.ExprRegisterToModRegRmRegister((AssemblyExpr.Register)op1Expr)
-                    ));
+                        instructions.Add(new Instruction.ModRegRm(Assembler.Instruction.ModRegRm.Mod.RegisterAdressingMode,
+                            (Instruction.ModRegRm.OpCodeExtension)OpCodeExtension,
+                            EncodingUtils.ExprRegisterToModRegRmRegister((AssemblyExpr.Register)op1Expr)
+                        ));
                     }
+                    
+                    if (op2.operandType == Operand.OperandType.D)
+                        assembler.symbolTable.unresolvedData.Push((((AssemblyExpr.DataRef)op2Expr).value, assembler.location + instructions.Count));
+
                     instructions.Add(EncodingUtils.GetImmInstruction(this.operands[1].size, (AssemblyExpr.Literal)op2Expr));
                 }
                 else
@@ -87,7 +91,7 @@ public partial class Assembler
                 return new Instruction(instructions.ToArray());
             }
 
-            private Instruction EncodeMemory(List<IInstruction> instructions, Operand op1, Operand op2, AssemblyExpr op1Expr, AssemblyExpr op2Expr)
+            private Instruction EncodeMemory(List<IInstruction> instructions, Operand op1, Operand op2, AssemblyExpr op1Expr, AssemblyExpr op2Expr, Assembler assembler)
             {
                 var ptr = (AssemblyExpr.Pointer)op1Expr;
 
@@ -122,7 +126,7 @@ public partial class Assembler
                 {
                     return EncodingUtils.EncodingError();
                 }
-                else if (op2.operandType == Operand.OperandType.IMM)
+                else if (op2.operandType.HasFlag(Operand.OperandType.D))
                 {
                     if (ptr.offset == 0 && EncodingUtils.CanHaveZeroByteDisplacement(ptr.register))
                     {
@@ -139,6 +143,10 @@ public partial class Assembler
                         ));
                         instructions.Add(EncodingUtils.GetDispInstruction(ptr.offset));
                     }
+
+                    if (op2.operandType == Operand.OperandType.D)
+                        assembler.symbolTable.unresolvedData.Push((((AssemblyExpr.DataRef)op2Expr).value, assembler.location + instructions.Count));
+
                     instructions.Add(EncodingUtils.GetImmInstruction(this.operands[1].size, (AssemblyExpr.Literal)op2Expr));
                 }
                 else
