@@ -28,7 +28,7 @@ public partial class Assembler
             sbyte _data;
             internal Immediate8SByte(sbyte _data) { this._data = _data; }
 
-            public byte[] GetBytes() => BitConverter.GetBytes(this._data);
+            public byte[] GetBytes() => new byte[] { (byte)this._data };
         }
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Immediate8Half : Immediate8
@@ -44,7 +44,7 @@ public partial class Assembler
             byte _data;
             internal Immediate8Byte(byte _data) { this._data = _data; }
 
-            public byte[] GetBytes() => BitConverter.GetBytes(this._data);
+            public byte[] GetBytes() => new byte[] { this._data };
         }
 
 
