@@ -10,15 +10,9 @@ public abstract partial class AssemblyExpr
     {
         public T VisitGlobal(Global instruction);
         public T VisitSection(Section instruction);
-        public T VisitRegister(Register instruction);
-        public T VisitPointer(Pointer instruction);
-        public T VisitLiteral(Literal instruction);
         public T VisitData(Data instruction);
-        public T VisitDataRef(DataRef instruction);
         public T VisitProcedure(Procedure instruction);
         public T VisitLocalProcedure(LocalProcedure instruction);
-        public T VisitLocalProcedureRef(LocalProcedureRef instruction);
-        public T VisitProcedureRef(ProcedureRef instruction);
         public T VisitBinary(Binary instruction);
         public T VisitUnary(Unary instruction);
         public T VisitZero(Zero instruction);
@@ -170,7 +164,7 @@ public abstract partial class AssemblyExpr
             return new Register(this.name, size);
         }
 
-        public override T Accept<T>(IVisitor<T> visitor)
+        public override T Accept<T>(IUnaryOperandVisitor<T> visitor)
         {
             return visitor.VisitRegister(this);
         }
@@ -178,6 +172,23 @@ public abstract partial class AssemblyExpr
         public override Assembler.Encoder.Operand ToAssemblerOperand()
         {
             return new(Assembler.Encoder.Operand.RegisterOperandType(this), (int)size);
+        }
+
+        public override T Accept<T>(IBinaryOperandVisitor<T> visitor, Operand operand)
+        {
+            return operand.VisitOperandRegister(visitor, this);
+        }
+        public override T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg)
+        {   
+            return visitor.VisitRegisterRegister(this, reg);
+        }
+        public override T VisitOperandMemory<T>(IBinaryOperandVisitor<T> visitor, Pointer ptr)
+        {
+            return visitor.VisitRegisterMemory(this, ptr);
+        }
+        public override T VisitOperandImmediate<T>(IBinaryOperandVisitor<T> visitor, Literal imm)
+        {
+            return visitor.VisitRegisterImmediate(this, imm);
         }
     }
 
@@ -219,9 +230,9 @@ public abstract partial class AssemblyExpr
             return assembler.alloc.NextRegister(size);
         }
 
-        public override T Accept<T>(IVisitor<T> visitor)
+        public override T Accept<T>(IUnaryOperandVisitor<T> visitor)
         {
-            return visitor.VisitPointer(this);
+            return visitor.VisitMemory(this);
         }
 
         public override Assembler.Encoder.Operand ToAssemblerOperand()
@@ -229,6 +240,14 @@ public abstract partial class AssemblyExpr
             Assembler.Encoder.Operand.ThrowTMP(register);
             return new(Assembler.Encoder.Operand.OperandType.M, (int)size);
         }
+
+        public override T Accept<T>(IBinaryOperandVisitor<T> visitor, Operand operand)
+        {
+            return operand.VisitOperandMemory(visitor, this);
+        }
+        public override T VisitOperandImmediate<T>(IBinaryOperandVisitor<T> visitor, Literal imm) => visitor.VisitMemoryImmediate(this, imm);
+        public override T VisitOperandMemory<T>(IBinaryOperandVisitor<T> visitor, Pointer ptr) => visitor.VisitMemoryMemory(this, ptr);
+        public override T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg) => visitor.VisitMemoryRegister(this, reg);
     }
 
     public class Literal : Value
@@ -242,15 +261,39 @@ public abstract partial class AssemblyExpr
             this.value = value;
         }
 
-        public override T Accept<T>(IVisitor<T> visitor)
+        public override T Accept<T>(IUnaryOperandVisitor<T> visitor)
         {
-            return visitor.VisitLiteral(this);
+            return visitor.VisitImmediate(this);
         }
 
         public override Assembler.Encoder.Operand ToAssemblerOperand()
         {
             return new(Assembler.Encoder.Operand.OperandType.IMM, CodeGen.SizeOfLiteral(this));
         }
+
+        public override T Accept<T>(IBinaryOperandVisitor<T> visitor, Operand operand)
+        {
+            return operand.VisitOperandImmediate(visitor, this);
+        }
+
+        public override T VisitOperandImmediate<T>(IBinaryOperandVisitor<T> visitor, Literal imm)
+        {
+            Assembler.Encoder.EncodingUtils.ThrowIvalidEncodingType("Immediate", "Immediate");
+            return default;
+        }
+        public override T VisitOperandMemory<T>(IBinaryOperandVisitor<T> visitor, Pointer ptr)
+        {
+            Assembler.Encoder.EncodingUtils.ThrowIvalidEncodingType("Immediate", "Memory");
+            return default;
+        }
+        public override T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg)
+        {
+            Assembler.Encoder.EncodingUtils.ThrowIvalidEncodingType("Immediate", "Register");
+            return default;
+        }
+
+
+        public virtual T VisitSpecialLiteralOperation<T>(ILiteralSpecialMethods<T> visitor) => default;
     }
 
     public class Data : DataExpr
@@ -278,14 +321,9 @@ public abstract partial class AssemblyExpr
         {
         }
 
-        public override T Accept<T>(IVisitor<T> visitor)
+        public override T VisitSpecialLiteralOperation<T>(ILiteralSpecialMethods<T> visitor)
         {
             return visitor.VisitDataRef(this);
-        }
-
-        public override Assembler.Encoder.Operand ToAssemblerOperand()
-        {
-            return new(Assembler.Encoder.Operand.OperandType.D, CodeGen.SizeOfLiteral(this));
         }
     }
 
@@ -317,42 +355,61 @@ public abstract partial class AssemblyExpr
         }
     }
     
-    public class ProcedureRef : TextExpr
+    public class ProcedureRef : Literal
     {
-        public string name;
-
-        public ProcedureRef(string name)
+        public ProcedureRef(string name) : base(Parser.LiteralTokenType.REF_STRING, name)
         {
-            this.name = name;
         }
 
-        public override T Accept<T>(IVisitor<T> visitor)
+        public override T VisitSpecialLiteralOperation<T>(ILiteralSpecialMethods<T> visitor)
         {
             return visitor.VisitProcedureRef(this);
         }
     }
 
-    public class LocalProcedureRef : TextExpr
+    public class LocalProcedureRef : Literal
     {
-        public string name;
-
-        public LocalProcedureRef(string name)
+        public LocalProcedureRef(string name) : base(Parser.LiteralTokenType.REF_STRING, name)
         {
-            this.name = name;
         }
 
-        public override T Accept<T>(IVisitor<T> visitor)
+        public override T VisitSpecialLiteralOperation<T>(ILiteralSpecialMethods<T> visitor)
         {
             return visitor.VisitLocalProcedureRef(this);
         }
     }
 
-    public interface IOperand
+    public interface ILiteralSpecialMethods<T>
     {
-        Assembler.Encoder.Operand ToAssemblerOperand();
+        public T VisitDataRef(DataRef dataRef);
+        public T VisitProcedureRef(ProcedureRef procedureRef);
+        public T VisitLocalProcedureRef(LocalProcedureRef localProcedureRef);
     }
-    public abstract class Operand : TextExpr, IOperand
+    public interface IUnaryOperandVisitor<T>
     {
+        public T VisitRegister(Register reg);
+        public T VisitMemory(Pointer ptr);
+        public T VisitImmediate(Literal imm);
+    }
+    public interface IBinaryOperandVisitor<T>
+    {
+        public T VisitRegisterRegister(Register reg1, Register reg2);
+        public T VisitRegisterMemory(Register reg1, Pointer ptr2);
+        public T VisitRegisterImmediate(Register reg1, Literal imm2);
+
+        public T VisitMemoryRegister(Pointer ptr1, Register reg2);
+        public T VisitMemoryMemory(Pointer ptr1, Pointer ptr2);
+        public T VisitMemoryImmediate(Pointer ptr1, Literal imm2);
+    }
+    public abstract class Operand
+    {
+        public abstract T Accept<T>(IBinaryOperandVisitor<T> visitor, Operand operand);
+        public abstract T Accept<T>(IUnaryOperandVisitor<T> visitor);
+
+        public abstract T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg);
+        public abstract T VisitOperandMemory<T>(IBinaryOperandVisitor<T> visitor, Pointer ptr);
+        public abstract T VisitOperandImmediate<T>(IBinaryOperandVisitor<T> visitor, Literal imm);
+
         public abstract Assembler.Encoder.Operand ToAssemblerOperand();
     }
 
@@ -382,10 +439,10 @@ public abstract partial class AssemblyExpr
 
     public class Unary : TextExpr
     {
-        public AssemblyExpr operand;
+        public Operand operand;
         public Instruction instruction;
 
-        public Unary(Instruction instruction, AssemblyExpr operand)
+        public Unary(Instruction instruction, Operand operand)
         {
             this.instruction = instruction;
             this.operand = operand;

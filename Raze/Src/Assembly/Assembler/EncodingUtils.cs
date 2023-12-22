@@ -10,7 +10,7 @@ public partial class Assembler
 {
     public partial class Encoder
     {
-        private static partial class EncodingUtils
+        internal static partial class EncodingUtils
         {
             internal static Instruction EncodingError()
             {
@@ -54,10 +54,10 @@ public partial class Assembler
                 Operand.OperandSize._64Bits => ImmediateGenerator.GenerateImm64(op2Expr),
             };
 
-            private static bool Disp8Bit(int disp) 
+            internal static bool Disp8Bit(int disp)
                 => disp <= sbyte.MaxValue && disp >= sbyte.MinValue;
 
-            internal static Instruction.ModRegRm.Mod GetDispSize(int disp) 
+            internal static Instruction.ModRegRm.Mod GetDispSize(int disp)
                 => Disp8Bit(disp) ? Instruction.ModRegRm.Mod.OneByteDisplacement : Instruction.ModRegRm.Mod.FourByteDisplacement;
 
             internal static IInstruction GetDispInstruction(int disp)
@@ -69,24 +69,47 @@ public partial class Assembler
                 return new Instruction.Displacement32(disp);
             }
 
-            internal static bool IsRegister(Operand op)
-                => op.operandType.HasFlag(Operand.OperandType.A) || op.operandType.HasFlag(Operand.OperandType.P);
-
-            internal static void AddRexPrefix(List<IInstruction> instructions, Encoding.EncodingTypes encodingType, Operand op1, Operand op2, AssemblyExpr op1Expr, AssemblyExpr op2Expr)
+            internal static bool SetRexPrefix(AssemblyExpr.Binary binary, Encoding encoding, out Instruction.RexPrefix rexPrefix)
             {
-                bool rexw = SetRexW(encodingType);
-                bool op1R = IsRRegister(op1, op1Expr);
-                bool op2R = IsRRegister(op2, op2Expr);
+                bool rexw = SetRexW(encoding.encodingType);
+                bool op1R = IsRRegister(binary.operand1);
+                bool op2R = IsRRegister(binary.operand2);
 
-                if (SetRex(encodingType) | rexw | op1R | op2R)
+                if (SetRex(encoding.encodingType) | rexw | op1R | op2R)
                 {
-                    instructions.Add(new Instruction.RexPrefix(rexw, op2R, false, op1R));
+                    rexPrefix = new Instruction.RexPrefix(rexw, op2R, false, op1R);
+                    return true;
                 }
+                rexPrefix = new();
+                return false;
             }
 
-            private static bool IsRRegister(Operand op, AssemblyExpr opExpr)
-                => op.operandType.HasFlag(Operand.OperandType.A) && (int)((AssemblyExpr.Register)opExpr).name < 0
-                    || op.operandType.HasFlag(Operand.OperandType.M) && (int)((AssemblyExpr.Pointer)opExpr).register.name < 0;
+            private static bool IsRRegister(AssemblyExpr.Operand op)
+                => op is AssemblyExpr.Register && (int)((AssemblyExpr.Register)op).name < 0
+                    || op is AssemblyExpr.Pointer && (int)((AssemblyExpr.Pointer)op).register.name < 0;
+
+            internal static bool SetAddressSizeOverridePrefix(AssemblyExpr.Operand operand1, AssemblyExpr.Operand operand2)
+            {
+                AssemblyExpr.Pointer? ptr = operand1 as AssemblyExpr.Pointer ?? operand2 as AssemblyExpr.Pointer;
+
+                if (ptr != null)
+                {
+                    if (ptr.register.size == AssemblyExpr.Register.RegisterSize._32Bits)
+                    {
+                        return true;
+                    }
+                    else if (ptr.register.size != AssemblyExpr.Register.RegisterSize._64Bits)
+                    {
+                        EncodingError();
+                    }
+                }
+                return false;
+            }
+
+            internal static void ThrowIvalidEncodingType(string t1, string t2)
+            {
+                Diagnostics.errors.Push(new Error.ImpossibleError($"Cannot encode instruction with operands '{t1.ToUpper()}, {t2.ToUpper()}'"));
+            }
         }
     }
 }

@@ -74,12 +74,12 @@ internal class Shell
             using (var fs = new FileStream("output.elf", FileMode.Create, FileAccess.Write))
             {
                 // Assemble and Output Assembly Code
-                Raze.Assembler assembler = new Raze.Assembler();
-                assembler.Assemble(fs, assembly);
+                Raze.Assembler assembler = new Raze.Assembler(fs);
+                assembler.Assemble(assembly);
 
                 // Link Assembly Code
-                Raze.Linker linker = new Raze.Linker();
-                linker.Link(fs, assembler);
+                Raze.Linker linker = new Raze.Linker(fs);
+                linker.Link(assembler);
             }
 
             // Throw any encountered assembling errors

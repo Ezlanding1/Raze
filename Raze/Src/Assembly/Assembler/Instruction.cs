@@ -28,6 +28,11 @@ public partial class Assembler
             this.Instructions = instructions;
         }
 
+        public Instruction()
+        {
+            this.Instructions = new IInstruction[0];
+        }
+
         public IEnumerable<byte[]> ToBytes()
         {
             for (int i = 0; i < Instructions.Length; i++)

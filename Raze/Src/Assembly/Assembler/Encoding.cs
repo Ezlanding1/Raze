@@ -10,7 +10,7 @@ public partial class Assembler
 {
     public partial class Encoder
     {
-        private partial class Encoding
+        internal partial class Encoding
         {
             public string Instruction
             {
@@ -74,7 +74,7 @@ public partial class Assembler
                     }
                 }
             }
-            private Operand[] operands;
+            internal Operand[] operands;
 
             public string EncodingType
             {
@@ -86,7 +86,7 @@ public partial class Assembler
                     }
                 }
             }
-            private EncodingTypes encodingType = EncodingTypes.None;
+            internal EncodingTypes encodingType = EncodingTypes.None;
 
             public byte OpCodeExtension { get; set; }
             public byte OpCode { get; set; }
@@ -125,11 +125,6 @@ public partial class Assembler
                     }
                 }
                 return true;
-            }
-
-            public static Operand ToEncodingType(AssemblyExpr.Operand operand)
-            {
-                return operand.ToAssemblerOperand();
             }
         }
     }

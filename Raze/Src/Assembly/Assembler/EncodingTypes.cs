@@ -10,7 +10,7 @@ public partial class Assembler
 {
     public partial class Encoder
     {
-        private partial class Encoding
+        internal partial class Encoding
         {
             [Flags]
             internal enum EncodingTypes : byte

@@ -10,7 +10,7 @@ public partial class Assembler
 {
     public partial class Encoder
     {
-        private static partial class EncodingUtils
+        internal static partial class EncodingUtils
         {
             private static partial class ImmediateGenerator
             {

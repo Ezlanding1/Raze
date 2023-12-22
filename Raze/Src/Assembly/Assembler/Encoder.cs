@@ -13,7 +13,7 @@ public partial class Assembler
     {
         Dictionary<string, List<Encoding>> instructionEncodings;
 
-        public Encoder() 
+        internal Encoder() 
         {
             string path = Path.Join(Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), "EncodingSchema.json");
 
@@ -27,10 +27,10 @@ public partial class Assembler
             }
         }
 
-        public Instruction Encode(AssemblyExpr.Binary binary, Assembler assembler)
+        internal Encoding GetEncoding(AssemblyExpr.Binary binary)
         {
-            var encoding1 = Encoding.ToEncodingType(binary.operand1);
-            var encoding2 = Encoding.ToEncodingType(binary.operand2);
+            var encoding1 = binary.operand1.ToAssemblerOperand();
+            var encoding2 = binary.operand2.ToAssemblerOperand();
 
             if (instructionEncodings.TryGetValue(binary.instruction.ToString(), out var encodings))
             {
@@ -38,18 +38,16 @@ public partial class Assembler
                 {
                     if (encoding.Matches(encoding1, encoding2) && encoding.SpecialMatch(new Operand[] { encoding1, encoding2 },  binary))
                     {
-                        return encoding.GenerateInstruction(encoding1, encoding2, binary.operand1, binary.operand2, assembler);
+                        return encoding;
                     }
                 }
             }
-
             Diagnostics.errors.Push(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
-            return new Instruction();
+            return new();
         }
 
-        public Instruction EncodeData(AssemblyExpr.Data data, Assembler assembler)
+        public Instruction EncodeData(AssemblyExpr.Data data)
         {
-            assembler.symbolTable.data[data.name] = assembler.location;
             return new Instruction(new IInstruction[] { data.value.Item1 switch
             {
                 Parser.LiteralTokenType.BINARY or

@@ -11,8 +11,7 @@ partial class Syntaxes
 {
     partial class SyntaxFactory 
     {
-
-        class IntelSyntax : ISyntaxFactory, AssemblyExpr.IVisitor<string>
+        class IntelSyntax : ISyntaxFactory, AssemblyExpr.IVisitor<string>, AssemblyExpr.IUnaryOperandVisitor<string>, AssemblyExpr.ILiteralSpecialMethods<string>
         {
             public IntelSyntax()
             {
@@ -55,11 +54,6 @@ partial class Syntaxes
                 return $"{instruction.name}: {InstructionUtils.dataSize[(int)instruction.size]} {instruction.value.Item2}";
             }
 
-            public string VisitDataRef(AssemblyExpr.DataRef instruction)
-            {
-                return $"{instruction.value}";
-            }
-
             public string VisitProcedure(AssemblyExpr.Procedure instruction)
             {
                 return $"{instruction.name}:";
@@ -75,7 +69,7 @@ partial class Syntaxes
                 return $"global {instruction.name}";
             }
 
-            public string VisitPointer(AssemblyExpr.Pointer instruction)
+            public string VisitMemory(AssemblyExpr.Pointer instruction)
             {
                 if (instruction.register.name == AssemblyExpr.Register.RegisterName.TMP)
                 {
@@ -87,16 +81,6 @@ partial class Syntaxes
                     return $"{InstructionUtils.wordSize[instruction.size]} [{instruction.register.Accept(this)}]";
                 }
                 return $"{InstructionUtils.wordSize[instruction.size]} [{instruction.register.Accept(this)} {((instruction.offset < 0) ? '-' : '+')} {Math.Abs(instruction.offset)}]";
-            }
-
-            public string VisitProcedureRef(AssemblyExpr.ProcedureRef instruction)
-            {
-                return $"{instruction.name}";
-            }
-
-            public string VisitLocalProcedureRef(AssemblyExpr.LocalProcedureRef instruction)
-            {
-                return $".{instruction.name}";
             }
 
             public string VisitRegister(AssemblyExpr.Register instruction)
@@ -138,7 +122,7 @@ partial class Syntaxes
                 return $"[{instruction.register.Accept(this)} {((instruction.offset < 0) ? '-' : '+')} {Math.Abs(instruction.offset)}]";
             }
 
-            public string VisitLiteral(AssemblyExpr.Literal instruction)
+            public string VisitImmediate(AssemblyExpr.Literal instruction)
             {
                 switch (instruction.type)
                 {
@@ -155,8 +139,14 @@ partial class Syntaxes
                         return $"{strAsInt}";
                     }
                 }
-                return $"{instruction.value}";
+                return $"{instruction.VisitSpecialLiteralOperation(this)}{instruction.value}";
             }
+
+            public string VisitDataRef(AssemblyExpr.DataRef dataRef) => string.Empty;
+
+            public string VisitProcedureRef(AssemblyExpr.ProcedureRef procedureRef) => string.Empty;
+
+            public string VisitLocalProcedureRef(AssemblyExpr.LocalProcedureRef localProcedureRef) => ".";
 
             private static Dictionary<(AssemblyExpr.Register.RegisterName, AssemblyExpr.Register.RegisterSize?), string> RegisterToString = new()
             {
@@ -272,21 +262,6 @@ partial class Syntaxes
                 throw new NotImplementedException();
             }
 
-            public string VisitProcedure(AssemblyExpr.Procedure instruction)
-            {
-                throw new NotImplementedException();
-            }
-
-            public string VisitLocalProcedure(AssemblyExpr.LocalProcedure instruction)
-            {
-                throw new NotImplementedException();
-            }
-
-            public string VisitDataRef(AssemblyExpr.DataRef instruction)
-            {
-                throw new NotImplementedException();
-            }
-
             public string VisitComment(AssemblyExpr.Comment instruction)
             {
                 throw new NotImplementedException();
@@ -302,12 +277,12 @@ partial class Syntaxes
                 throw new NotImplementedException();
             }
 
-            public string VisitPointer(AssemblyExpr.Pointer instruction)
+            public string VisitLocalProcedure(AssemblyExpr.LocalProcedure instruction)
             {
                 throw new NotImplementedException();
             }
 
-            public string VisitRegister(AssemblyExpr.Register instruction)
+            public string VisitProcedure(AssemblyExpr.Procedure instruction)
             {
                 throw new NotImplementedException();
             }
@@ -323,21 +298,6 @@ partial class Syntaxes
             }
 
             public string VisitZero(AssemblyExpr.Zero instruction)
-            {
-                throw new NotImplementedException();
-            }
-
-            public string VisitProcedureRef(AssemblyExpr.ProcedureRef instruction)
-            {
-                throw new NotImplementedException();
-            }
-
-            public string VisitLocalProcedureRef(AssemblyExpr.LocalProcedureRef instruction)
-            {
-                throw new NotImplementedException();
-            }
-
-            public string VisitLiteral(AssemblyExpr.Literal instruction)
             {
                 throw new NotImplementedException();
             }
