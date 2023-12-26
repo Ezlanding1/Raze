@@ -110,9 +110,9 @@ public abstract class Instruction
         public enum RegisterSize
         {
             _64Bits = 8,
-            _32Bits = 4, 
-            _16Bits = 2, 
-            _8BitsUpper = 0, 
+            _32Bits = 4,
+            _16Bits = 2,
+            _8BitsUpper = 0,
             _8Bits = 1
         }
 
@@ -220,10 +220,10 @@ public abstract class Instruction
 
     public class Literal : Value
     {
-        internal Token.TokenType type;
+        internal Parser.LiteralTokenType type;
         public string value;
 
-        internal Literal(Token.TokenType type, string value) : base(2)
+        internal Literal(Parser.LiteralTokenType type, string value) : base(2)
         {
             this.type = type;
             this.value = value;
@@ -297,7 +297,7 @@ public abstract class Instruction
     }
 
     public class ProcedureRef : Instruction
-    { 
+    {
         public string name;
 
         public ProcedureRef(string name)
@@ -370,7 +370,7 @@ public abstract class Instruction
         }
     }
 
-    public class Zero : Instruction 
+    public class Zero : Instruction
     {
         public string instruction;
         public Zero(string instruction)
@@ -472,7 +472,7 @@ public class InstructionUtils
         { "SETLE" , "JG" },
     };
 
-    internal readonly static Instruction.Register.RegisterName[] paramRegister = new Instruction.Register.RegisterName[] 
+    internal readonly static Instruction.Register.RegisterName[] paramRegister = new Instruction.Register.RegisterName[]
     {
         Instruction.Register.RegisterName.RDI,
         Instruction.Register.RegisterName.RSI,
@@ -598,7 +598,7 @@ public class InstructionUtils
         Diagnostics.errors.Push(new Error.ImpossibleError($"Invalid Register Size ({size})"));
         return 0;
     }
-    
+
 
     internal readonly static Dictionary<Instruction.Register.RegisterSize?, string> wordSize = new()
     {

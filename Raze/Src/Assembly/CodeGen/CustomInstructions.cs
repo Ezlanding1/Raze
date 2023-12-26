@@ -17,7 +17,7 @@ internal abstract class CustomInstructions
 
         public StackAlloc(int allocSize)
         {
-            literal = new(Token.TokenType.INTEGER, AlignTo16(allocSize).ToString());
+            literal = new(Parser.LiteralTokenType.INTEGER, AlignTo16(allocSize).ToString());
         }
 
         public override string GetInstruction(IVisitor visitor)
@@ -55,7 +55,7 @@ internal abstract class CustomInstructions
 
                 for (int i = 0; i < registers.Length; i++)
                 {
-                    if (registers[i]) 
+                    if (registers[i])
                         sb.AppendLine(new Unary("PUSH", new Register(InstructionUtils.storageRegisters[i + 1], Register.RegisterSize._64Bits)).Accept(visitor));
                 }
 
@@ -85,12 +85,12 @@ internal abstract class CustomInstructions
                 sb.AppendLine(new StackAlloc((size > 128) ? size - 128 : size).Accept(visitor));
             }
         }
-        
+
         private void GenerateFooter(IVisitor visitor, StringBuilder sb)
         {
             sb.AppendLine(
                 leaf ?
-                new Unary("POP", Register.RegisterName.RBP).Accept(visitor) : 
+                new Unary("POP", Register.RegisterName.RBP).Accept(visitor) :
                 new Zero("LEAVE").Accept(visitor)
             );
 

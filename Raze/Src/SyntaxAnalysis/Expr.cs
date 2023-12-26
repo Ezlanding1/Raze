@@ -105,9 +105,9 @@ public abstract class Expr
 
     public class Literal : Expr
     {
-        public Token literal;
+        public LiteralToken literal;
 
-        public Literal(Token literal)
+        public Literal(LiteralToken literal)
         {
             this.literal = literal;
         }

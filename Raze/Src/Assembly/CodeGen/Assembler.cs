@@ -22,9 +22,9 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
     private protected string CreateConditionalLabel(int i) => "L" + i;
 
     public int dataCount;
-    public string DataLabel 
+    public string DataLabel
     {
-        get { return CreateDatalLabel(dataCount); } 
+        get { return CreateDatalLabel(dataCount); }
     }
     public string CreateDatalLabel(int i) => "LC" + i;
 
@@ -38,7 +38,7 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
         data.Add(new Instruction.Section("data"));
         this.assemblyOps = new(this);
     }
-    
+
     public (List<Instruction>, List<Instruction>) Assemble()
     {
         foreach (Expr expr in expressions)
@@ -170,9 +170,9 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
 
         if (expr.arguments.Count > InstructionUtils.paramRegister.Length && alloc.fncPushPreserved.leaf)
         {
-            Emit(new Instruction.Binary("ADD", new Instruction.Register(Instruction.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE), new Instruction.Literal(Parser.Literals[0], ((expr.arguments.Count - InstructionUtils.paramRegister.Length) * 8).ToString())));
+            Emit(new Instruction.Binary("ADD", new Instruction.Register(Instruction.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE), new Instruction.Literal(Parser.LiteralTokenType.INTEGER, ((expr.arguments.Count - InstructionUtils.paramRegister.Length) * 8).ToString())));
         }
-        
+
         return alloc.CallAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnSize));
     }
 
@@ -182,7 +182,7 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
         {
             blockExpr.Accept(this);
         }
-        
+
         return null;
     }
 
@@ -199,7 +199,7 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
             Instruction.Register.RegisterSize size = _ref ? InstructionUtils.SYS_SIZE : ((Instruction.Pointer)operand).size;
 
             Instruction.Register reg = ((Instruction.Pointer)operand).AsRegister(size, this);
-            
+
             Emit(new Instruction.Binary(_ref? "LEA" : "MOV", reg, operand));
             _ref = false;
             operand = reg;
@@ -237,13 +237,13 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
                 if (expr.classScoped)
                 {
                     Emit(new Instruction.Binary("MOV", alloc.CurrentRegister(InstructionUtils.SYS_SIZE), new Instruction.Pointer(Instruction.Register.RegisterName.RBP, (int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE)));
-                    Emit(new Instruction.Binary("MOV", new Instruction.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), expr.stack.stackOffset, Instruction.Register.RegisterSize._32Bits), new Instruction.Literal(Token.TokenType.INTEGER, chunks.Item1.ToString())));
-                    Emit(new Instruction.Binary("MOV", new Instruction.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), expr.stack.stackOffset, InstructionUtils.ToRegisterSize(expr.stack.size - 4)), new Instruction.Literal(Token.TokenType.INTEGER, chunks.Item2.ToString())));
+                    Emit(new Instruction.Binary("MOV", new Instruction.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), expr.stack.stackOffset, Instruction.Register.RegisterSize._32Bits), new Instruction.Literal(Parser.LiteralTokenType.INTEGER, chunks.Item1.ToString())));
+                    Emit(new Instruction.Binary("MOV", new Instruction.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), expr.stack.stackOffset, InstructionUtils.ToRegisterSize(expr.stack.size - 4)), new Instruction.Literal(Parser.LiteralTokenType.INTEGER, chunks.Item2.ToString())));
                 }
                 else
                 {
-                    Emit(new Instruction.Binary("MOV", new Instruction.Pointer(expr.stack.stackOffset-4, Instruction.Register.RegisterSize._32Bits), new Instruction.Literal(Token.TokenType.INTEGER, chunks.Item1.ToString())));
-                    Emit(new Instruction.Binary("MOV", new Instruction.Pointer(expr.stack.stackOffset, InstructionUtils.ToRegisterSize(expr.stack.size-4)), new Instruction.Literal(Token.TokenType.INTEGER, chunks.Item2.ToString())));
+                    Emit(new Instruction.Binary("MOV", new Instruction.Pointer(expr.stack.stackOffset-4, Instruction.Register.RegisterSize._32Bits), new Instruction.Literal(Parser.LiteralTokenType.INTEGER, chunks.Item1.ToString())));
+                    Emit(new Instruction.Binary("MOV", new Instruction.Pointer(expr.stack.stackOffset, InstructionUtils.ToRegisterSize(expr.stack.size-4)), new Instruction.Literal(Parser.LiteralTokenType.INTEGER, chunks.Item2.ToString())));
                 }
                 goto dealloc;
             }
@@ -259,7 +259,7 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
             Emit(new Instruction.Binary(_ref ? "LEA" : "MOV", new Instruction.Pointer(expr.stack.stackOffset, expr.stack._ref ? InstructionUtils.SYS_SIZE : InstructionUtils.ToRegisterSize(expr.stack.size)), operand));
         }
 
-        dealloc:
+    dealloc:
         alloc.Free(operand);
         return null;
     }
@@ -387,7 +387,7 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
         Instruction.Register register;
 
         var firstGet = expr.getters[0].Accept(this);
-        
+
         if (expr.getters.Count == 1)
         {
             return firstGet;
@@ -436,7 +436,7 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
         }
         else if (operand1.IsPointer())
         {
-            Emit(new Instruction.Binary("CMP", operand1, new Instruction.Literal(Token.TokenType.INTEGER, "0")));
+            Emit(new Instruction.Binary("CMP", operand1, new Instruction.Literal(Parser.LiteralTokenType.INTEGER, "0")));
 
             Emit(new Instruction.Unary((expr.op.type == Token.TokenType.AND) ? "JE" : "JNE", new Instruction.LocalProcedureRef(ConditionalLabel)));
         }
@@ -448,9 +448,9 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
                 instructions.RemoveAt(instructions.Count - 1);
 
                 Emit(new Instruction.Unary(
-                    (expr.op.type == Token.TokenType.AND) ? 
-                        InstructionUtils.ConditionalJumpReversed[instruction.instruction] : 
-                        InstructionUtils.ConditionalJump[instruction.instruction], 
+                    (expr.op.type == Token.TokenType.AND) ?
+                        InstructionUtils.ConditionalJumpReversed[instruction.instruction] :
+                        InstructionUtils.ConditionalJump[instruction.instruction],
                     new Instruction.LocalProcedureRef(ConditionalLabel)));
             }
             else
@@ -485,7 +485,7 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
 
             if (operand1.IsPointer())
             {
-                Emit(new Instruction.Binary("CMP", operand1, new Instruction.Literal(Token.TokenType.INTEGER, "0")));
+                Emit(new Instruction.Binary("CMP", operand1, new Instruction.Literal(Parser.LiteralTokenType.INTEGER, "0")));
 
                 Emit(new Instruction.Unary("JE", new Instruction.LocalProcedureRef(cLabel)));
             }
@@ -515,17 +515,17 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
 
         conditionalCount++;
 
-        Emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._8Bits), new Instruction.Literal(Token.TokenType.INTEGER, "1")));
-       
+        Emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._8Bits), new Instruction.Literal(Parser.LiteralTokenType.INTEGER, "1")));
+
         Emit(new Instruction.Unary("JMP", new Instruction.LocalProcedureRef(ConditionalLabel)));
 
         Emit(new Instruction.LocalProcedure(CreateConditionalLabel(conditionalCount-1)));
 
-        Emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._8Bits), new Instruction.Literal(Token.TokenType.INTEGER, "0")));
+        Emit(new Instruction.Binary("MOV", alloc.CurrentRegister(Instruction.Register.RegisterSize._8Bits), new Instruction.Literal(Parser.LiteralTokenType.INTEGER, "0")));
 
         Emit(new Instruction.LocalProcedure(ConditionalLabel));
         conditionalCount++;
-        
+
 
         return alloc.NextRegister(Instruction.Register.RegisterSize._8Bits);
     }
@@ -539,23 +539,22 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
     {
         switch (expr.literal.type)
         {
-            case Token.TokenType.REF_STRING:
+            case Parser.LiteralTokenType.REF_STRING:
                 string name = DataLabel;
                 EmitData(new Instruction.Data(name, InstructionUtils.dataSize[1], expr.literal.lexeme + ", 0"));
                 dataCount++;
                 return new Instruction.Literal(expr.literal.type, name);
-            case Token.TokenType.STRING:
-            case Token.TokenType.INTEGER:
-            case Token.TokenType.FLOATING:
-            case Token.TokenType.BINARY:
-            case Token.TokenType.HEX:
-            case Token.TokenType.BOOLEAN:
+            case Parser.LiteralTokenType.STRING:
+            case Parser.LiteralTokenType.INTEGER:
+            case Parser.LiteralTokenType.FLOATING:
+            case Parser.LiteralTokenType.BINARY:
+            case Parser.LiteralTokenType.HEX:
+            case Parser.LiteralTokenType.BOOLEAN:
                 return new Instruction.Literal(expr.literal.type, expr.literal.lexeme);
             default:
                 Diagnostics.errors.Push(new Error.ImpossibleError($"Invalid Literal Type ({expr.literal.type})"));
                 return null;
         }
-        
     }
 
     public virtual Instruction.Value? VisitUnaryExpr(Expr.Unary expr)
@@ -712,9 +711,9 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
         }
         else
         {
-            Emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, InstructionUtils.SYS_SIZE), new Instruction.Literal(Parser.Literals[0], "0")));
+            Emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, InstructionUtils.SYS_SIZE), new Instruction.Literal(Parser.LiteralTokenType.INTEGER, "0")));
         }
-        
+
         DoFooter();
 
         return null;
@@ -755,8 +754,8 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
                 if (chunks.Item1 != -1)
                 {
                     var ptr = (Instruction.Pointer)operand1;
-                    Emit(new Instruction.Binary("MOV", new Instruction.Pointer(ptr.register, ptr.offset - 4, Instruction.Register.RegisterSize._32Bits, ptr._operator), new Instruction.Literal(Token.TokenType.INTEGER, chunks.Item1.ToString())));
-                    Emit(new Instruction.Binary("MOV", new Instruction.Pointer(ptr.register, ptr.offset, InstructionUtils.ToRegisterSize((int)ptr.size-4), ptr._operator), new Instruction.Literal(Token.TokenType.INTEGER, chunks.Item2.ToString())));
+                    Emit(new Instruction.Binary("MOV", new Instruction.Pointer(ptr.register, ptr.offset - 4, Instruction.Register.RegisterSize._32Bits, ptr._operator), new Instruction.Literal(Parser.LiteralTokenType.INTEGER, chunks.Item1.ToString())));
+                    Emit(new Instruction.Binary("MOV", new Instruction.Pointer(ptr.register, ptr.offset, InstructionUtils.ToRegisterSize((int)ptr.size-4), ptr._operator), new Instruction.Literal(Parser.LiteralTokenType.INTEGER, chunks.Item2.ToString())));
 
                     goto dealloc;
                 }
@@ -782,10 +781,10 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
     {
         switch (expr.keyword)
         {
-            case "null": return new Instruction.Literal(Parser.Literals[0], "0");
-            case "true": return new Instruction.Literal(Parser.Literals[0], "1");
-            case "false": return new Instruction.Literal(Parser.Literals[0], "0");
-            default: 
+            case "null": return new Instruction.Literal(Parser.LiteralTokenType.INTEGER, "0");
+            case "true": return new Instruction.Literal(Parser.LiteralTokenType.INTEGER, "1");
+            case "false": return new Instruction.Literal(Parser.LiteralTokenType.INTEGER, "0");
+            default:
                 Diagnostics.errors.Push(new Error.ImpossibleError($"'{expr.keyword}' is not a keyword"));
                 return null;
         }
@@ -810,17 +809,17 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
         var rbx = alloc.NextRegister(Instruction.Register.RegisterSize._64Bits);
         // Move the following into a runtime procedure, and pass in the expr.internalClass.size as a parameter
         // {
-        Emit(new Instruction.Binary("MOV", rax, new Instruction.Literal(Parser.Literals[0], "12")));
-        Emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.Literals[0], "0")));
+        Emit(new Instruction.Binary("MOV", rax, new Instruction.Literal(Parser.LiteralTokenType.INTEGER, "12")));
+        Emit(new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.LiteralTokenType.INTEGER, "0")));
         Emit(new Instruction.Zero("SYSCALL"));
 
         var ptr = new Instruction.Pointer(rax, expr.internalClass.size, 8, '+');
         Emit(new Instruction.Binary("LEA", rbx, ptr));
 
         Emit(new Instruction.Binary("LEA", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), ptr));
-        Emit(new Instruction.Binary("MOV", rax, new Instruction.Literal(Parser.Literals[0], "12")));
+        Emit(new Instruction.Binary("MOV", rax, new Instruction.Literal(Parser.LiteralTokenType.INTEGER, "12")));
         Emit(new Instruction.Zero("SYSCALL"));
-           
+
         Emit(new Instruction.Binary("MOV", rax, rbx));
         // }
 
@@ -833,7 +832,7 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
 
     public Instruction.Value? VisitIsExpr(Expr.Is expr)
     {
-        return new Instruction.Literal(Parser.Literals[5], expr.value);
+        return new Instruction.Literal(Parser.LiteralTokenType.BOOLEAN, expr.value);
     }
 
     public Instruction.Value? VisitNoOpExpr(Expr.NoOp expr)
@@ -871,7 +870,7 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
         }
         else if (!conditional.IsLiteral())
         {
-            Emit(new Instruction.Binary("CMP", conditional, new Instruction.Literal(Token.TokenType.BOOLEAN, "1")));
+            Emit(new Instruction.Binary("CMP", conditional, new Instruction.Literal(Parser.LiteralTokenType.BOOLEAN, "1")));
         }
 
         return "SETE";
@@ -927,56 +926,56 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
         }
     }
 
-    internal int SizeOfLiteral(Token.TokenType type, string value)
+    internal int SizeOfLiteral(Parser.LiteralTokenType type, string value)
     {
         switch (type)
         {
-            case Token.TokenType.INTEGER:
+            case Parser.LiteralTokenType.INTEGER:
                 return GetIntegralSize(long.Parse(value));
-            case Token.TokenType.FLOATING:
-            {
-                double val = double.Parse(value);
-                if (val <= 480 && val >= 0.0078)
+            case Parser.LiteralTokenType.FLOATING:
                 {
-                    return (int)Instruction.Register.RegisterSize._8Bits;
+                    double val = double.Parse(value);
+                    if (val <= 480 && val >= 0.0078)
+                    {
+                        return (int)Instruction.Register.RegisterSize._8Bits;
+                    }
+                    else if (val <= (double)Half.MaxValue && val >= (double)Half.MinValue)
+                    {
+                        return (int)Instruction.Register.RegisterSize._16Bits;
+                    }
+                    else if (val <= float.MaxValue && val >= float.MinValue)
+                    {
+                        return (int)Instruction.Register.RegisterSize._32Bits;
+                    }
+                    else
+                    {
+                        return (int)Instruction.Register.RegisterSize._64Bits;
+                    }
                 }
-                else if (val <= (double)Half.MaxValue && val >= (double)Half.MinValue)
+            case Parser.LiteralTokenType.STRING:
                 {
-                    return (int)Instruction.Register.RegisterSize._16Bits;
+                    return value.Length;
                 }
-                else if (val <= float.MaxValue && val >= float.MinValue)
+            case Parser.LiteralTokenType.REF_STRING:
                 {
-                    return (int)Instruction.Register.RegisterSize._32Bits;
+                    return (int)InstructionUtils.SYS_SIZE;
                 }
-                else
+            case Parser.LiteralTokenType.BINARY:
                 {
-                    return (int)Instruction.Register.RegisterSize._64Bits;
+                    int length = value.Length-2;
+                    length--;
+                    length |= length >> 1;
+                    length |= length >> 2;
+                    length |= length >> 4;
+                    length |= length >> 8;
+                    length |= length >> 16;
+                    length++;
+                    length /= 8;
+                    return length;
                 }
-            }
-            case Token.TokenType.STRING:
-            {
-                return value.Length;
-            }
-            case Token.TokenType.REF_STRING:
-            {
-                return (int)InstructionUtils.SYS_SIZE;
-            }
-            case Token.TokenType.BINARY:
-            {
-                int length = value.Length-2;
-                length--;
-                length |= length >> 1;
-                length |= length >> 2;
-                length |= length >> 4;
-                length |= length >> 8;
-                length |= length >> 16;
-                length++;
-                length /= 8;
-                return length;
-            }
-            case Token.TokenType.HEX:
+            case Parser.LiteralTokenType.HEX:
                 return GetIntegralSize(long.Parse(value, NumberStyles.AllowHexSpecifier));
-            case Token.TokenType.BOOLEAN:
+            case Parser.LiteralTokenType.BOOLEAN:
                 return (int)Instruction.Register.RegisterSize._8Bits;
             default:
                 return 0;
@@ -1008,7 +1007,7 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
     private (int, int) ChunkString(Instruction.Literal literal)
     {
         int size = literal.value.Length;
-        if (literal.type != Token.TokenType.STRING || size <= 4)
+        if (literal.type != Parser.LiteralTokenType.STRING || size <= 4)
         {
             return (-1, -1);
         }
@@ -1030,4 +1029,3 @@ public class Assembler : Expr.IVisitor<Instruction.Value?>
         return (h2, h1);
     }
 }
-

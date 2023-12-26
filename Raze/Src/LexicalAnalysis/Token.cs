@@ -21,3 +21,16 @@ public partial class Token
         return $"{{ {type} }}:{{ {lexeme} }}";
     }
 }
+
+public class LiteralToken : Token
+{
+    internal new Parser.LiteralTokenType type 
+    { 
+        get => (Parser.LiteralTokenType)base.type; 
+        set => base.type = (TokenType)value; 
+    }
+
+    internal LiteralToken(Parser.LiteralTokenType type, string lexeme) : base((TokenType)type, lexeme)
+    {
+    }
+}

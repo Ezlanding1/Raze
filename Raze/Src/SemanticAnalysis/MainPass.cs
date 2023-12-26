@@ -65,9 +65,9 @@ public partial class Analyzer
             if (arg0.Item1 && arg1.Item1)
             {
                 var opType = Primitives.OperationType(expr.op, arg0.Item2, arg1.Item2);
-                if (opType != null)
+                if (opType != Parser.VoidTokenType)
                 {
-                    return TypeCheckUtils.literalTypes[(Token.TokenType)opType];
+                    return TypeCheckUtils.literalTypes[opType];
                 }
                 return TypeCheckUtils.anyType;
             }
@@ -137,9 +137,9 @@ public partial class Analyzer
             if (arg.Item1)
             {
                 var opType = Primitives.OperationType(expr.op, arg.Item2);
-                if (opType != null)
+                if (opType != Parser.VoidTokenType)
                 {
-                    return TypeCheckUtils.literalTypes[(Token.TokenType)opType];
+                    return TypeCheckUtils.literalTypes[opType];
                 }
                 return TypeCheckUtils.anyType;
             }
@@ -370,7 +370,7 @@ public partial class Analyzer
             using (new SaveContext())
                 expr.value = expr.right.Accept(this) == expr.right.type ? "1" : "0";
 
-            return TypeCheckUtils.literalTypes[Token.TokenType.BOOLEAN];
+            return TypeCheckUtils.literalTypes[Parser.LiteralTokenType.BOOLEAN];
         }
 
         public override Expr.Type VisitTypeReferenceExpr(Expr.TypeReference expr)
@@ -427,12 +427,12 @@ public partial class Analyzer
                 expr.right.Accept(this)
             };
 
-            TypeCheckUtils.MustMatchType(argumentTypes[0], TypeCheckUtils.literalTypes[Token.TokenType.BOOLEAN]);
-            TypeCheckUtils.MustMatchType(argumentTypes[1], TypeCheckUtils.literalTypes[Token.TokenType.BOOLEAN]);
+            TypeCheckUtils.MustMatchType(argumentTypes[0], TypeCheckUtils.literalTypes[Parser.LiteralTokenType.BOOLEAN]);
+            TypeCheckUtils.MustMatchType(argumentTypes[1], TypeCheckUtils.literalTypes[Parser.LiteralTokenType.BOOLEAN]);
 
-            return TypeCheckUtils.literalTypes[Token.TokenType.BOOLEAN];
+            return TypeCheckUtils.literalTypes[Parser.LiteralTokenType.BOOLEAN];
         }
-        
+
         public override Expr.Type VisitGroupingExpr(Expr.Grouping expr)
         {
             return expr.expression.Accept(this);

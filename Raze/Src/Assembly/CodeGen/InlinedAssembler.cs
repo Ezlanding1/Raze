@@ -364,7 +364,7 @@ public class InlinedAssembler : Assembler
         }
         else
         {
-            Emit(new Instruction.Binary("MOV", ((InlineStateInlined)inlineState).callee, new Instruction.Literal(Parser.Literals[0], "0")));
+            Emit(new Instruction.Binary("MOV", ((InlineStateInlined)inlineState).callee, new Instruction.Literal(Parser.LiteralTokenType.INTEGER, "0")));
         }
 
         if (((InlineStateInlined)inlineState).inlineLabelIdx == -1)
@@ -381,7 +381,7 @@ public class InlinedAssembler : Assembler
         return null;
     }
 
-    public Instruction.Value LockOperand(Instruction.Value operand) 
+    public Instruction.Value LockOperand(Instruction.Value operand)
     {
         if (operand.IsRegister())
         {
@@ -417,7 +417,7 @@ public class InlinedAssembler : Assembler
             }
         }
     }
-    
+
     private Instruction.Value HandleParameterRegister(Expr.Parameter parameter, Instruction.Value arg)
     {
         return IsRefParameter(parameter) ? arg : MovToRegister(arg, InstructionUtils.ToRegisterSize(parameter.stack.size));

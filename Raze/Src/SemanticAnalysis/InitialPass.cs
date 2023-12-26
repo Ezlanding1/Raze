@@ -44,7 +44,7 @@ public partial class Analyzer
             {
                 expr.modifiers["static"] = true;
 
-                if (expr.modifiers["operator"]) 
+                if (expr.modifiers["operator"])
                 {
                     Diagnostics.errors.Push(new Error.AnalyzerError("Invalid Operator Definition", $"Top level operator function definitions are not allowed"));
                     expr.modifiers["operator"] = false;
@@ -106,7 +106,7 @@ public partial class Analyzer
                         break;
                 }
             }
-            
+
             if (expr.name.lexeme == "Main")
             {
                 symbolTable.main = expr;
@@ -114,7 +114,7 @@ public partial class Analyzer
 
             HandleConstructor();
 
-            foreach (var parameter in expr.parameters) 
+            foreach (var parameter in expr.parameters)
             {
                 parameter.stack = (expr.modifiers["inline"]) ? new Expr.StackRegister() : new Expr.StackData();
                 GetVariableDefinition(parameter.typeName, parameter.stack);
@@ -138,7 +138,7 @@ public partial class Analyzer
             {
                 argExpr.Accept(this);
             }
-            
+
             return null;
         }
 
@@ -188,7 +188,7 @@ public partial class Analyzer
         public override object? VisitNewExpr(Expr.New expr)
         {
             HandleTopLevelCode();
-            
+
             expr.call.callee ??= new Expr.AmbiguousGetReference(new ExprUtils.QueueList<Token>(), false);
             ((Expr.AmbiguousGetReference)expr.call.callee).typeName.Enqueue(expr.call.name);
 
@@ -213,7 +213,7 @@ public partial class Analyzer
             {
                 Diagnostics.errors.Push(new Error.AnalyzerError("ASM Block Not In Function", "Assembly Blocks must be placed in functions"));
             }
-            
+
             if ((symbolTable.Current?.definitionType == Expr.Definition.DefinitionType.Function) && !((Expr.Function)symbolTable.Current).modifiers["unsafe"])
             {
                 Diagnostics.errors.Push(new Error.AnalyzerError("Unsafe Code in Safe Function", "Mark a function with 'unsafe' to include unsafe code"));
@@ -237,7 +237,7 @@ public partial class Analyzer
         public override object? VisitInstanceGetReferenceExpr(Expr.InstanceGetReference expr)
         {
             HandleTopLevelCode();
-            
+
             foreach (Expr.Getter get in expr.getters)
             {
                 get.Accept(this);
@@ -260,8 +260,8 @@ public partial class Analyzer
 
         public override object? VisitAssignExpr(Expr.Assign expr)
         {
-            if (expr.member.HandleThis() && (symbolTable.NearestEnclosingClass()?.definitionType != Expr.Definition.DefinitionType.Primitive)) 
-            { 
+            if (expr.member.HandleThis() && (symbolTable.NearestEnclosingClass()?.definitionType != Expr.Definition.DefinitionType.Primitive))
+            {
                 Diagnostics.errors.Push(new Error.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword cannot be assigned to"));
             }
 
@@ -273,39 +273,20 @@ public partial class Analyzer
         {
             symbolTable.AddDefinition(expr);
 
-            switch (expr.superclass.typeName.Dequeue().lexeme)
+            if (Enum.TryParse(expr.superclass.typeName.Dequeue().lexeme, out Parser.LiteralTokenType literalTokenType))
             {
-                case "INTEGER":
-                    expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[0]];
-                    break;
-                case "FLOATING":
-                    expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[1]];
-                    break;
-                case "STRING":
-                    expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[2]];
-                    break;
-                case "BINARY":
-                    expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[3]];
-                    break;
-                case "HEX":
-                    expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[4]];
-                    break;
-                case "BOOLEAN":
-                    expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[5]];
-                    break;
-                case "REF_STRING":
-                    expr.superclass.type = TypeCheckUtils.literalTypes[Parser.Literals[6]];
-                    break;
-                default:
-                    Diagnostics.errors.Push(new Error.ImpossibleError("Invalid primitive superclass"));
-                    break;
+                expr.superclass.type = TypeCheckUtils.literalTypes[literalTokenType];
+            }
+            else
+            {
+                Diagnostics.errors.Push(new Error.ImpossibleError("Invalid primitive superclass"));
             }
 
             foreach (var blockExpr in expr.definitions)
             {
                 blockExpr.Accept(this);
             }
-            
+
             symbolTable.UpContext();
 
             return null;

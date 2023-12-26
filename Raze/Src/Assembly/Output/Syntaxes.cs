@@ -9,7 +9,7 @@ namespace Raze;
 
 partial class Syntaxes
 {
-    partial class SyntaxFactory 
+    partial class SyntaxFactory
     {
 
         class IntelSyntax : ISyntaxFactory, Instruction.IVisitor
@@ -26,8 +26,8 @@ partial class Syntaxes
                     { new Instruction.Section("text") },
                     { new Instruction.Procedure("_start") },
                     { new Instruction.Unary("CALL", new Instruction.ProcedureRef(Assembler.ToMangledName(main))) },
-                    { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), (Analyzer.TypeCheckUtils.literalTypes[Parser.Literals[0]].Matches(main._returnType.type)) ? new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits) : new Instruction.Literal(Parser.Literals[0], "0")) },
-                    { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.Literals[0], "60")) },
+                    { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), (Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.INTEGER].Matches(main._returnType.type)) ? new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits) : new Instruction.Literal(Parser.LiteralTokenType.INTEGER, "0")) },
+                    { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.LiteralTokenType.INTEGER, "60")) },
                     { new Instruction.Zero("SYSCALL") }
                 };
             }
@@ -155,18 +155,18 @@ partial class Syntaxes
             {
                 switch (instruction.type)
                 {
-                    case Token.TokenType.STRING:
-                    {
-                        if (instruction.value == "") return "0";
-
-                        int strAsInt = instruction.value[^1];
-                        for (int i = instruction.value.Length - 2; i >= 0; i--)
+                    case Parser.LiteralTokenType.STRING:
                         {
-                            strAsInt <<= 8;
-                            strAsInt += instruction.value[i];
+                            if (instruction.value == "") return "0";
+
+                            int strAsInt = instruction.value[^1];
+                            for (int i = instruction.value.Length - 2; i >= 0; i--)
+                            {
+                                strAsInt <<= 8;
+                                strAsInt += instruction.value[i];
+                            }
+                            return $"{strAsInt}";
                         }
-                        return $"{strAsInt}";
-                    }
                 }
                 return $"{instruction.value}";
             }
@@ -265,15 +265,16 @@ partial class Syntaxes
             {
                 header = new Instruction.Comment("Raze Compiler Version ALPHA 0.0.0 Intel_x86-64 GAS");
             }
-            public override List<Instruction> GenerateHeaderInstructions(Expr.Function main){
+            public override List<Instruction> GenerateHeaderInstructions(Expr.Function main)
+            {
                 return new List<Instruction>()
                 {
                     { new Instruction.Global("_start") },
                     { new Instruction.Section("text") },
                     { new Instruction.Procedure("_start") },
                     { new Instruction.Unary("CALL", new Instruction.ProcedureRef(Assembler.ToMangledName(main))) },
-                    { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), (Analyzer.TypeCheckUtils.literalTypes[Parser.Literals[0]].Matches(main._returnType.type)) ? new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits) : new Instruction.Literal(Parser.Literals[0], "0")) },
-                    { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.Literals[0], "60")) },
+                    { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RDI, Instruction.Register.RegisterSize._64Bits), (Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.INTEGER].Matches(main._returnType.type)) ? new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits) : new Instruction.Literal(Parser.LiteralTokenType.INTEGER, "0")) },
+                    { new Instruction.Binary("MOV", new Instruction.Register(Instruction.Register.RegisterName.RAX, Instruction.Register.RegisterSize._64Bits), new Instruction.Literal(Parser.LiteralTokenType.INTEGER, "60")) },
                     { new Instruction.Zero("SYSCALL") }
                 };
             }

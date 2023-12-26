@@ -15,25 +15,26 @@ public partial class Analyzer
 
         public static Expr.Type _voidType = new Expr.Class(new(Token.TokenType.RESERVED, "void"), new(), new(), new(null));
 
-        public static Dictionary<Token.TokenType, Expr.Type> literalTypes = new Dictionary<Token.TokenType, Expr.Type>()
+        public static Dictionary<Parser.LiteralTokenType, Expr.Type> literalTypes = new Dictionary<Parser.LiteralTokenType, Expr.Type>()
         {
-            { Parser.Literals[0], new(new Token(Parser.Literals[0])) },
-            { Parser.Literals[1], new(new Token(Parser.Literals[1])) },
-            { Parser.Literals[2], new(new Token(Parser.Literals[2])) },
-            { Parser.Literals[3], new(new Token(Parser.Literals[3])) },
-            { Parser.Literals[4], new(new Token(Parser.Literals[4])) },
-            { Parser.Literals[5], new(new Token(Parser.Literals[5])) },
-            { Parser.Literals[6], new(new Token(Parser.Literals[6])) },
+            { Parser.VoidTokenType, _voidType },
+            { Parser.LiteralTokenType.INTEGER, new(new Token((Token.TokenType)Parser.LiteralTokenType.INTEGER)) },
+            { Parser.LiteralTokenType.FLOATING, new(new Token((Token.TokenType)Parser.LiteralTokenType.FLOATING)) },
+            { Parser.LiteralTokenType.STRING, new(new Token((Token.TokenType)Parser.LiteralTokenType.STRING)) },
+            { Parser.LiteralTokenType.BINARY, new(new Token((Token.TokenType)Parser.LiteralTokenType.BINARY)) },
+            { Parser.LiteralTokenType.HEX, new(new Token((Token.TokenType)Parser.LiteralTokenType.HEX)) },
+            { Parser.LiteralTokenType.BOOLEAN, new(new Token((Token.TokenType)Parser.LiteralTokenType.BOOLEAN)) },
+            { Parser.LiteralTokenType.REF_STRING, new(new Token((Token.TokenType)Parser.LiteralTokenType.REF_STRING)) },
         };
 
         public static Dictionary<string, Expr.Type> keywordTypes = new Dictionary<string, Expr.Type>()
         {
-            { "true", literalTypes[Token.TokenType.BOOLEAN] },
-            { "false", literalTypes[Token.TokenType.BOOLEAN] },
+            { "true", literalTypes[Parser.LiteralTokenType.BOOLEAN] },
+            { "false", literalTypes[Parser.LiteralTokenType.BOOLEAN] },
             { "null", null },
         };
 
-        public static void MustMatchType(Expr.Type type1, Expr.Type type2, string error= "You cannot assign type '{0}' to type '{1}'")
+        public static void MustMatchType(Expr.Type type1, Expr.Type type2, string error = "You cannot assign type '{0}' to type '{1}'")
         {
             if (!type2.Matches(type1))
             {
@@ -49,7 +50,7 @@ public partial class Analyzer
             if (condition != null)
             {
                 var conditionType = condition.Accept(visitor);
-                if (!literalTypes[Token.TokenType.BOOLEAN].Matches(conditionType))
+                if (!literalTypes[Parser.LiteralTokenType.BOOLEAN].Matches(conditionType))
                 {
                     Diagnostics.errors.Push(new Error.AnalyzerError("Type Mismatch", $"'{conditionalName}' expects condition to return 'BOOLEAN'. Got '{conditionType}'"));
                 }

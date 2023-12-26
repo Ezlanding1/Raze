@@ -14,16 +14,17 @@ public class Parser
     Token? current;
     int index;
 
-    internal static readonly Token.TokenType[] Literals =
+    internal const LiteralTokenType VoidTokenType = (LiteralTokenType)(-1);
+    internal enum LiteralTokenType
     {
-        Token.TokenType.INTEGER,
-        Token.TokenType.FLOATING,
-        Token.TokenType.STRING,
-        Token.TokenType.BINARY,
-        Token.TokenType.HEX,
-        Token.TokenType.BOOLEAN,
-        Token.TokenType.REF_STRING
-    };
+        INTEGER = Token.TokenType.INTEGER,
+        FLOATING = Token.TokenType.FLOATING,
+        STRING = Token.TokenType.STRING,
+        BINARY = Token.TokenType.BINARY,
+        HEX = Token.TokenType.HEX,
+        BOOLEAN = Token.TokenType.BOOLEAN,
+        REF_STRING = Token.TokenType.REF_STRING
+    }
 
     internal static readonly Token.TokenType[] SynchronizationTokens =
     {
@@ -131,7 +132,7 @@ public class Parser
                 Expect(Token.TokenType.IDENTIFIER, definitionType.lexeme + " name");
                 Token name = Previous();
 
-                if (Literals.Contains(name.type))
+                if (Enum.GetNames<LiteralTokenType>().Contains(name.type.ToString()))
                 {
                     Diagnostics.errors.Push(new Error.ParseError("Invalid Class", $"The name of a class may not be a literal ({name.lexeme})"));
                 }
@@ -175,13 +176,13 @@ public class Parser
                 Expect(Token.TokenType.IDENTIFIER, definitionType.lexeme + " name");
                 var name = Previous();
 
-                if (Literals.Contains(name.type))
+                if (Enum.GetNames<LiteralTokenType>().Contains(name.type.ToString()))
                 {
                     Diagnostics.errors.Push(new Error.ParseError("Invalid Primitive", $"The name of a primitive may not be a literal ({name.lexeme})"));
                 }
 
                 ExpectValue(Token.TokenType.IDENTIFIER, "sizeof", "'sizeof' keyword");
-                
+
                 int size = -1;
 
                 if (TypeMatch(Token.TokenType.INTEGER))
@@ -208,10 +209,9 @@ public class Parser
                     type = new(new());
                     type.typeName.Enqueue(Previous());
 
-
-                    if (!Enum.TryParse<Token.TokenType>(Previous().lexeme, out var literalEnum) || !Literals.Contains(literalEnum))
+                    if (!Enum.GetNames<LiteralTokenType>().Contains(Previous().lexeme))
                     {
-                        Diagnostics.errors.Push(new Error.ParseError("Invalid Primitive", $"The superclass of a primitive must be a valid literal ({string.Join(", ", Literals)}). Got: '{Previous().lexeme}'"));
+                        Diagnostics.errors.Push(new Error.ParseError("Invalid Primitive", $"The superclass of a primitive must be a valid literal ({string.Join(", ", Enum.GetValues<LiteralTokenType>())}). Got: '{Previous().lexeme}'"));
                     }
                 }
 
@@ -486,9 +486,9 @@ public class Parser
         {
             Expr expr;
 
-            if (TypeMatch(Literals))
+            if (TypeMatch(Array.ConvertAll<LiteralTokenType, Token.TokenType>(Enum.GetValues<LiteralTokenType>(), new(x => (Token.TokenType)x))))
             {
-                return new Expr.Literal(Previous());
+                return new Expr.Literal(new LiteralToken((LiteralTokenType)Previous().type, Previous().lexeme));
             }
 
             if (TypeMatch(Token.TokenType.LPAREN))
@@ -782,7 +782,7 @@ public class Parser
                     }
                     else
                     {
-                        value = new Instruction.Literal(Previous().type, Previous().lexeme);
+                        value = new Instruction.Literal((LiteralTokenType)Previous().type, Previous().lexeme);
                     }
 
                     if (TypeMatch(Token.TokenType.COMMA))
@@ -804,7 +804,7 @@ public class Parser
                         }
                         else if (TypeMatch(Token.TokenType.INTEGER, Token.TokenType.FLOATING, Token.TokenType.STRING, Token.TokenType.REF_STRING, Token.TokenType.HEX, Token.TokenType.BINARY))
                         {
-                            instructions.Add(new ExprUtils.AssignableInstruction.Binary(new Instruction.Binary(op.lexeme, value, new Instruction.Literal(Previous().type, Previous().lexeme)), (value == null) ? ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst : ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
+                            instructions.Add(new ExprUtils.AssignableInstruction.Binary(new Instruction.Binary(op.lexeme, value, new Instruction.Literal((LiteralTokenType)Previous().type, Previous().lexeme)), (value == null) ? ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst : ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
                         }
                         else if (TypeMatch(Token.TokenType.DOLLAR))
                         {
