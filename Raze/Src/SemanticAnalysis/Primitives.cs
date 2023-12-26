@@ -16,10 +16,10 @@ public partial class Analyzer
             AssemblyExpr.Literal.LiteralType.INTEGER => int.Parse(literal.value),
             AssemblyExpr.Literal.LiteralType.FLOATING => float.Parse(literal.value),
             AssemblyExpr.Literal.LiteralType.STRING => literal.value,
-            AssemblyExpr.Literal.LiteralType.REF_STRING => literal.value,
             AssemblyExpr.Literal.LiteralType.BINARY => Convert.ToInt32(literal.value, 2),
             AssemblyExpr.Literal.LiteralType.HEX => Convert.ToInt32(literal.value, 16),
-            AssemblyExpr.Literal.LiteralType.BOOLEAN => byte.Parse(literal.value)
+            AssemblyExpr.Literal.LiteralType.BOOLEAN => byte.Parse(literal.value),
+            AssemblyExpr.Literal.LiteralType.REF_DATA => literal.value
         };
 
         // Binary Operation
@@ -120,7 +120,7 @@ public partial class Analyzer
                 (
                     pName switch
                     {
-                        "Add" => Add(ToType(a), ToType(b), (a.type == b.type && a.type == AssemblyExpr.Literal.LiteralType.REF_STRING), assembler),
+                        "Add" => Add(ToType(a), ToType(b), (a.type == b.type && a.type == AssemblyExpr.Literal.LiteralType.REF_DATA), assembler),
                         "Subtract" => ToType(a) - ToType(b),
                         "Multiply" => ToType(a) * ToType(b),
                         "Modulo" => ToType(a) % ToType(b),
@@ -167,7 +167,7 @@ public partial class Analyzer
                 i++;
             }
 
-            assembler.EmitData(new AssemblyExpr.Data(assembler.DataLabel, AssemblyExpr.Register.RegisterSize._8Bits, (AssemblyExpr.Literal.LiteralType.REF_STRING, aData[..^4] + bData[1..])));
+            assembler.EmitData(new AssemblyExpr.Data(assembler.DataLabel, AssemblyExpr.Register.RegisterSize._8Bits, (AssemblyExpr.Literal.LiteralType.STRING, aData[..^4] + bData[1..])));
 
             return assembler.CreateDatalLabel(assembler.dataCount++);
         }

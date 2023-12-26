@@ -11,7 +11,7 @@ partial class Syntaxes
 {
     partial class SyntaxFactory 
     {
-        class IntelSyntax : ISyntaxFactory, AssemblyExpr.IVisitor<string>, AssemblyExpr.IUnaryOperandVisitor<string>, AssemblyExpr.ILiteralSpecialMethods<string>
+        class IntelSyntax : ISyntaxFactory, AssemblyExpr.IVisitor<string>, AssemblyExpr.IUnaryOperandVisitor<string>
         {
             public IntelSyntax()
             {
@@ -138,15 +138,11 @@ partial class Syntaxes
                         }
                         return $"{strAsInt}";
                     }
+                    case AssemblyExpr.Literal.LiteralType.REF_LOCALPROCEDURE:
+                        return $".{instruction.value}";
                 }
-                return $"{instruction.VisitSpecialLiteralOperation(this)}{instruction.value}";
+                return $"{instruction.value}";
             }
-
-            public string VisitDataRef(AssemblyExpr.DataRef dataRef) => string.Empty;
-
-            public string VisitProcedureRef(AssemblyExpr.ProcedureRef procedureRef) => string.Empty;
-
-            public string VisitLocalProcedureRef(AssemblyExpr.LocalProcedureRef localProcedureRef) => ".";
 
             private static Dictionary<(AssemblyExpr.Register.RegisterName, AssemblyExpr.Register.RegisterSize?), string> RegisterToString = new()
             {

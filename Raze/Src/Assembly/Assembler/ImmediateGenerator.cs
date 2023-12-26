@@ -53,10 +53,12 @@ public partial class Assembler
                     LiteralType.INTEGER => ParseSigned64(literal.value),
                     LiteralType.FLOATING => Instruction.Immediate64.Generate(double.Parse(literal.value)),
                     LiteralType.STRING => Instruction.Immediate64.Generate(literal.value[0]),
-                    LiteralType.REF_STRING => new Instruction.Immediate64Long(),
                     LiteralType.BINARY => Instruction.Immediate64.Generate(Convert.ToUInt64(literal.value, 2)),
                     LiteralType.HEX => ParseSigned64(literal.value, 16),
-                    LiteralType.BOOLEAN => Instruction.Immediate64.Generate(literal.value == "true" ? (ulong)1 : (ulong)0)
+                    LiteralType.BOOLEAN => Instruction.Immediate64.Generate(literal.value == "true" ? (ulong)1 : (ulong)0),
+                    LiteralType.REF_DATA => new Instruction.Immediate64Long(0),
+                    LiteralType.REF_PROCEDURE => new Instruction.Immediate64Long(0),
+                    LiteralType.REF_LOCALPROCEDURE => new Instruction.Immediate64Long(0),
                 };
 
                 private static IInstruction ParseSigned8(string literal, int _base=10) =>

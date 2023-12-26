@@ -10,8 +10,7 @@ namespace Raze;
 public partial class Assembler : 
     AssemblyExpr.IVisitor<Assembler.Instruction>, 
     AssemblyExpr.IUnaryOperandVisitor<Assembler.Instruction>, 
-    AssemblyExpr.IBinaryOperandVisitor<Assembler.Instruction>, 
-    AssemblyExpr.ILiteralSpecialMethods<object?>
+    AssemblyExpr.IBinaryOperandVisitor<Assembler.Instruction>
 {
     FileStream fs;
 
@@ -170,15 +169,13 @@ public partial class Assembler :
 
     public Instruction VisitRegisterImmediate(AssemblyExpr.Register reg1, AssemblyExpr.Literal imm2)
     {
-        imm2.VisitSpecialLiteralOperation(this);
-
         return new Instruction { Instructions = new IInstruction[] {
             new ModRegRm(
                 ModRegRm.Mod.RegisterAdressingMode,
                 (ModRegRm.OpCodeExtension)encoding.OpCodeExtension,
                 Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1)
             ),
-            Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2)
+            Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2, this)
         } };
     }
 
@@ -220,7 +217,6 @@ public partial class Assembler :
     {
         if (ptr1.offset == 0 && Encoder.EncodingUtils.CanHaveZeroByteDisplacement(ptr1.register))
         {
-            imm2.VisitSpecialLiteralOperation(this);
             return new Instruction
             {
                 Instructions = new IInstruction[] {
@@ -229,12 +225,11 @@ public partial class Assembler :
                         (ModRegRm.OpCodeExtension)encoding.OpCodeExtension,
                         Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(ptr1.register)
                     ),
-                    Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2)
+                    Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2, this)
                 }
             };
         }
         location += Encoder.EncodingUtils.Disp8Bit(ptr1.offset)? 1 : 4;
-        imm2.VisitSpecialLiteralOperation(this);
         return new Instruction
         {
             Instructions = new IInstruction[] {
@@ -244,7 +239,7 @@ public partial class Assembler :
                     Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(ptr1.register)
                 ),
                 Encoder.EncodingUtils.GetDispInstruction(ptr1.offset),
-                Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2)
+                Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2, this)
             }
         };
     }
@@ -293,26 +288,7 @@ public partial class Assembler :
 
     public Instruction VisitImmediate(AssemblyExpr.Literal imm)
     {
-        imm.VisitSpecialLiteralOperation(this);
         // No ModRegRm byte is emitted for a unary literal operand
-        return new Instruction(new IInstruction[] { Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm) });
-    }
-
-    public object? VisitDataRef(AssemblyExpr.DataRef dataRef)
-    {
-        symbolTable.unresolvedData.Push((dataRef.value, location));
-        return null;
-    }
-
-    public object? VisitProcedureRef(AssemblyExpr.ProcedureRef procedureRef)
-    {
-        symbolTable.unresolvedLabels.Push((procedureRef.value, location));
-        return null;
-    }
-
-    public object? VisitLocalProcedureRef(AssemblyExpr.LocalProcedureRef localProcedureRef)
-    {
-        symbolTable.unresolvedLocalLabels.Push((localProcedureRef.value, location));
-        return null;
+        return new Instruction(new IInstruction[] { Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm, this) });
     }
 }

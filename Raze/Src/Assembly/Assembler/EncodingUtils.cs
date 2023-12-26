@@ -46,13 +46,29 @@ public partial class Assembler
                 _ => false
             };
 
-            internal static IInstruction GetImmInstruction(Operand.OperandSize size, AssemblyExpr.Literal op2Expr) => size switch
+            internal static IInstruction GetImmInstruction(Operand.OperandSize size, AssemblyExpr.Literal op2Expr, Assembler assembler)
             {
-                Operand.OperandSize._8Bits => ImmediateGenerator.GenerateImm8(op2Expr),
-                Operand.OperandSize._16Bits => ImmediateGenerator.GenerateImm16(op2Expr),
-                Operand.OperandSize._32Bits => ImmediateGenerator.GenerateImm32(op2Expr),
-                Operand.OperandSize._64Bits => ImmediateGenerator.GenerateImm64(op2Expr),
-            };
+                if (op2Expr.type == AssemblyExpr.Literal.LiteralType.REF_DATA)
+                {
+                    assembler.symbolTable.unresolvedData.Push((op2Expr.value, assembler.location));
+                }
+                else if (op2Expr.type == AssemblyExpr.Literal.LiteralType.REF_PROCEDURE)
+                {
+                    assembler.symbolTable.unresolvedLabels.Push((op2Expr.value, assembler.location));
+                }
+                else if (op2Expr.type == AssemblyExpr.Literal.LiteralType.REF_PROCEDURE)
+                {
+                    assembler.symbolTable.unresolvedLocalLabels.Push((op2Expr.value, assembler.location));
+                }
+
+                return size switch
+                {
+                    Operand.OperandSize._8Bits => ImmediateGenerator.GenerateImm8(op2Expr),
+                    Operand.OperandSize._16Bits => ImmediateGenerator.GenerateImm16(op2Expr),
+                    Operand.OperandSize._32Bits => ImmediateGenerator.GenerateImm32(op2Expr),
+                    Operand.OperandSize._64Bits => ImmediateGenerator.GenerateImm64(op2Expr),
+                };
+            }
 
             internal static bool Disp8Bit(int disp)
                 => disp <= sbyte.MaxValue && disp >= sbyte.MinValue;

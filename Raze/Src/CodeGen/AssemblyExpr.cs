@@ -260,7 +260,9 @@ public abstract partial class AssemblyExpr
             BINARY = Parser.LiteralTokenType.BINARY,
             HEX = Parser.LiteralTokenType.HEX,
             BOOLEAN = Parser.LiteralTokenType.BOOLEAN,
-            REF_STRING = Parser.LiteralTokenType.REF_STRING
+            REF_DATA,
+            REF_PROCEDURE,
+            REF_LOCALPROCEDURE
         }
         internal LiteralType type;
         public string value;
@@ -301,9 +303,6 @@ public abstract partial class AssemblyExpr
             Assembler.Encoder.EncodingUtils.ThrowIvalidEncodingType("Immediate", "Register");
             return default;
         }
-
-
-        public virtual T VisitSpecialLiteralOperation<T>(ILiteralSpecialMethods<T> visitor) => default;
     }
 
     public class Data : DataExpr
@@ -327,13 +326,8 @@ public abstract partial class AssemblyExpr
 
     public class DataRef : Literal
     {
-        public DataRef(string dataName) : base(LiteralType.REF_STRING, dataName)
+        public DataRef(string dataName) : base(LiteralType.REF_DATA, dataName)
         {
-        }
-
-        public override T VisitSpecialLiteralOperation<T>(ILiteralSpecialMethods<T> visitor)
-        {
-            return visitor.VisitDataRef(this);
         }
     }
 
@@ -367,34 +361,18 @@ public abstract partial class AssemblyExpr
     
     public class ProcedureRef : Literal
     {
-        public ProcedureRef(string name) : base(LiteralType.REF_STRING, name)
+        public ProcedureRef(string name) : base(LiteralType.REF_PROCEDURE, name)
         {
-        }
-
-        public override T VisitSpecialLiteralOperation<T>(ILiteralSpecialMethods<T> visitor)
-        {
-            return visitor.VisitProcedureRef(this);
         }
     }
 
     public class LocalProcedureRef : Literal
     {
-        public LocalProcedureRef(string name) : base(LiteralType.REF_STRING, name)
+        public LocalProcedureRef(string name) : base(LiteralType.REF_LOCALPROCEDURE, name)
         {
-        }
-
-        public override T VisitSpecialLiteralOperation<T>(ILiteralSpecialMethods<T> visitor)
-        {
-            return visitor.VisitLocalProcedureRef(this);
         }
     }
 
-    public interface ILiteralSpecialMethods<T>
-    {
-        public T VisitDataRef(DataRef dataRef);
-        public T VisitProcedureRef(ProcedureRef procedureRef);
-        public T VisitLocalProcedureRef(LocalProcedureRef localProcedureRef);
-    }
     public interface IUnaryOperandVisitor<T>
     {
         public T VisitRegister(Register reg);

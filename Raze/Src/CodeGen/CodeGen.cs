@@ -543,7 +543,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         {
             case Parser.LiteralTokenType.REF_STRING:
                 string name = DataLabel;
-                EmitData(new AssemblyExpr.Data(name, AssemblyExpr.Register.RegisterSize._8Bits, (AssemblyExpr.Literal.LiteralType.REF_STRING, expr.literal.lexeme + ", 0")));
+                EmitData(new AssemblyExpr.Data(name, AssemblyExpr.Register.RegisterSize._8Bits, (AssemblyExpr.Literal.LiteralType.STRING, expr.literal.lexeme + ", 0")));
                 dataCount++;
                 return new AssemblyExpr.DataRef(name);
             case Parser.LiteralTokenType.STRING:
@@ -959,7 +959,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             {
                 return literal.value.Length;
             }
-            case AssemblyExpr.Literal.LiteralType.REF_STRING:
+            case AssemblyExpr.Literal.LiteralType.REF_DATA:
+            case AssemblyExpr.Literal.LiteralType.REF_PROCEDURE:
+            case AssemblyExpr.Literal.LiteralType.REF_LOCALPROCEDURE:
             {
                 return (int)InstructionUtils.SYS_SIZE;
             }

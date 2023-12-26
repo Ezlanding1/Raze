@@ -54,8 +54,8 @@ public partial class Assembler
                 AssemblyExpr.Literal.LiteralType.HEX or
                 AssemblyExpr.Literal.LiteralType.FLOATING or
                 AssemblyExpr.Literal.LiteralType.BOOLEAN or
-                AssemblyExpr.Literal.LiteralType.INTEGER => EncodingUtils.GetImmInstruction((Operand.OperandSize)(byte)data.size, new(data.value.Item1, data.value.Item2)),
-                AssemblyExpr.Literal.LiteralType.REF_STRING or AssemblyExpr.Literal.LiteralType.STRING => new Instruction.RawInstruction(System.Text.Encoding.ASCII.GetBytes(data.value.Item2)),
+                AssemblyExpr.Literal.LiteralType.INTEGER => EncodingUtils.GetImmInstruction((Operand.OperandSize)(byte)data.size, new(data.value.Item1, data.value.Item2), null),
+                AssemblyExpr.Literal.LiteralType.STRING => new Instruction.RawInstruction(System.Text.Encoding.ASCII.GetBytes(data.value.Item2)),
                 _ => EncodingUtils.EncodingError().Instructions[0]
             }});
         }
