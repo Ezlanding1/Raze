@@ -364,7 +364,7 @@ public class InlinedCodeGen : CodeGen
         }
         else
         {
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, ((InlineStateInlined)inlineState).callee, new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "0")));
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, ((InlineStateInlined)inlineState).callee, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.INTEGER, "0")));
         }
 
         if (((InlineStateInlined)inlineState).inlineLabelIdx == -1)

@@ -169,7 +169,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         if (expr.arguments.Count > InstructionUtils.paramRegister.Length && alloc.fncPushPreserved.leaf)
         {
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.ADD, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, ((expr.arguments.Count - InstructionUtils.paramRegister.Length) * 8).ToString())));
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.ADD, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.INTEGER, ((expr.arguments.Count - InstructionUtils.paramRegister.Length) * 8).ToString())));
         }
         
         return alloc.CallAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnSize));
@@ -236,13 +236,13 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                 if (expr.classScoped)
                 {
                     Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.CurrentRegister(InstructionUtils.SYS_SIZE), new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, (int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE)));
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), expr.stack.stackOffset, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, chunks.Item1.ToString())));
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), expr.stack.stackOffset, InstructionUtils.ToRegisterSize(expr.stack.size - 4)), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, chunks.Item2.ToString())));
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), expr.stack.stackOffset, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.INTEGER, chunks.Item1.ToString())));
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), expr.stack.stackOffset, InstructionUtils.ToRegisterSize(expr.stack.size - 4)), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.INTEGER, chunks.Item2.ToString())));
                 }
                 else
                 {
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(expr.stack.stackOffset-4, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, chunks.Item1.ToString())));
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(expr.stack.stackOffset, InstructionUtils.ToRegisterSize(expr.stack.size-4)), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, chunks.Item2.ToString())));
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(expr.stack.stackOffset-4, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.INTEGER, chunks.Item1.ToString())));
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(expr.stack.stackOffset, InstructionUtils.ToRegisterSize(expr.stack.size-4)), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.INTEGER, chunks.Item2.ToString())));
                 }
                 goto dealloc;
             }
@@ -438,7 +438,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         }
         else if (operand1.IsPointer())
         {
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.CMP, operand1, new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "0")));
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.CMP, operand1, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.INTEGER, "0")));
 
             Emit(new AssemblyExpr.Unary((expr.op.type == Token.TokenType.AND) ? AssemblyExpr.Instruction.JE : AssemblyExpr.Instruction.JNE, new AssemblyExpr.LocalProcedureRef(ConditionalLabel)));
         }
@@ -487,7 +487,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
             if (operand1.IsPointer())
             {
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.CMP, operand1, new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "0")));
+                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.CMP, operand1, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.INTEGER, "0")));
 
                 Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.JE, new AssemblyExpr.LocalProcedureRef(cLabel)));
             }
@@ -517,13 +517,13 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         conditionalCount++;
 
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.CurrentRegister(AssemblyExpr.Register.RegisterSize._8Bits), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "1")));
+        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.CurrentRegister(AssemblyExpr.Register.RegisterSize._8Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.INTEGER, "1")));
        
         Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.JMP, new AssemblyExpr.LocalProcedureRef(ConditionalLabel)));
 
         Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(conditionalCount-1)));
 
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.CurrentRegister(AssemblyExpr.Register.RegisterSize._8Bits), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "0")));
+        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.CurrentRegister(AssemblyExpr.Register.RegisterSize._8Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.INTEGER, "0")));
 
         Emit(new AssemblyExpr.LocalProcedure(ConditionalLabel));
         conditionalCount++;
@@ -543,7 +543,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         {
             case Parser.LiteralTokenType.REF_STRING:
                 string name = DataLabel;
-                EmitData(new AssemblyExpr.Data(name, AssemblyExpr.Register.RegisterSize._8Bits, (Parser.LiteralTokenType.REF_STRING, expr.literal.lexeme + ", 0")));
+                EmitData(new AssemblyExpr.Data(name, AssemblyExpr.Register.RegisterSize._8Bits, (AssemblyExpr.Literal.LiteralType.REF_STRING, expr.literal.lexeme + ", 0")));
                 dataCount++;
                 return new AssemblyExpr.DataRef(name);
             case Parser.LiteralTokenType.STRING:
@@ -552,7 +552,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             case Parser.LiteralTokenType.BINARY:
             case Parser.LiteralTokenType.HEX:
             case Parser.LiteralTokenType.BOOLEAN:
-                return new AssemblyExpr.Literal(expr.literal.type, expr.literal.lexeme);
+                return new AssemblyExpr.Literal((AssemblyExpr.Literal.LiteralType)expr.literal.type, expr.literal.lexeme);
             default:
                 Diagnostics.errors.Push(new Error.ImpossibleError($"Invalid Literal Type ({expr.literal.type})"));
                 return null;
@@ -714,7 +714,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         }
         else
         {
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, InstructionUtils.SYS_SIZE), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "0")));
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, InstructionUtils.SYS_SIZE), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.INTEGER, "0")));
         }
         
         DoFooter();
@@ -757,8 +757,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                 if (chunks.Item1 != -1)
                 {
                     var ptr = (AssemblyExpr.Pointer)operand1;
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(ptr.register, ptr.offset - 4, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, chunks.Item1.ToString())));
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(ptr.register, ptr.offset, InstructionUtils.ToRegisterSize((int)ptr.size-4)), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, chunks.Item2.ToString())));
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(ptr.register, ptr.offset - 4, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.INTEGER, chunks.Item1.ToString())));
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(ptr.register, ptr.offset, InstructionUtils.ToRegisterSize((int)ptr.size-4)), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.INTEGER, chunks.Item2.ToString())));
 
                     goto dealloc;
                 }
@@ -784,9 +784,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
     {
         switch (expr.keyword)
         {
-            case "null": return new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "0");
-            case "true": return new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "1");
-            case "false": return new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "0");
+            case "null": return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.INTEGER, "0");
+            case "true": return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.INTEGER, "1");
+            case "false": return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.INTEGER, "0");
             default: 
                 Diagnostics.errors.Push(new Error.ImpossibleError($"'{expr.keyword}' is not a keyword"));
                 return null;
@@ -812,15 +812,15 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         var rbx = alloc.NextRegister(AssemblyExpr.Register.RegisterSize._64Bits);
         // Move the following into a runtime procedure, and pass in the expr.internalClass.size as a parameter
         // {
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "12")));
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits), new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "0")));
+        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.INTEGER, "12")));
+        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.INTEGER, "0")));
         Emit(new AssemblyExpr.Zero(AssemblyExpr.Instruction.SYSCALL));
 
         var ptr = new AssemblyExpr.Pointer(rax, -expr.internalClass.size, 8);
         Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, rbx, ptr));
 
         Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits), ptr));
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(Parser.LiteralTokenType.INTEGER, "12")));
+        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.INTEGER, "12")));
         Emit(new AssemblyExpr.Zero(AssemblyExpr.Instruction.SYSCALL));
            
         Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, rbx));
@@ -835,7 +835,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     public AssemblyExpr.Value? VisitIsExpr(Expr.Is expr)
     {
-        return new AssemblyExpr.Literal(Parser.LiteralTokenType.BOOLEAN, expr.value);
+        return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.BOOLEAN, expr.value);
     }
 
     public AssemblyExpr.Value? VisitNoOpExpr(Expr.NoOp expr)
@@ -873,7 +873,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         }
         else if (!conditional.IsLiteral())
         {
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.CMP, conditional, new AssemblyExpr.Literal(Parser.LiteralTokenType.BOOLEAN, "1")));
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.CMP, conditional, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.BOOLEAN, "1")));
         }
 
         return AssemblyExpr.Instruction.SETE;
@@ -933,9 +933,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
     {
         switch (literal.type)
         {
-            case Parser.LiteralTokenType.INTEGER:
+            case AssemblyExpr.Literal.LiteralType.INTEGER:
                 return GetIntegralSize(long.Parse(literal.value));
-            case Parser.LiteralTokenType.FLOATING:
+            case AssemblyExpr.Literal.LiteralType.FLOATING:
             {
                 double val = double.Parse(literal.value);
                 if (val <= 480 && val >= 0.0078)
@@ -955,15 +955,15 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                     return (int)AssemblyExpr.Register.RegisterSize._64Bits;
                 }
             }
-            case Parser.LiteralTokenType.STRING:
+            case AssemblyExpr.Literal.LiteralType.STRING:
             {
                 return literal.value.Length;
             }
-            case Parser.LiteralTokenType.REF_STRING:
+            case AssemblyExpr.Literal.LiteralType.REF_STRING:
             {
                 return (int)InstructionUtils.SYS_SIZE;
             }
-            case Parser.LiteralTokenType.BINARY:
+            case AssemblyExpr.Literal.LiteralType.BINARY:
             {
                 int length = literal.value.Length-2;
                 length--;
@@ -976,9 +976,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                 length /= 8;
                 return length;
             }
-            case Parser.LiteralTokenType.HEX:
+            case AssemblyExpr.Literal.LiteralType.HEX:
                 return GetIntegralSize(long.Parse(literal.value, NumberStyles.AllowHexSpecifier));
-            case Parser.LiteralTokenType.BOOLEAN:
+            case AssemblyExpr.Literal.LiteralType.BOOLEAN:
                 return (int)AssemblyExpr.Register.RegisterSize._8Bits;
             default:
                 return 0;
@@ -1041,7 +1041,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
     private (int, int) ChunkString(AssemblyExpr.Literal literal)
     {
         int size = literal.value.Length;
-        if (literal.type != Parser.LiteralTokenType.STRING || size <= 4)
+        if (literal.type != AssemblyExpr.Literal.LiteralType.STRING || size <= 4)
         {
             return (-1, -1);
         }

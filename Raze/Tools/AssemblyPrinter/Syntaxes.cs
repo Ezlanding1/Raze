@@ -126,7 +126,7 @@ partial class Syntaxes
             {
                 switch (instruction.type)
                 {
-                    case Parser.LiteralTokenType.STRING:
+                    case AssemblyExpr.Literal.LiteralType.STRING:
                     {
                         if (instruction.value == "") return "0";
 

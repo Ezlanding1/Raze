@@ -50,12 +50,12 @@ public partial class Assembler
         {
             return new Instruction(new IInstruction[] { data.value.Item1 switch
             {
-                Parser.LiteralTokenType.BINARY or
-                Parser.LiteralTokenType.HEX or
-                Parser.LiteralTokenType.FLOATING or
-                Parser.LiteralTokenType.BOOLEAN or
-                Parser.LiteralTokenType.INTEGER => EncodingUtils.GetImmInstruction((Operand.OperandSize)(byte)data.size, new(data.value.Item1, data.value.Item2)),
-                Parser.LiteralTokenType.REF_STRING or Parser.LiteralTokenType.STRING => new Instruction.RawInstruction(System.Text.Encoding.ASCII.GetBytes(data.value.Item2)),
+                AssemblyExpr.Literal.LiteralType.BINARY or
+                AssemblyExpr.Literal.LiteralType.HEX or
+                AssemblyExpr.Literal.LiteralType.FLOATING or
+                AssemblyExpr.Literal.LiteralType.BOOLEAN or
+                AssemblyExpr.Literal.LiteralType.INTEGER => EncodingUtils.GetImmInstruction((Operand.OperandSize)(byte)data.size, new(data.value.Item1, data.value.Item2)),
+                AssemblyExpr.Literal.LiteralType.REF_STRING or AssemblyExpr.Literal.LiteralType.STRING => new Instruction.RawInstruction(System.Text.Encoding.ASCII.GetBytes(data.value.Item2)),
                 _ => EncodingUtils.EncodingError().Instructions[0]
             }});
         }

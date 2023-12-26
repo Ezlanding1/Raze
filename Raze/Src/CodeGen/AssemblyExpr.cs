@@ -252,10 +252,20 @@ public abstract partial class AssemblyExpr
 
     public class Literal : Value
     {
-        internal Parser.LiteralTokenType type;
+        internal enum LiteralType
+        {
+            INTEGER = Parser.LiteralTokenType.INTEGER,
+            FLOATING = Parser.LiteralTokenType.FLOATING,
+            STRING = Parser.LiteralTokenType.STRING,
+            BINARY = Parser.LiteralTokenType.BINARY,
+            HEX = Parser.LiteralTokenType.HEX,
+            BOOLEAN = Parser.LiteralTokenType.BOOLEAN,
+            REF_STRING = Parser.LiteralTokenType.REF_STRING
+        }
+        internal LiteralType type;
         public string value;
 
-        internal Literal(Parser.LiteralTokenType type, string value) : base(2)
+        internal Literal(LiteralType type, string value) : base(2)
         {
             this.type = type;
             this.value = value;
@@ -300,9 +310,9 @@ public abstract partial class AssemblyExpr
     {
         public string name;
         public Register.RegisterSize size;
-        internal (Parser.LiteralTokenType type, string) value;
+        internal (Literal.LiteralType type, string) value;
 
-        internal Data(string name, Register.RegisterSize size, (Parser.LiteralTokenType type, string) value)
+        internal Data(string name, Register.RegisterSize size, (Literal.LiteralType type, string) value)
         {
             this.name = name;
             this.size = size;
@@ -317,7 +327,7 @@ public abstract partial class AssemblyExpr
 
     public class DataRef : Literal
     {
-        public DataRef(string dataName) : base(Parser.LiteralTokenType.REF_STRING, dataName)
+        public DataRef(string dataName) : base(LiteralType.REF_STRING, dataName)
         {
         }
 
@@ -357,7 +367,7 @@ public abstract partial class AssemblyExpr
     
     public class ProcedureRef : Literal
     {
-        public ProcedureRef(string name) : base(Parser.LiteralTokenType.REF_STRING, name)
+        public ProcedureRef(string name) : base(LiteralType.REF_STRING, name)
         {
         }
 
@@ -369,7 +379,7 @@ public abstract partial class AssemblyExpr
 
     public class LocalProcedureRef : Literal
     {
-        public LocalProcedureRef(string name) : base(Parser.LiteralTokenType.REF_STRING, name)
+        public LocalProcedureRef(string name) : base(LiteralType.REF_STRING, name)
         {
         }
 
