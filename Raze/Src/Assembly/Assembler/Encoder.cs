@@ -36,7 +36,24 @@ public partial class Assembler
             {
                 foreach (Encoding encoding in encodings)
                 {
-                    if (encoding.Matches(encoding1, encoding2) && encoding.SpecialMatch(new Operand[] { encoding1, encoding2 },  binary))
+                    if (encoding.Matches(encoding1, encoding2) && encoding.SpecialMatch(binary, encoding1, encoding2))
+                    {
+                        return encoding;
+                    }
+                }
+            }
+            Diagnostics.errors.Push(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
+            return new();
+        }
+        internal Encoding GetEncoding(AssemblyExpr.Unary unary)
+        {
+            var encoding1 = unary.operand.ToAssemblerOperand();
+
+            if (instructionEncodings.TryGetValue(unary.instruction.ToString(), out var encodings))
+            {
+                foreach (Encoding encoding in encodings)
+                {
+                    if (encoding.Matches(encoding1) && encoding.SpecialMatch(unary, encoding1))
                     {
                         return encoding;
                     }

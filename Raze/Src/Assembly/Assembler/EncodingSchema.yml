@@ -96,3 +96,19 @@ MOV:
 - Instruction: MOV RM64, R64
   EncodingType: RexWPrefix
   OpCode: 0x89
+
+
+PUSH:
+- Instruction: PUSH IMM32
+  OpCode: 104
+
+- Instruction: PUSH R64
+  EncodingType: AddRegisterToOpCode | NoModRegRM
+  OpCode: 80
+
+
+INC:
+- Instruction: INC R64
+  EncodingType: RexWPrefix
+  OpCodeExtension: 0
+  OpCode: 255

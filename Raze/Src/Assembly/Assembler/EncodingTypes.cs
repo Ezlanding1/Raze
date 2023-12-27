@@ -21,7 +21,8 @@ public partial class Assembler
                 ExpansionPrefix = 4,
                 SizePrefix = 8,
                 NoModRegRM = 16,
-                SignExtends = 32
+                SignExtends = 32,
+                AddRegisterToOpCode = 64
             }
         }
     }

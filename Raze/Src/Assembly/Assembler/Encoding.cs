@@ -107,7 +107,7 @@ public partial class Assembler
                 return true;
             }
 
-            public bool SpecialMatch(Operand[] operands, AssemblyExpr assemblyExpr)
+            public bool SpecialMatch(AssemblyExpr assemblyExpr, params Operand[] operands)
             {
                 if (encodingType.HasFlag(EncodingTypes.SignExtends) && operands.Length == 2 && operands[1].operandType == Operand.OperandType.IMM)
                 {
@@ -125,6 +125,11 @@ public partial class Assembler
                     }
                 }
                 return true;
+            }
+
+            internal void AddRegisterCode(Instruction.ModRegRm.RegisterCode registerCode)
+            {
+                OpCode = (byte)((OpCode & 0xF8) | (byte)registerCode);
             }
         }
     }

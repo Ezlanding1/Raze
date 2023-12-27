@@ -99,16 +99,27 @@ public partial class Assembler
                 rexPrefix = new();
                 return false;
             }
+            internal static bool SetRexPrefix(AssemblyExpr.Unary binary, Encoding encoding, out Instruction.RexPrefix rexPrefix)
+            {
+                bool rexw = SetRexW(encoding.encodingType);
+                bool op2R = IsRRegister(binary.operand);
+
+                if (SetRex(encoding.encodingType) | rexw | op2R)
+                {
+                    rexPrefix = new Instruction.RexPrefix(rexw, op2R, false, false);
+                    return true;
+                }
+                rexPrefix = new();
+                return false;
+            }
 
             private static bool IsRRegister(AssemblyExpr.Operand op)
                 => op is AssemblyExpr.Register && (int)((AssemblyExpr.Register)op).name < 0
                     || op is AssemblyExpr.Pointer && (int)((AssemblyExpr.Pointer)op).register.name < 0;
 
-            internal static bool SetAddressSizeOverridePrefix(AssemblyExpr.Operand operand1, AssemblyExpr.Operand operand2)
+            internal static bool SetAddressSizeOverridePrefix(AssemblyExpr.Operand operand)
             {
-                AssemblyExpr.Pointer? ptr = operand1 as AssemblyExpr.Pointer ?? operand2 as AssemblyExpr.Pointer;
-
-                if (ptr != null)
+                if (operand is AssemblyExpr.Pointer ptr)
                 {
                     if (ptr.register.size == AssemblyExpr.Register.RegisterSize._32Bits)
                     {

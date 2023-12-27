@@ -24,6 +24,7 @@
   // SizePrefix = Emit Size Prefix (0x66)
   // NoModRegRM = Do not emit ModRegRM byte when operand1 is a register (R), and operand2 is an immediate (IMM)
   // SignExtends = Indicates that the immediate (IMM) operand2 will be sign extended. Will only match if MSB is 0
+  // AddRegisterToOpCode = Add the register code of operand 1 to the last 3 bits of the instruction's OpCode. Only works when operand 1 is a register
   // Any combination of these flags can be encoded by separating two EncodingTypes with bitwise or '|' or comma ','
 
 {
@@ -133,6 +134,25 @@
       "Instruction": "MOV RM64, R64",
       "EncodingType": "RexWPrefix",
       "OpCode": 137
+    }
+  ],
+  "PUSH": [
+    {
+      "Instruction": "PUSH IMM32",
+      "OpCode": 104
+    },
+    {
+      "Instruction": "PUSH R64",
+      "EncodingType": "AddRegisterToOpCode | NoModRegRM",
+      "OpCode": 80
+    }
+  ],
+  "INC": [
+    {
+      "Instruction": "INC R64",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 0,
+      "OpCode": 255
     }
   ]
 }

@@ -48,7 +48,8 @@ public partial class Assembler :
         long localLocation = location;
         List<IInstruction> instructions = new();
 
-        if (Encoder.EncodingUtils.SetAddressSizeOverridePrefix(instruction.operand1, instruction.operand2))
+        if (Encoder.EncodingUtils.SetAddressSizeOverridePrefix(instruction.operand1) || 
+            Encoder.EncodingUtils.SetAddressSizeOverridePrefix(instruction.operand2))
         {
             instructions.Add(new AddressSizeOverridePrefix());
         }
@@ -120,7 +121,40 @@ public partial class Assembler :
 
     public Instruction VisitUnary(AssemblyExpr.Unary instruction)
     {
-        throw new NotImplementedException();
+        encoding = encoder.GetEncoding(instruction);
+
+        long localLocation = location;
+        List<IInstruction> instructions = new();
+
+        if (Encoder.EncodingUtils.SetAddressSizeOverridePrefix(instruction.operand))
+        {
+            instructions.Add(new AddressSizeOverridePrefix());
+        }
+        if (Encoder.EncodingUtils.SetSizePrefix(encoding.encodingType))
+        {
+            instructions.Add(new InstructionOpCodeSizePrefix());
+        }
+        if (Encoder.EncodingUtils.SetRexPrefix(instruction, encoding, out RexPrefix rexPrefix))
+        {
+            instructions.Add(rexPrefix);
+        }
+
+        instructions.Add(new InstructionOpCode(encoding.OpCode));
+        location += instructions.Count;
+
+        // Assumes ModRegRm byte is always first byte emitted
+        if (!encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.NoModRegRM))
+        {
+            instructions.AddRange(instruction.operand.Accept(this).Instructions);
+        }
+        else
+        {
+            location--;
+            instructions.AddRange(instruction.operand.Accept(this).Instructions[1..]);
+        }
+
+        location = localLocation;
+        return new Instruction(instructions.ToArray());
     }
 
     public Instruction VisitZero(AssemblyExpr.Zero instruction)
@@ -130,6 +164,11 @@ public partial class Assembler :
 
     public Instruction VisitRegisterRegister(AssemblyExpr.Register reg1, AssemblyExpr.Register reg2)
     {
+        if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.AddRegisterToOpCode))
+        {
+            encoding.AddRegisterCode(Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1));
+        }
+
         return new Instruction {
             Instructions = new IInstruction[] { 
                 new ModRegRm(
@@ -143,6 +182,11 @@ public partial class Assembler :
 
     public Instruction VisitRegisterMemory(AssemblyExpr.Register reg1, AssemblyExpr.Pointer ptr2)
     {
+        if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.AddRegisterToOpCode))
+        {
+            encoding.AddRegisterCode(Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1));
+        }
+
         if (ptr2.offset == 0 && Encoder.EncodingUtils.CanHaveZeroByteDisplacement(ptr2.register))
         {
             return new Instruction {
@@ -169,6 +213,11 @@ public partial class Assembler :
 
     public Instruction VisitRegisterImmediate(AssemblyExpr.Register reg1, AssemblyExpr.Literal imm2)
     {
+        if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.AddRegisterToOpCode))
+        {
+            encoding.AddRegisterCode(Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1));
+        }
+
         return new Instruction { Instructions = new IInstruction[] {
             new ModRegRm(
                 ModRegRm.Mod.RegisterAdressingMode,
@@ -246,6 +295,11 @@ public partial class Assembler :
 
     public Instruction VisitRegister(AssemblyExpr.Register reg)
     {
+        if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.AddRegisterToOpCode))
+        {
+            encoding.AddRegisterCode(Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg));
+        }
+
         return new Instruction
         {
             Instructions = new IInstruction[] {
