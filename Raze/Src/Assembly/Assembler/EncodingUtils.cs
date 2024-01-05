@@ -56,7 +56,7 @@ public partial class Assembler
                 {
                     assembler.symbolTable.unresolvedLabels.Push((op2Expr.value, assembler.location));
                 }
-                else if (op2Expr.type == AssemblyExpr.Literal.LiteralType.REF_PROCEDURE)
+                else if (op2Expr.type == AssemblyExpr.Literal.LiteralType.REF_LOCALPROCEDURE)
                 {
                     assembler.symbolTable.unresolvedLocalLabels.Push((op2Expr.value, assembler.location));
                 }

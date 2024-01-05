@@ -18,7 +18,5 @@ public partial class Linker
         internal Dictionary<string, long> labels = new();
         internal Dictionary<string, long> data = new();
 
-        internal static Dictionary<string, long> globalLabels = new();
-        internal static Dictionary<string, long> globalData = new();
     }
 }

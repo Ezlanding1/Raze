@@ -65,16 +65,16 @@ public partial class Assembler :
         instructions.Add(new InstructionOpCode(encoding.OpCode));
         location += instructions.Count;
 
+        IEnumerable<IInstruction> operandInstructions = instruction.operand2.Accept(this, instruction.operand1).Instructions;
+
         // Assumes ModRegRm byte is always first byte emitted
-        if (!encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.NoModRegRM))
-        {
-            instructions.AddRange(instruction.operand2.Accept(this, instruction.operand1).Instructions);
-        }
-        else
+        if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.NoModRegRM))
         {
             location--;
-            instructions.AddRange(instruction.operand2.Accept(this, instruction.operand1).Instructions[1..]);
+            operandInstructions = operandInstructions.Skip(1);
         }
+
+        instructions.AddRange(operandInstructions);
 
         location = localLocation;
         return new Instruction(instructions.ToArray());
@@ -93,11 +93,6 @@ public partial class Assembler :
 
     public Instruction VisitGlobal(AssemblyExpr.Global instruction)
     {
-        if (symbolTable.labels.ContainsKey(instruction.name))
-            Linker.SymbolTable.globalLabels[instruction.name] = symbolTable.labels[instruction.name];
-        else
-            Linker.SymbolTable.globalData[instruction.name] = symbolTable.data[instruction.name];
-        
         return new Instruction();
     }
 
@@ -142,16 +137,16 @@ public partial class Assembler :
         instructions.Add(new InstructionOpCode(encoding.OpCode));
         location += instructions.Count;
 
+        IEnumerable<IInstruction> operandInstructions = instruction.operand.Accept(this).Instructions;
+
         // Assumes ModRegRm byte is always first byte emitted
-        if (!encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.NoModRegRM))
-        {
-            instructions.AddRange(instruction.operand.Accept(this).Instructions);
-        }
-        else
+        if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.NoModRegRM))
         {
             location--;
-            instructions.AddRange(instruction.operand.Accept(this).Instructions[1..]);
+            operandInstructions = operandInstructions.Skip(1);
         }
+
+        instructions.AddRange(operandInstructions);
 
         location = localLocation;
         return new Instruction(instructions.ToArray());
@@ -343,6 +338,6 @@ public partial class Assembler :
     public Instruction VisitImmediate(AssemblyExpr.Literal imm)
     {
         // No ModRegRm byte is emitted for a unary literal operand
-        return new Instruction(new IInstruction[] { Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm, this) });
+        return new Instruction(new IInstruction[] { Encoder.EncodingUtils.GetImmInstruction(encoding.operands[0].size, imm, this) });
     }
 }

@@ -65,11 +65,9 @@ internal class Shell
             Raze.CodeGen codeGen = new Raze.InlinedCodeGen(expressions);
             var assembly = codeGen.Generate();
 
-
             #if DEBUG
             Raze.Tools.AssemblyPrinter.PrintAssembly(assembly);
             #endif
-
 
             using (var fs = new FileStream("output.elf", FileMode.Create, FileAccess.Write))
             {
