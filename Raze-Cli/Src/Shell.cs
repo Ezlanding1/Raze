@@ -69,15 +69,15 @@ internal class Shell
             Raze.Tools.AssemblyPrinter.PrintAssembly(assembly);
             #endif
 
+            // Assemble Assembly Expressions
+            Raze.Assembler assembler = new Raze.Assembler();
+            assembler.Assemble(assembly);
+
             using (var fs = new FileStream("output.elf", FileMode.Create, FileAccess.Write))
             {
-                // Assemble and Output Assembly Code
-                Raze.Assembler assembler = new Raze.Assembler(fs);
-                assembler.Assemble(assembly);
-
-                // Link Assembly Code
-                Raze.Linker linker = new Raze.Linker(fs);
-                linker.Link(assembler);
+                // Link and Output Binary
+                Raze.Linker linker = new Raze.Linker();
+                linker.Link(fs, assembler);
             }
 
             // Throw any encountered assembling errors

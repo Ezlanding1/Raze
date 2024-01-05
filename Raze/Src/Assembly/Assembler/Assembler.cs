@@ -12,40 +12,46 @@ public partial class Assembler :
     AssemblyExpr.IUnaryOperandVisitor<Assembler.Instruction>, 
     AssemblyExpr.IBinaryOperandVisitor<Assembler.Instruction>
 {
-    FileStream fs;
+    internal List<byte> text = new List<byte>();
+    internal List<byte> data = new List<byte>();
 
-    internal long location { get; private set; } = 0;
+    internal int location { get; private set; } = 0;
 
     internal Linker.SymbolTable symbolTable = new Linker.SymbolTable();
 
     Encoder encoder = new Encoder();
     Encoder.Encoding encoding;
 
-    public Assembler(FileStream fs)
-    {
-        this.fs = fs;
-    }
-
     public void Assemble(CodeGen.Assembly assembly)
     {
-        foreach (var assemblyExpr in Enumerable.Concat<AssemblyExpr>(assembly.text, assembly.data))
+        foreach (var assemblyExpr in assembly.text)
         {
-            var instruction = assemblyExpr.Accept(this);
-
-            foreach (byte[] bytes in instruction.ToBytes())
+            foreach (byte[] bytes in assemblyExpr.Accept(this).ToBytes())
             {
-                fs.Write(bytes, 0, bytes.Length);
+                text.AddRange(bytes);
                 location += bytes.Length;
             }
         }
-        Linker.HandleLocalProcedureRefs(fs, symbolTable);
+        Linker.ResolveLocalProcedureRefs(text, symbolTable);
+        Linker.ResolveProcedureRefs(text, symbolTable);
+
+        location = 0;
+
+        foreach (var assemblyExpr in assembly.data)
+        {
+            foreach (byte[] bytes in assemblyExpr.Accept(this).ToBytes())
+            {
+                data.AddRange(bytes);
+                location += bytes.Length;
+            }
+        }
     }
 
     public Instruction VisitBinary(AssemblyExpr.Binary instruction)
     {
         encoding = encoder.GetEncoding(instruction);
 
-        long localLocation = location;
+        int localLocation = location;
         List<IInstruction> instructions = new();
 
         if (Encoder.EncodingUtils.SetAddressSizeOverridePrefix(instruction.operand1) || 
@@ -104,7 +110,7 @@ public partial class Assembler :
 
     public Instruction VisitProcedure(AssemblyExpr.Procedure instruction)
     {
-        Linker.HandleLocalProcedureRefs(fs, symbolTable);
+        Linker.ResolveLocalProcedureRefs(text, symbolTable);
         symbolTable.labels[instruction.name] = location;
         return new Instruction();
     }
@@ -118,7 +124,7 @@ public partial class Assembler :
     {
         encoding = encoder.GetEncoding(instruction);
 
-        long localLocation = location;
+        int localLocation = location;
         List<IInstruction> instructions = new();
 
         if (Encoder.EncodingUtils.SetAddressSizeOverridePrefix(instruction.operand))

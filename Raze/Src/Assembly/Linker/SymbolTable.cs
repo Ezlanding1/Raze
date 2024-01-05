@@ -10,13 +10,12 @@ public partial class Linker
 {
     internal class SymbolTable
     {
-        internal Stack<(string, long)> unresolvedLabels = new();
-        internal Stack<(string, long)> unresolvedLocalLabels = new();
-        internal Stack<(string, long)> unresolvedData = new();
+        internal Stack<(string, int)> unresolvedLabels = new();
+        internal Stack<(string, int)> unresolvedLocalLabels = new();
+        internal Stack<(string, int)> unresolvedData = new();
 
-        internal Dictionary<string, long> localLabels = new();
-        internal Dictionary<string, long> labels = new();
-        internal Dictionary<string, long> data = new();
-
+        internal Dictionary<string, int> localLabels = new();
+        internal Dictionary<string, int> labels = new();
+        internal Dictionary<string, int> data = new();
     }
 }

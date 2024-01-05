@@ -8,36 +8,14 @@ namespace Raze;
 
 public partial class Linker
 {
-    FileStream fs;
-
-    public Linker(FileStream fs)
+    public void Link(FileStream fs, Assembler assembler)
     {
-        this.fs = fs;
-    }
+        fs.Write(assembler.text.ToArray(), 0, assembler.text.Count);
+        fs.Write(assembler.data.ToArray(), 0, assembler.data.Count);
 
-    public void Link(Assembler assembler)
-    {
-        while (assembler.symbolTable.unresolvedLabels.Count != 0)
-        {
-            if (assembler.symbolTable.labels.TryGetValue(assembler.symbolTable.unresolvedLabels.Peek().Item1, out var label))
-            {
-                Resolve(fs, assembler.symbolTable.unresolvedLabels.Pop().Item2, label);
-            }
-            else
-            {
-                Resolve(fs, assembler.symbolTable.unresolvedLabels.Peek().Item2, assembler.symbolTable.labels[assembler.symbolTable.unresolvedLabels.Pop().Item1]);
-            }
-        }
         while (assembler.symbolTable.unresolvedData.Count != 0)
         {
-            if (assembler.symbolTable.data.TryGetValue(assembler.symbolTable.unresolvedData.Peek().Item1, out var data))
-            {
-                Resolve(fs, assembler.symbolTable.unresolvedData.Pop().Item2, data);
-            }
-            else
-            {
-                Resolve(fs, assembler.symbolTable.unresolvedData.Peek().Item2, assembler.symbolTable.data[assembler.symbolTable.unresolvedData.Pop().Item1]);
-            }
+            Resolve(fs, assembler.symbolTable.unresolvedData.Peek().Item2, assembler.symbolTable.data[assembler.symbolTable.unresolvedData.Pop().Item1] + assembler.text.Count);
         }
     }
 
@@ -46,14 +24,27 @@ public partial class Linker
         fs.Seek(location, SeekOrigin.Begin);
         fs.Write(BitConverter.GetBytes(data));
     }
+    
+    private static void SectionResolve(List<byte> section, int location, int data)
+    {
+        byte[] bytes = BitConverter.GetBytes(data);
+        for (int i = 0; i < 4; i++) section[location + i] = bytes[i];
+    }
 
-    internal static void HandleLocalProcedureRefs(FileStream fs, SymbolTable symbolTable)
+    internal static void ResolveProcedureRefs(List<byte> text, SymbolTable symbolTable)
+    {
+        while (symbolTable.unresolvedLabels.Count != 0)
+        {
+            SectionResolve(text, symbolTable.unresolvedLabels.Peek().Item2, symbolTable.labels[symbolTable.unresolvedLabels.Pop().Item1]);
+        }
+    }
+    
+    internal static void ResolveLocalProcedureRefs(List<byte> text, SymbolTable symbolTable)
     {
         while (symbolTable.unresolvedLocalLabels.Count != 0)
         {
-            Resolve(fs, symbolTable.unresolvedLocalLabels.Peek().Item2, symbolTable.localLabels[symbolTable.unresolvedLocalLabels.Pop().Item1]);
+            SectionResolve(text, symbolTable.unresolvedLocalLabels.Peek().Item2, symbolTable.localLabels[symbolTable.unresolvedLocalLabels.Pop().Item1]);
         }
         symbolTable.localLabels.Clear();
-        fs.Seek(0, SeekOrigin.End);
     }
 }

@@ -88,7 +88,7 @@ MOV:
   OpCode: 0xC7
 
 - Instruction: MOV RM64, IMM32
-  EncodingType: RexWPrefix
+  EncodingType: RexWPrefix | SignExtends
   OpCode: 0xC7
 - Instruction: MOV RM16, IMM16
   EncodingType: SizePrefix
@@ -96,6 +96,9 @@ MOV:
 - Instruction: MOV RM64, R64
   EncodingType: RexWPrefix
   OpCode: 0x89
+- Instruction: MOV RM64, IMM64
+  EncodingType: RexWPrefix | NoModRegRM | AddRegisterToOpCode
+  OpCode: 184
 
 
 PUSH:

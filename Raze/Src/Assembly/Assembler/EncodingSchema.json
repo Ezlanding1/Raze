@@ -122,7 +122,7 @@
 
     {
       "Instruction": "MOV RM64, IMM32",
-      "EncodingType": "RexWPrefix",
+      "EncodingType": "RexWPrefix | SignExtends",
       "OpCode": 199
     },
     {
@@ -134,6 +134,11 @@
       "Instruction": "MOV RM64, R64",
       "EncodingType": "RexWPrefix",
       "OpCode": 137
+    },
+    {
+      "Instruction": "MOV RM64, IMM64",
+      "EncodingType": "RexWPrefix | NoModRegRM | AddRegisterToOpCode",
+      "OpCode": 184
     }
   ],
   "PUSH": [

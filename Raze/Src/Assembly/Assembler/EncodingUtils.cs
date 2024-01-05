@@ -54,11 +54,11 @@ public partial class Assembler
                 }
                 else if (op2Expr.type == AssemblyExpr.Literal.LiteralType.REF_PROCEDURE)
                 {
-                    assembler.symbolTable.unresolvedLabels.Push((op2Expr.value, assembler.location));
+                    assembler.symbolTable.unresolvedLabels.Push((op2Expr.value, assembler.location+1));
                 }
                 else if (op2Expr.type == AssemblyExpr.Literal.LiteralType.REF_LOCALPROCEDURE)
                 {
-                    assembler.symbolTable.unresolvedLocalLabels.Push((op2Expr.value, assembler.location));
+                    assembler.symbolTable.unresolvedLocalLabels.Push((op2Expr.value, assembler.location+1));
                 }
 
                 return size switch
