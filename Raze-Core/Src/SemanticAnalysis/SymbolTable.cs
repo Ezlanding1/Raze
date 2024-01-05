@@ -180,19 +180,21 @@ public partial class Analyzer
 
         public void AddVariable(Token name, Expr.StackData variable, bool initializedOnDeclaration)
         {
+            if (TryGetVariable(name, out _, out _, true))
+            {
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
+                    Diagnostic.DiagnosticName.DoubleDeclaration,
+                    name.location, 
+                    "variable", 
+                    name.lexeme
+                ));
+            }
+
             if (current is Expr.Function)
             {
                 locals.Add(new(name, variable));
                 if (!initializedOnDeclaration)
                     frameData[variable] = new FrameData();
-            }
-        }
-
-        public void AddParameter(Token name, Expr.StackData parameter)
-        {
-            if (current is Expr.Function)
-            {
-                locals.Add(new(name, parameter));
             }
         }
 
@@ -471,23 +473,19 @@ public partial class Analyzer
         {
             foreach (var duplicate in definitions.GroupBy(ToUniqueName).Where(x => x.Count() > 1).Select(x => x.ElementAt(0)))
             {
-                if (duplicate is Expr.Function)
+                string typeName = duplicate switch
                 {
-                    if (duplicate.name.lexeme == "Main")
-                    {
-                        Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.MainDoubleDeclaration, duplicate.name.location, []));
-                    }
+                    Expr.Function => "function",
+                    Expr.Primitive => "primitive",
+                    _ => "class"
+                };
 
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, duplicate.name.location, "function", duplicate));
-                }
-                else if (duplicate is Expr.Primitive)
-                {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, duplicate.name.location, "primitive class", duplicate.name.lexeme));
-                }
-                else
-                {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, duplicate.name.location, "class", duplicate.name.lexeme));
-                }
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
+                    Diagnostic.DiagnosticName.DoubleDeclaration, 
+                    duplicate.name.location,
+                    typeName,
+                    duplicate.name.lexeme)
+                );
             }
         }
         public void CheckDuplicates(List<Expr.Declare> declarations)
@@ -567,7 +565,7 @@ public partial class Analyzer
                         else
                         {
                             Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.AmbiguousCall, function.name.location, value, function));
-                            return false;
+                            return true;
                         }
                     }
                 }
@@ -599,12 +597,6 @@ public partial class Analyzer
         public class FrameData
         {
             public bool initialized;
-
-            public FrameData() { }
-            public FrameData(bool initializedOnDeclaration)
-            {
-                initialized = initializedOnDeclaration;
-            }
         }
 
         public class ReturnFrameData : FrameData

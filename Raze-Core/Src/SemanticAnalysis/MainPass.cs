@@ -234,11 +234,6 @@ public partial class Analyzer
         {
             var name = expr.name;
 
-            if (symbolTable.TryGetVariable(name, out _, out _, true))
-            {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, name.location, "variable", name.lexeme));
-            }
-
             if (symbolTable.Current == null) return TypeCheckUtils._voidType;
 
             if (symbolTable.Current is Expr.Class)
@@ -279,14 +274,10 @@ public partial class Analyzer
             {
                 Expr.Parameter paramExpr = expr.parameters[i];
 
-                if (symbolTable.TryGetVariable(paramExpr.name, out _, out _, true))
-                {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, paramExpr.name.location, "variable", paramExpr.name.lexeme));
-                }
                 paramExpr.stack._ref = paramExpr.modifiers["ref"];
                 paramExpr.stack._readonly = paramExpr.modifiers["readonly"];
 
-                symbolTable.AddParameter(paramExpr.name, paramExpr.stack);
+                symbolTable.AddVariable(paramExpr.name, paramExpr.stack, true);
             }
 
             if (!expr.Abstract && !expr.modifiers["extern"])
