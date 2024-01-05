@@ -109,7 +109,8 @@ public partial class Assembler
 
             public bool SpecialMatch(AssemblyExpr assemblyExpr, params Operand[] operands)
             {
-                if (encodingType.HasFlag(EncodingTypes.SignExtends) && operands.Length == 2 && operands[1].operandType == Operand.OperandType.IMM)
+                if (encodingType.HasFlag(EncodingTypes.SignExtends) && operands.Length == 2 && operands[1].operandType == Operand.OperandType.IMM
+                    && ((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).type < AssemblyExpr.Literal.LiteralType.REF_DATA)
                 {
                     switch (this.operands[1].size)
                     {
