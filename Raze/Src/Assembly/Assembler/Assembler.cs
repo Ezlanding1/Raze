@@ -15,13 +15,17 @@ public partial class Assembler :
     internal List<byte> text = new List<byte>();
     internal List<byte> data = new List<byte>();
 
-    internal int location { get; private set; } = 0;
+    internal int textLocation { get => text.Count; }
+    internal int dataLocation { get => data.Count; }
 
     internal Linker.SymbolTable symbolTable = new Linker.SymbolTable();
 
     Encoder encoder = new Encoder();
     Encoder.Encoding encoding;
 
+    internal bool nonResolvingPass = true;
+    internal string enclosingLbl = string.Empty;
+    
     public void Assemble(CodeGen.Assembly assembly)
     {
         foreach (var assemblyExpr in assembly.text)
@@ -29,29 +33,23 @@ public partial class Assembler :
             foreach (byte[] bytes in assemblyExpr.Accept(this).ToBytes())
             {
                 text.AddRange(bytes);
-                location += bytes.Length;
             }
         }
-        Linker.ResolveLocalProcedureRefs(text, symbolTable);
-        Linker.ResolveProcedureRefs(text, symbolTable);
-
-        location = 0;
+        Linker.Resolver.ResolveProcedureRefs(text, this);
 
         foreach (var assemblyExpr in assembly.data)
         {
             foreach (byte[] bytes in assemblyExpr.Accept(this).ToBytes())
             {
                 data.AddRange(bytes);
-                location += bytes.Length;
             }
         }
     }
 
     public Instruction VisitBinary(AssemblyExpr.Binary instruction)
     {
-        encoding = encoder.GetEncoding(instruction);
+        encoding = encoder.GetEncoding(instruction, this, out AssemblyExpr.Literal.LiteralType refResolveType);
 
-        int localLocation = location;
         List<IInstruction> instructions = new();
 
         if (Encoder.EncodingUtils.SetAddressSizeOverridePrefix(instruction.operand1) || 
@@ -69,20 +67,26 @@ public partial class Assembler :
         }
 
         instructions.Add(new InstructionOpCode(encoding.OpCode));
-        location += instructions.Count;
 
         IEnumerable<IInstruction> operandInstructions = instruction.operand2.Accept(this, instruction.operand1).Instructions;
 
         // Assumes ModRegRm byte is always first byte emitted
         if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.NoModRegRM))
         {
-            location--;
             operandInstructions = operandInstructions.Skip(1);
         }
 
         instructions.AddRange(operandInstructions);
 
-        location = localLocation;
+        if (refResolveType == AssemblyExpr.Literal.LiteralType.REF_PROCEDURE || refResolveType == AssemblyExpr.Literal.LiteralType.REF_LOCALPROCEDURE)
+        {
+            ((Linker.LabelRefInfo)symbolTable.unresolvedLabels[^1]).size = instructions.Count;
+        }
+        else if (refResolveType == AssemblyExpr.Literal.LiteralType.REF_DATA)
+        {
+            symbolTable.unresolvedData.Peek().location += (instructions.Count - 1);
+        }
+
         return new Instruction(instructions.ToArray());
     }
 
@@ -93,7 +97,7 @@ public partial class Assembler :
 
     public Instruction VisitData(AssemblyExpr.Data instruction)
     {
-        symbolTable.data[instruction.name] = location; 
+        symbolTable.data[instruction.name] = dataLocation; 
         return encoder.EncodeData(instruction);
     }
 
@@ -104,14 +108,17 @@ public partial class Assembler :
 
     public Instruction VisitLocalProcedure(AssemblyExpr.LocalProcedure instruction)
     {
-        symbolTable.localLabels[instruction.name] = location;
+        instruction.name = enclosingLbl + '.' + instruction.name;
+        symbolTable.labels[instruction.name] = textLocation;
+        symbolTable.unresolvedLabels.Add(new Linker.LabelDefInfo(instruction.name));
         return new Instruction();
     }
 
     public Instruction VisitProcedure(AssemblyExpr.Procedure instruction)
     {
-        Linker.ResolveLocalProcedureRefs(text, symbolTable);
-        symbolTable.labels[instruction.name] = location;
+        enclosingLbl = instruction.name;
+        symbolTable.labels[instruction.name] = textLocation;
+        symbolTable.unresolvedLabels.Add(new Linker.LabelDefInfo(instruction.name));
         return new Instruction();
     }
 
@@ -122,9 +129,8 @@ public partial class Assembler :
 
     public Instruction VisitUnary(AssemblyExpr.Unary instruction)
     {
-        encoding = encoder.GetEncoding(instruction);
+        encoding = encoder.GetEncoding(instruction, this, out AssemblyExpr.Literal.LiteralType refResolveType);
 
-        int localLocation = location;
         List<IInstruction> instructions = new();
 
         if (Encoder.EncodingUtils.SetAddressSizeOverridePrefix(instruction.operand))
@@ -141,20 +147,26 @@ public partial class Assembler :
         }
 
         instructions.Add(new InstructionOpCode(encoding.OpCode));
-        location += instructions.Count;
 
         IEnumerable<IInstruction> operandInstructions = instruction.operand.Accept(this).Instructions;
 
         // Assumes ModRegRm byte is always first byte emitted
         if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.NoModRegRM))
         {
-            location--;
             operandInstructions = operandInstructions.Skip(1);
         }
 
         instructions.AddRange(operandInstructions);
 
-        location = localLocation;
+        if (refResolveType == AssemblyExpr.Literal.LiteralType.REF_PROCEDURE || refResolveType == AssemblyExpr.Literal.LiteralType.REF_LOCALPROCEDURE)
+        {
+            ((Linker.LabelRefInfo)symbolTable.unresolvedLabels[^1]).size = instructions.Count;
+        }
+        else if (refResolveType == AssemblyExpr.Literal.LiteralType.REF_DATA)
+        {
+            symbolTable.unresolvedData.Peek().location += (instructions.Count - 1);
+        }
+
         return new Instruction(instructions.ToArray());
     }
 
@@ -225,7 +237,7 @@ public partial class Assembler :
                 (ModRegRm.OpCodeExtension)encoding.OpCodeExtension,
                 Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1)
             ),
-            Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2, this)
+            Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2, symbolTable)
         } };
     }
 
@@ -275,11 +287,10 @@ public partial class Assembler :
                         (ModRegRm.OpCodeExtension)encoding.OpCodeExtension,
                         Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(ptr1.register)
                     ),
-                    Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2, this)
+                    Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2, symbolTable)
                 }
             };
         }
-        location += Encoder.EncodingUtils.Disp8Bit(ptr1.offset)? 1 : 4;
         return new Instruction
         {
             Instructions = new IInstruction[] {
@@ -289,7 +300,7 @@ public partial class Assembler :
                     Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(ptr1.register)
                 ),
                 Encoder.EncodingUtils.GetDispInstruction(ptr1.offset),
-                Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2, this)
+                Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2, symbolTable)
             }
         };
     }
@@ -344,6 +355,6 @@ public partial class Assembler :
     public Instruction VisitImmediate(AssemblyExpr.Literal imm)
     {
         // No ModRegRm byte is emitted for a unary literal operand
-        return new Instruction(new IInstruction[] { Encoder.EncodingUtils.GetImmInstruction(encoding.operands[0].size, imm, this) });
+        return new Instruction(new IInstruction[] { Encoder.EncodingUtils.GetImmInstruction(encoding.operands[0].size, imm, symbolTable) });
     }
 }

@@ -45,9 +45,7 @@ public partial class Assembler
                     // 32-bit REF_STRING cannot exist
                     LiteralType.BINARY => Instruction.Immediate32.Generate(Convert.ToUInt32(literal.value, 2)),
                     LiteralType.HEX => ParseSigned32(literal.value, 16),
-                    LiteralType.BOOLEAN => Instruction.Immediate32.Generate(literal.value == "true" ? (uint)1 : (uint)0),
-                    LiteralType.REF_PROCEDURE => new Instruction.Immediate32Int(0),
-                    LiteralType.REF_LOCALPROCEDURE => new Instruction.Immediate32Int(0)
+                    LiteralType.BOOLEAN => Instruction.Immediate32.Generate(literal.value == "true" ? (uint)1 : (uint)0)
                 };
 
                 internal static IInstruction GenerateImm64(AssemblyExpr.Literal literal) => literal.type switch
@@ -57,10 +55,7 @@ public partial class Assembler
                     LiteralType.STRING => Instruction.Immediate64.Generate(literal.value[0]),
                     LiteralType.BINARY => Instruction.Immediate64.Generate(Convert.ToUInt64(literal.value, 2)),
                     LiteralType.HEX => ParseSigned64(literal.value, 16),
-                    LiteralType.BOOLEAN => Instruction.Immediate64.Generate(literal.value == "true" ? (ulong)1 : (ulong)0),
-                    LiteralType.REF_DATA => new Instruction.Immediate64Long(0),
-                    LiteralType.REF_PROCEDURE => new Instruction.Immediate64Long(0),
-                    LiteralType.REF_LOCALPROCEDURE => new Instruction.Immediate64Long(0)
+                    LiteralType.BOOLEAN => Instruction.Immediate64.Generate(literal.value == "true" ? (ulong)1 : (ulong)0)
                 };
 
                 private static IInstruction ParseSigned8(string literal, int _base=10) =>

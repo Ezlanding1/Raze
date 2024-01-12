@@ -12,6 +12,8 @@ public partial class Assembler
     {
         internal static partial class EncodingUtils
         {
+            private static readonly IInstruction DefaultLabel = new Instruction.Immediate8Byte(0);
+                
             internal static Instruction EncodingError()
             {
                 Diagnostics.errors.Push(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
@@ -46,19 +48,15 @@ public partial class Assembler
                 _ => false
             };
 
-            internal static IInstruction GetImmInstruction(Operand.OperandSize size, AssemblyExpr.Literal op2Expr, Assembler assembler)
+            internal static IInstruction GetImmInstruction(Operand.OperandSize size, AssemblyExpr.Literal op2Expr, Linker.SymbolTable symbolTable)
             {
                 if (op2Expr.type == AssemblyExpr.Literal.LiteralType.REF_DATA)
                 {
-                    assembler.symbolTable.unresolvedData.Push((op2Expr.value, assembler.location));
+                    return new Instruction.Immediate64ULong(0);
                 }
-                else if (op2Expr.type == AssemblyExpr.Literal.LiteralType.REF_PROCEDURE)
+                else if (op2Expr.type == AssemblyExpr.Literal.LiteralType.REF_PROCEDURE || op2Expr.type == AssemblyExpr.Literal.LiteralType.REF_LOCALPROCEDURE)
                 {
-                    assembler.symbolTable.unresolvedLabels.Push((op2Expr.value, assembler.location+1));
-                }
-                else if (op2Expr.type == AssemblyExpr.Literal.LiteralType.REF_LOCALPROCEDURE)
-                {
-                    assembler.symbolTable.unresolvedLocalLabels.Push((op2Expr.value, assembler.location+1));
+                    return symbolTable.labels.ContainsKey(op2Expr.value)? GenerateImmFromInt(size, symbolTable.labels[op2Expr.value]) : DefaultLabel;
                 }
 
                 return size switch
@@ -69,6 +67,14 @@ public partial class Assembler
                     Operand.OperandSize._64Bits => ImmediateGenerator.GenerateImm64(op2Expr),
                 };
             }
+
+            private static IInstruction GenerateImmFromInt(Operand.OperandSize size, int value) => size switch
+            {
+                Operand.OperandSize._8Bits => new Instruction.Immediate8Byte((byte)value),
+                Operand.OperandSize._16Bits => new Instruction.Immediate16UShort((ushort)value),
+                Operand.OperandSize._32Bits => new Instruction.Immediate32UInt((uint)value),
+                Operand.OperandSize._64Bits => new Instruction.Immediate64ULong((ulong)value),
+            };
 
             internal static bool Disp8Bit(int disp)
                 => disp <= sbyte.MaxValue && disp >= sbyte.MinValue;
@@ -136,6 +142,64 @@ public partial class Assembler
             internal static void ThrowIvalidEncodingType(string t1, string t2)
             {
                 Diagnostics.errors.Push(new Error.ImpossibleError($"Cannot encode instruction with operands '{t1.ToUpper()}, {t2.ToUpper()}'"));
+            }
+
+            internal static Operand HandleUnresolvedRef(AssemblyExpr expr, AssemblyExpr.Operand operand, Assembler assembler, out AssemblyExpr.Literal.LiteralType refResolveType)
+            {
+                refResolveType = (AssemblyExpr.Literal.LiteralType)(-1);
+
+                var encodingType = operand.ToAssemblerOperand();
+                if (encodingType.operandType != Operand.OperandType.IMM)
+                {
+                    return encodingType;
+                }
+
+                AssemblyExpr.Literal literal = (AssemblyExpr.Literal)operand;
+
+                if (literal.type == AssemblyExpr.Literal.LiteralType.REF_DATA)
+                {
+                    refResolveType = AssemblyExpr.Literal.LiteralType.REF_DATA;
+                    assembler.symbolTable.unresolvedData.Push(new(literal.value, assembler.textLocation));
+                }
+                else if (literal.type == AssemblyExpr.Literal.LiteralType.REF_PROCEDURE)
+                {
+                    if (assembler.nonResolvingPass)
+                    {
+                        refResolveType = AssemblyExpr.Literal.LiteralType.REF_PROCEDURE;
+                        assembler.symbolTable.unresolvedLabels.Add(new Linker.LabelRefInfo(expr, assembler.textLocation, -1));
+                    }
+                    if (assembler.symbolTable.labels.ContainsKey(literal.value))
+                    {
+                        return new(encodingType.operandType, SizeOfIntegerUnsigned(assembler.symbolTable.labels[literal.value]));
+                    }
+                }
+                else if (literal.type == AssemblyExpr.Literal.LiteralType.REF_LOCALPROCEDURE)
+                {
+                    if (assembler.nonResolvingPass)
+                    {
+                        refResolveType = AssemblyExpr.Literal.LiteralType.REF_LOCALPROCEDURE;
+                        literal.value = assembler.enclosingLbl + '.' + literal.value;
+                        assembler.symbolTable.unresolvedLabels.Add(new Linker.LabelRefInfo(expr, assembler.textLocation, -1));
+                    }
+                    if (assembler.symbolTable.labels.ContainsKey(literal.value))
+                    {
+                        return new(encodingType.operandType, SizeOfIntegerUnsigned(assembler.symbolTable.labels[literal.value]));
+                    }
+                }
+                return encodingType;
+            }
+
+            private static Operand.OperandSize SizeOfIntegerUnsigned(int value)
+            {
+                if (value <= byte.MaxValue)
+                {
+                    return Operand.OperandSize._8Bits;
+                }
+                else if (value <= ushort.MaxValue)
+                {
+                    return Operand.OperandSize._16Bits;
+                }
+                return Operand.OperandSize._32Bits;
             }
         }
     }

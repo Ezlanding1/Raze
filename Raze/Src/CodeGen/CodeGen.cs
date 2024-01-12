@@ -959,11 +959,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             {
                 return literal.value.Length;
             }
-            case AssemblyExpr.Literal.LiteralType.REF_PROCEDURE:
-            case AssemblyExpr.Literal.LiteralType.REF_LOCALPROCEDURE:
-            {
-                return (int)AssemblyExpr.Register.RegisterSize._32Bits;
-            }
             case AssemblyExpr.Literal.LiteralType.REF_DATA:
             {
                 return (int)InstructionUtils.SYS_SIZE;
@@ -986,7 +981,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             case AssemblyExpr.Literal.LiteralType.BOOLEAN:
                 return (int)AssemblyExpr.Register.RegisterSize._8Bits;
             default:
-                return 0;
+                return (int)AssemblyExpr.Register.RegisterSize._8Bits;
 
         }
 

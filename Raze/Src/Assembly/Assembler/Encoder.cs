@@ -27,10 +27,10 @@ public partial class Assembler
             }
         }
 
-        internal Encoding GetEncoding(AssemblyExpr.Binary binary)
+        internal Encoding GetEncoding(AssemblyExpr.Binary binary, Assembler assembler, out AssemblyExpr.Literal.LiteralType refResolveType)
         {
             var encoding1 = binary.operand1.ToAssemblerOperand();
-            var encoding2 = binary.operand2.ToAssemblerOperand();
+            var encoding2 = EncodingUtils.HandleUnresolvedRef(binary, binary.operand2, assembler, out refResolveType);
 
             if (instructionEncodings.TryGetValue(binary.instruction.ToString(), out var encodings))
             {
@@ -45,9 +45,9 @@ public partial class Assembler
             Diagnostics.errors.Push(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
             return new();
         }
-        internal Encoding GetEncoding(AssemblyExpr.Unary unary)
+        internal Encoding GetEncoding(AssemblyExpr.Unary unary, Assembler assembler, out AssemblyExpr.Literal.LiteralType refResolveType)
         {
-            var encoding1 = unary.operand.ToAssemblerOperand();
+            var encoding1 = EncodingUtils.HandleUnresolvedRef(unary, unary.operand, assembler, out refResolveType);
 
             if (instructionEncodings.TryGetValue(unary.instruction.ToString(), out var encodings))
             {
