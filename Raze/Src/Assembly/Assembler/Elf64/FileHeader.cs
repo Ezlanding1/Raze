@@ -16,10 +16,8 @@ namespace Raze;
 
 public partial class Linker
 {
-    internal struct Elf64
+    internal partial class Elf64
     {
-        internal const ulong dataOffset = 0x402000;
-
         internal struct Elf64_Ehdr
         {
             unsafe fixed unsigned_char e_ident[16]; /* ELF identification */

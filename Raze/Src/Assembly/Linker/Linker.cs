@@ -15,7 +15,7 @@ public partial class Linker
             SectionResolve(
                 assembler.text,
                 assembler.symbolTable.unresolvedData.Peek().location,
-                Elf64.dataOffset + (ulong)assembler.symbolTable.data[assembler.symbolTable.unresolvedData.Pop().dataRef]
+                Elf64.Elf64_Shdr.dataOffset + (ulong)assembler.symbolTable.data[assembler.symbolTable.unresolvedData.Pop().dataRef]
             );
         }
 
