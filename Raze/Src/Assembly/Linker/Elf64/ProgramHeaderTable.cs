@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 using Elf64_Addr = System.UInt64;
 using Elf64_Off = System.UInt64;
 using Elf64_Half = System.UInt16;
@@ -18,6 +19,7 @@ public partial class Linker
 {
     internal partial class Elf64
     {
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Elf64_Phdr
         {
             Elf64_Word p_type; /* Type of segment */
