@@ -161,6 +161,7 @@ public partial class Assembler
                     if (assembler.nonResolvingPass)
                     {
                         refResolveType = AssemblyExpr.Literal.LiteralType.REF_DATA;
+                        literal.value = "data." + literal.value;
                         assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.textLocation, -1));
                     }
                     if (assembler.symbolTable.definitions.ContainsKey(literal.value))
@@ -173,6 +174,7 @@ public partial class Assembler
                     if (assembler.nonResolvingPass)
                     {
                         refResolveType = AssemblyExpr.Literal.LiteralType.REF_PROCEDURE;
+                        literal.value = "text." + literal.value;
                         assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.textLocation, -1));
                     }
                     if (assembler.symbolTable.definitions.ContainsKey(literal.value))

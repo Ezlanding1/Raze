@@ -91,6 +91,7 @@ public partial class Assembler :
 
     public Instruction VisitData(AssemblyExpr.Data instruction)
     {
+        instruction.name = "data." + instruction.name;
         symbolTable.definitions[instruction.name] = dataLocation; 
         return encoder.EncodeData(instruction);
     }
@@ -110,6 +111,7 @@ public partial class Assembler :
 
     public Instruction VisitProcedure(AssemblyExpr.Procedure instruction)
     {
+        instruction.name = "text." + instruction.name;
         enclosingLbl = instruction.name;
         symbolTable.definitions[instruction.name] = textLocation;
         symbolTable.unresolvedReferences.Add(new Linker.DefinitionInfo(instruction.name));
@@ -154,7 +156,7 @@ public partial class Assembler :
 
         if (Encoder.EncodingUtils.IsReferenceLiteralType(refResolveType))
         {
-            ((Linker.ReferenceInfo)symbolTable.unresolvedReferences[^1]).size = instructions.Count;
+            ((Linker.ReferenceInfo)symbolTable.unresolvedReferences[^1]).size = instructions.Sum(x => x.GetBytes().Length);
         }
 
         return new Instruction(instructions.ToArray());
