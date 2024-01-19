@@ -10,52 +10,39 @@ public partial class Linker
 {
     internal class SymbolTable
     {
-        internal List<LabelRefOrDefSymbolTableInfo> unresolvedLabels = new();
-        internal Stack<DataSymbolTableInfo> unresolvedData = new();
+        internal List<RefOrDefSymbolTableInfo> unresolvedReferences = new();
 
-        internal Dictionary<string, int> labels = new();
-        internal Dictionary<string, int> data = new();
+        internal Dictionary<string, int> definitions = new();
     }
 
-    internal class DataSymbolTableInfo
+    internal abstract class RefOrDefSymbolTableInfo
     {
-        public readonly string dataRef;
-        public int location;
+        // true = reference, false = definition
+        public readonly bool reference; 
 
-        public DataSymbolTableInfo(string dataRef, int location)
+        public RefOrDefSymbolTableInfo(bool reference)
         {
-            this.dataRef = dataRef;
-            this.location = location;
+            this.reference = reference;
         }
     }
 
-    internal abstract class LabelRefOrDefSymbolTableInfo
-    {
-        public readonly bool lblRef;
-
-        public LabelRefOrDefSymbolTableInfo(bool lblRef)
-        {
-            this.lblRef = lblRef;
-        }
-    }
-
-    internal class LabelDefInfo : LabelRefOrDefSymbolTableInfo
+    internal class DefinitionInfo : RefOrDefSymbolTableInfo
     {
         public string refName;
 
-        public LabelDefInfo(string refName) : base(false)
+        public DefinitionInfo(string refName) : base(false)
         {
             this.refName = refName;
         }
     }
 
-    internal class LabelRefInfo : LabelRefOrDefSymbolTableInfo
+    internal class ReferenceInfo : RefOrDefSymbolTableInfo
     {
         public AssemblyExpr instruction;
         public int location;
         public int size;
 
-        public LabelRefInfo(AssemblyExpr instruction, int location, int size) : base(true)
+        public ReferenceInfo(AssemblyExpr instruction, int location, int size) : base(true)
         {
             this.instruction = instruction;
             this.location = location;

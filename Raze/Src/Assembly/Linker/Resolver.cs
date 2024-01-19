@@ -10,7 +10,7 @@ public partial class Linker
 {
     internal static class Resolver
     {
-        private static int ResolveLabelCalculateNewSize(List<byte> section, LabelRefInfo reference, Assembler.Instruction instruction)
+        private static int ResolveLabelCalculateNewSize(List<byte> section, ReferenceInfo reference, Assembler.Instruction instruction)
         {
             section.RemoveRange(reference.location, reference.size);
 
@@ -24,7 +24,7 @@ public partial class Linker
             return reference.size;
         }
 
-        internal static void ResolveProcedureRefs(List<byte> text, Assembler assembler)
+        internal static void ResolveReferences(Assembler assembler)
         {
             assembler.nonResolvingPass = false;
             bool stablePass;
@@ -34,18 +34,18 @@ public partial class Linker
                 stablePass = true;
                 int sizeOffset = 0;
 
-                for (int i = 0; i < assembler.symbolTable.unresolvedLabels.Count; i++)
+                for (int i = 0; i < assembler.symbolTable.unresolvedReferences.Count; i++)
                 {
-                    if (assembler.symbolTable.unresolvedLabels[i].lblRef == true)
+                    if (assembler.symbolTable.unresolvedReferences[i].reference == true)
                     {
-                        LabelRefInfo lblRef = (LabelRefInfo)assembler.symbolTable.unresolvedLabels[i];
+                        ReferenceInfo reference = (ReferenceInfo)assembler.symbolTable.unresolvedReferences[i];
 
-                        lblRef.location += sizeOffset;
+                        reference.location += sizeOffset;
 
-                        int oldSize = lblRef.size;
-                        int localSizeOffset = ResolveLabelCalculateNewSize(text, lblRef, lblRef.instruction.Accept(assembler)) - oldSize;
+                        int oldSize = reference.size;
+                        int localSizeOffset = ResolveLabelCalculateNewSize(assembler.text, reference, reference.instruction.Accept(assembler)) - oldSize;
 
-                        if (sizeOffset != 0)
+                        if (localSizeOffset != 0)
                         {
                             stablePass = false;
                         }
@@ -53,8 +53,8 @@ public partial class Linker
                     }
                     else
                     {
-                        LabelDefInfo lblDef = (LabelDefInfo)assembler.symbolTable.unresolvedLabels[i];
-                        assembler.symbolTable.labels[lblDef.refName] += sizeOffset;
+                        DefinitionInfo defintion = (DefinitionInfo)assembler.symbolTable.unresolvedReferences[i];
+                        assembler.symbolTable.definitions[defintion.refName] += sizeOffset;
                     }
                 }
 

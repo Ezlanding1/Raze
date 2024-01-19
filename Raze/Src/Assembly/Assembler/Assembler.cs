@@ -35,8 +35,6 @@ public partial class Assembler :
                 text.AddRange(bytes);
             }
         }
-        Linker.Resolver.ResolveProcedureRefs(text, this);
-
         foreach (var assemblyExpr in assembly.data)
         {
             foreach (byte[] bytes in assemblyExpr.Accept(this).ToBytes())
@@ -78,13 +76,9 @@ public partial class Assembler :
 
         instructions.AddRange(operandInstructions);
 
-        if (refResolveType == AssemblyExpr.Literal.LiteralType.REF_PROCEDURE || refResolveType == AssemblyExpr.Literal.LiteralType.REF_LOCALPROCEDURE)
+        if (Encoder.EncodingUtils.IsReferenceLiteralType(refResolveType))
         {
-            ((Linker.LabelRefInfo)symbolTable.unresolvedLabels[^1]).size = instructions.Count;
-        }
-        else if (refResolveType == AssemblyExpr.Literal.LiteralType.REF_DATA)
-        {
-            symbolTable.unresolvedData.Peek().location += (instructions.Count - 1);
+            ((Linker.ReferenceInfo)symbolTable.unresolvedReferences[^1]).size = instructions.Sum(x => x.GetBytes().Length);
         }
 
         return new Instruction(instructions.ToArray());
@@ -97,7 +91,7 @@ public partial class Assembler :
 
     public Instruction VisitData(AssemblyExpr.Data instruction)
     {
-        symbolTable.data[instruction.name] = dataLocation; 
+        symbolTable.definitions[instruction.name] = dataLocation; 
         return encoder.EncodeData(instruction);
     }
 
@@ -109,16 +103,16 @@ public partial class Assembler :
     public Instruction VisitLocalProcedure(AssemblyExpr.LocalProcedure instruction)
     {
         instruction.name = enclosingLbl + '.' + instruction.name;
-        symbolTable.labels[instruction.name] = textLocation;
-        symbolTable.unresolvedLabels.Add(new Linker.LabelDefInfo(instruction.name));
+        symbolTable.definitions[instruction.name] = textLocation;
+        symbolTable.unresolvedReferences.Add(new Linker.DefinitionInfo(instruction.name));
         return new Instruction();
     }
 
     public Instruction VisitProcedure(AssemblyExpr.Procedure instruction)
     {
         enclosingLbl = instruction.name;
-        symbolTable.labels[instruction.name] = textLocation;
-        symbolTable.unresolvedLabels.Add(new Linker.LabelDefInfo(instruction.name));
+        symbolTable.definitions[instruction.name] = textLocation;
+        symbolTable.unresolvedReferences.Add(new Linker.DefinitionInfo(instruction.name));
         return new Instruction();
     }
 
@@ -158,13 +152,9 @@ public partial class Assembler :
 
         instructions.AddRange(operandInstructions);
 
-        if (refResolveType == AssemblyExpr.Literal.LiteralType.REF_PROCEDURE || refResolveType == AssemblyExpr.Literal.LiteralType.REF_LOCALPROCEDURE)
+        if (Encoder.EncodingUtils.IsReferenceLiteralType(refResolveType))
         {
-            ((Linker.LabelRefInfo)symbolTable.unresolvedLabels[^1]).size = instructions.Count;
-        }
-        else if (refResolveType == AssemblyExpr.Literal.LiteralType.REF_DATA)
-        {
-            symbolTable.unresolvedData.Peek().location += (instructions.Count - 1);
+            ((Linker.ReferenceInfo)symbolTable.unresolvedReferences[^1]).size = instructions.Count;
         }
 
         return new Instruction(instructions.ToArray());

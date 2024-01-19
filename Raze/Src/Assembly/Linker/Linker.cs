@@ -10,15 +10,7 @@ public partial class Linker
 {
     public void Link(FileStream fs, Assembler assembler)
     {
-        while (assembler.symbolTable.unresolvedData.Count != 0)
-        {
-            SectionResolve(
-                assembler.text,
-                assembler.symbolTable.unresolvedData.Peek().location,
-                Elf64.Elf64_Shdr.dataOffset + (ulong)assembler.symbolTable.data[assembler.symbolTable.unresolvedData.Pop().dataRef]
-            );
-        }
-
+        Resolver.ResolveReferences(assembler);
         fs.Write(assembler.text.ToArray(), 0, assembler.text.Count);
         fs.Write(assembler.data.ToArray(), 0, assembler.data.Count);
     }

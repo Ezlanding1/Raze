@@ -22,6 +22,7 @@ public partial class Linker
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Elf64_Shdr
         {
+            internal const Elf64_Off textOffset = 0x401000;
             internal const Elf64_Off dataOffset = 0x402000;
 
             Elf64_Word sh_name; /* Section name */
