@@ -62,6 +62,18 @@ public partial class Assembler
             Diagnostics.errors.Push(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
             return new();
         }
+        internal Encoding GetEncoding(AssemblyExpr.Zero zero)
+        {
+            if (instructionEncodings.TryGetValue(zero.instruction.ToString(), out var encodings))
+            {
+                if (encodings.Count != 0)
+                {
+                    return encodings[0];
+                }
+            }
+            Diagnostics.errors.Push(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
+            return new();
+        }
 
         public Instruction EncodeData(AssemblyExpr.Data data)
         {

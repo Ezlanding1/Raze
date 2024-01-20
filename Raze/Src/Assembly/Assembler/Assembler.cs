@@ -164,7 +164,17 @@ public partial class Assembler :
 
     public Instruction VisitZero(AssemblyExpr.Zero instruction)
     {
-        return new Instruction(new IInstruction[] { new InstructionOpCode(encoding.OpCode) });
+        encoding = encoder.GetEncoding(instruction);
+
+        List<IInstruction> instructions = new();
+
+        if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.ExpansionPrefix))
+        {
+            instructions.Add(new InstructionOpCodeExpansionPrefix());
+        }
+        instructions.Add(new InstructionOpCode(encoding.OpCode));
+
+        return new Instruction(instructions.ToArray());
     }
 
     public Instruction VisitRegisterRegister(AssemblyExpr.Register reg1, AssemblyExpr.Register reg2)
