@@ -76,9 +76,9 @@ public partial class Assembler :
             instructions.Add(rexPrefix);
         }
 
-        instructions.Add(new InstructionOpCode(encoding.OpCode));
-
         IEnumerable<IInstruction> operandInstructions = instruction.operand2.Accept(this, instruction.operand1).Instructions;
+
+        instructions.Add(new InstructionOpCode(encoding.OpCode));
 
         // Assumes ModRegRm byte is always first byte emitted
         if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.NoModRegRM))
@@ -154,9 +154,9 @@ public partial class Assembler :
             instructions.Add(rexPrefix);
         }
 
-        instructions.Add(new InstructionOpCode(encoding.OpCode));
-
         IEnumerable<IInstruction> operandInstructions = instruction.operand.Accept(this).Instructions;
+
+        instructions.Add(new InstructionOpCode(encoding.OpCode));
 
         // Assumes ModRegRm byte is always first byte emitted
         if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.NoModRegRM))
