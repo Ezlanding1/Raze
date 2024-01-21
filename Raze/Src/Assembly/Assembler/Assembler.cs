@@ -28,14 +28,26 @@ public partial class Assembler :
     
     public void Assemble(CodeGen.Assembly assembly)
     {
-        foreach (var assemblyExpr in assembly.text)
+        AssembleTextSection(CodeGen.ISection.Text.GenerateDriverInstructions(SymbolTableSingleton.SymbolTable.main));
+
+        AssembleTextSection(assembly.text);
+
+        AssembleDataSection(assembly.data);
+    }
+
+    private void AssembleTextSection(CodeGen.ISection.Text section)
+    {
+        foreach (var assemblyExpr in section)
         {
             foreach (byte[] bytes in assemblyExpr.Accept(this).ToBytes())
             {
                 text.AddRange(bytes);
             }
         }
-        foreach (var assemblyExpr in assembly.data)
+    }
+    private void AssembleDataSection(CodeGen.ISection.Data section)
+    {
+        foreach (var assemblyExpr in section)
         {
             foreach (byte[] bytes in assemblyExpr.Accept(this).ToBytes())
             {

@@ -16,7 +16,7 @@ public partial class Linker
 
         fs.Write(
             Elf64.ToReadOnlySpan(Elf64Generator.GenerateFileHeader(
-                Elf64.Elf64_Shdr.textVirtualAddress + (ulong)assembler.symbolTable.definitions["text." + CodeGen.ToMangledName(SymbolTableSingleton.SymbolTable.main)],
+                Elf64.Elf64_Shdr.textVirtualAddress + (ulong)assembler.symbolTable.definitions["text._start"],
                 checked((ushort)programHeaders.Length),
                 systemInfo
             ))
