@@ -52,11 +52,11 @@ public partial class Assembler
             {
                 if (op2Expr.type == AssemblyExpr.Literal.LiteralType.REF_DATA)
                 {
-                    return symbolTable.definitions.ContainsKey(op2Expr.value) ? GenerateImmFromInt(size, (ulong)symbolTable.definitions[op2Expr.value] + Linker.Elf64.Elf64_Shdr.dataOffset) : DefaultUnresolvedReference;
+                    return symbolTable.definitions.ContainsKey(op2Expr.value) ? GenerateImmFromInt(size, (ulong)symbolTable.definitions[op2Expr.value] + Linker.Elf64.Elf64_Shdr.dataVirtualAddress) : DefaultUnresolvedReference;
                 }
                 else if (op2Expr.type == AssemblyExpr.Literal.LiteralType.REF_PROCEDURE || op2Expr.type == AssemblyExpr.Literal.LiteralType.REF_LOCALPROCEDURE)
                 {
-                    return symbolTable.definitions.ContainsKey(op2Expr.value)? GenerateImmFromInt(size, (ulong)symbolTable.definitions[op2Expr.value] + Linker.Elf64.Elf64_Shdr.textOffset) : DefaultUnresolvedReference;
+                    return symbolTable.definitions.ContainsKey(op2Expr.value)? GenerateImmFromInt(size, (ulong)symbolTable.definitions[op2Expr.value] + Linker.Elf64.Elf64_Shdr.textVirtualAddress) : DefaultUnresolvedReference;
                 }
 
                 return size switch
@@ -166,7 +166,7 @@ public partial class Assembler
                     }
                     if (assembler.symbolTable.definitions.ContainsKey(literal.value))
                     {
-                        return new(encodingType.operandType, SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.value] + Linker.Elf64.Elf64_Shdr.dataOffset));
+                        return new(encodingType.operandType, SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.value] + Linker.Elf64.Elf64_Shdr.dataVirtualAddress));
                     }
                 }
                 else if (literal.type == AssemblyExpr.Literal.LiteralType.REF_PROCEDURE)
@@ -179,7 +179,7 @@ public partial class Assembler
                     }
                     if (assembler.symbolTable.definitions.ContainsKey(literal.value))
                     {
-                        return new(encodingType.operandType, SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.value] + Linker.Elf64.Elf64_Shdr.textOffset));
+                        return new(encodingType.operandType, SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.value] + Linker.Elf64.Elf64_Shdr.textVirtualAddress));
                     }
                 }
                 else if (literal.type == AssemblyExpr.Literal.LiteralType.REF_LOCALPROCEDURE)
@@ -192,7 +192,7 @@ public partial class Assembler
                     }
                     if (assembler.symbolTable.definitions.ContainsKey(literal.value))
                     {
-                        return new(encodingType.operandType, SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.value] + Linker.Elf64.Elf64_Shdr.textOffset));
+                        return new(encodingType.operandType, SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.value] + Linker.Elf64.Elf64_Shdr.textVirtualAddress));
                     }
                 }
                 return encodingType;
