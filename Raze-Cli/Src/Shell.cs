@@ -33,6 +33,9 @@ internal class Shell
         #endif
         try
         {
+            // Store SytemInfo Data
+            Raze.SystemInfo systemInfo = new Raze.SystemInfo(Raze.SystemInfo.CPU_Architecture.AMD_x86_64, Raze.SystemInfo.OsAbi.Linux, Raze.SystemInfo.BitFormat._64BitFormat);
+
             #if DEBUG
             Raze.Tools.InputPrinter.PrintInput(text);
             #endif
@@ -77,7 +80,7 @@ internal class Shell
             {
                 // Link and Output Binary
                 Raze.Linker linker = new Raze.Linker();
-                linker.Link(fs, assembler);
+                linker.Link(fs, assembler, systemInfo);
             }
 
             // Throw any encountered assembling errors

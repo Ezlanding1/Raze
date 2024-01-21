@@ -8,7 +8,7 @@ namespace Raze;
 
 public partial class Linker
 {
-    public void Link(FileStream fs, Assembler assembler)
+    public void Link(FileStream fs, Assembler assembler, SystemInfo systemInfo)
     {
         Resolver.ResolveReferences(assembler);
         fs.Write(assembler.text.ToArray(), 0, assembler.text.Count);
