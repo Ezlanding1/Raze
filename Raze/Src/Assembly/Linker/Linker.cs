@@ -12,14 +12,19 @@ public partial class Linker
     {
         Resolver.ResolveReferences(assembler);
 
+        Elf64.Elf64_Phdr[] programHeaders = Elf64Generator.GenerateProgramHeaders(assembler, systemInfo);
+
         fs.Write(
             Elf64.ToReadOnlySpan(Elf64Generator.GenerateFileHeader(
-                Elf64.Elf64_Shdr.textVirtualAddress + (ulong)assembler.symbolTable.definitions["text." + CodeGen.ToMangledName(SymbolTableSingleton.SymbolTable.main)], 
-                0, 
+                Elf64.Elf64_Shdr.textVirtualAddress + (ulong)assembler.symbolTable.definitions["text." + CodeGen.ToMangledName(SymbolTableSingleton.SymbolTable.main)],
+                checked((ushort)programHeaders.Length),
                 systemInfo
             ))
         );
 
+        fs.Write(
+            Elf64.ToReadOnlySpan(programHeaders)
+        );
         fs.Write(GetPaddingBytes((ulong)fs.Position, systemInfo.alignment));
 
         fs.Write(assembler.text.ToArray(), 0, assembler.text.Count);
