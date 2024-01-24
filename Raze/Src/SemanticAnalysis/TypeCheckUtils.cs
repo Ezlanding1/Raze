@@ -18,19 +18,20 @@ public partial class Analyzer
         public static Dictionary<Parser.LiteralTokenType, Expr.Type> literalTypes = new Dictionary<Parser.LiteralTokenType, Expr.Type>()
         {
             { Parser.VoidTokenType, _voidType },
-            { Parser.LiteralTokenType.INTEGER, new(new Token((Token.TokenType)Parser.LiteralTokenType.INTEGER)) },
-            { Parser.LiteralTokenType.FLOATING, new(new Token((Token.TokenType)Parser.LiteralTokenType.FLOATING)) },
-            { Parser.LiteralTokenType.STRING, new(new Token((Token.TokenType)Parser.LiteralTokenType.STRING)) },
-            { Parser.LiteralTokenType.BINARY, new(new Token((Token.TokenType)Parser.LiteralTokenType.BINARY)) },
-            { Parser.LiteralTokenType.HEX, new(new Token((Token.TokenType)Parser.LiteralTokenType.HEX)) },
-            { Parser.LiteralTokenType.BOOLEAN, new(new Token((Token.TokenType)Parser.LiteralTokenType.BOOLEAN)) },
-            { Parser.LiteralTokenType.REF_STRING, new(new Token((Token.TokenType)Parser.LiteralTokenType.REF_STRING)) },
+            { Parser.LiteralTokenType.Integer, new(new Token((Token.TokenType)Parser.LiteralTokenType.Integer)) },
+            { Parser.LiteralTokenType.UnsignedInteger, new(new Token((Token.TokenType)Parser.LiteralTokenType.UnsignedInteger)) },
+            { Parser.LiteralTokenType.Floating, new(new Token((Token.TokenType)Parser.LiteralTokenType.Floating)) },
+            { Parser.LiteralTokenType.String, new(new Token((Token.TokenType)Parser.LiteralTokenType.String)) },
+            { Parser.LiteralTokenType.Binary, new(new Token((Token.TokenType)Parser.LiteralTokenType.Binary)) },
+            { Parser.LiteralTokenType.Hex, new(new Token((Token.TokenType)Parser.LiteralTokenType.Hex)) },
+            { Parser.LiteralTokenType.Boolean, new(new Token((Token.TokenType)Parser.LiteralTokenType.Boolean)) },
+            { Parser.LiteralTokenType.RefString, new(new Token((Token.TokenType)Parser.LiteralTokenType.RefString)) },
         };
 
         public static Dictionary<string, Expr.Type> keywordTypes = new Dictionary<string, Expr.Type>()
         {
-            { "true", literalTypes[Parser.LiteralTokenType.BOOLEAN] },
-            { "false", literalTypes[Parser.LiteralTokenType.BOOLEAN] },
+            { "true", literalTypes[Parser.LiteralTokenType.Boolean] },
+            { "false", literalTypes[Parser.LiteralTokenType.Boolean] },
             { "null", null },
         };
 
@@ -50,7 +51,7 @@ public partial class Analyzer
             if (condition != null)
             {
                 var conditionType = condition.Accept(visitor);
-                if (!literalTypes[Parser.LiteralTokenType.BOOLEAN].Matches(conditionType))
+                if (!literalTypes[Parser.LiteralTokenType.Boolean].Matches(conditionType))
                 {
                     Diagnostics.errors.Push(new Error.AnalyzerError("Type Mismatch", $"'{conditionalName}' expects condition to return 'BOOLEAN'. Got '{conditionType}'"));
                 }

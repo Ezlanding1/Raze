@@ -254,15 +254,16 @@ public abstract partial class AssemblyExpr
     {
         internal enum LiteralType
         {
-            INTEGER = Parser.LiteralTokenType.INTEGER,
-            FLOATING = Parser.LiteralTokenType.FLOATING,
-            STRING = Parser.LiteralTokenType.STRING,
-            BINARY = Parser.LiteralTokenType.BINARY,
-            HEX = Parser.LiteralTokenType.HEX,
-            BOOLEAN = Parser.LiteralTokenType.BOOLEAN,
-            REF_DATA,
-            REF_PROCEDURE,
-            REF_LOCALPROCEDURE
+            Integer = Parser.LiteralTokenType.Integer,
+            UnsignedInteger = Parser.LiteralTokenType.UnsignedInteger,
+            Floating = Parser.LiteralTokenType.Floating,
+            String = Parser.LiteralTokenType.String,
+            Binary = Parser.LiteralTokenType.Binary,
+            Hex = Parser.LiteralTokenType.Hex,
+            Boolean = Parser.LiteralTokenType.Boolean,
+            RefData,
+            RefProcedure,
+            RefLocalProcedure
         }
         internal LiteralType type;
         public string value;
@@ -280,7 +281,7 @@ public abstract partial class AssemblyExpr
 
         public override Assembler.Encoder.Operand ToAssemblerOperand()
         {
-            return new(Assembler.Encoder.Operand.OperandType.IMM, CodeGen.SizeOfLiteral(this));
+            return new(Assembler.Encoder.Operand.OperandType.IMM, (Assembler.Encoder.Operand.OperandSize)CodeGen.SizeOfLiteral(this));
         }
 
         public override T Accept<T>(IBinaryOperandVisitor<T> visitor, Operand operand)
@@ -326,7 +327,7 @@ public abstract partial class AssemblyExpr
 
     public class DataRef : Literal
     {
-        public DataRef(string dataName) : base(LiteralType.REF_DATA, dataName)
+        public DataRef(string dataName) : base(LiteralType.RefData, dataName)
         {
         }
     }
@@ -361,14 +362,14 @@ public abstract partial class AssemblyExpr
     
     public class ProcedureRef : Literal
     {
-        public ProcedureRef(string name) : base(LiteralType.REF_PROCEDURE, name)
+        public ProcedureRef(string name) : base(LiteralType.RefProcedure, name)
         {
         }
     }
 
     public class LocalProcedureRef : Literal
     {
-        public LocalProcedureRef(string name) : base(LiteralType.REF_LOCALPROCEDURE, name)
+        public LocalProcedureRef(string name) : base(LiteralType.RefLocalProcedure, name)
         {
         }
     }

@@ -159,11 +159,12 @@ public class Lexer
     private bool ExceedsMaxSize(Token.TokenType type, string value) => type switch
     {
         Token.TokenType.INTEGER => (value.Length == 19) ? !long.TryParse(value, out _) : value.Length > 19,
+        Token.TokenType.UNSIGNED_INTEGER => (value.Length == 21) ? !ulong.TryParse(value[..^1], out _) : value.Length > 21,
         Token.TokenType.FLOATING => (!double.TryParse(value, out var d)) || (d == double.PositiveInfinity || d == double.NegativeInfinity),
         Token.TokenType.STRING => 8 < value.Length-2,
         Token.TokenType.REF_STRING => false,
         Token.TokenType.BINARY => 64 < value[2..].Length,
-        Token.TokenType.HEX => (value.Length == 18) ? ((!long.TryParse(value[2..], NumberStyles.AllowHexSpecifier, null, out var h)) || h < 0) : value.Length > 18,
+        Token.TokenType.HEX => (value.Length == 18) ? (!ulong.TryParse(value[2..], NumberStyles.AllowHexSpecifier, null, out var _)) : value.Length > 18,
         Token.TokenType.BOOLEAN => false,
         _ => false
     };

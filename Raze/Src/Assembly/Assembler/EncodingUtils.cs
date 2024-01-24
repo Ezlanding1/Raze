@@ -50,11 +50,11 @@ public partial class Assembler
 
             internal static IInstruction GetImmInstruction(Operand.OperandSize size, AssemblyExpr.Literal op2Expr, Linker.SymbolTable symbolTable)
             {
-                if (op2Expr.type == AssemblyExpr.Literal.LiteralType.REF_DATA)
+                if (op2Expr.type == AssemblyExpr.Literal.LiteralType.RefData)
                 {
                     return symbolTable.definitions.ContainsKey(op2Expr.value) ? GenerateImmFromInt(size, (ulong)symbolTable.definitions[op2Expr.value] + Linker.Elf64.Elf64_Shdr.dataVirtualAddress) : DefaultUnresolvedReference;
                 }
-                else if (op2Expr.type == AssemblyExpr.Literal.LiteralType.REF_PROCEDURE || op2Expr.type == AssemblyExpr.Literal.LiteralType.REF_LOCALPROCEDURE)
+                else if (op2Expr.type == AssemblyExpr.Literal.LiteralType.RefProcedure || op2Expr.type == AssemblyExpr.Literal.LiteralType.RefLocalProcedure)
                 {
                     return symbolTable.definitions.ContainsKey(op2Expr.value)? GenerateImmFromInt(size, (ulong)symbolTable.definitions[op2Expr.value] + Linker.Elf64.Elf64_Shdr.textVirtualAddress) : DefaultUnresolvedReference;
                 }
@@ -156,11 +156,11 @@ public partial class Assembler
 
                 AssemblyExpr.Literal literal = (AssemblyExpr.Literal)operand;
 
-                if (literal.type == AssemblyExpr.Literal.LiteralType.REF_DATA)
+                if (literal.type == AssemblyExpr.Literal.LiteralType.RefData)
                 {
                     if (assembler.nonResolvingPass)
                     {
-                        refResolveType = AssemblyExpr.Literal.LiteralType.REF_DATA;
+                        refResolveType = AssemblyExpr.Literal.LiteralType.RefData;
                         literal.value = "data." + literal.value;
                         assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.textLocation, -1));
                     }
@@ -169,11 +169,11 @@ public partial class Assembler
                         return new(encodingType.operandType, SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.value] + Linker.Elf64.Elf64_Shdr.dataVirtualAddress));
                     }
                 }
-                else if (literal.type == AssemblyExpr.Literal.LiteralType.REF_PROCEDURE)
+                else if (literal.type == AssemblyExpr.Literal.LiteralType.RefProcedure)
                 {
                     if (assembler.nonResolvingPass)
                     {
-                        refResolveType = AssemblyExpr.Literal.LiteralType.REF_PROCEDURE;
+                        refResolveType = AssemblyExpr.Literal.LiteralType.RefProcedure;
                         literal.value = "text." + literal.value;
                         assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.textLocation, -1));
                     }
@@ -182,11 +182,11 @@ public partial class Assembler
                         return new(encodingType.operandType, SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.value] + Linker.Elf64.Elf64_Shdr.textVirtualAddress));
                     }
                 }
-                else if (literal.type == AssemblyExpr.Literal.LiteralType.REF_LOCALPROCEDURE)
+                else if (literal.type == AssemblyExpr.Literal.LiteralType.RefLocalProcedure)
                 {
                     if (assembler.nonResolvingPass)
                     {
-                        refResolveType = AssemblyExpr.Literal.LiteralType.REF_LOCALPROCEDURE;
+                        refResolveType = AssemblyExpr.Literal.LiteralType.RefLocalProcedure;
                         literal.value = assembler.enclosingLbl + '.' + literal.value;
                         assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.textLocation, -1));
                     }
@@ -198,27 +198,12 @@ public partial class Assembler
                 return encodingType;
             }
 
-            private static Operand.OperandSize SizeOfIntegerUnsigned(ulong value)
-            {
-                if (value <= byte.MaxValue)
-                {
-                    return Operand.OperandSize._8Bits;
-                }
-                else if (value <= ushort.MaxValue)
-                {
-                    return Operand.OperandSize._16Bits;
-                }
-                else if (value <= uint.MaxValue)
-                {
-                    return Operand.OperandSize._32Bits;
-                }
-                return Operand.OperandSize._64Bits;
-            }
+            private static Operand.OperandSize SizeOfIntegerUnsigned(ulong value) => (Operand.OperandSize)CodeGen.GetIntegralSizeUnsigned(value);
 
             internal static bool IsReferenceLiteralType(AssemblyExpr.Literal.LiteralType literalType) =>
-                literalType == AssemblyExpr.Literal.LiteralType.REF_DATA ||
-                literalType == AssemblyExpr.Literal.LiteralType.REF_PROCEDURE ||
-                literalType == AssemblyExpr.Literal.LiteralType.REF_LOCALPROCEDURE;
+                literalType == AssemblyExpr.Literal.LiteralType.RefData ||
+                literalType == AssemblyExpr.Literal.LiteralType.RefProcedure ||
+                literalType == AssemblyExpr.Literal.LiteralType.RefLocalProcedure;
         }
     }
 }

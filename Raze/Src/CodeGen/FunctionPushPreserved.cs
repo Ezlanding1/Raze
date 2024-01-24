@@ -64,7 +64,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             public static AssemblyExpr.Binary GenerateStackAlloc(int allocSize)
             {
                 return new AssemblyExpr.Binary(AssemblyExpr.Instruction.SUB, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE),
-                    new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.INTEGER, AlignTo16(allocSize).ToString()));
+                    new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, AlignTo16(allocSize).ToString()));
             }
 
             private static string AlignTo16(int i)

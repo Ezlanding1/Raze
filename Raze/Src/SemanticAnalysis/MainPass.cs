@@ -370,7 +370,7 @@ public partial class Analyzer
             using (new SaveContext())
                 expr.value = expr.right.Accept(this) == expr.right.type ? "1" : "0";
 
-            return TypeCheckUtils.literalTypes[Parser.LiteralTokenType.BOOLEAN];
+            return TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Boolean];
         }
 
         public override Expr.Type VisitTypeReferenceExpr(Expr.TypeReference expr)
@@ -427,10 +427,10 @@ public partial class Analyzer
                 expr.right.Accept(this)
             };
 
-            TypeCheckUtils.MustMatchType(argumentTypes[0], TypeCheckUtils.literalTypes[Parser.LiteralTokenType.BOOLEAN]);
-            TypeCheckUtils.MustMatchType(argumentTypes[1], TypeCheckUtils.literalTypes[Parser.LiteralTokenType.BOOLEAN]);
+            TypeCheckUtils.MustMatchType(argumentTypes[0], TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Boolean]);
+            TypeCheckUtils.MustMatchType(argumentTypes[1], TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Boolean]);
 
-            return TypeCheckUtils.literalTypes[Parser.LiteralTokenType.BOOLEAN];
+            return TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Boolean];
         }
 
         public override Expr.Type VisitGroupingExpr(Expr.Grouping expr)

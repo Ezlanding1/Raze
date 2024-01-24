@@ -48,7 +48,7 @@ public partial class Analyzer
             main.modifiers["static"] = true;
         }
 
-        if (main._returnType.type.name.lexeme != "void" && !Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.INTEGER].Matches(main._returnType.type))
+        if (main._returnType.type.name.lexeme != "void" && !Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Integer].Matches(main._returnType.type))
         {
             Diagnostics.errors.Push(new Error.AnalyzerError("Invalid Main Function", $"Main can only return types 'number', and 'void'. Got '{main._returnType.type}'"));
         }

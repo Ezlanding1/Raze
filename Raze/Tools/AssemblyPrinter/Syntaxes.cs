@@ -126,7 +126,7 @@ partial class Syntaxes
             {
                 switch (instruction.type)
                 {
-                    case AssemblyExpr.Literal.LiteralType.STRING:
+                    case AssemblyExpr.Literal.LiteralType.String:
                     {
                         if (instruction.value == "") return "0";
 
@@ -138,8 +138,10 @@ partial class Syntaxes
                         }
                         return $"{strAsInt}";
                     }
-                    case AssemblyExpr.Literal.LiteralType.REF_LOCALPROCEDURE:
+                    case AssemblyExpr.Literal.LiteralType.RefLocalProcedure:
                         return $".{instruction.value}";
+                    case AssemblyExpr.Literal.LiteralType.UnsignedInteger:
+                        return instruction.value[..^1];
                 }
                 return $"{instruction.value}";
             }

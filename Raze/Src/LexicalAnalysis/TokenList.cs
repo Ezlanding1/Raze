@@ -16,6 +16,7 @@ internal class TokenList
         { Token.TokenType.BINARY, /*lang=regex*/@"0[bB][0-1]+" },
         { Token.TokenType.HEX, /*lang=regex*/@"0[xX][0-9a-fA-F]+" },
         { Token.TokenType.FLOATING, /*lang=regex*/@"[0-9]+\.[0-9]*" },
+        { Token.TokenType.UNSIGNED_INTEGER, /*lang=regex*/@"[0-9]+[uU]" },
         { Token.TokenType.INTEGER, /*lang=regex*/@"[0-9]+" },
         { Token.TokenType.IDENTIFIER, /*lang=regex*/@"[a-zA-Z_][a-zA-Z0-9_]*" },
         { Token.TokenType.REF_STRING, /*lang=regex*/"\"[^\"^\r^\n^;]*\"?" },

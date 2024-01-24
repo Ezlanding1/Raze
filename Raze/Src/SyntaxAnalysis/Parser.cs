@@ -17,13 +17,14 @@ public class Parser
     internal const LiteralTokenType VoidTokenType = (LiteralTokenType)(-1);
     internal enum LiteralTokenType
     {
-        INTEGER = Token.TokenType.INTEGER,
-        FLOATING = Token.TokenType.FLOATING,
-        STRING = Token.TokenType.STRING,
-        BINARY = Token.TokenType.BINARY,
-        HEX = Token.TokenType.HEX,
-        BOOLEAN = Token.TokenType.BOOLEAN,
-        REF_STRING = Token.TokenType.REF_STRING
+        Integer = Token.TokenType.INTEGER,
+        UnsignedInteger = Token.TokenType.UNSIGNED_INTEGER,
+        Floating = Token.TokenType.FLOATING,
+        String = Token.TokenType.STRING,
+        Binary = Token.TokenType.BINARY,
+        Hex = Token.TokenType.HEX,
+        Boolean = Token.TokenType.BOOLEAN,
+        RefString = Token.TokenType.REF_STRING
     }
 
     internal static readonly Token.TokenType[] SynchronizationTokens =

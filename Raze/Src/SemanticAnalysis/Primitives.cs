@@ -13,13 +13,13 @@ public partial class Analyzer
     {
         private static dynamic ToType(AssemblyExpr.Literal literal) => literal.type switch
         {
-            AssemblyExpr.Literal.LiteralType.INTEGER => int.Parse(literal.value),
-            AssemblyExpr.Literal.LiteralType.FLOATING => float.Parse(literal.value),
-            AssemblyExpr.Literal.LiteralType.STRING => literal.value,
-            AssemblyExpr.Literal.LiteralType.BINARY => Convert.ToInt32(literal.value, 2),
-            AssemblyExpr.Literal.LiteralType.HEX => Convert.ToInt32(literal.value, 16),
-            AssemblyExpr.Literal.LiteralType.BOOLEAN => byte.Parse(literal.value),
-            AssemblyExpr.Literal.LiteralType.REF_DATA => literal.value
+            AssemblyExpr.Literal.LiteralType.Integer => int.Parse(literal.value),
+            AssemblyExpr.Literal.LiteralType.Floating => float.Parse(literal.value),
+            AssemblyExpr.Literal.LiteralType.String => literal.value,
+            AssemblyExpr.Literal.LiteralType.Binary => Convert.ToInt32(literal.value, 2),
+            AssemblyExpr.Literal.LiteralType.Hex => Convert.ToInt32(literal.value, 16),
+            AssemblyExpr.Literal.LiteralType.Boolean => byte.Parse(literal.value),
+            AssemblyExpr.Literal.LiteralType.RefData => literal.value
         };
 
         // Binary Operation
@@ -35,24 +35,24 @@ public partial class Analyzer
 
             // Note: All cases where an operator's return type for two given literals is not correctly expressed in the switch should be handled individually, here
 
-            if (type1 == STRING && type2 == STRING && pName == "Add")
+            if (type1 == Parser.LiteralTokenType.String && type2 == Parser.LiteralTokenType.String && pName == "Add")
             {
-                return STRING;
+                return Parser.LiteralTokenType.String;
             }
-            if ((type1 == FLOATING || type2 == FLOATING) && (pName == "BitwiseShiftLeft" || pName == "BitwiseShiftRight" || pName == "BitwiseAnd" || pName == "BitwiseOr" || pName == "BitwiseXor"))
+            if ((type1 == Floating || type2 == Floating) && (pName == "BitwiseShiftLeft" || pName == "BitwiseShiftRight" || pName == "BitwiseAnd" || pName == "BitwiseOr" || pName == "BitwiseXor"))
             {
                 Diagnostics.errors.Push(InvalidOperation(op, type1, type2));
                 return Parser.VoidTokenType;
             }
             if (pName == "EqualTo" || pName == "NotEqualTo" || pName == "GreaterThan" || pName == "LessThan" || pName == "GreaterThanOrEqualTo" || pName == "LessThanOrEqualTo")
             {
-                return BOOLEAN;
+                return Parser.LiteralTokenType.Boolean;
             }
-            if (type1 == BOOLEAN || type2 == BOOLEAN)
+            if (type1 == Parser.LiteralTokenType.Boolean || type2 == Parser.LiteralTokenType.Boolean)
             {
                 if (pName == "BitwiseAnd" || pName == "BitwiseOr" || pName == "BitwiseXor")
                 {
-                    return BOOLEAN;
+                    return Parser.LiteralTokenType.Boolean;
                 }
                 else
                 {
@@ -62,48 +62,48 @@ public partial class Analyzer
 
             switch (type1, type2)
             {
-                case (INTEGER, INTEGER): return INTEGER; // INTEGER OP INTEGER
-                case (INTEGER, FLOATING): case (FLOATING, INTEGER): return FLOATING; // INTEGER OP FLOATING
-                case (INTEGER, STRING):
-                case (STRING, INTEGER):
-                case (INTEGER, REF_STRING):
-                case (REF_STRING, INTEGER): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // INTEGER OP STRING
-                case (INTEGER, BINARY): case (BINARY, INTEGER): return BINARY; // INTEGER OP BINARY
-                case (INTEGER, HEX): case (HEX, INTEGER): return HEX; // INTEGER OP HEX
-                case (INTEGER, BOOLEAN): case (BOOLEAN, INTEGER): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // INTEGER OP BOOLEAN
+                case (Integer, Integer): return Integer; // INTEGER OP INTEGER
+                case (Integer, Floating): case (Floating, Integer): return Floating; // INTEGER OP FLOATING
+                case (Integer, Parser.LiteralTokenType.String):
+                case (Parser.LiteralTokenType.String, Integer):
+                case (Integer, RefString):
+                case (RefString, Integer): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // INTEGER OP STRING
+                case (Integer, Binary): case (Binary, Integer): return Binary; // INTEGER OP BINARY
+                case (Integer, Hex): case (Hex, Integer): return Hex; // INTEGER OP HEX
+                case (Integer, Parser.LiteralTokenType.Boolean): case (Parser.LiteralTokenType.Boolean, Integer): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // INTEGER OP BOOLEAN
 
-                case (FLOATING, FLOATING): return FLOATING; // FLOATING OP FLOATING
-                case (FLOATING, STRING):
-                case (STRING, FLOATING):
-                case (FLOATING, REF_STRING):
-                case (REF_STRING, FLOATING): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break; // FLOATING OP STRING
-                case (FLOATING, BINARY): case (BINARY, FLOATING): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // FLOATING OP BINARY
-                case (FLOATING, HEX): case (HEX, FLOATING): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // FLOATING OP HEX
-                case (FLOATING, BOOLEAN): case (BOOLEAN, FLOATING): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // FLOATING OP BOOLEAN
+                case (Floating, Floating): return Floating; // FLOATING OP FLOATING
+                case (Floating, Parser.LiteralTokenType.String):
+                case (Parser.LiteralTokenType.String, Floating):
+                case (Floating, RefString):
+                case (RefString, Floating): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break; // FLOATING OP STRING
+                case (Floating, Binary): case (Binary, Floating): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // FLOATING OP BINARY
+                case (Floating, Hex): case (Hex, Floating): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // FLOATING OP HEX
+                case (Floating, Parser.LiteralTokenType.Boolean): case (Parser.LiteralTokenType.Boolean, Floating): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // FLOATING OP BOOLEAN
 
-                case (STRING, STRING):
-                case (REF_STRING, REF_STRING): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break; // STRING OP STRING
-                case (STRING, BINARY):
-                case (BINARY, STRING):
-                case (REF_STRING, BINARY):
-                case (BINARY, REF_STRING): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // STRING OP BINARY
-                case (STRING, HEX):
-                case (HEX, STRING):
-                case (REF_STRING, HEX):
-                case (HEX, REF_STRING): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // STRING OP HEX
-                case (STRING, BOOLEAN):
-                case (BOOLEAN, STRING):
-                case (REF_STRING, BOOLEAN):
-                case (BOOLEAN, REF_STRING): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // STRING OP BOOLEAN
+                case (Parser.LiteralTokenType.String, Parser.LiteralTokenType.String):
+                case (RefString, RefString): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break; // STRING OP STRING
+                case (Parser.LiteralTokenType.String, Binary):
+                case (Binary, Parser.LiteralTokenType.String):
+                case (RefString, Binary):
+                case (Binary, RefString): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // STRING OP BINARY
+                case (Parser.LiteralTokenType.String, Hex):
+                case (Hex, Parser.LiteralTokenType.String):
+                case (RefString, Hex):
+                case (Hex, RefString): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // STRING OP HEX
+                case (Parser.LiteralTokenType.String, Parser.LiteralTokenType.Boolean):
+                case (Parser.LiteralTokenType.Boolean, Parser.LiteralTokenType.String):
+                case (RefString, Parser.LiteralTokenType.Boolean):
+                case (Parser.LiteralTokenType.Boolean, RefString): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // STRING OP BOOLEAN
 
-                case (BINARY, BINARY): return BINARY; // BINARY OP BINARY
-                case (BINARY, HEX): case (HEX, BINARY): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // BINARY OP HEX
-                case (BINARY, BOOLEAN): case (BOOLEAN, BINARY): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // BINARY OP BOOLEAN
+                case (Binary, Binary): return Binary; // BINARY OP BINARY
+                case (Binary, Hex): case (Hex, Binary): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // BINARY OP HEX
+                case (Binary, Parser.LiteralTokenType.Boolean): case (Parser.LiteralTokenType.Boolean, Binary): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // BINARY OP BOOLEAN
 
-                case (HEX, HEX): return HEX; // HEX OP HEX
-                case (HEX, BOOLEAN): case (BOOLEAN, HEX): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // HEX OP BOOLEAN
+                case (Hex, Hex): return Hex; // HEX OP HEX
+                case (Hex, Parser.LiteralTokenType.Boolean): case (Parser.LiteralTokenType.Boolean, Hex): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // HEX OP BOOLEAN
 
-                case (BOOLEAN, BOOLEAN): return BOOLEAN; // BOOLEAN OP BOOLEAN
+                case (Parser.LiteralTokenType.Boolean, Parser.LiteralTokenType.Boolean): return Parser.LiteralTokenType.Boolean; // BOOLEAN OP BOOLEAN
 
                 default:
                     Diagnostics.errors.Push(new Error.ImpossibleError($"Unrecognized literal operation"));
@@ -120,7 +120,7 @@ public partial class Analyzer
                 (
                     pName switch
                     {
-                        "Add" => Add(ToType(a), ToType(b), (a.type == b.type && a.type == AssemblyExpr.Literal.LiteralType.REF_DATA), assembler),
+                        "Add" => Add(ToType(a), ToType(b), (a.type == b.type && a.type == AssemblyExpr.Literal.LiteralType.RefData), assembler),
                         "Subtract" => ToType(a) - ToType(b),
                         "Multiply" => ToType(a) * ToType(b),
                         "Modulo" => ToType(a) % ToType(b),
@@ -167,7 +167,7 @@ public partial class Analyzer
                 i++;
             }
 
-            assembler.EmitData(new AssemblyExpr.Data(assembler.DataLabel, AssemblyExpr.Register.RegisterSize._8Bits, (AssemblyExpr.Literal.LiteralType.STRING, aData[..^4] + bData[1..])));
+            assembler.EmitData(new AssemblyExpr.Data(assembler.DataLabel, AssemblyExpr.Register.RegisterSize._8Bits, (AssemblyExpr.Literal.LiteralType.String, aData[..^4] + bData[1..])));
 
             return assembler.CreateDatalLabel(assembler.dataCount++);
         }
@@ -202,19 +202,19 @@ public partial class Analyzer
 
             switch (type1)
             {
-                case INTEGER: return INTEGER; // INTEGER OP
+                case Integer: return Integer; // INTEGER OP
 
-                case FLOATING: Diagnostics.errors.Push(InvalidOperation(op, FLOATING)); break;  // FLOATING OP
+                case Floating: Diagnostics.errors.Push(InvalidOperation(op, Floating)); break;  // FLOATING OP
 
-                case STRING: Diagnostics.errors.Push(InvalidOperation(op, STRING)); break;  // STRING OP
+                case Parser.LiteralTokenType.String: Diagnostics.errors.Push(InvalidOperation(op, Parser.LiteralTokenType.String)); break;  // STRING OP
 
-                case REF_STRING: Diagnostics.errors.Push(InvalidOperation(op, REF_STRING)); break;  // REF_STRING OP
+                case RefString: Diagnostics.errors.Push(InvalidOperation(op, RefString)); break;  // REF_STRING OP
 
-                case BINARY: return BINARY; // BINARY OP
+                case Binary: return Binary; // BINARY OP
 
-                case HEX: return HEX; // HEX OP
+                case Hex: return Hex; // HEX OP
 
-                case BOOLEAN: return BOOLEAN; // BOOLEAN OP
+                case Parser.LiteralTokenType.Boolean: return Parser.LiteralTokenType.Boolean; // BOOLEAN OP
 
                 default:
                     Diagnostics.errors.Push(new Error.ImpossibleError($"Unrecognized literal operation"));
