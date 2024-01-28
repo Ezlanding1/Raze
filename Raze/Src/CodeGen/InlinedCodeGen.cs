@@ -96,11 +96,11 @@ public class InlinedCodeGen : CodeGen
         {
             if (ret.IsRegister())
             {
-                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Register)ret).name), ((AssemblyExpr.Register)ret).size);
+                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Register)ret).Name), ((AssemblyExpr.Register)ret).size);
             }
             else if (ret.IsPointer() && !((AssemblyExpr.Pointer)ret).IsOnStack())
             {
-                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Pointer)ret).register.name), ((AssemblyExpr.Pointer)ret).size);
+                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Pointer)ret).register.Name), ((AssemblyExpr.Pointer)ret).size);
             }
         }
 
@@ -175,11 +175,11 @@ public class InlinedCodeGen : CodeGen
         {
             if (ret.IsRegister())
             {
-                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Register)ret).name), ((AssemblyExpr.Register)ret).size);
+                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Register)ret).Name), ((AssemblyExpr.Register)ret).size);
             }
             else if (ret.IsPointer() && !((AssemblyExpr.Pointer)ret).IsOnStack())
             {
-                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Pointer)ret).register.name), ((AssemblyExpr.Pointer)ret).size);
+                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Pointer)ret).register.Name), ((AssemblyExpr.Pointer)ret).size);
             }
         }
 
@@ -281,11 +281,11 @@ public class InlinedCodeGen : CodeGen
         {
             if (ret.IsRegister())
             {
-                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Register)ret).name), ((AssemblyExpr.Register)ret).size);
+                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Register)ret).Name), ((AssemblyExpr.Register)ret).size);
             }
             else if (ret.IsPointer() && !((AssemblyExpr.Pointer)ret).IsOnStack())
             {
-                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Pointer)ret).register.name), ((AssemblyExpr.Pointer)ret).size);
+                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Pointer)ret).register.Name), ((AssemblyExpr.Pointer)ret).size);
             }
         }
 
@@ -344,11 +344,11 @@ public class InlinedCodeGen : CodeGen
                 if (operand.IsRegister())
                 {
                     var op = (AssemblyExpr.Register)operand;
-                    if (op.name != ((AssemblyExpr.Register)((InlineStateInlined)inlineState).callee).name)
+                    if (op.Name != ((AssemblyExpr.Register)((InlineStateInlined)inlineState).callee).Name)
                     {
                         if (!(HandleSeteOptimization((AssemblyExpr.Register)operand, ((InlineStateInlined)inlineState).callee)))
                         {
-                            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(((AssemblyExpr.Register)((InlineStateInlined)inlineState).callee).name, op.size), operand));
+                            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(((AssemblyExpr.Register)((InlineStateInlined)inlineState).callee).Name, op.size), operand));
                         }
                     }
                 }
@@ -389,7 +389,7 @@ public class InlinedCodeGen : CodeGen
         }
         else if (operand.IsPointer())
         {
-            var idx = alloc.NameToIdx(((AssemblyExpr.Pointer)operand).register.name);
+            var idx = alloc.NameToIdx(((AssemblyExpr.Pointer)operand).register.Name);
             if (idx != -1)
             {
                 alloc.Lock(idx);
@@ -410,7 +410,7 @@ public class InlinedCodeGen : CodeGen
         }
         else if (operand.IsPointer())
         {
-            var idx = alloc.NameToIdx(((AssemblyExpr.Pointer)operand).register.name);
+            var idx = alloc.NameToIdx(((AssemblyExpr.Pointer)operand).register.Name);
             if (idx != -1)
             {
                 alloc.Unlock(idx);

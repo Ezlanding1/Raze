@@ -38,7 +38,7 @@ internal partial class AssemblyOps
                 if (operand.IsRegister())
                 {
                     var op = (AssemblyExpr.Register)operand;
-                    if (op.name != AssemblyExpr.Register.RegisterName.RAX)
+                    if (op.Name != AssemblyExpr.Register.RegisterName.RAX)
                         assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, op.size), operand));
                 }
                 else if (operand.IsPointer())

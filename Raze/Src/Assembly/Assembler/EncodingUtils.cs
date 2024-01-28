@@ -20,13 +20,13 @@ public partial class Assembler
                 return new Instruction();
             }
 
-            internal static Instruction.ModRegRm.RegisterCode ExprRegisterToModRegRmRegister(AssemblyExpr.Register register) => (register.name, register.size) switch
+            internal static Instruction.ModRegRm.RegisterCode ExprRegisterToModRegRmRegister(AssemblyExpr.Register register) => (register.Name, register.size) switch
             {
                 (AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._8BitsUpper) => Instruction.ModRegRm.RegisterCode.AH,
                 (AssemblyExpr.Register.RegisterName.RBX, AssemblyExpr.Register.RegisterSize._8BitsUpper) => Instruction.ModRegRm.RegisterCode.BH,
                 (AssemblyExpr.Register.RegisterName.RCX, AssemblyExpr.Register.RegisterSize._8BitsUpper) => Instruction.ModRegRm.RegisterCode.CH,
                 (AssemblyExpr.Register.RegisterName.RDX, AssemblyExpr.Register.RegisterSize._8BitsUpper) => Instruction.ModRegRm.RegisterCode.DH,
-                _ => (Instruction.ModRegRm.RegisterCode)ToRegCode((int)register.name)
+                _ => (Instruction.ModRegRm.RegisterCode)ToRegCode((int)register.Name)
             };
 
             private static int ToRegCode(int register) => (register < 0) ? -register - 1 : register;
@@ -37,7 +37,7 @@ public partial class Assembler
 
             internal static bool SetSizePrefix(Encoding.EncodingTypes encodingType) => encodingType.HasFlag(Encoding.EncodingTypes.SizePrefix);
 
-            internal static bool CanHaveZeroByteDisplacement(AssemblyExpr.Register register) => register.name switch
+            internal static bool CanHaveZeroByteDisplacement(AssemblyExpr.Register register) => register.Name switch
             {
                 AssemblyExpr.Register.RegisterName.RAX or
                 AssemblyExpr.Register.RegisterName.RBX or
@@ -120,8 +120,8 @@ public partial class Assembler
             }
 
             private static bool IsRRegister(AssemblyExpr.Operand op)
-                => op is AssemblyExpr.Register && (int)((AssemblyExpr.Register)op).name < 0
-                    || op is AssemblyExpr.Pointer && (int)((AssemblyExpr.Pointer)op).register.name < 0;
+                => op is AssemblyExpr.Register && (int)((AssemblyExpr.Register)op).Name < 0
+                    || op is AssemblyExpr.Pointer && (int)((AssemblyExpr.Pointer)op).register.Name < 0;
 
             internal static bool SetAddressSizeOverridePrefix(AssemblyExpr.Operand operand)
             {

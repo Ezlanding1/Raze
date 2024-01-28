@@ -57,7 +57,7 @@ internal partial class AssemblyOps
                 if (operand.IsRegister())
                 {
                     var op = (AssemblyExpr.Register)operand;
-                    if (op.name != AssemblyExpr.Register.RegisterName.RAX)
+                    if (op.Name != AssemblyExpr.Register.RegisterName.RAX)
                         assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, op.size), operand));
                 }
                 else if (operand.IsPointer())
@@ -216,8 +216,8 @@ internal partial class AssemblyOps
 
                     assemblyOps.assembler.alloc.FreeRegister((AssemblyExpr.Register)operand2);
 
-                    ((AssemblyExpr.Register)operand2).name = AssemblyExpr.Register.RegisterName.RCX;
-                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary(instruction.instruction.instruction, operand1, new AssemblyExpr.Register(InstructionUtils.paramRegister[3], ((AssemblyExpr.SizedValue)operand2).size)));
+                    ((AssemblyExpr.Register)operand2).Name = AssemblyExpr.Register.RegisterName.RCX;
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary(instruction.instruction.instruction, operand1, new AssemblyExpr.Register(InstructionUtils.paramRegister[3], operand2.size)));
                     assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, assemblyOps.assembler.alloc.paramRegisters[3], reg));
 
                     assemblyOps.assembler.alloc.FreeRegister(reg);
@@ -289,7 +289,7 @@ internal partial class AssemblyOps
 
             if (assemblyOps.assembler.alloc.paramRegisters[2] == null)
             {
-                if (!(operand1.IsRegister() && ((AssemblyExpr.Register)operand1).name == AssemblyExpr.Register.RegisterName.RAX))
+                if (!(operand1.IsRegister() && ((AssemblyExpr.Register)operand1).Name == AssemblyExpr.Register.RegisterName.RAX))
                 {
                     assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, operand1));
                 }
@@ -303,7 +303,7 @@ internal partial class AssemblyOps
                 paramStoreReg = assemblyOps.assembler.alloc.NextRegister(assemblyOps.assembler.alloc.paramRegisters[2].size);
                 assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, paramStoreReg, assemblyOps.assembler.alloc.paramRegisters[2]));
 
-                if (!(operand1.IsRegister() && ((AssemblyExpr.Register)operand1).name == AssemblyExpr.Register.RegisterName.RAX))
+                if (!(operand1.IsRegister() && ((AssemblyExpr.Register)operand1).Name == AssemblyExpr.Register.RegisterName.RAX))
                 {
                     assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, operand1));
                 }

@@ -110,10 +110,10 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             return GetRegister(0, size);
         }
 
-        public void Lock(AssemblyExpr.Register register) => Lock(NameToIdx(register.name));
+        public void Lock(AssemblyExpr.Register register) => Lock(NameToIdx(register.Name));
         public void Lock(int idx) => registerStates[idx].SetState(RegisterState.RegisterStates.Used, RegisterState.RegisterStates.Locked);
 
-        public void Unlock(AssemblyExpr.Register register) => Unlock(NameToIdx(register.name));
+        public void Unlock(AssemblyExpr.Register register) => Unlock(NameToIdx(register.Name));
         public void Unlock(int idx) => registerStates[idx].RemoveState(RegisterState.RegisterStates.Locked);
 
         public bool IsLocked(int idx) => registerStates[idx].HasState(RegisterState.RegisterStates.Locked);
@@ -142,7 +142,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             if (localParam != null)
             {
                 assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(InstructionUtils.paramRegister[i], localParam.size), localParam));
-                Free(NameToIdx(localParam.name));
+                Free(NameToIdx(localParam.Name));
             }
         }
 
@@ -158,7 +158,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                 FreeRegister((AssemblyExpr.Register)value, force);
             }
         }
-        public void FreeRegister(AssemblyExpr.Register register, bool force = false) => Free(NameToIdx(register.name), force);
+        public void FreeRegister(AssemblyExpr.Register register, bool force = false) => Free(NameToIdx(register.Name), force);
         public void FreePtr(AssemblyExpr.Pointer ptr, bool force = false) => FreeRegister(ptr.register, force);
 
         // Frees a register by allowing it to be alloc-ed elsewhere, and making the other uses pull from a new instance

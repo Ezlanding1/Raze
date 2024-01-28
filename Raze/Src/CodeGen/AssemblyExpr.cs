@@ -136,16 +136,16 @@ public abstract partial class AssemblyExpr
             R15 = -0b111 - 1
         }
 
-        private StrongBox<RegisterName> _name;
-        public RegisterName name
+        public StrongBox<RegisterName> nameBox;
+        public RegisterName Name
         {
-            get => _name.Value;
-            set => _name.Value = value;
+            get => nameBox.Value;
+            set => nameBox.Value = value;
         }
 
         public Register(RegisterName register, RegisterSize size) : base(0)
         {
-            this._name = new(register);
+            this.nameBox = new(register);
             this.size = size;
         }
 
@@ -155,7 +155,7 @@ public abstract partial class AssemblyExpr
 
         public Register(StrongBox<RegisterName> _name, RegisterSize size) : base(0)
         {
-            this._name = _name;
+            this.nameBox = _name;
             this.size = size;
         }
 

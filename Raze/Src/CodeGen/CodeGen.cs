@@ -195,7 +195,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         if (operand.IsPointer())
         {
-            AssemblyExpr.Register.RegisterSize size = _ref ? InstructionUtils.SYS_SIZE : ((AssemblyExpr.Pointer)operand).size;
+            AssemblyExpr.Register reg = new AssemblyExpr.Register(((AssemblyExpr.Pointer)operand).AsRegister(this).Name, _ref? InstructionUtils.SYS_SIZE : ((AssemblyExpr.Pointer)operand).size);
 
             AssemblyExpr.Register reg = ((AssemblyExpr.Pointer)operand).AsRegister(size, this);
             
@@ -694,7 +694,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             if (operand.IsRegister())
             {
                 var op = (AssemblyExpr.Register)operand;
-                if (op.name != AssemblyExpr.Register.RegisterName.RAX)
+                if (op.Name != AssemblyExpr.Register.RegisterName.RAX)
                     Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, op.size), operand));
             }
             else if (operand.IsPointer())

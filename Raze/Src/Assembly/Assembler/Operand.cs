@@ -49,7 +49,7 @@ public partial class Assembler
             {
                 ThrowTMP(reg);
 
-                return reg.name switch
+                return reg.Name switch
                 {
                     AssemblyExpr.Register.RegisterName.RAX => OperandType.A,
                     AssemblyExpr.Register.RegisterName.RSP => OperandType.P,
@@ -62,7 +62,7 @@ public partial class Assembler
 
             internal static void ThrowTMP(AssemblyExpr.Register reg)
             {
-                if (reg.name == AssemblyExpr.Register.RegisterName.TMP)
+                if (reg.Name == AssemblyExpr.Register.RegisterName.TMP)
                 {
                     Diagnostics.errors.Push(new Error.ImpossibleError("TMP Register Emitted"));
                 }
