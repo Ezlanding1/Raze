@@ -26,7 +26,7 @@ public class InlinedCodeGen : CodeGen
         public int inlineLabelIdx = -1;
         public bool secondJump = false;
 
-        public AssemblyExpr.SizedValue? callee;
+        public AssemblyExpr.RegisterPointer? callee;
 
         public InlineStateInlined(InlineStateNoInline lastState) : base(lastState, true)
         {
@@ -337,7 +337,7 @@ public class InlinedCodeGen : CodeGen
 
             if (((InlineStateInlined)inlineState).callee == null)
             {
-                ((InlineStateInlined)inlineState).callee = operand.NonLiteral(InstructionUtils.ToRegisterSize(expr.size), this);
+                ((InlineStateInlined)inlineState).callee = operand.NonLiteral(this);
             }
             else
             {

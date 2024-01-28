@@ -71,7 +71,7 @@ partial class Syntaxes
 
             public string VisitMemory(AssemblyExpr.Pointer instruction)
             {
-                if (instruction.register.name == AssemblyExpr.Register.RegisterName.TMP)
+                if (instruction.register.Name == AssemblyExpr.Register.RegisterName.TMP)
                 {
                     Diagnostics.errors.Push(new Error.ImpossibleError("TMP Register Emitted"));
                 }
@@ -85,12 +85,12 @@ partial class Syntaxes
 
             public string VisitRegister(AssemblyExpr.Register instruction)
             {
-                if (instruction.name == AssemblyExpr.Register.RegisterName.TMP)
+                if (instruction.Name == AssemblyExpr.Register.RegisterName.TMP)
                 {
                     Diagnostics.errors.Push(new Error.ImpossibleError("TMP Register Cannot Be Emitted"));
                 }
 
-                return $"{RegisterToString[(instruction.name, instruction.size)]}";
+                return $"{RegisterToString[(instruction.Name, instruction.size)]}";
             }
 
             public string VisitSection(AssemblyExpr.Section instruction)
@@ -110,7 +110,7 @@ partial class Syntaxes
 
             private string PointerToString(AssemblyExpr.Pointer instruction)
             {
-                if (instruction.register.name == AssemblyExpr.Register.RegisterName.TMP)
+                if (instruction.register.Name == AssemblyExpr.Register.RegisterName.TMP)
                 {
                     Diagnostics.errors.Push(new Error.ImpossibleError("TMP Register Cannot Be Emitted"));
                 }

@@ -114,7 +114,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             if (arg.IsLiteral())
             {
                 AssemblyExpr.Literal literal = (AssemblyExpr.Literal)arg;
-                if (expr.internalFunction.parameters[i].stack.size < (int)SizeOfLiteral(literal))
+                if (expr.internalFunction.parameters[i].stack.size < (int)literal.size)
                 {
                     Diagnostics.errors.Push(new Error.BackendError("Invalid Literal", $"The size of literal '{literal.value}' exceeds size of assigned data type '{expr.internalFunction.parameters[i].stack.size}'"));
                 }
@@ -197,8 +197,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         {
             AssemblyExpr.Register reg = new AssemblyExpr.Register(((AssemblyExpr.Pointer)operand).AsRegister(this).Name, _ref? InstructionUtils.SYS_SIZE : ((AssemblyExpr.Pointer)operand).size);
 
-            AssemblyExpr.Register reg = ((AssemblyExpr.Pointer)operand).AsRegister(size, this);
-            
             Emit(new AssemblyExpr.Binary(_ref? AssemblyExpr.Instruction.LEA : AssemblyExpr.Instruction.MOV, reg, operand));
             _ref = false;
             operand = reg;
@@ -225,7 +223,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         else
         {
             AssemblyExpr.Literal literal = (AssemblyExpr.Literal)operand;
-            if (expr.stack.size < (int)SizeOfLiteral(literal))
+            if (expr.stack.size < (int)literal.size)
             {
                 Diagnostics.errors.Push(new Error.BackendError("Invalid Literal", $"The size of literal '{literal.value}' exceeds size of assigned data type '{expr.stack.size}'"));
             }
@@ -338,7 +336,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                 {
                     return ((Expr.StackRegister)stack).register;
                 }
-                register = ((Expr.StackRegister)stack).register.NonPointerNonLiteral(InstructionUtils.ToRegisterSize(stack.size), this);
+                register = ((Expr.StackRegister)stack).register.NonPointerNonLiteral(this);
             }
             else if (stack._ref)
             {
@@ -699,12 +697,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             }
             else if (operand.IsPointer())
             {
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, ((AssemblyExpr.SizedValue)operand).size), operand));
+                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, operand.size), operand));
             }
             else
             {
                 AssemblyExpr.Literal literal = (AssemblyExpr.Literal)operand;
-                if (expr.size < (int)SizeOfLiteral(literal))
+                if (expr.size < (int)literal.size)
                 {
                     Diagnostics.errors.Push(new Error.BackendError("Invalid Literal", $"The size of literal '{literal.value}' exceeds size of assigned data type '{expr.size}'"));
                 }
@@ -747,7 +745,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         {
             AssemblyExpr.Literal literal = (AssemblyExpr.Literal)operand2;
             var size = expr.member.GetLastSize();
-            if (size < (int)SizeOfLiteral(literal))
+            if (size < (int)literal.size)
             {
                 Diagnostics.errors.Push(new Error.BackendError("Invalid Literal", $"The size of literal '{literal.value}' exceeds size of assigned data type '{size}'"));
             }
@@ -907,7 +905,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return false;
     }
 
-    internal AssemblyExpr.Register MovToRegister(AssemblyExpr.Value operand, AssemblyExpr.Register.RegisterSize? size) => operand.NonPointerNonLiteral(size, this);
+    internal AssemblyExpr.Register MovToRegister(AssemblyExpr.Value operand, AssemblyExpr.Register.RegisterSize? size) => operand.NonPointerNonLiteral(this);
 
     public static string ToMangledName(Expr.Function function)
     {
@@ -980,11 +978,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                 return (AssemblyExpr.Register.RegisterSize)length;
             }
             case AssemblyExpr.Literal.LiteralType.Hex:
-                return GetIntegralSizeUnsigned(ulong.Parse(literal.value, NumberStyles.AllowHexSpecifier));
+                return GetIntegralSizeUnsigned(ulong.Parse(literal.value[2..], NumberStyles.AllowHexSpecifier));
             case AssemblyExpr.Literal.LiteralType.Boolean:
                 return AssemblyExpr.Register.RegisterSize._8Bits;
             default:
-                return AssemblyExpr.Register.RegisterSize._8Bits;
+                Diagnostics.errors.Push(new Error.ImpossibleError("Invalid literal type in GetSize"));
+                return 0;
 
         }
     }

@@ -56,6 +56,8 @@ public abstract partial class AssemblyExpr
         // 0 = Register, 1 = Pointer, 2 = Literal
         public int valueType;
 
+        public Register.RegisterSize size;
+
         public Value(int valueType)
         {
             this.valueType = valueType;
@@ -65,45 +67,38 @@ public abstract partial class AssemblyExpr
         public bool IsPointer() => valueType == 1;
         public bool IsLiteral() => valueType == 2;
 
-        internal Register NonPointerNonLiteral(Register.RegisterSize? size, CodeGen assembler) =>
-            (Register)this.NonPointer(assembler).NonLiteral(size, assembler);
+        internal Register NonPointerNonLiteral(CodeGen assembler) =>
+            (Register)this.NonPointer(assembler).NonLiteral(assembler);
 
         public Value NonPointer(CodeGen assembler)
         {
             if (IsPointer())
             {
-                Register reg = ((Pointer)this).AsRegister(((Pointer)this).size, assembler);
+                Register reg = ((Pointer)this).AsRegister(assembler);
                 assembler.Emit(new Binary(Instruction.MOV, reg, this));
                 return reg;
             }
             return this;
         }
-        internal SizedValue NonLiteral(Register.RegisterSize? size, CodeGen assembler)
+        internal RegisterPointer NonLiteral(CodeGen assembler)
         {
             if (IsLiteral())
             {
-                if (size == null) { Diagnostics.errors.Push(new Error.ImpossibleError("Null size in NonLiteral when operand is literal")); }
-
-                assembler.Emit(new Binary(Instruction.MOV, assembler.alloc.CurrentRegister((Register.RegisterSize)size), this));
-                return assembler.alloc.NextRegister((Register.RegisterSize)size);
+                assembler.Emit(new Binary(Instruction.MOV, assembler.alloc.CurrentRegister(size), this));
+                return assembler.alloc.NextRegister(size);
             }
-            return (SizedValue)this;
+            return (RegisterPointer)this;
         }
     }
 
-    public abstract class SizedValue : Value
+    public abstract class RegisterPointer : Value
     {
-        public Register.RegisterSize size;
-
-        internal abstract Register AsRegister(Register.RegisterSize size, CodeGen assembler);
-
-        public SizedValue(int valueType) : base(valueType)
+        public RegisterPointer(int valueType) : base(valueType)
         {
-
         }
     }
 
-    public class Register : SizedValue
+    public class Register : RegisterPointer
     {
         public enum RegisterSize
         {
@@ -159,11 +154,6 @@ public abstract partial class AssemblyExpr
             this.size = size;
         }
 
-        internal override Register AsRegister(RegisterSize size, CodeGen assembler)
-        {
-            return new Register(this.name, size);
-        }
-
         public override T Accept<T>(IUnaryOperandVisitor<T> visitor)
         {
             return visitor.VisitRegister(this);
@@ -192,7 +182,7 @@ public abstract partial class AssemblyExpr
         }
     }
 
-    public class Pointer : SizedValue
+    public class Pointer : RegisterPointer
     {
         internal Register register;
         public int offset;
@@ -219,15 +209,11 @@ public abstract partial class AssemblyExpr
         {
         }
 
-        public bool IsOnStack() => register.name == Register.RegisterName.RBP;
+        public bool IsOnStack() => register.Name == Register.RegisterName.RBP;
 
-        internal override Register AsRegister(Register.RegisterSize size, CodeGen assembler)
+        internal Register AsRegister(CodeGen assembler)
         {
-            if (!IsOnStack())
-            {
-                return new Register(register.name, size);
-            }
-            return assembler.alloc.NextRegister(size);
+            return IsOnStack() ? assembler.alloc.NextRegister(size) : new Register(register.nameBox, size);
         }
 
         public override T Accept<T>(IUnaryOperandVisitor<T> visitor)
@@ -268,10 +254,15 @@ public abstract partial class AssemblyExpr
         internal LiteralType type;
         public string value;
 
+        private protected Literal() : base(2)
+        {
+        }
+        
         internal Literal(LiteralType type, string value) : base(2)
         {
             this.type = type;
             this.value = value;
+            this.size = CodeGen.SizeOfLiteral(this);
         }
 
         public override T Accept<T>(IUnaryOperandVisitor<T> visitor)
@@ -281,7 +272,7 @@ public abstract partial class AssemblyExpr
 
         public override Assembler.Encoder.Operand ToAssemblerOperand()
         {
-            return new(Assembler.Encoder.Operand.OperandType.IMM, (Assembler.Encoder.Operand.OperandSize)CodeGen.SizeOfLiteral(this));
+            return new(Assembler.Encoder.Operand.OperandType.IMM, (Assembler.Encoder.Operand.OperandSize)this.size);
         }
 
         public override T Accept<T>(IBinaryOperandVisitor<T> visitor, Operand operand)
@@ -306,6 +297,16 @@ public abstract partial class AssemblyExpr
         }
     }
 
+    public class SpecialLiteral : Literal
+    {
+        internal SpecialLiteral(LiteralType type, string value) : base()
+        {
+            this.type = type;
+            this.value = value;
+            this.size = Register.RegisterSize._8Bits;
+        }
+    }
+
     public class Data : DataExpr
     {
         public string name;
@@ -325,7 +326,7 @@ public abstract partial class AssemblyExpr
         }
     }
 
-    public class DataRef : Literal
+    public class DataRef : SpecialLiteral
     {
         public DataRef(string dataName) : base(LiteralType.RefData, dataName)
         {
@@ -360,14 +361,14 @@ public abstract partial class AssemblyExpr
         }
     }
     
-    public class ProcedureRef : Literal
+    public class ProcedureRef : SpecialLiteral
     {
         public ProcedureRef(string name) : base(LiteralType.RefProcedure, name)
         {
         }
     }
 
-    public class LocalProcedureRef : Literal
+    public class LocalProcedureRef : SpecialLiteral
     {
         public LocalProcedureRef(string name) : base(LiteralType.RefLocalProcedure, name)
         {
