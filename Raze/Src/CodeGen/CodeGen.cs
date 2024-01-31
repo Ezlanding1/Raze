@@ -195,12 +195,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         if (operand.IsPointer())
         {
-            AssemblyExpr.Register reg = new AssemblyExpr.Register(((AssemblyExpr.Pointer)operand).AsRegister(this).Name, _ref? InstructionUtils.SYS_SIZE : ((AssemblyExpr.Pointer)operand).size);
+            AssemblyExpr.Register reg = ((AssemblyExpr.Pointer)operand).AsRegister(this);
+            reg.size = _ref ? InstructionUtils.SYS_SIZE : ((AssemblyExpr.Pointer)operand).size;
 
             Emit(new AssemblyExpr.Binary(_ref? AssemblyExpr.Instruction.LEA : AssemblyExpr.Instruction.MOV, reg, operand));
             _ref = false;
             operand = reg;
-
         }
         else if (operand.IsRegister())
         {
