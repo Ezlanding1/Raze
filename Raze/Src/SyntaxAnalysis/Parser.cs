@@ -795,7 +795,7 @@ public class Parser
                             var identifier = Previous();
                             if (InstructionUtils.Registers.TryGetValue(identifier.lexeme, out var reg))
                             {
-                                instructions.Add(new ExprUtils.AssignableInstruction.Binary(new AssemblyExpr.Binary(ConvertToInstruction(op.lexeme), value, new AssemblyExpr.Register(reg.Item1, reg.Item2)), ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
+                                instructions.Add(new ExprUtils.AssignableInstruction.Binary(new AssemblyExpr.Binary(ConvertToInstruction(op.lexeme), value, new AssemblyExpr.Register(reg.Item1, reg.Item2)), (value == null) ? ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst : ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
                             }
                             else
                             {
