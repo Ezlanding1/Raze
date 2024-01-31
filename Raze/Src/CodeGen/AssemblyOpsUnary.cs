@@ -34,7 +34,7 @@ internal partial class AssemblyOps
         }
         private static AssemblyExpr.Value HandleOperand(ExprUtils.AssignableInstruction.Unary instruction, AssemblyOps assemblyOps)
         {
-            return (AssemblyExpr.Value)(instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Unary.AssignType.AssignFirst) ? 
+            return (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Unary.AssignType.AssignFirst) ? 
                 assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler) : 
                 instruction.instruction.operand);
         }

@@ -42,7 +42,7 @@ internal partial class AssemblyOps
             {
                 return assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler).NonLiteral(assemblyOps.assembler);
             }
-            return (AssemblyExpr.Value)instruction.instruction.operand1;
+            return instruction.instruction.operand1;
         }
         public static AssemblyExpr.Value HandleOperand2(ExprUtils.AssignableInstruction.Binary instruction, AssemblyExpr.Value operand1, AssemblyOps assemblyOps)
         {
@@ -51,7 +51,7 @@ internal partial class AssemblyOps
                 var operand2 = assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler);
                 return (operand1.IsPointer() && operand2.IsPointer()) ? operand2.NonPointer(assemblyOps.assembler) : operand2;
             }
-            return (AssemblyExpr.Value)instruction.instruction.operand2;
+            return instruction.instruction.operand2;
         }
 
         private static AssemblyExpr.Value CheckOperandSizeMismatch(ExprUtils.AssignableInstruction.Binary instruction, AssemblyExpr.Value operand1, AssemblyExpr.Value operand2)
@@ -105,7 +105,7 @@ internal partial class AssemblyOps
             AssemblyExpr.Value? operand2 =
                 (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond)) ?
                 assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler) :
-                (AssemblyExpr.Value)instruction.instruction.operand2;
+                instruction.instruction.operand2;
 
             CheckLEA(operand1, operand2);
 
@@ -215,13 +215,13 @@ internal partial class AssemblyOps
         {
             assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler);
 
-            var operand1 = (AssemblyExpr.Value)(instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst) ?
+            var operand1 = (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst) ?
                     assemblyOps.assembler.MovToRegister(assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count - 1].GetLastData().size)) :
                     instruction.instruction.operand1);
 
             var operand2 = (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond)) ?
                 assemblyOps.vars[assemblyOps.count].Accept(assemblyOps.assembler).NonLiteral(assemblyOps.assembler) :
-                (AssemblyExpr.Value)instruction.instruction.operand2;
+                instruction.instruction.operand2;
 
             AssemblyExpr.Instruction emitOp;
             switch (instruction.instruction.instruction)

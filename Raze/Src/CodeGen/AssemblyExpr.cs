@@ -407,9 +407,9 @@ public abstract partial class AssemblyExpr
     public class Binary : TextExpr
     {
         public Instruction instruction;
-        public Operand operand1, operand2;
+        public Value operand1, operand2;
 
-        public Binary(Instruction instruction, Operand operand1, Operand operand2)
+        public Binary(Instruction instruction, Value operand1, Value operand2)
         {
             this.instruction = instruction;
             this.operand1 = operand1;
@@ -429,10 +429,10 @@ public abstract partial class AssemblyExpr
 
     public class Unary : TextExpr
     {
-        public Operand operand;
         public Instruction instruction;
+        public Value operand;
 
-        public Unary(Instruction instruction, Operand operand)
+        public Unary(Instruction instruction, Value operand)
         {
             this.instruction = instruction;
             this.operand = operand;

@@ -206,7 +206,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         {
             if (SafeGetCmpTypeRaw((AssemblyExpr.Register)operand, out var instruction))
             {
-                alloc.Free((AssemblyExpr.Value)instruction.operand);
+                alloc.Free(instruction.operand);
 
                 if (expr.classScoped)
                 {
@@ -444,7 +444,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         {
             if (SafeGetCmpTypeRaw((AssemblyExpr.Register)operand1, out AssemblyExpr.Unary instruction))
             {
-                alloc.Free((AssemblyExpr.Value)instruction.operand);
+                alloc.Free(instruction.operand);
                 assembly.text.RemoveAt(assembly.text.Count - 1);
 
                 Emit(new AssemblyExpr.Unary(
