@@ -38,7 +38,7 @@ partial class Syntaxes
 
             public string VisitBinary(AssemblyExpr.Binary instruction)
             {
-                if (instruction.operand2 is AssemblyExpr.Pointer && instruction.instruction != AssemblyExpr.Instruction.MOVSX)
+                if (instruction.operand2 is AssemblyExpr.Pointer && !SpecifyPointerSizeOperand2(instruction.instruction))
                     return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, {PointerToString((AssemblyExpr.Pointer)instruction.operand2)}";
 
                 return $"{instruction.instruction}\t{instruction.operand1.Accept(this)}, {instruction.operand2.Accept(this)}";
@@ -144,6 +144,11 @@ partial class Syntaxes
                         return instruction.value[..^1];
                 }
                 return $"{instruction.value}";
+            }
+
+            private bool SpecifyPointerSizeOperand2(AssemblyExpr.Instruction instruction)
+            {
+                return instruction == AssemblyExpr.Instruction.MOVSX || instruction == AssemblyExpr.Instruction.MOVZX;
             }
 
             private static Dictionary<(AssemblyExpr.Register.RegisterName, AssemblyExpr.Register.RegisterSize?), string> RegisterToString = new()

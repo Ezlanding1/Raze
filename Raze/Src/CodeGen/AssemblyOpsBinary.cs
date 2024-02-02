@@ -46,39 +46,50 @@ internal partial class AssemblyOps
         }
         public static AssemblyExpr.Value HandleOperand2(ExprUtils.AssignableInstruction.Binary instruction, AssemblyExpr.Value operand1, AssemblyOps assemblyOps)
         {
+            AssemblyExpr.Value operand2;
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))
             {
-                var operand2 = assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler);
-                return (operand1.IsPointer() && operand2.IsPointer()) ? operand2.NonPointer(assemblyOps.assembler) : operand2;
+                operand2 = assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler);
+                if (operand1.IsPointer() && operand2.IsPointer())
+                {
+                    if (operand2.size < AssemblyExpr.Register.RegisterSize._32Bits)
+                    {
+                        int varOffset = Convert.ToInt32(instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst)) + 1;
+                        Expr.Type type = assemblyOps.vars[assemblyOps.vars.Count - varOffset].GetLastData().type;
+
+                        AssemblyExpr.Register reg = ((AssemblyExpr.Pointer)operand2).AsRegister(assemblyOps.assembler);
+                        assemblyOps.assembler.Emit(CodeGen.PartialRegisterOptimize(type, reg, operand2));
+
+                        operand1.size = AssemblyExpr.Register.RegisterSize._32Bits;
+                        operand2 = reg;
+                    }
+                    else
+                    {
+                        operand2 = operand2.NonPointer(assemblyOps.assembler);
+                    }
+                }
             }
-            return instruction.instruction.operand2;
+            else
+            {
+                operand2 = instruction.instruction.operand2;
+            }
+
+            CheckOperandSizeMismatch(operand1, operand2);
+            return operand2;
         }
 
-        private static AssemblyExpr.Value CheckOperandSizeMismatch(ExprUtils.AssignableInstruction.Binary instruction, AssemblyExpr.Value operand1, AssemblyExpr.Value operand2)
+        private static void CheckOperandSizeMismatch(AssemblyExpr.Value operand1, AssemblyExpr.Value operand2)
         {
-            if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst) && operand1.size > operand2.size)
-            {
-                if (operand1.IsRegister())
-                {
-                    return new AssemblyExpr.Register(((AssemblyExpr.Register)operand1).nameBox, operand2.size);
-                }
-                else
-                {
-                    return new AssemblyExpr.Pointer(((AssemblyExpr.Pointer)operand1).register, -((AssemblyExpr.Pointer)operand1).offset, operand2.size);
-                }
-            }
-            else if (operand1.size < operand2.size)
+            if (operand1.size < operand2.size)
             {
                 Diagnostics.errors.Push(new Error.BackendError("Invalid Assembly Block", "Operand size mistmatch"));
             }
-            return operand1;
         }
 
         public static void DefaultBinOp(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
             var operand1 = HandleOperand1(instruction, assemblyOps);
             var operand2 = HandleOperand2(instruction, operand1, assemblyOps);
-            operand1 = CheckOperandSizeMismatch(instruction, operand1, operand2);
 
             assemblyOps.assembler.Emit(new AssemblyExpr.Binary(instruction.instruction.instruction, operand1, operand2));
 
@@ -127,7 +138,6 @@ internal partial class AssemblyOps
         {
             var operand1 = HandleOperand1(instruction, assemblyOps).NonPointer(assemblyOps.assembler);
             var operand2 = HandleOperand2(instruction, operand1, assemblyOps);
-            operand1 = CheckOperandSizeMismatch(instruction, operand1, operand2);
 
             assemblyOps.assembler.Emit(new AssemblyExpr.Binary(instruction.instruction.instruction, operand1, operand2));
 
@@ -147,7 +157,6 @@ internal partial class AssemblyOps
         {
             var operand1 = HandleOperand1(instruction, assemblyOps);
             var operand2 = HandleOperand2(instruction, operand1, assemblyOps);
-            operand1 = CheckOperandSizeMismatch(instruction, operand1, operand2);
 
             if (!operand2.IsLiteral())
             {
@@ -216,7 +225,7 @@ internal partial class AssemblyOps
             assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler);
 
             var operand1 = (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst) ?
-                    assemblyOps.assembler.MovToRegister(assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler), InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count - 1].GetLastData().size)) :
+                    assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler).NonPointerNonLiteral(assemblyOps.assembler) :
                     instruction.instruction.operand1);
 
             var operand2 = (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond)) ?
@@ -314,7 +323,6 @@ internal partial class AssemblyOps
         {
             var operand1 = HandleOperand1(instruction, assemblyOps);
             var operand2 = HandleOperand2(instruction, operand1, assemblyOps);
-            operand1 = CheckOperandSizeMismatch(instruction, operand1, operand2);
 
             assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.CMP, operand1, operand2));
 

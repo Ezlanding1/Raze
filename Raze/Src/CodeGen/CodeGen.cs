@@ -905,8 +905,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return false;
     }
 
-    internal AssemblyExpr.Register MovToRegister(AssemblyExpr.Value operand, AssemblyExpr.Register.RegisterSize? size) => operand.NonPointerNonLiteral(this);
-
     public static string ToMangledName(Expr.Function function)
     {
         return (function.enclosing != null ?
@@ -926,6 +924,19 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             }
             return res;
         }
+    }
+
+    internal static AssemblyExpr.Binary PartialRegisterOptimize(Expr.Type operand1Type, AssemblyExpr.RegisterPointer operand1, AssemblyExpr.Value operand2)
+    {
+        if (operand1.size >= AssemblyExpr.Register.RegisterSize._32Bits)
+        {
+            return new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, operand1, operand2);
+        }
+        operand1.size = AssemblyExpr.Register.RegisterSize._32Bits;
+
+        bool signed = Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Integer].Matches(operand1Type);
+
+        return new AssemblyExpr.Binary(signed ? AssemblyExpr.Instruction.MOVSX : AssemblyExpr.Instruction.MOVZX, operand1, operand2);
     }
 
     internal static AssemblyExpr.Register.RegisterSize SizeOfLiteral(AssemblyExpr.Literal literal)

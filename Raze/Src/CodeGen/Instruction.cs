@@ -47,6 +47,7 @@ public abstract partial class AssemblyExpr
         AND,
         XOR,
         MOVSX,
+        MOVZX,
         SAL,
         SAR,
         RET,
