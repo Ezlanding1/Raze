@@ -661,13 +661,13 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         Emit(new AssemblyExpr.LocalProcedure(ConditionalLabel));
 
-        var cmpType = HandleConditionalCmpType(expr.conditional.block.Accept(this));
-
+        expr.conditional.block.Accept(this);
         expr.updateExpr.Accept(this);
 
         Emit(conditional);
-        expr.conditional.condition.Accept(this);
-        Emit(new AssemblyExpr.Unary(InstructionUtils.ConditionalJump[cmpType], new AssemblyExpr.LocalProcedureRef(ConditionalLabel)));
+
+        Emit(new AssemblyExpr.Unary(InstructionUtils.ConditionalJump[HandleConditionalCmpType(expr.conditional.condition.Accept(this))],
+            new AssemblyExpr.LocalProcedureRef(ConditionalLabel)));
         conditionalCount++;
 
         return null;
