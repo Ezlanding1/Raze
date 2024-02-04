@@ -449,8 +449,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
                 Emit(new AssemblyExpr.Unary(
                     (expr.op.type == Token.TokenType.AND) ? 
-                        InstructionUtils.ConditionalJumpReversed[instruction.instruction] : 
-                        InstructionUtils.ConditionalJump[instruction.instruction], 
+                        InstructionUtils.ConditionalJumpReversed(instruction.instruction) : 
+                        InstructionUtils.ConditionalJump(instruction.instruction), 
                     new AssemblyExpr.LocalProcedureRef(ConditionalLabel)));
             }
             else
@@ -494,7 +494,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                 alloc.Free((AssemblyExpr.Value)instruction.operand);
                 assembly.text.RemoveAt(assembly.text.Count - 1);
 
-                Emit(new AssemblyExpr.Unary(InstructionUtils.ConditionalJumpReversed[instruction.instruction], new AssemblyExpr.LocalProcedureRef(cLabel)));
+                Emit(new AssemblyExpr.Unary(InstructionUtils.ConditionalJumpReversed(instruction.instruction), new AssemblyExpr.LocalProcedureRef(cLabel)));
             }
             else
             {
@@ -605,7 +605,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                     continue;
                 }
             }
-            Emit(new AssemblyExpr.Unary(InstructionUtils.ConditionalJumpReversed[cmpType], new AssemblyExpr.LocalProcedureRef(ConditionalLabel)));
+            Emit(new AssemblyExpr.Unary(InstructionUtils.ConditionalJumpReversed(cmpType), new AssemblyExpr.LocalProcedureRef(ConditionalLabel)));
 
             expr.conditionals[i].block.Accept(this);
             Emit(tJump);
@@ -643,7 +643,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         Emit(conditional);
 
-        Emit(new AssemblyExpr.Unary(InstructionUtils.ConditionalJump[HandleConditionalCmpType(expr.conditional.condition.Accept(this))],
+        Emit(new AssemblyExpr.Unary(InstructionUtils.ConditionalJump(HandleConditionalCmpType(expr.conditional.condition.Accept(this))),
             new AssemblyExpr.LocalProcedureRef(ConditionalLabel)));
         conditionalCount++;
 
@@ -666,7 +666,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         Emit(conditional);
 
-        Emit(new AssemblyExpr.Unary(InstructionUtils.ConditionalJump[HandleConditionalCmpType(expr.conditional.condition.Accept(this))],
+        Emit(new AssemblyExpr.Unary(InstructionUtils.ConditionalJump(HandleConditionalCmpType(expr.conditional.condition.Accept(this))),
             new AssemblyExpr.LocalProcedureRef(ConditionalLabel)));
         conditionalCount++;
 

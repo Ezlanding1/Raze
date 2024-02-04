@@ -10,32 +10,21 @@ public class InstructionUtils
 {
     internal const AssemblyExpr.Register.RegisterSize SYS_SIZE = AssemblyExpr.Register.RegisterSize._64Bits;
 
-    internal readonly static Dictionary<AssemblyExpr.Instruction, AssemblyExpr.Instruction> ConditionalJump = new()
+    private readonly static Dictionary<AssemblyExpr.Instruction, (AssemblyExpr.Instruction, AssemblyExpr.Instruction)> Jumps = new()
     {
-        { AssemblyExpr.Instruction.SETE , AssemblyExpr.Instruction.JE },
-        { AssemblyExpr.Instruction.SETNE , AssemblyExpr.Instruction.JNE },
-        { AssemblyExpr.Instruction.SETG , AssemblyExpr.Instruction.JG },
-        { AssemblyExpr.Instruction.SETL , AssemblyExpr.Instruction.JL },
-        { AssemblyExpr.Instruction.SETGE , AssemblyExpr.Instruction.JGE },
-        { AssemblyExpr.Instruction.SETLE , AssemblyExpr.Instruction.JLE },
-        { AssemblyExpr.Instruction.SETA , AssemblyExpr.Instruction.JA },
-        { AssemblyExpr.Instruction.SETB , AssemblyExpr.Instruction.JB },
-        { AssemblyExpr.Instruction.SETAE , AssemblyExpr.Instruction.JAE },
-        { AssemblyExpr.Instruction.SETBE , AssemblyExpr.Instruction.JBE },
+        { AssemblyExpr.Instruction.SETE, (AssemblyExpr.Instruction.JE, AssemblyExpr.Instruction.JNE) },
+        { AssemblyExpr.Instruction.SETNE, (AssemblyExpr.Instruction.JNE, AssemblyExpr.Instruction.JE) },
+        { AssemblyExpr.Instruction.SETG, (AssemblyExpr.Instruction.JG, AssemblyExpr.Instruction.JLE) },
+        { AssemblyExpr.Instruction.SETL, (AssemblyExpr.Instruction.JL, AssemblyExpr.Instruction.JGE) },
+        { AssemblyExpr.Instruction.SETGE, (AssemblyExpr.Instruction.JGE, AssemblyExpr.Instruction.JL) },
+        { AssemblyExpr.Instruction.SETLE, (AssemblyExpr.Instruction.JLE, AssemblyExpr.Instruction.JG) },
+        { AssemblyExpr.Instruction.SETA, (AssemblyExpr.Instruction.JA, AssemblyExpr.Instruction.JBE) },
+        { AssemblyExpr.Instruction.SETB, (AssemblyExpr.Instruction.JB, AssemblyExpr.Instruction.JAE) },
+        { AssemblyExpr.Instruction.SETAE, (AssemblyExpr.Instruction.JAE, AssemblyExpr.Instruction.JB) },
+        { AssemblyExpr.Instruction.SETBE, (AssemblyExpr.Instruction.JBE, AssemblyExpr.Instruction.JA) },
     };
-    internal readonly static Dictionary<AssemblyExpr.Instruction, AssemblyExpr.Instruction> ConditionalJumpReversed = new()
-    {
-        { AssemblyExpr.Instruction.SETE , AssemblyExpr.Instruction.JNE },
-        { AssemblyExpr.Instruction.SETNE , AssemblyExpr.Instruction.JE },
-        { AssemblyExpr.Instruction.SETG , AssemblyExpr.Instruction.JLE },
-        { AssemblyExpr.Instruction.SETL , AssemblyExpr.Instruction.JGE },
-        { AssemblyExpr.Instruction.SETGE , AssemblyExpr.Instruction.JL },
-        { AssemblyExpr.Instruction.SETLE , AssemblyExpr.Instruction.JG },
-        { AssemblyExpr.Instruction.SETA , AssemblyExpr.Instruction.JBE },
-        { AssemblyExpr.Instruction.SETB , AssemblyExpr.Instruction.JAE },
-        { AssemblyExpr.Instruction.SETAE , AssemblyExpr.Instruction.JB },
-        { AssemblyExpr.Instruction.SETBE , AssemblyExpr.Instruction.JA },
-    };
+    internal static AssemblyExpr.Instruction ConditionalJump(AssemblyExpr.Instruction instruction) => Jumps[instruction].Item1;
+    internal static AssemblyExpr.Instruction ConditionalJumpReversed(AssemblyExpr.Instruction instruction) => Jumps[instruction].Item2;
 
     internal readonly static AssemblyExpr.Register.RegisterName[] paramRegister = new AssemblyExpr.Register.RegisterName[]
     {
