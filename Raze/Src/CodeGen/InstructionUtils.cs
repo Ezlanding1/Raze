@@ -18,6 +18,10 @@ public class InstructionUtils
         { AssemblyExpr.Instruction.SETL , AssemblyExpr.Instruction.JL },
         { AssemblyExpr.Instruction.SETGE , AssemblyExpr.Instruction.JGE },
         { AssemblyExpr.Instruction.SETLE , AssemblyExpr.Instruction.JLE },
+        { AssemblyExpr.Instruction.SETA , AssemblyExpr.Instruction.JA },
+        { AssemblyExpr.Instruction.SETB , AssemblyExpr.Instruction.JB },
+        { AssemblyExpr.Instruction.SETAE , AssemblyExpr.Instruction.JAE },
+        { AssemblyExpr.Instruction.SETBE , AssemblyExpr.Instruction.JBE },
     };
     internal readonly static Dictionary<AssemblyExpr.Instruction, AssemblyExpr.Instruction> ConditionalJumpReversed = new()
     {
@@ -25,8 +29,12 @@ public class InstructionUtils
         { AssemblyExpr.Instruction.SETNE , AssemblyExpr.Instruction.JE },
         { AssemblyExpr.Instruction.SETG , AssemblyExpr.Instruction.JLE },
         { AssemblyExpr.Instruction.SETL , AssemblyExpr.Instruction.JGE },
-        { AssemblyExpr.Instruction.SETGE , AssemblyExpr.Instruction.JE },
+        { AssemblyExpr.Instruction.SETGE , AssemblyExpr.Instruction.JL },
         { AssemblyExpr.Instruction.SETLE , AssemblyExpr.Instruction.JG },
+        { AssemblyExpr.Instruction.SETA , AssemblyExpr.Instruction.JBE },
+        { AssemblyExpr.Instruction.SETB , AssemblyExpr.Instruction.JAE },
+        { AssemblyExpr.Instruction.SETAE , AssemblyExpr.Instruction.JB },
+        { AssemblyExpr.Instruction.SETBE , AssemblyExpr.Instruction.JA },
     };
 
     internal readonly static AssemblyExpr.Register.RegisterName[] paramRegister = new AssemblyExpr.Register.RegisterName[]

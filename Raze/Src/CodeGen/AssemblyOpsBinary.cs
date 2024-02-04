@@ -355,6 +355,18 @@ internal partial class AssemblyOps
                 case AssemblyExpr.Instruction.LE_CMP:
                     assemblyOps.assembler.Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.SETLE, reg));
                     break;
+                case AssemblyExpr.Instruction.UG_CMP:
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.SETA, reg));
+                    break;
+                case AssemblyExpr.Instruction.UGE_CMP:
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.SETAE, reg));
+                    break;
+                case AssemblyExpr.Instruction.UL_CMP:
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.SETB, reg));
+                    break;
+                case AssemblyExpr.Instruction.ULE_CMP:
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.SETBE, reg));
+                    break;
             }
 
             if (instruction.returns && assemblyOps.assembler is InlinedCodeGen)

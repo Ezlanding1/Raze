@@ -72,6 +72,10 @@ internal abstract partial class ExprUtils
                     case AssemblyExpr.Instruction.GE_CMP:
                     case AssemblyExpr.Instruction.L_CMP:
                     case AssemblyExpr.Instruction.LE_CMP:
+                    case AssemblyExpr.Instruction.UG_CMP:
+                    case AssemblyExpr.Instruction.UGE_CMP:
+                    case AssemblyExpr.Instruction.UL_CMP:
+                    case AssemblyExpr.Instruction.ULE_CMP:
                         AssemblyOps.Binary.CMP(this, assemblyOps);
                         return;
                     default:
