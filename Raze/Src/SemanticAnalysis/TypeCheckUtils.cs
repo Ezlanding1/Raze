@@ -15,15 +15,17 @@ public partial class Analyzer
 
         public static Expr.Type _voidType = new Expr.Class(new(Token.TokenType.RESERVED, "void"), new(), new(), new(null));
 
+        private static Expr.Type integralType = new(new Token((Token.TokenType)Parser.LiteralTokenType.Integer));
+
         public static Dictionary<Parser.LiteralTokenType, Expr.Type> literalTypes = new Dictionary<Parser.LiteralTokenType, Expr.Type>()
         {
             { Parser.VoidTokenType, _voidType },
-            { Parser.LiteralTokenType.Integer, new(new Token((Token.TokenType)Parser.LiteralTokenType.Integer)) },
+            { Parser.LiteralTokenType.Integer, integralType },
             { Parser.LiteralTokenType.UnsignedInteger, new(new Token((Token.TokenType)Parser.LiteralTokenType.UnsignedInteger)) },
             { Parser.LiteralTokenType.Floating, new(new Token((Token.TokenType)Parser.LiteralTokenType.Floating)) },
             { Parser.LiteralTokenType.String, new(new Token((Token.TokenType)Parser.LiteralTokenType.String)) },
-            { Parser.LiteralTokenType.Binary, new(new Token((Token.TokenType)Parser.LiteralTokenType.Binary)) },
-            { Parser.LiteralTokenType.Hex, new(new Token((Token.TokenType)Parser.LiteralTokenType.Hex)) },
+            { Parser.LiteralTokenType.Binary, integralType },
+            { Parser.LiteralTokenType.Hex, integralType },
             { Parser.LiteralTokenType.Boolean, new(new Token((Token.TokenType)Parser.LiteralTokenType.Boolean)) },
             { Parser.LiteralTokenType.RefString, new(new Token((Token.TokenType)Parser.LiteralTokenType.RefString)) },
         };

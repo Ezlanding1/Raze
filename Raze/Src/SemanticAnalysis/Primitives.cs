@@ -12,7 +12,7 @@ public partial class Analyzer
     internal class Primitives
     {
         private static dynamic ToType(AssemblyExpr.UnresolvedLiteral literal) => literal.type switch
-        {
+        {            
             AssemblyExpr.Literal.LiteralType.Integer => long.Parse(literal.value),
             AssemblyExpr.Literal.LiteralType.Floating => double.Parse(literal.value),
             AssemblyExpr.Literal.LiteralType.String => literal.value,
@@ -68,8 +68,8 @@ public partial class Analyzer
                 case (Parser.LiteralTokenType.String, Integer):
                 case (Integer, RefString):
                 case (RefString, Integer): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // INTEGER OP STRING
-                case (Integer, Binary): case (Binary, Integer): return Binary; // INTEGER OP BINARY
-                case (Integer, Hex): case (Hex, Integer): return Hex; // INTEGER OP HEX
+                case (Integer, Binary): case (Binary, Integer): return Integer; // INTEGER OP BINARY
+                case (Integer, Hex): case (Hex, Integer): return Integer; // INTEGER OP HEX
                 case (Integer, Parser.LiteralTokenType.Boolean): case (Parser.LiteralTokenType.Boolean, Integer): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // INTEGER OP BOOLEAN
 
                 case (Floating, Floating): return Floating; // FLOATING OP FLOATING
@@ -96,11 +96,11 @@ public partial class Analyzer
                 case (RefString, Parser.LiteralTokenType.Boolean):
                 case (Parser.LiteralTokenType.Boolean, RefString): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // STRING OP BOOLEAN
 
-                case (Binary, Binary): return Binary; // BINARY OP BINARY
+                case (Binary, Binary): return Integer; // BINARY OP BINARY
                 case (Binary, Hex): case (Hex, Binary): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // BINARY OP HEX
                 case (Binary, Parser.LiteralTokenType.Boolean): case (Parser.LiteralTokenType.Boolean, Binary): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // BINARY OP BOOLEAN
 
-                case (Hex, Hex): return Hex; // HEX OP HEX
+                case (Hex, Hex): return Integer; // HEX OP HEX
                 case (Hex, Parser.LiteralTokenType.Boolean): case (Parser.LiteralTokenType.Boolean, Hex): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // HEX OP BOOLEAN
 
                 case (Parser.LiteralTokenType.Boolean, Parser.LiteralTokenType.Boolean): return Parser.LiteralTokenType.Boolean; // BOOLEAN OP BOOLEAN
@@ -166,6 +166,7 @@ public partial class Analyzer
                 }
                 i++;
             }
+            assembler.EmitData(new AssemblyExpr.Data(assembler.DataLabel, new(AssemblyExpr.Literal.LiteralType.String, aData.Concat(bData).ToArray())));
 
             return assembler.CreateDatalLabel(assembler.dataCount++);
         }
@@ -208,9 +209,9 @@ public partial class Analyzer
 
                 case RefString: Diagnostics.errors.Push(InvalidOperation(op, RefString)); break;  // REF_STRING OP
 
-                case Binary: return Binary; // BINARY OP
+                case Binary: return Integer; // BINARY OP
 
-                case Hex: return Hex; // HEX OP
+                case Hex: return Integer; // HEX OP
 
                 case Parser.LiteralTokenType.Boolean: return Parser.LiteralTokenType.Boolean; // BOOLEAN OP
 
