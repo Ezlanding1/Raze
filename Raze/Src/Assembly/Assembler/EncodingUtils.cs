@@ -12,7 +12,7 @@ public partial class Assembler
     {
         internal static partial class EncodingUtils
         {
-            private static readonly IInstruction DefaultUnresolvedReference = new Instruction.Immediate8Byte(0);
+            private static readonly IInstruction DefaultUnresolvedReference = new Instruction.RawInstruction(new byte[] { 0 });
                 
             internal static Instruction EncodingError()
             {
@@ -20,7 +20,7 @@ public partial class Assembler
                 return new Instruction();
             }
 
-            internal static Instruction.ModRegRm.RegisterCode ExprRegisterToModRegRmRegister(AssemblyExpr.Register register) => (register.Name, register.size) switch
+            internal static Instruction.ModRegRm.RegisterCode ExprRegisterToModRegRmRegister(AssemblyExpr.Register register) => (register.Name, register.Size) switch
             {
                 (AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._8BitsUpper) => Instruction.ModRegRm.RegisterCode.AH,
                 (AssemblyExpr.Register.RegisterName.RBX, AssemblyExpr.Register.RegisterSize._8BitsUpper) => Instruction.ModRegRm.RegisterCode.BH,
@@ -52,29 +52,20 @@ public partial class Assembler
             {
                 if (op2Expr.type == AssemblyExpr.Literal.LiteralType.RefData)
                 {
-                    return symbolTable.definitions.ContainsKey(op2Expr.value) ? GenerateImmFromInt(size, (ulong)symbolTable.definitions[op2Expr.value] + Linker.Elf64.Elf64_Shdr.dataVirtualAddress) : DefaultUnresolvedReference;
+                    return symbolTable.definitions.ContainsKey(((AssemblyExpr.LabelLiteral)op2Expr).Name) ? 
+                        GenerateImmFromInt(size, (ulong)symbolTable.definitions[((AssemblyExpr.LabelLiteral)op2Expr).Name] + Linker.Elf64.Elf64_Shdr.dataVirtualAddress) : 
+                        DefaultUnresolvedReference;
                 }
                 else if (op2Expr.type == AssemblyExpr.Literal.LiteralType.RefProcedure || op2Expr.type == AssemblyExpr.Literal.LiteralType.RefLocalProcedure)
                 {
-                    return symbolTable.definitions.ContainsKey(op2Expr.value)? GenerateImmFromInt(size, (ulong)symbolTable.definitions[op2Expr.value] + Linker.Elf64.Elf64_Shdr.textVirtualAddress) : DefaultUnresolvedReference;
+                    return symbolTable.definitions.ContainsKey(((AssemblyExpr.LabelLiteral)op2Expr).Name)? 
+                        GenerateImmFromInt(size, (ulong)symbolTable.definitions[((AssemblyExpr.LabelLiteral)op2Expr).Name] + Linker.Elf64.Elf64_Shdr.textVirtualAddress) : 
+                        DefaultUnresolvedReference;
                 }
-
-                return size switch
-                {
-                    Operand.OperandSize._8Bits => ImmediateGenerator.GenerateImm8(op2Expr),
-                    Operand.OperandSize._16Bits => ImmediateGenerator.GenerateImm16(op2Expr),
-                    Operand.OperandSize._32Bits => ImmediateGenerator.GenerateImm32(op2Expr),
-                    Operand.OperandSize._64Bits => ImmediateGenerator.GenerateImm64(op2Expr),
-                };
+                return new Instruction.Immediate(op2Expr.value, size);
             }
 
-            private static IInstruction GenerateImmFromInt(Operand.OperandSize size, ulong value) => size switch
-            {
-                Operand.OperandSize._8Bits => new Instruction.Immediate8Byte((byte)value),
-                Operand.OperandSize._16Bits => new Instruction.Immediate16UShort((ushort)value),
-                Operand.OperandSize._32Bits => new Instruction.Immediate32UInt((uint)value),
-                Operand.OperandSize._64Bits => new Instruction.Immediate64ULong((ulong)value),
-            };
+            private static IInstruction GenerateImmFromInt(Operand.OperandSize size, ulong value) => new Instruction.Immediate(BitConverter.GetBytes(value), size);
 
             internal static bool Disp8Bit(int disp)
                 => disp <= sbyte.MaxValue && disp >= sbyte.MinValue;
@@ -127,11 +118,11 @@ public partial class Assembler
             {
                 if (operand is AssemblyExpr.Pointer ptr)
                 {
-                    if (ptr.register.size == AssemblyExpr.Register.RegisterSize._32Bits)
+                    if (ptr.register.Size == AssemblyExpr.Register.RegisterSize._32Bits)
                     {
                         return true;
                     }
-                    else if (ptr.register.size != AssemblyExpr.Register.RegisterSize._64Bits)
+                    else if (ptr.register.Size != AssemblyExpr.Register.RegisterSize._64Bits)
                     {
                         EncodingError();
                     }
@@ -154,45 +145,48 @@ public partial class Assembler
                     return encodingType;
                 }
 
-                AssemblyExpr.Literal literal = (AssemblyExpr.Literal)operand;
+                AssemblyExpr.Literal.LiteralType literalType = ((AssemblyExpr.Literal)operand).type;
 
-                if (literal.type == AssemblyExpr.Literal.LiteralType.RefData)
+                if (literalType == AssemblyExpr.Literal.LiteralType.RefData)
                 {
+                    var literal = (AssemblyExpr.LabelLiteral)operand;
                     if (assembler.nonResolvingPass)
                     {
                         refResolveType = AssemblyExpr.Literal.LiteralType.RefData;
-                        literal.value = "data." + literal.value;
+                        literal.Name = "data." + literal.value;
                         assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.textLocation, -1));
                     }
-                    if (assembler.symbolTable.definitions.ContainsKey(literal.value))
+                    if (assembler.symbolTable.definitions.ContainsKey(literal.Name))
                     {
-                        return new(encodingType.operandType, SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.value] + Linker.Elf64.Elf64_Shdr.dataVirtualAddress));
+                        return new(encodingType.operandType, SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + Linker.Elf64.Elf64_Shdr.dataVirtualAddress));
                     }
                 }
-                else if (literal.type == AssemblyExpr.Literal.LiteralType.RefProcedure)
+                else if (literalType == AssemblyExpr.Literal.LiteralType.RefProcedure)
                 {
+                    var literal = (AssemblyExpr.LabelLiteral)operand;
                     if (assembler.nonResolvingPass)
                     {
                         refResolveType = AssemblyExpr.Literal.LiteralType.RefProcedure;
-                        literal.value = "text." + literal.value;
+                        literal.Name = "text." + literal.Name;
                         assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.textLocation, -1));
                     }
-                    if (assembler.symbolTable.definitions.ContainsKey(literal.value))
+                    if (assembler.symbolTable.definitions.ContainsKey(literal.Name))
                     {
-                        return new(encodingType.operandType, SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.value] + Linker.Elf64.Elf64_Shdr.textVirtualAddress));
+                        return new(encodingType.operandType, SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + Linker.Elf64.Elf64_Shdr.textVirtualAddress));
                     }
                 }
-                else if (literal.type == AssemblyExpr.Literal.LiteralType.RefLocalProcedure)
+                else if (literalType == AssemblyExpr.Literal.LiteralType.RefLocalProcedure)
                 {
+                    var literal = (AssemblyExpr.LabelLiteral)operand;
                     if (assembler.nonResolvingPass)
                     {
                         refResolveType = AssemblyExpr.Literal.LiteralType.RefLocalProcedure;
-                        literal.value = assembler.enclosingLbl + '.' + literal.value;
+                        literal.Name = assembler.enclosingLbl + '.' + literal.Name;
                         assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.textLocation, -1));
                     }
-                    if (assembler.symbolTable.definitions.ContainsKey(literal.value))
+                    if (assembler.symbolTable.definitions.ContainsKey(literal.Name))
                     {
-                        return new(encodingType.operandType, SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.value] + Linker.Elf64.Elf64_Shdr.textVirtualAddress));
+                        return new(encodingType.operandType, SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + Linker.Elf64.Elf64_Shdr.textVirtualAddress));
                     }
                 }
                 return encodingType;

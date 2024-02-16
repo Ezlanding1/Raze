@@ -113,11 +113,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
             if (arg.IsLiteral())
             {
-                AssemblyExpr.Literal literal = (AssemblyExpr.Literal)arg;
-                if (expr.internalFunction.parameters[i].stack.size < (int)literal.size)
-                {
-                    Diagnostics.errors.Push(new Error.BackendError("Invalid Literal", $"The size of literal '{literal.value}' exceeds size of assigned data type '{expr.internalFunction.parameters[i].stack.size}'"));
-                }
+                arg = ((AssemblyExpr.ILiteralBase)arg).CreateLiteral((AssemblyExpr.Register.RegisterSize)expr.internalFunction.parameters[i].stack.size);
             }
 
             if (i + Convert.ToUInt16(instance) < InstructionUtils.paramRegister.Length)
@@ -169,7 +165,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         if (expr.arguments.Count > InstructionUtils.paramRegister.Length && alloc.fncPushPreserved.leaf)
         {
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.ADD, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, ((expr.arguments.Count - InstructionUtils.paramRegister.Length) * 8).ToString())));
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.ADD, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes((expr.arguments.Count - InstructionUtils.paramRegister.Length) * 8))));
         }
         
         return alloc.CallAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnSize));
@@ -196,7 +192,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         if (operand.IsPointer())
         {
             AssemblyExpr.Register reg = ((AssemblyExpr.Pointer)operand).AsRegister(this);
-            reg.size = _ref ? InstructionUtils.SYS_SIZE : ((AssemblyExpr.Pointer)operand).size;
+            reg.size = _ref ? InstructionUtils.SYS_SIZE : ((AssemblyExpr.Pointer)operand).Size;
 
             Emit(new AssemblyExpr.Binary(_ref? AssemblyExpr.Instruction.LEA : AssemblyExpr.Instruction.MOV, reg, operand));
             _ref = false;
@@ -222,11 +218,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         }
         else
         {
+            operand = ((AssemblyExpr.ILiteralBase)operand).CreateLiteral((AssemblyExpr.Register.RegisterSize)expr.stack.size);
             AssemblyExpr.Literal literal = (AssemblyExpr.Literal)operand;
-            if (expr.stack.size < (int)literal.size)
-            {
-                Diagnostics.errors.Push(new Error.BackendError("Invalid Literal", $"The size of literal '{literal.value}' exceeds size of assigned data type '{expr.stack.size}'"));
-            }
 
             var chunks = ChunkString(literal);
             if (chunks.Item1 != -1)
@@ -234,13 +227,13 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                 if (expr.classScoped)
                 {
                     Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.CurrentRegister(InstructionUtils.SYS_SIZE), new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, (int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE)));
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), expr.stack.stackOffset, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, chunks.Item1.ToString())));
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), expr.stack.stackOffset, InstructionUtils.ToRegisterSize(expr.stack.size - 4)), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, chunks.Item2.ToString())));
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), expr.stack.stackOffset, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes(chunks.Item1))));
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), expr.stack.stackOffset, InstructionUtils.ToRegisterSize(expr.stack.size - 4)), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes(chunks.Item2))));
                 }
                 else
                 {
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(expr.stack.stackOffset-4, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, chunks.Item1.ToString())));
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(expr.stack.stackOffset, InstructionUtils.ToRegisterSize(expr.stack.size-4)), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, chunks.Item2.ToString())));
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(expr.stack.stackOffset-4, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes(chunks.Item1))));
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(expr.stack.stackOffset, InstructionUtils.ToRegisterSize(expr.stack.size-4)), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes(chunks.Item2))));
                 }
                 goto dealloc;
             }
@@ -425,7 +418,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         if (operand1.IsLiteral())
         {
-            if ((expr.op.type == Token.TokenType.AND) ^ (((AssemblyExpr.Literal)operand1).value == "1"))
+            operand1 = ((AssemblyExpr.ILiteralBase)operand1).CreateLiteral(AssemblyExpr.Register.RegisterSize._8Bits);
+            if ((expr.op.type == Token.TokenType.AND) ^ (IsTrueBooleanLiteral((AssemblyExpr.Literal)operand1)))
             {
                 return operand1;
             }
@@ -436,7 +430,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         }
         else if (operand1.IsPointer())
         {
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.CMP, operand1, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, "0")));
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.CMP, operand1, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 0 })));
 
             Emit(new AssemblyExpr.Unary((expr.op.type == Token.TokenType.AND) ? AssemblyExpr.Instruction.JE : AssemblyExpr.Instruction.JNE, new AssemblyExpr.LocalProcedureRef(ConditionalLabel)));
         }
@@ -467,9 +461,10 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         if (operand2.IsLiteral())
         {
+            operand2 = ((AssemblyExpr.ILiteralBase)operand2).CreateLiteral(AssemblyExpr.Register.RegisterSize._8Bits);
             assembly.text.RemoveRange(assembly.text.Count-2, 2);
 
-            if ((expr.op.type == Token.TokenType.AND) ^ (((AssemblyExpr.Literal)operand2).value == "1"))
+            if ((expr.op.type == Token.TokenType.AND) ^ (IsTrueBooleanLiteral((AssemblyExpr.Literal)operand2)))
             {
                 return operand2;
             }
@@ -485,7 +480,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
             if (operand1.IsPointer())
             {
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.CMP, operand1, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, "0")));
+                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.CMP, operand1, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 0 })));
 
                 Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.JE, new AssemblyExpr.LocalProcedureRef(cLabel)));
             }
@@ -515,13 +510,13 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         conditionalCount++;
 
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.CurrentRegister(AssemblyExpr.Register.RegisterSize._8Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, "1")));
+        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.CurrentRegister(AssemblyExpr.Register.RegisterSize._8Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 1 })));
        
         Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.JMP, new AssemblyExpr.LocalProcedureRef(ConditionalLabel)));
 
         Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(conditionalCount-1)));
 
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.CurrentRegister(AssemblyExpr.Register.RegisterSize._8Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, "0")));
+        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.CurrentRegister(AssemblyExpr.Register.RegisterSize._8Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 0 })));
 
         Emit(new AssemblyExpr.LocalProcedure(ConditionalLabel));
         conditionalCount++;
@@ -541,9 +536,16 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         {
             case Parser.LiteralTokenType.RefString:
                 string name = DataLabel;
-                EmitData(new AssemblyExpr.Data(name, AssemblyExpr.Register.RegisterSize._8Bits, (AssemblyExpr.Literal.LiteralType.String, expr.literal.lexeme + ", 0")));
+                EmitData(
+                    new AssemblyExpr.Data(
+                        name, 
+                        new(AssemblyExpr.Literal.LiteralType.String, AssemblyExpr.ImmediateGenerator.Generate(
+                            AssemblyExpr.Literal.LiteralType.RefData, expr.literal.lexeme, InstructionUtils.SYS_SIZE
+                        ))
+                    )
+                );
                 dataCount++;
-                return new AssemblyExpr.DataRef(name);
+                return new AssemblyExpr.UnresolvedLiteral(AssemblyExpr.Literal.LiteralType.RefData, name);
             case Parser.LiteralTokenType.String:
             case Parser.LiteralTokenType.Integer:
             case Parser.LiteralTokenType.UnsignedInteger:
@@ -551,7 +553,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             case Parser.LiteralTokenType.Binary:
             case Parser.LiteralTokenType.Hex:
             case Parser.LiteralTokenType.Boolean:
-                return new AssemblyExpr.Literal((AssemblyExpr.Literal.LiteralType)expr.literal.type, expr.literal.lexeme);
+                return new AssemblyExpr.UnresolvedLiteral((AssemblyExpr.Literal.LiteralType)expr.literal.type, expr.literal.lexeme);
             default:
                 Diagnostics.errors.Push(new Error.ImpossibleError($"Invalid Literal Type ({expr.literal.type})"));
                 return null;
@@ -590,7 +592,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
             if (condition.IsLiteral())
             {
-                if (((AssemblyExpr.Literal)condition).value == "1")
+                condition = ((AssemblyExpr.ILiteralBase)condition).CreateLiteral(AssemblyExpr.Register.RegisterSize._8Bits);
+                if (IsTrueBooleanLiteral((AssemblyExpr.Literal)condition))
                 {
                     expr.conditionals[i].block.Accept(this);
 
@@ -693,19 +696,16 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             {
                 var op = (AssemblyExpr.Register)operand;
                 if (op.Name != AssemblyExpr.Register.RegisterName.RAX)
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, op.size), operand));
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, op.Size), operand));
             }
             else if (operand.IsPointer())
             {
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, operand.size), operand));
+                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, operand.Size), operand));
             }
             else
             {
-                AssemblyExpr.Literal literal = (AssemblyExpr.Literal)operand;
-                if (expr.size < (int)literal.size)
-                {
-                    Diagnostics.errors.Push(new Error.BackendError("Invalid Literal", $"The size of literal '{literal.value}' exceeds size of assigned data type '{expr.size}'"));
-                }
+                operand = ((AssemblyExpr.ILiteralBase)operand).CreateLiteral((AssemblyExpr.Register.RegisterSize)expr.size);
+
                 Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, InstructionUtils.ToRegisterSize(expr.size)), operand));
             }
 
@@ -713,7 +713,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         }
         else
         {
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, InstructionUtils.SYS_SIZE), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, "0")));
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, InstructionUtils.SYS_SIZE), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 0 })));
         }
         
         DoFooter();
@@ -730,7 +730,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         if (operand2.IsPointer())
         {
-            var reg = alloc.NextRegister(((AssemblyExpr.Pointer)operand2).size);
+            var reg = alloc.NextRegister(((AssemblyExpr.Pointer)operand2).Size);
             Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, reg, operand2));
             operand2 = reg;
         }
@@ -743,12 +743,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         }
         else
         {
+            operand2 = ((AssemblyExpr.ILiteralBase)operand2).CreateLiteral((AssemblyExpr.Register.RegisterSize)expr.member.GetLastSize());
             AssemblyExpr.Literal literal = (AssemblyExpr.Literal)operand2;
-            var size = expr.member.GetLastSize();
-            if (size < (int)literal.size)
-            {
-                Diagnostics.errors.Push(new Error.BackendError("Invalid Literal", $"The size of literal '{literal.value}' exceeds size of assigned data type '{size}'"));
-            }
 
             if (operand1.IsPointer())
             {
@@ -756,8 +752,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                 if (chunks.Item1 != -1)
                 {
                     var ptr = (AssemblyExpr.Pointer)operand1;
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(ptr.register, ptr.offset - 4, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, chunks.Item1.ToString())));
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(ptr.register, ptr.offset, InstructionUtils.ToRegisterSize((int)ptr.size-4)), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, chunks.Item2.ToString())));
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(ptr.register, ptr.offset - 4, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, Encoding.ASCII.GetBytes(chunks.Item1.ToString()))));
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(ptr.register, ptr.offset, InstructionUtils.ToRegisterSize((int)ptr.Size-4)), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, Encoding.ASCII.GetBytes(chunks.Item2.ToString()))));
 
                     goto dealloc;
                 }
@@ -783,9 +779,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
     {
         switch (expr.keyword)
         {
-            case "null": return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, "0");
-            case "true": return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, "1");
-            case "false": return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, "0");
+            case "null": return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 0 });
+            case "true": return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 1 });
+            case "false": return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 0 });
             default: 
                 Diagnostics.errors.Push(new Error.ImpossibleError($"'{expr.keyword}' is not a keyword"));
                 return null;
@@ -811,15 +807,15 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         var rbx = alloc.NextRegister(AssemblyExpr.Register.RegisterSize._64Bits);
         // Move the following into a runtime procedure, and pass in the expr.internalClass.size as a parameter
         // {
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, "12")));
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, "0")));
+        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 12 })));
+        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 0 })));
         Emit(new AssemblyExpr.Zero(AssemblyExpr.Instruction.SYSCALL));
 
         var ptr = new AssemblyExpr.Pointer(rax, -expr.internalClass.size, 8);
         Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, rbx, ptr));
 
         Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits), ptr));
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, "12")));
+        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 12 })));
         Emit(new AssemblyExpr.Zero(AssemblyExpr.Instruction.SYSCALL));
            
         Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, rbx));
@@ -834,7 +830,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     public AssemblyExpr.Value? VisitIsExpr(Expr.Is expr)
     {
-        return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Boolean, expr.value);
+        return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Boolean, expr.value == "true"? new byte[] { 1 } : new byte[] { 0 });
     }
 
     public AssemblyExpr.Value? VisitNoOpExpr(Expr.NoOp expr)
@@ -872,7 +868,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         }
         else if (!conditional.IsLiteral())
         {
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.CMP, conditional, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Boolean, "1")));
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.CMP, conditional, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Boolean, new byte[]{ 1 })));
         }
 
         return AssemblyExpr.Instruction.SETE;
@@ -928,7 +924,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     internal static AssemblyExpr.Binary PartialRegisterOptimize(Expr.Type operand1Type, AssemblyExpr.RegisterPointer operand1, AssemblyExpr.Value operand2)
     {
-        if (operand1.size >= AssemblyExpr.Register.RegisterSize._32Bits)
+        if (operand1.Size >= AssemblyExpr.Register.RegisterSize._32Bits)
         {
             return new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, operand1, operand2);
         }
@@ -937,66 +933,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         bool signed = Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Integer].Matches(operand1Type);
 
         return new AssemblyExpr.Binary(signed ? AssemblyExpr.Instruction.MOVSX : AssemblyExpr.Instruction.MOVZX, operand1, operand2);
-    }
-
-    internal static AssemblyExpr.Register.RegisterSize SizeOfLiteral(AssemblyExpr.Literal literal)
-    {
-        switch (literal.type)
-        {
-            case AssemblyExpr.Literal.LiteralType.Integer:
-                return GetIntegralSizeSigned(long.Parse(literal.value));
-            case AssemblyExpr.Literal.LiteralType.UnsignedInteger:
-                return GetIntegralSizeUnsigned(ulong.Parse(literal.value[..^1]));
-            case AssemblyExpr.Literal.LiteralType.Floating:
-            {
-                double val = double.Parse(literal.value);
-                if (val <= 480 && val >= 0.0078)
-                {
-                    return AssemblyExpr.Register.RegisterSize._8Bits;
-                }
-                else if (val <= (double)Half.MaxValue && val >= (double)Half.MinValue)
-                {
-                    return AssemblyExpr.Register.RegisterSize._16Bits;
-                }
-                else if (val <= float.MaxValue && val >= float.MinValue)
-                {
-                    return AssemblyExpr.Register.RegisterSize._32Bits;
-                }
-                else
-                {
-                    return AssemblyExpr.Register.RegisterSize._64Bits;
-                }
-            }
-            case AssemblyExpr.Literal.LiteralType.String:
-            {
-                return (AssemblyExpr.Register.RegisterSize)literal.value.Length;
-            }
-            case AssemblyExpr.Literal.LiteralType.RefData:
-            {
-                return InstructionUtils.SYS_SIZE;
-            }
-            case AssemblyExpr.Literal.LiteralType.Binary:
-            {
-                int length = literal.value.Length-2;
-                length--;
-                length |= length >> 1;
-                length |= length >> 2;
-                length |= length >> 4;
-                length |= length >> 8;
-                length |= length >> 16;
-                length++;
-                length /= 8;
-                return (AssemblyExpr.Register.RegisterSize)length;
-            }
-            case AssemblyExpr.Literal.LiteralType.Hex:
-                return GetIntegralSizeUnsigned(ulong.Parse(literal.value[2..], NumberStyles.AllowHexSpecifier));
-            case AssemblyExpr.Literal.LiteralType.Boolean:
-                return AssemblyExpr.Register.RegisterSize._8Bits;
-            default:
-                Diagnostics.errors.Push(new Error.ImpossibleError("Invalid literal type in GetSize"));
-                return 0;
-
-        }
     }
 
     internal static AssemblyExpr.Register.RegisterSize GetIntegralSizeSigned(long value)
@@ -1032,11 +968,13 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return AssemblyExpr.Register.RegisterSize._64Bits;
     }
 
+    private bool IsTrueBooleanLiteral(AssemblyExpr.Literal literal) => literal.value.Length == 1 && literal.value[0] == 1;
+
     // MOV M64, IMM64 is not encodable, so the 64-bit value must be chunked into two IMM32s
     private (int, int) ChunkString(AssemblyExpr.Literal literal)
     {
         int size = literal.value.Length;
-        if (literal.type != AssemblyExpr.Literal.LiteralType.String || size <= 4)
+        if (literal.type != AssemblyExpr.Literal.LiteralType.String || size <= 32)
         {
             return (-1, -1);
         }

@@ -58,13 +58,13 @@ public partial class Assembler
                     {
                         case Operand.OperandSize._8Bits:
                         case Operand.OperandSize._8BitsUpper:
-                            return sbyte.TryParse(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value, out _);
+                            return ((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value[0] <= sbyte.MaxValue;
                         case Operand.OperandSize._16Bits:
-                            return short.TryParse(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value, out _);
+                            return BitConverter.ToInt16(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value) <= short.MaxValue;
                         case Operand.OperandSize._32Bits:
-                            return int.TryParse(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value, out _);
+                            return BitConverter.ToInt32(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value) <= int.MaxValue;
                         default:
-                            return long.TryParse(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value, out _);
+                            return BitConverter.ToInt64(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value) <= long.MaxValue;
                     }
                 }
                 return true;

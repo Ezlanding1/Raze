@@ -14,7 +14,7 @@ public class Lexer
 
     List<Token> tokens;
     TokenDefinition[] tokenDefinitions;
-    (Regex, string)[] regexes;
+    public static (Regex, char)[] stringEscapeCodes;
     string text;
     int line;
     int col;
@@ -53,12 +53,6 @@ public class Lexer
                 index += match.Length;
                 col += match.Length;
 
-                if (ExceedsMaxSize(pattern.type, match.ToString()))
-                {
-                    Diagnostics.errors.Push(new Error.LexError(line, col, "Invalid Literal", $"Size of literal '{match.ToString()}' exceeds max size of literal (8 bytes)"));
-                    return new Token(pattern.type, "000");
-                }
-
                 if (pattern.type == Token.TokenType.WHITESPACE)
                 {
                     if (lexeme[0] == '\n')
@@ -82,6 +76,10 @@ public class Lexer
                 if (pattern.type == Token.TokenType.STRING)
                 {
                     string str = match.ToString();
+                    if (str.Length == 2)
+                    {
+                        Diagnostics.errors.Push(new Error.LexError(line, col, "Invalid Literal", "Empty String Literal"));
+                    }
                     if (str[^1] != '\'' || str.Length == 1)
                     {
                         Diagnostics.errors.Push(new Error.LexError(line, col, "Non Terminated String", $"\'{((str.Length <= StringTruncateLength) ? str + "'" : str.Substring(0, StringTruncateLength) + "'...")} was not terminated"));
@@ -95,7 +93,7 @@ public class Lexer
                     {
                         Diagnostics.errors.Push(new Error.LexError(line, col, "Non Terminated String", $"\'{((str.Length <= StringTruncateLength) ? str + "'" : str.Substring(0, StringTruncateLength) + "'...")} was not terminated"));
                     }
-                    return new Token(pattern.type, Escape(str));
+                    return new Token(pattern.type, Escape(str[1..^1]));
                 }
                 if (pattern.type == Token.TokenType.FLOATING)
                 {
@@ -105,6 +103,10 @@ public class Lexer
                         Diagnostics.errors.Push(new Error.LexError(line, col, "Invalid Formatted Number", $"'{floating}' is incorectly formatted"));
                     }
                     return new Token(pattern.type, floating);
+                }
+                if (pattern.type == Token.TokenType.HEX || pattern.type == Token.TokenType.BINARY)
+                {
+                    return new Token(pattern.type, match.ToString()[2..]);
                 }
                 return new Token(pattern.type, match.ToString());
             }
@@ -117,9 +119,9 @@ public class Lexer
 
     private string Escape (string str)
     {
-        foreach ((Regex,string) regex in regexes)
+        foreach ((Regex, char) regex in stringEscapeCodes)
         {
-            str = regex.Item1.Replace(str, regex.Item2);
+            str = regex.Item1.Replace(str, regex.Item2.ToString());
         }
         return str;
     }
@@ -136,38 +138,26 @@ public class Lexer
             count++;
         }
     }
+    
     private void InitEscape()
     {
         // Intializes the Regexes for escape characters
         // In accordance to the escape character standard: https://www.ibm.com/docs/en/zos/2.4.0?topic=set-escape-sequences
 
-        regexes = new (Regex, string)[11];
+        stringEscapeCodes = new (Regex, char)[11];
 
-        regexes[0] = ( new Regex("[\\\\][\\\\]"), "\", 0x5c, \"");
-        regexes[1] = ( new Regex("[\\\\][a]"), "\", 0x7, \"");
-        regexes[2] = ( new Regex("[\\\\][b]"),  "\", 0x8, \"");
-        regexes[3] = ( new Regex("[\\\\][f]"),  "\", 0xc, \"");
-        regexes[4] = ( new Regex("[\\\\][n]"),  "\", 0xa, \"");
-        regexes[5] = ( new Regex("[\\\\][r]"),  "\", 0xd, \"");
-        regexes[6] = ( new Regex("[\\\\][t]"),  "\", 0x9, \"");
-        regexes[7] = ( new Regex("[\\\\][v]"), "\", 0xb, \"");
-        regexes[8] = (new Regex("[\\\\][']"), "\", 0x27, \"");
-        regexes[9] = ( new Regex("[\\\\][\"]"), "\", 0x22, \"");
-        regexes[10] = ( new Regex("[\\\\][?]"), "\", 0x3f, \"");
+        stringEscapeCodes[0] = (new Regex(@"\\\\"), '\\');
+        stringEscapeCodes[1] = (new Regex(@"\\a"), '\a');
+        stringEscapeCodes[2] = (new Regex(@"\\b"), '\b');
+        stringEscapeCodes[3] = (new Regex(@"\\f"), '\f');
+        stringEscapeCodes[4] = (new Regex(@"\\n"), '\n');
+        stringEscapeCodes[5] = (new Regex(@"\\r"), '\r');
+        stringEscapeCodes[6] = (new Regex(@"\\t"), '\t');
+        stringEscapeCodes[7] = (new Regex(@"\\v"), '\v');
+        stringEscapeCodes[8] = (new Regex(@"\\'"), '\'');
+        stringEscapeCodes[9] = (new Regex(@"\\\"""), '\"');
+        stringEscapeCodes[10] =  (new Regex(@"\\\?"), '?');
     }
-
-    private bool ExceedsMaxSize(Token.TokenType type, string value) => type switch
-    {
-        Token.TokenType.INTEGER => (value.Length == 19) ? !long.TryParse(value, out _) : value.Length > 19,
-        Token.TokenType.UNSIGNED_INTEGER => (value.Length == 21) ? !ulong.TryParse(value[..^1], out _) : value.Length > 21,
-        Token.TokenType.FLOATING => (!double.TryParse(value, out var d)) || (d == double.PositiveInfinity || d == double.NegativeInfinity),
-        Token.TokenType.STRING => 8 < value.Length-2,
-        Token.TokenType.REF_STRING => false,
-        Token.TokenType.BINARY => 64 < value[2..].Length,
-        Token.TokenType.HEX => (value.Length == 18) ? (!ulong.TryParse(value[2..], NumberStyles.AllowHexSpecifier, null, out var _)) : value.Length > 18,
-        Token.TokenType.BOOLEAN => false,
-        _ => false
-    };
 }
 
 // Holds a token's regex and literal

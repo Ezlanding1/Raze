@@ -783,7 +783,7 @@ public class Parser
                     }
                     else
                     {
-                        value = new AssemblyExpr.Literal((AssemblyExpr.Literal.LiteralType)Previous().type, Previous().lexeme);
+                        value = new AssemblyExpr.UnresolvedLiteral((AssemblyExpr.Literal.LiteralType)Previous().type, Previous().lexeme);
                     }
 
                     if (TypeMatch(Token.TokenType.COMMA))
@@ -805,7 +805,7 @@ public class Parser
                         }
                         else if (TypeMatch(Token.TokenType.INTEGER, Token.TokenType.FLOATING, Token.TokenType.STRING, Token.TokenType.REF_STRING, Token.TokenType.HEX, Token.TokenType.BINARY))
                         {
-                            instructions.Add(new ExprUtils.AssignableInstruction.Binary(new AssemblyExpr.Binary(ConvertToInstruction(op.lexeme), value, new AssemblyExpr.Literal((AssemblyExpr.Literal.LiteralType)Previous().type, Previous().lexeme)), (value == null) ? ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst : ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
+                            instructions.Add(new ExprUtils.AssignableInstruction.Binary(new AssemblyExpr.Binary(ConvertToInstruction(op.lexeme), value, new AssemblyExpr.UnresolvedLiteral((AssemblyExpr.Literal.LiteralType)Previous().type, Previous().lexeme)), (value == null) ? ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst : ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
                         }
                         else if (TypeMatch(Token.TokenType.DOLLAR))
                         {

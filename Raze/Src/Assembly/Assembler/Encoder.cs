@@ -74,19 +74,5 @@ public partial class Assembler
             Diagnostics.errors.Push(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
             return new();
         }
-
-        public Instruction EncodeData(AssemblyExpr.Data data)
-        {
-            return new Instruction(new IInstruction[] { data.value.Item1 switch
-            {
-                AssemblyExpr.Literal.LiteralType.Binary or
-                AssemblyExpr.Literal.LiteralType.Hex or
-                AssemblyExpr.Literal.LiteralType.Floating or
-                AssemblyExpr.Literal.LiteralType.Boolean or
-                AssemblyExpr.Literal.LiteralType.Integer => EncodingUtils.GetImmInstruction((Operand.OperandSize)(byte)data.size, new(data.value.Item1, data.value.Item2), null),
-                AssemblyExpr.Literal.LiteralType.String => new Instruction.RawInstruction(System.Text.Encoding.ASCII.GetBytes(data.value.Item2)),
-                _ => EncodingUtils.EncodingError().Instructions[0]
-            }});
-        }
     }
 }

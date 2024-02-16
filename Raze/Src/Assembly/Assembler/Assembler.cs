@@ -105,7 +105,7 @@ public partial class Assembler :
     {
         instruction.name = "data." + instruction.name;
         symbolTable.definitions[instruction.name] = dataLocation; 
-        return encoder.EncodeData(instruction);
+        return new Instruction(new IInstruction[] { new RawInstruction(instruction.literal.value) });
     }
 
     public Instruction VisitGlobal(AssemblyExpr.Global instruction)

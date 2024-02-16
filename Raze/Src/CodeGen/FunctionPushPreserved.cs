@@ -64,12 +64,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             public static AssemblyExpr.Binary GenerateStackAlloc(int allocSize)
             {
                 return new AssemblyExpr.Binary(AssemblyExpr.Instruction.SUB, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE),
-                    new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, AlignTo16(allocSize).ToString()));
+                    new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes(AlignTo16(allocSize))));
             }
 
-            private static string AlignTo16(int i)
+            private static int AlignTo16(int i)
             {
-                return (((int)Math.Ceiling(i / 16f)) * 16).ToString();
+                return (((int)Math.Ceiling(i / 16f)) * 16);
             }
         }
     }

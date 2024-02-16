@@ -163,11 +163,12 @@ public class InstructionUtils
         { AssemblyExpr.Register.RegisterSize._8Bits, "BYTE"}, // 8-Bits
     };
 
-    internal readonly static Dictionary<int, string> dataSize = new()
+    internal readonly static Dictionary<AssemblyExpr.Register.RegisterSize, string> dataSize = new()
     {
-        { 8, "dq"}, // 64-Bits
-        { 4, "dd"}, // 32-Bits
-        { 2, "dw"}, // 16-Bits
-        { 1, "db"}, // 8-Bits
+        { AssemblyExpr.Register.RegisterSize._64Bits, "dq"}, // 64-Bits
+        { AssemblyExpr.Register.RegisterSize._32Bits, "dd"}, // 32-Bits
+        { AssemblyExpr.Register.RegisterSize._16Bits, "dw"}, // 16-Bits
+        { AssemblyExpr.Register.RegisterSize._8BitsUpper, "db"}, // 8-Bits
+        { AssemblyExpr.Register.RegisterSize._8Bits, "db"}, // 8-Bits
     };
 }

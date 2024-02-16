@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace Raze;
 
@@ -56,7 +57,7 @@ public abstract partial class AssemblyExpr
         // 0 = Register, 1 = Pointer, 2 = Literal
         public int valueType;
 
-        public Register.RegisterSize size;
+        public abstract Register.RegisterSize Size { get; }
 
         public Value(int valueType)
         {
@@ -84,8 +85,8 @@ public abstract partial class AssemblyExpr
         {
             if (IsLiteral())
             {
-                assembler.Emit(new Binary(Instruction.MOV, assembler.alloc.CurrentRegister(size), this));
-                return assembler.alloc.NextRegister(size);
+                assembler.Emit(new Binary(Instruction.MOV, assembler.alloc.CurrentRegister(Size), this));
+                return assembler.alloc.NextRegister(Size);
             }
             return (RegisterPointer)this;
         }
@@ -93,11 +94,15 @@ public abstract partial class AssemblyExpr
 
     public abstract class RegisterPointer : Value
     {
+        public Register.RegisterSize size;
+        public override Register.RegisterSize Size { get => size; }
+
         public RegisterPointer(int valueType) : base(valueType)
         {
         }
         // Note: This method should always shallow-clone the returned register
         internal abstract Register AsRegister(CodeGen assembler);
+        
     }
 
     public class Register : RegisterPointer
@@ -156,7 +161,7 @@ public abstract partial class AssemblyExpr
             this.size = size;
         }
 
-        internal override Register AsRegister(CodeGen assembler) => new(nameBox, size);
+        internal override Register AsRegister(CodeGen assembler) => new(nameBox, Size);
 
         public override T Accept<T>(IUnaryOperandVisitor<T> visitor)
         {
@@ -165,7 +170,7 @@ public abstract partial class AssemblyExpr
 
         public override Assembler.Encoder.Operand ToAssemblerOperand()
         {
-            return new(Assembler.Encoder.Operand.RegisterOperandType(this), (int)size);
+            return new(Assembler.Encoder.Operand.RegisterOperandType(this), (int)Size);
         }
 
         public override T Accept<T>(IBinaryOperandVisitor<T> visitor, Operand operand)
@@ -189,6 +194,7 @@ public abstract partial class AssemblyExpr
     public class Pointer : RegisterPointer
     {
         internal Register register;
+        
         public int offset;
 
         internal Pointer(Register register, int offset, Register.RegisterSize size) : base(1)
@@ -217,7 +223,7 @@ public abstract partial class AssemblyExpr
 
         internal override Register AsRegister(CodeGen assembler)
         {
-            return IsOnStack() ? assembler.alloc.NextRegister(size) : new Register(register.nameBox, size);
+            return IsOnStack() ? assembler.alloc.NextRegister(Size) : new Register(register.nameBox, Size);
         }
 
         public override T Accept<T>(IUnaryOperandVisitor<T> visitor)
@@ -228,7 +234,7 @@ public abstract partial class AssemblyExpr
         public override Assembler.Encoder.Operand ToAssemblerOperand()
         {
             Assembler.Encoder.Operand.ThrowTMP(register);
-            return new(Assembler.Encoder.Operand.OperandType.M, (int)size);
+            return new(Assembler.Encoder.Operand.OperandType.M, (int)Size);
         }
 
         public override T Accept<T>(IBinaryOperandVisitor<T> visitor, Operand operand)
@@ -240,7 +246,62 @@ public abstract partial class AssemblyExpr
         public override T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg) => visitor.VisitMemoryRegister(this, reg);
     }
 
-    public class Literal : Value
+    public interface ILiteralBase
+    {
+        public Literal CreateLiteral(Register.RegisterSize size);
+    }
+
+    public class UnresolvedLiteral : Value, ILiteralBase
+    {
+        internal Literal.LiteralType type;
+        
+        public string value;
+
+        public override Register.RegisterSize Size { get { Diagnostics.errors.Push(new Error.ImpossibleError("Attempted access of UnresolvedRegister size")); return 0; } }
+
+        internal UnresolvedLiteral(Literal.LiteralType type, string value) : base(2)
+        {
+            this.type = type;
+            this.value = value;
+        }
+
+        public Literal CreateLiteral(Register.RegisterSize size)
+        {
+            return type >= Literal.LiteralType.RefData? new LabelLiteral(type, value, size) : new Literal(type, value, size);
+        }
+
+        public override T Accept<T>(IBinaryOperandVisitor<T> visitor, Operand operand)
+        {
+            Diagnostics.errors.Push(new Error.ImpossibleError("Literal left unresolved")); return default;
+        }
+
+        public override T Accept<T>(IUnaryOperandVisitor<T> visitor)
+        {
+            Diagnostics.errors.Push(new Error.ImpossibleError("Literal left unresolved")); return default;
+        }
+
+        public override Assembler.Encoder.Operand ToAssemblerOperand()
+        {
+            Diagnostics.errors.Push(new Error.ImpossibleError("Literal left unresolved")); return default;
+        }
+
+        public override T VisitOperandImmediate<T>(IBinaryOperandVisitor<T> visitor, Literal imm)
+        {
+            Diagnostics.errors.Push(new Error.ImpossibleError("Literal left unresolved")); return default;
+        }
+
+        public override T VisitOperandMemory<T>(IBinaryOperandVisitor<T> visitor, Pointer ptr)
+        {
+            Diagnostics.errors.Push(new Error.ImpossibleError("Literal left unresolved")); return default;
+        }
+
+        public override T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg)
+        {
+            Diagnostics.errors.Push(new Error.ImpossibleError("Literal left unresolved")); return default;
+        }
+    }
+
+    public class Literal : Value, ILiteralBase
     {
         internal enum LiteralType
         {
@@ -256,18 +317,25 @@ public abstract partial class AssemblyExpr
             RefLocalProcedure
         }
         internal LiteralType type;
-        public string value;
+        public byte[] value;
+        public override Register.RegisterSize Size { get => (Register.RegisterSize)value.Length; }
 
-        private protected Literal() : base(2)
+        private protected Literal(LiteralType type) : base(2)
         {
+            this.type = type;
         }
-        
-        internal Literal(LiteralType type, string value) : base(2)
+        internal Literal(LiteralType type, byte[] value) : base(2)
         {
             this.type = type;
             this.value = value;
-            this.size = CodeGen.SizeOfLiteral(this);
         }
+        internal Literal(LiteralType type, string value, Register.RegisterSize size) : base(2)
+        {
+            this.type = type;
+            this.value = ImmediateGenerator.Generate(type, value, size);
+        }
+
+        public Literal CreateLiteral(Register.RegisterSize size) => this;
 
         public override T Accept<T>(IUnaryOperandVisitor<T> visitor)
         {
@@ -276,7 +344,7 @@ public abstract partial class AssemblyExpr
 
         public override Assembler.Encoder.Operand ToAssemblerOperand()
         {
-            return new(Assembler.Encoder.Operand.OperandType.IMM, (Assembler.Encoder.Operand.OperandSize)this.size);
+            return new(Assembler.Encoder.Operand.OperandType.IMM, (Assembler.Encoder.Operand.OperandSize)this.Size);
         }
 
         public override T Accept<T>(IBinaryOperandVisitor<T> visitor, Operand operand)
@@ -301,27 +369,33 @@ public abstract partial class AssemblyExpr
         }
     }
 
-    public class SpecialLiteral : Literal
+    public class LabelLiteral : Literal
     {
-        internal SpecialLiteral(LiteralType type, string value) : base()
+        internal string Name 
         {
-            this.type = type;
-            this.value = value;
-            this.size = Register.RegisterSize._8Bits;
+            get => Encoding.ASCII.GetString(this.value);
+            set => this.value = Encoding.ASCII.GetBytes(value);
+        }
+
+        private protected LabelLiteral(LiteralType type, string name) : base(type)
+        {
+            this.Name = name;
+        }
+        internal LabelLiteral(LiteralType type, string name, Register.RegisterSize dataTypeSize) : base(type)
+        {
+            this.value = ImmediateGenerator.Generate(type, name, dataTypeSize);
         }
     }
 
     public class Data : DataExpr
     {
         public string name;
-        public Register.RegisterSize size;
-        internal (Literal.LiteralType type, string) value;
+        internal Literal literal;
 
-        internal Data(string name, Register.RegisterSize size, (Literal.LiteralType type, string) value)
+        internal Data(string name, Literal value)
         {
             this.name = name;
-            this.size = size;
-            this.value = value;
+            this.literal = value;
         }
 
         public override T Accept<T>(IVisitor<T> visitor)
@@ -330,7 +404,7 @@ public abstract partial class AssemblyExpr
         }
     }
 
-    public class DataRef : SpecialLiteral
+    public class DataRef : LabelLiteral
     {
         public DataRef(string dataName) : base(LiteralType.RefData, dataName)
         {
@@ -365,14 +439,14 @@ public abstract partial class AssemblyExpr
         }
     }
     
-    public class ProcedureRef : SpecialLiteral
+    public class ProcedureRef : LabelLiteral
     {
         public ProcedureRef(string name) : base(LiteralType.RefProcedure, name)
         {
         }
     }
 
-    public class LocalProcedureRef : SpecialLiteral
+    public class LocalProcedureRef : LabelLiteral
     {
         public LocalProcedureRef(string name) : base(LiteralType.RefLocalProcedure, name)
         {

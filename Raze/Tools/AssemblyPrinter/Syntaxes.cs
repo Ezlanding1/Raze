@@ -51,7 +51,11 @@ partial class Syntaxes
 
             public string VisitData(AssemblyExpr.Data instruction)
             {
-                return $"{instruction.name}: {InstructionUtils.dataSize[(int)instruction.size]} {instruction.value.Item2}";
+                if (instruction.literal.type == AssemblyExpr.Literal.LiteralType.String)
+                {
+                    return $"{instruction.name}: {InstructionUtils.dataSize[AssemblyExpr.Register.RegisterSize._8Bits]} {UnescapeString(instruction.literal.value)}";
+                }
+                return $"{instruction.name}: {InstructionUtils.dataSize[instruction.literal.Size]} {instruction.literal.Accept(this)}";
             }
 
             public string VisitProcedure(AssemblyExpr.Procedure instruction)
@@ -78,9 +82,9 @@ partial class Syntaxes
 
                 if (instruction.offset == 0)
                 {
-                    return $"{InstructionUtils.wordSize[instruction.size]} [{instruction.register.Accept(this)}]";
+                    return $"{InstructionUtils.wordSize[instruction.Size]} [{instruction.register.Accept(this)}]";
                 }
-                return $"{InstructionUtils.wordSize[instruction.size]} [{instruction.register.Accept(this)} {((instruction.offset < 0) ? '-' : '+')} {Math.Abs(instruction.offset)}]";
+                return $"{InstructionUtils.wordSize[instruction.Size]} [{instruction.register.Accept(this)} {((instruction.offset < 0) ? '-' : '+')} {Math.Abs(instruction.offset)}]";
             }
 
             public string VisitRegister(AssemblyExpr.Register instruction)
@@ -90,7 +94,7 @@ partial class Syntaxes
                     Diagnostics.errors.Push(new Error.ImpossibleError("TMP Register Cannot Be Emitted"));
                 }
 
-                return $"{RegisterToString[(instruction.Name, instruction.size)]}";
+                return $"{RegisterToString[(instruction.Name, instruction.Size)]}";
             }
 
             public string VisitSection(AssemblyExpr.Section instruction)
@@ -128,7 +132,7 @@ partial class Syntaxes
                 {
                     case AssemblyExpr.Literal.LiteralType.String:
                     {
-                        if (instruction.value == "") return "0";
+                        if (instruction.value.Length == 0) return "0";
 
                         int strAsInt = instruction.value[^1];
                         for (int i = instruction.value.Length - 2; i >= 0; i--)
@@ -138,17 +142,53 @@ partial class Syntaxes
                         }
                         return $"{strAsInt}";
                     }
+                    case AssemblyExpr.Literal.LiteralType.RefData:
+                        return ((AssemblyExpr.LabelLiteral)instruction).Name;
+                    case AssemblyExpr.Literal.LiteralType.RefProcedure:
+                        return ((AssemblyExpr.LabelLiteral)instruction).Name;
                     case AssemblyExpr.Literal.LiteralType.RefLocalProcedure:
-                        return $".{instruction.value}";
-                    case AssemblyExpr.Literal.LiteralType.UnsignedInteger:
-                        return instruction.value[..^1];
+                        return $".{((AssemblyExpr.LabelLiteral)instruction).Name}";
+                    default:
+                        var number = instruction.value;
+                        Array.Resize(ref number, 8);
+                        return BitConverter.ToInt64(number).ToString();  
                 }
-                return $"{instruction.value}";
             }
 
             private bool SpecifyPointerSizeOperand2(AssemblyExpr.Instruction instruction)
             {
                 return instruction == AssemblyExpr.Instruction.MOVSX || instruction == AssemblyExpr.Instruction.MOVZX;
+            }
+
+            private string UnescapeString(byte[] bytes)
+            {
+                if (bytes.Length == 0) return "\"\"";
+
+                string escapedString = Encoding.ASCII.GetString(bytes);
+                List<char> escapedChars = Lexer.stringEscapeCodes.Select(x => x.Item2).ToList();
+
+                StringBuilder unescapedString = new StringBuilder();
+
+                for (int i = 0; i < escapedString.Length; i++)
+                {
+                    if (escapedChars.Contains(escapedString[i]))
+                    {
+                        if (i != 0) 
+                            unescapedString.Append("\", ");
+
+                        unescapedString.Append($"0x{(byte)escapedString[i]:x}");
+
+                        if (i != escapedString.Length-1)
+                            unescapedString.Append(", \"");
+                        continue;
+                    }
+                    if (i == 0)
+                        unescapedString.Append('"');
+                    unescapedString.Append(escapedString[i]);
+                    if (i == escapedString.Length-1)
+                        unescapedString.Append('"');
+                }
+                return unescapedString.ToString();
             }
 
             private static Dictionary<(AssemblyExpr.Register.RegisterName, AssemblyExpr.Register.RegisterSize?), string> RegisterToString = new()

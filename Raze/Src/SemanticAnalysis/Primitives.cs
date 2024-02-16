@@ -11,13 +11,13 @@ public partial class Analyzer
 {
     internal class Primitives
     {
-        private static dynamic ToType(AssemblyExpr.Literal literal) => literal.type switch
+        private static dynamic ToType(AssemblyExpr.UnresolvedLiteral literal) => literal.type switch
         {
-            AssemblyExpr.Literal.LiteralType.Integer => int.Parse(literal.value),
-            AssemblyExpr.Literal.LiteralType.Floating => float.Parse(literal.value),
+            AssemblyExpr.Literal.LiteralType.Integer => long.Parse(literal.value),
+            AssemblyExpr.Literal.LiteralType.Floating => double.Parse(literal.value),
             AssemblyExpr.Literal.LiteralType.String => literal.value,
-            AssemblyExpr.Literal.LiteralType.Binary => Convert.ToInt32(literal.value, 2),
-            AssemblyExpr.Literal.LiteralType.Hex => Convert.ToInt32(literal.value, 16),
+            AssemblyExpr.Literal.LiteralType.Binary => Convert.ToInt64(literal.value, 2),
+            AssemblyExpr.Literal.LiteralType.Hex => Convert.ToInt64(literal.value, 16),
             AssemblyExpr.Literal.LiteralType.Boolean => byte.Parse(literal.value),
             AssemblyExpr.Literal.LiteralType.RefData => literal.value
         };
@@ -112,7 +112,7 @@ public partial class Analyzer
             return Parser.VoidTokenType;
         }
 
-        public static AssemblyExpr.Literal Operation(Token op, AssemblyExpr.Literal a, AssemblyExpr.Literal b, CodeGen assembler)
+        public static AssemblyExpr.UnresolvedLiteral Operation(Token op, AssemblyExpr.UnresolvedLiteral a, AssemblyExpr.UnresolvedLiteral b, CodeGen assembler)
         {
             string pName = SymbolToPrimitiveName(op);
 
@@ -140,7 +140,7 @@ public partial class Analyzer
                     }
                 ).ToString();
 
-            return new AssemblyExpr.Literal((AssemblyExpr.Literal.LiteralType)OperationType(op, (Parser.LiteralTokenType)a.type, (Parser.LiteralTokenType)b.type), result);
+            return new AssemblyExpr.UnresolvedLiteral((AssemblyExpr.Literal.LiteralType)OperationType(op, (Parser.LiteralTokenType)a.type, (Parser.LiteralTokenType)b.type), result);
         }
 
         private static string Add(dynamic a, dynamic b, bool stringAddition, CodeGen assembler)
@@ -150,24 +150,22 @@ public partial class Analyzer
                 return (a + b).ToString();
             }
 
-            string aData = null;
-            string bData = null;
+            byte[] aData = null;
+            byte[] bData = null;
 
             int i = 1;
             while (aData == null || bData == null)
             {
                 if (((AssemblyExpr.Data)assembler.assembly.data[i]).name == (string)a)
                 {
-                    aData = ((AssemblyExpr.Data)assembler.assembly.data[i]).value.Item2;
+                    aData = ((AssemblyExpr.Data)assembler.assembly.data[i]).literal.value;
                 }
                 if (((AssemblyExpr.Data)assembler.assembly.data[i]).name == (string)b)
                 {
-                    bData = ((AssemblyExpr.Data)assembler.assembly.data[i]).value.Item2;
+                    bData = ((AssemblyExpr.Data)assembler.assembly.data[i]).literal.value;
                 }
                 i++;
             }
-
-            assembler.EmitData(new AssemblyExpr.Data(assembler.DataLabel, AssemblyExpr.Register.RegisterSize._8Bits, (AssemblyExpr.Literal.LiteralType.String, aData[..^4] + bData[1..])));
 
             return assembler.CreateDatalLabel(assembler.dataCount++);
         }
@@ -223,7 +221,7 @@ public partial class Analyzer
             return Parser.VoidTokenType;
         }
 
-        public static AssemblyExpr.Value Operation(Token op, AssemblyExpr.Literal a, CodeGen assembler)
+        public static AssemblyExpr.UnresolvedLiteral Operation(Token op, AssemblyExpr.UnresolvedLiteral a, CodeGen assembler)
         {
             string pName = SymbolToPrimitiveName(op);
 
@@ -238,7 +236,7 @@ public partial class Analyzer
                     }
                 ).ToString();
 
-            return new AssemblyExpr.Literal((AssemblyExpr.Literal.LiteralType)OperationType(op, (Parser.LiteralTokenType)a.type), result);
+            return new AssemblyExpr.UnresolvedLiteral((AssemblyExpr.Literal.LiteralType)OperationType(op, (Parser.LiteralTokenType)a.type), result);
         }
 
         public static Error.AnalyzerError InvalidOperation(Token op, Parser.LiteralTokenType type)

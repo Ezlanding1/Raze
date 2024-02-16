@@ -43,7 +43,7 @@ public class InlinedCodeGen : CodeGen
     {
         if (expr.internalFunction == null)
         {
-            return Analyzer.Primitives.Operation(expr.op, (AssemblyExpr.Literal)expr.operand.Accept(this), this);
+            return Analyzer.Primitives.Operation(expr.op, (AssemblyExpr.UnresolvedLiteral)expr.operand.Accept(this), this);
         }
 
         if (!expr.internalFunction.modifiers["inline"])
@@ -74,7 +74,7 @@ public class InlinedCodeGen : CodeGen
         alloc.Free(((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register, true);
 
         if (assembly.text[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == AssemblyExpr.Instruction.JMP
-            && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.value == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
+            && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.value == Encoding.ASCII.GetBytes(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)))
         {
             assembly.text.RemoveAt(assembly.text.Count - 1);
 
@@ -96,11 +96,11 @@ public class InlinedCodeGen : CodeGen
         {
             if (ret.IsRegister())
             {
-                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Register)ret).Name), ((AssemblyExpr.Register)ret).size);
+                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Register)ret).Name), ((AssemblyExpr.Register)ret).Size);
             }
             else if (ret.IsPointer() && !((AssemblyExpr.Pointer)ret).IsOnStack())
             {
-                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Pointer)ret).register.Name), ((AssemblyExpr.Pointer)ret).size);
+                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Pointer)ret).register.Name), ((AssemblyExpr.Pointer)ret).Size);
             }
         }
 
@@ -115,7 +115,7 @@ public class InlinedCodeGen : CodeGen
     {
         if (expr.internalFunction == null)
         {
-            return Analyzer.Primitives.Operation(expr.op, (AssemblyExpr.Literal)expr.left.Accept(this), (AssemblyExpr.Literal)expr.right.Accept(this), this);
+            return Analyzer.Primitives.Operation(expr.op, (AssemblyExpr.UnresolvedLiteral)expr.left.Accept(this), (AssemblyExpr.UnresolvedLiteral)expr.right.Accept(this), this);
         }
 
         if (!expr.internalFunction.modifiers["inline"])
@@ -157,7 +157,7 @@ public class InlinedCodeGen : CodeGen
         UnlockOperand(ret);
 
         if (assembly.text[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == AssemblyExpr.Instruction.JMP
-            && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.value == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
+            && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.value == Encoding.ASCII.GetBytes(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)))
         {
             assembly.text.RemoveAt(assembly.text.Count - 1);
 
@@ -175,11 +175,11 @@ public class InlinedCodeGen : CodeGen
         {
             if (ret.IsRegister())
             {
-                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Register)ret).Name), ((AssemblyExpr.Register)ret).size);
+                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Register)ret).Name), ((AssemblyExpr.Register)ret).Size);
             }
             else if (ret.IsPointer() && !((AssemblyExpr.Pointer)ret).IsOnStack())
             {
-                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Pointer)ret).register.Name), ((AssemblyExpr.Pointer)ret).size);
+                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Pointer)ret).register.Name), ((AssemblyExpr.Pointer)ret).Size);
             }
         }
 
@@ -263,7 +263,7 @@ public class InlinedCodeGen : CodeGen
         UnlockOperand(ret);
 
         if (assembly.text[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == AssemblyExpr.Instruction.JMP
-            && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.value == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
+            && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.value == Encoding.ASCII.GetBytes(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)))
         {
             assembly.text.RemoveAt(assembly.text.Count - 1);
 
@@ -281,11 +281,11 @@ public class InlinedCodeGen : CodeGen
         {
             if (ret.IsRegister())
             {
-                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Register)ret).Name), ((AssemblyExpr.Register)ret).size);
+                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Register)ret).Name), ((AssemblyExpr.Register)ret).Size);
             }
             else if (ret.IsPointer() && !((AssemblyExpr.Pointer)ret).IsOnStack())
             {
-                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Pointer)ret).register.Name), ((AssemblyExpr.Pointer)ret).size);
+                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Pointer)ret).register.Name), ((AssemblyExpr.Pointer)ret).Size);
             }
         }
 
@@ -348,7 +348,7 @@ public class InlinedCodeGen : CodeGen
                     {
                         if (!(HandleSeteOptimization((AssemblyExpr.Register)operand, ((InlineStateInlined)inlineState).callee)))
                         {
-                            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(((AssemblyExpr.Register)((InlineStateInlined)inlineState).callee).Name, op.size), operand));
+                            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(((AssemblyExpr.Register)((InlineStateInlined)inlineState).callee).Name, op.Size), operand));
                         }
                     }
                 }
@@ -364,7 +364,7 @@ public class InlinedCodeGen : CodeGen
         }
         else
         {
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, ((InlineStateInlined)inlineState).callee, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, "0")));
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, ((InlineStateInlined)inlineState).callee, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 0 })));
         }
 
         if (((InlineStateInlined)inlineState).inlineLabelIdx == -1)

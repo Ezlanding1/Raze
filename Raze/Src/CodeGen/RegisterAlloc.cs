@@ -96,7 +96,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         {
             if (paramRegisters[i] != null)
             {
-                AssemblyExpr.Register newReg = NextRegister(paramRegisters[i].size);
+                AssemblyExpr.Register newReg = NextRegister(paramRegisters[i].Size);
                 assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, newReg, paramRegisters[i]));
                 localParams[i] = newReg;
             }
@@ -141,7 +141,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
             if (localParam != null)
             {
-                assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(InstructionUtils.paramRegister[i], localParam.size), localParam));
+                assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(InstructionUtils.paramRegister[i], localParam.Size), localParam));
                 Free(NameToIdx(localParam.Name));
             }
         }
