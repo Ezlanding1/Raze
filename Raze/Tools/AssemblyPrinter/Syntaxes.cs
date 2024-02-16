@@ -148,10 +148,18 @@ partial class Syntaxes
                         return ((AssemblyExpr.LabelLiteral)instruction).Name;
                     case AssemblyExpr.Literal.LiteralType.RefLocalProcedure:
                         return $".{((AssemblyExpr.LabelLiteral)instruction).Name}";
-                    default:
-                        var number = instruction.value;
+                    case AssemblyExpr.Literal.LiteralType.UnsignedInteger:
+                    {
+                        byte[] number = instruction.value.ToArray();
                         Array.Resize(ref number, 8);
-                        return BitConverter.ToInt64(number).ToString();  
+                        return BitConverter.ToUInt64(number).ToString();
+                    }
+                    case AssemblyExpr.Literal.LiteralType.Hex:
+                        return "0x" + IntegralImmediateToString(instruction.value, 16);
+                    case AssemblyExpr.Literal.LiteralType.Binary:
+                        return "0b" + IntegralImmediateToString(instruction.value, 2);
+                    default:
+                        return IntegralImmediateToString(instruction.value, 10);
                 }
             }
 
@@ -189,6 +197,13 @@ partial class Syntaxes
                         unescapedString.Append('"');
                 }
                 return unescapedString.ToString();
+            }
+
+            private static string IntegralImmediateToString(byte[] bytes, int _base)
+            {
+                byte[] number = bytes.ToArray();
+                Array.Resize(ref number, 8);
+                return Convert.ToString(BitConverter.ToInt64(number), _base);
             }
 
             private static Dictionary<(AssemblyExpr.Register.RegisterName, AssemblyExpr.Register.RegisterSize?), string> RegisterToString = new()
