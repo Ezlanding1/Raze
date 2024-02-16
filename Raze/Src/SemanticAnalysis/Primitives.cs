@@ -257,15 +257,15 @@ public partial class Analyzer
 
         public static (bool, Parser.LiteralTokenType) IsLiteralTypeOrVoid(Expr.Type type)
         {
-            if (Enum.TryParse<Parser.LiteralTokenType>(type.name.type.ToString(), out var literalTokenType))
+            if (type.name.type == Token.TokenType.IDENTIFIER)
             {
-                return (true, literalTokenType);
+                return (false, Parser.VoidTokenType);
             }
-            if (IsVoidType(type))
+            else if (IsVoidType(type))
             {
                 return (true, Parser.VoidTokenType);
             }
-            return (false, Parser.VoidTokenType);
+            return (true, (Parser.LiteralTokenType)type.name.type);
         }
 
         public static string SymbolToPrimitiveName(Token op) => op.type switch

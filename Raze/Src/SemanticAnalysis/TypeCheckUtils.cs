@@ -11,7 +11,7 @@ public partial class Analyzer
 {
     internal static class TypeCheckUtils
     {
-        public static Expr.Class anyType = new Analyzer.SpecialObjects.Any(new(Token.TokenType.IDENTIFIER, "any"));
+        public static Expr.Class anyType = new Analyzer.SpecialObjects.Any(new(Token.TokenType.RESERVED, "any"));
 
         public static Expr.Type _voidType = new Expr.Class(new(Token.TokenType.RESERVED, "void"), new(), new(), new(null));
 
