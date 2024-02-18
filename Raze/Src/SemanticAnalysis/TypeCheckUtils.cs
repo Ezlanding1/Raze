@@ -13,7 +13,7 @@ public partial class Analyzer
     {
         public static Expr.Class anyType = new Analyzer.SpecialObjects.Any(new(Token.TokenType.RESERVED, "any"));
 
-        public static Expr.Type _voidType = new Expr.Class(new(Token.TokenType.RESERVED, "void"), new(), new(), new(null));
+        public static Expr.Class _voidType = new Expr.Class(new(Token.TokenType.RESERVED, "void"), new(), new(), new(null));
 
         private static Expr.Type integralType = new(new Token((Token.TokenType)Parser.LiteralTokenType.Integer));
 
@@ -84,7 +84,7 @@ public partial class Analyzer
 
                 MustMatchType(expr._returnType.type, ret.Item1, "You cannot return type '{0}' from type '{1}'");
 
-                ret.Item3.size = expr._returnSize;
+                ret.Item3.type = expr._returnType.type;
             }
             if (_returnCount == 0 && !Primitives.IsVoidType(expr._returnType.type))
             {

@@ -75,7 +75,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             alloc.FreeParameter(i, localParams[i], this);
         }
 
-        return alloc.CallAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnSize));
+        return alloc.CallAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnType.type.allocSize));
     }
 
     public virtual AssemblyExpr.Value? VisitCallExpr(Expr.Call expr)
@@ -164,7 +164,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.ADD, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes((expr.arguments.Count - InstructionUtils.paramRegister.Length) * 8))));
         }
         
-        return alloc.CallAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnSize));
+        return alloc.CallAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnType.type.allocSize));
     }
 
     public AssemblyExpr.Value? VisitClassExpr(Expr.Class expr)
@@ -574,7 +574,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         EmitCall(new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL, new AssemblyExpr.ProcedureRef(ToMangledName(expr.internalFunction))));
 
-        return alloc.CallAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnSize));
+        return alloc.CallAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnType.type.allocSize));
     }
 
     public AssemblyExpr.Value? VisitIfExpr(Expr.If expr)
@@ -701,9 +701,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             }
             else
             {
-                operand = ((AssemblyExpr.ILiteralBase)operand).CreateLiteral((AssemblyExpr.Register.RegisterSize)expr.size);
+                operand = ((AssemblyExpr.ILiteralBase)operand).CreateLiteral((AssemblyExpr.Register.RegisterSize)expr.type.allocSize);
 
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, InstructionUtils.ToRegisterSize(expr.size)), operand));
+                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, InstructionUtils.ToRegisterSize(expr.type.allocSize)), operand));
             }
 
             alloc.Free(operand);

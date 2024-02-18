@@ -54,7 +54,6 @@ public partial class Analyzer
             if (expr._returnType.typeName != null)
             {
                 expr._returnType.Accept(this);
-                expr._returnSize = (expr._returnType.type?.definitionType == Expr.Definition.DefinitionType.Primitive) ? ((Expr.Primitive)expr._returnType.type).size : 8;
             }
             else
             {
@@ -253,7 +252,7 @@ public partial class Analyzer
                 {
                     HandleTypeNameReference(expr.typeName);
                 }
-                expr.type = symbolTable.Current;
+                expr.type = (Expr.DataType)symbolTable.Current;
             }
             return null;
         }
@@ -273,7 +272,7 @@ public partial class Analyzer
         {
             symbolTable.AddDefinition(expr);
 
-            if (Enum.TryParse(expr.superclass.typeName.Dequeue().lexeme, out Parser.LiteralTokenType literalTokenType))
+            if (Enum.TryParse(expr.superclass.name, out Parser.LiteralTokenType literalTokenType))
             {
                 expr.superclass.type = TypeCheckUtils.literalTypes[literalTokenType];
             }

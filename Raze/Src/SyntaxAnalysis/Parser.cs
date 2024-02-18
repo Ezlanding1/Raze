@@ -202,15 +202,15 @@ public class Parser
                     Expected("INTEGER", "size (in bytes) of primitive");
                 }
 
-                Expr.TypeReference type = null;
+                string superclassName = null;
 
                 if (ValueMatch("extends"))
                 {
                     Expect(Token.TokenType.IDENTIFIER, "superclass of primitive type");
-                    type = new(new());
-                    type.typeName.Enqueue(Previous());
+                    
+                    superclassName = Previous().lexeme;
 
-                    if (!Enum.GetNames<LiteralTokenType>().Contains(Previous().lexeme))
+                    if (!Enum.GetNames<LiteralTokenType>().Contains(superclassName))
                     {
                         Diagnostics.errors.Push(new Error.ParseError("Invalid Primitive", $"The superclass of a primitive must be a valid literal ({string.Join(", ", Enum.GetValues<LiteralTokenType>())}). Got: '{Previous().lexeme}'"));
                     }
@@ -237,7 +237,7 @@ public class Parser
                     }
                 }
 
-                return new Expr.Primitive(name, definitions, size, type);
+                return new Expr.Primitive(name, definitions, size, superclassName);
             }
         }
         return null;
@@ -350,11 +350,11 @@ public class Parser
         {
             if (current.type == Token.TokenType.SEMICOLON)
             {
-                expr = new Expr.Return(new Expr.Keyword("void"), true);
+                expr = new Expr.Return(new Expr.Keyword("void"));
             }
             else
             {
-                expr = new Expr.Return(Logical(), false);
+                expr = new Expr.Return(Logical());
             }
         }
         else

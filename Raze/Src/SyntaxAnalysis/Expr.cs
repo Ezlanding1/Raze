@@ -213,7 +213,7 @@ public abstract class Expr
     public class TypeReference : Expr
     {
         internal ExprUtils.QueueList<Token>? typeName;
-        public Type type;
+        public DataType type;
 
         private protected TypeReference() { }
 
@@ -222,7 +222,7 @@ public abstract class Expr
             this.typeName = typeName;
         }
 
-        internal TypeReference(ExprUtils.QueueList<Token>? typeName, Type type) : this(typeName)
+        internal TypeReference(ExprUtils.QueueList<Token>? typeName, DataType type) : this(typeName)
         {
             this.type = type;
         }
@@ -299,7 +299,7 @@ public abstract class Expr
         }
 
         public override StackData GetLastData() => ((Get)getters[^1]).data;
-        public override int GetLastSize() => (getters[^1] is Get) ? ((Get)getters[^1]).data.size : ((Call)getters[^1]).internalFunction._returnSize;
+        public override int GetLastSize() => (getters[^1] is Get) ? ((Get)getters[^1]).data.size : ((Call)getters[^1]).internalFunction._returnType.type.allocSize;
         public override bool HandleThis()
         {
             if (getters.Count == 1 && getters[0].name.lexeme == "this")
@@ -580,7 +580,6 @@ public abstract class Expr
     {
         public List<Parameter> parameters;
         public TypeReference _returnType;
-        public int _returnSize;
         public int Arity
         {
             get { return parameters.Count; }
@@ -641,20 +640,19 @@ public abstract class Expr
 
     public abstract class DataType : Definition
     {
-        public TypeReference superclass;
-
         public List<Definition> definitions;
 
         public StackData _this = new();
 
-        public DataType(Token name, List<Definition> definitions, TypeReference superclass) : base(name)
+        public abstract int allocSize { get; }
+
+        public DataType(Token name, List<Definition> definitions) : base(name)
         {
-            this.superclass = superclass;
             this.definitions = definitions;
             (_this.stackOffset, _this.size, _this.type) = (8, 8, this);
         }
 
-        public DataType(Token name, List<Definition> definitions, int size, TypeReference superclass) : this(name, definitions, superclass)
+        public DataType(Token name, List<Definition> definitions, int size) : this(name, definitions)
         {
             this.size = size;
         }
@@ -662,12 +660,17 @@ public abstract class Expr
 
     public class Class : DataType
     {
+        public TypeReference superclass;
+
         public List<Declare> declarations;
 
-        public Class(Token name, List<Declare> declarations, List<Definition> definitions, TypeReference superclass) : base(name, definitions, superclass)
+        public override int allocSize => 8;
+
+        public Class(Token name, List<Declare> declarations, List<Definition> definitions, TypeReference superclass) : base(name, definitions)
         {
             this.definitionType = DefinitionType.Class;
             this.declarations = declarations;
+            this.superclass = superclass;
         }
 
         public override bool Matches(Type type)
@@ -683,9 +686,14 @@ public abstract class Expr
 
     public class Primitive : DataType
     {
-        public Primitive(Token name, List<Definition> definitions, int size, TypeReference superclass) : base(name, definitions, size, superclass)
+        public (string? name, Type type) superclass = new();
+
+        public override int allocSize => size;
+
+        public Primitive(Token name, List<Definition> definitions, int size, string? superclass) : base(name, definitions, size)
         {
             this.definitionType = DefinitionType.Primitive;
+            this.superclass.name = superclass;
         }
 
         public override bool Match(Type type)
@@ -702,13 +710,15 @@ public abstract class Expr
     public class Return : Expr
     {
         public Expr value;
-        public bool _void;
-        public int size;
+        public DataType type;
+        public bool _void
+        {
+            get => Analyzer.Primitives.IsVoidType(type);
+        }
 
-        public Return(Expr value, bool _void)
+        public Return(Expr value)
         {
             this.value = value;
-            this._void = _void;
         }
 
         public override T Accept<T>(IVisitor<T> visitor)

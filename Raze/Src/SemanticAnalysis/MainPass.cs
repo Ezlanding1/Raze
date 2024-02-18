@@ -473,7 +473,7 @@ public partial class Analyzer
 
         public override Expr.Type VisitReturnExpr(Expr.Return expr)
         {
-            _return.Add((expr._void ? TypeCheckUtils._voidType : expr.value.Accept(this), false, expr));
+            _return.Add((expr.value.Accept(this), false, expr));
 
             return TypeCheckUtils._voidType;
         }

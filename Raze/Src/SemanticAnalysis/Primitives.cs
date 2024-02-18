@@ -251,7 +251,7 @@ public partial class Analyzer
 
         public static bool IsVoidType(Expr.Type type)
         {
-            return type.name.lexeme == "void";
+            return type == TypeCheckUtils._voidType;
         }
 
         public static (bool, Parser.LiteralTokenType) IsLiteralTypeOrVoid(Expr.Type type)
