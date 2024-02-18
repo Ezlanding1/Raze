@@ -687,23 +687,23 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
     {
         if (!expr._void)
         {
-            AssemblyExpr.Value operand = expr.value.Accept(this);
+            AssemblyExpr.Value operand = expr.value.Accept(this)
+                .IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)expr.type.allocSize);
+
+            var rax = new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, operand.Size);
 
             if (operand.IsRegister())
             {
-                var op = (AssemblyExpr.Register)operand;
-                if (op.Name != AssemblyExpr.Register.RegisterName.RAX)
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, op.Size), operand));
+                if (((AssemblyExpr.Register)operand).Name != AssemblyExpr.Register.RegisterName.RAX)
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, operand));
             }
             else if (operand.IsPointer())
             {
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, operand.Size), operand));
+                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, operand));
             }
             else
             {
-                operand = ((AssemblyExpr.ILiteralBase)operand).CreateLiteral((AssemblyExpr.Register.RegisterSize)expr.type.allocSize);
-
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, InstructionUtils.ToRegisterSize(expr.type.allocSize)), operand));
+                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, operand));
             }
 
             alloc.Free(operand);
