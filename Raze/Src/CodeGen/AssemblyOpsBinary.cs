@@ -42,18 +42,13 @@ internal partial class AssemblyOps
 
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst))
             {
-                operand1 = assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler);
+                operand1 = assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler)
+                    .IfLiteralCreateLiteral(InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count-1].GetLastData().size));
             }
             else
             {
-                operand1 = instruction.instruction.operand1;
+                operand1 = instruction.instruction.operand1.IfLiteralCreateLiteral(AssemblyExpr.Register.RegisterSize._64Bits);
             }
-
-            if (operand1.IsLiteral())
-            {
-                operand1 = ((AssemblyExpr.UnresolvedLiteral)operand1).CreateLiteral(InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count].GetLastData().size));
-            }
-
             return operand1.NonLiteral(assemblyOps.assembler);
         }
         public static AssemblyExpr.Value HandleOperand2(ExprUtils.AssignableInstruction.Binary instruction, AssemblyExpr.Value operand1, AssemblyOps assemblyOps)
@@ -80,15 +75,14 @@ internal partial class AssemblyOps
                         operand2 = operand2.NonPointer(assemblyOps.assembler);
                     }
                 }
+                else
+                {
+                    operand2 = operand2.IfLiteralCreateLiteral(InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count - 1].GetLastData().size));
+                }
             }
             else
             {
-                operand2 = instruction.instruction.operand2;
-            }
-
-            if (operand2.IsLiteral())
-            {
-                operand2 = ((AssemblyExpr.UnresolvedLiteral)operand2).CreateLiteral(operand1.Size);
+                operand2 = instruction.instruction.operand2.IfLiteralCreateLiteral(operand1.Size);
             }
 
             CheckOperandSizeMismatch(operand1, operand2);
@@ -181,7 +175,6 @@ internal partial class AssemblyOps
             {
                 operand2 = ((AssemblyExpr.UnresolvedLiteral)operand2).CreateLiteral(AssemblyExpr.Register.RegisterSize._8Bits).NonLiteral(assemblyOps.assembler);
             }
-
 
             if (!operand2.IsLiteral())
             {

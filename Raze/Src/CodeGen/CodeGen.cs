@@ -52,23 +52,15 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
     {
         var localParams = new AssemblyExpr.Register?[2];
 
-        AssemblyExpr.Value operand1 = expr.left.Accept(this);
-
-        if (operand1.IsLiteral())
-        {
-            operand1 = ((AssemblyExpr.ILiteralBase)operand1).CreateLiteral((AssemblyExpr.Register.RegisterSize)expr.internalFunction.parameters[0].stack.size);
-        }
+        AssemblyExpr.Value operand1 = expr.left.Accept(this)
+            .IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)expr.internalFunction.parameters[0].stack.size);
 
         Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.AllocParam(0, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[0].stack.size), localParams, this), operand1));
 
         alloc.Free(operand1);
 
-        AssemblyExpr.Value operand2 = expr.right.Accept(this);
-
-        if (operand2.IsLiteral())
-        {
-            operand2 = ((AssemblyExpr.ILiteralBase)operand2).CreateLiteral((AssemblyExpr.Register.RegisterSize)expr.internalFunction.parameters[1].stack.size);
-        }
+        AssemblyExpr.Value operand2 = expr.right.Accept(this)
+            .IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)expr.internalFunction.parameters[1].stack.size);
 
         Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.AllocParam(1, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[1].stack.size), localParams, this), operand2));
 
@@ -117,14 +109,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         for (int i = 0; i < expr.arguments.Count; i++)
         {
-            AssemblyExpr.Value arg = expr.arguments[i].Accept(this);
-
-            if (arg == null) continue;
-
-            if (arg.IsLiteral())
-            {
-                arg = ((AssemblyExpr.ILiteralBase)arg).CreateLiteral((AssemblyExpr.Register.RegisterSize)expr.internalFunction.parameters[i].stack.size);
-            }
+            AssemblyExpr.Value arg = expr.arguments[i].Accept(this)
+                .IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)expr.internalFunction.parameters[i].stack.size);
 
             if (i + Convert.ToUInt16(instance) < InstructionUtils.paramRegister.Length)
             {
@@ -575,12 +561,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
     {
         AssemblyExpr.Register?[] localParam = new AssemblyExpr.Register[1];
 
-        AssemblyExpr.Value operand = expr.operand.Accept(this);
-
-        if (operand.IsLiteral())
-        {
-            operand = ((AssemblyExpr.ILiteralBase)operand).CreateLiteral((AssemblyExpr.Register.RegisterSize)expr.internalFunction.parameters[0].stack.size);
-        }
+        AssemblyExpr.Value operand = expr.operand.Accept(this)
+            .IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)expr.internalFunction.parameters[0].stack.size);
 
         Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.AllocParam(0, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[0].stack.size), localParam, this), operand));
 

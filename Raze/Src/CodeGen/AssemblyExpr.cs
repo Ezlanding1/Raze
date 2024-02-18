@@ -90,6 +90,15 @@ public abstract partial class AssemblyExpr
             }
             return (RegisterPointer)this;
         }
+
+        internal Value IfLiteralCreateLiteral(Register.RegisterSize size)
+        {
+            if (IsLiteral())
+            {
+                return ((ILiteralBase)this).CreateLiteral(size);
+            }
+            return this;
+        }
     }
 
     public abstract class RegisterPointer : Value

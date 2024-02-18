@@ -48,7 +48,7 @@ public abstract class Expr
         public T VisitNoOpExpr(NoOp expr);
     }
 
-    public class Binary : Expr
+    public class Binary : Expr, ICall
     {
         public Expr left;
         public Token op;
@@ -67,9 +67,12 @@ public abstract class Expr
         {
             return visitor.VisitBinaryExpr(this);
         }
+
+        public IEnumerable<Expr> GetArguments() => new Expr[] { left, right };
+        public Function GetInternalFunction() => internalFunction;
     }
 
-    public class Unary : Expr
+    public class Unary : Expr, ICall
     {
         public Token op;
         public Expr operand;
@@ -86,6 +89,9 @@ public abstract class Expr
         {
             return visitor.VisitUnaryExpr(this);
         }
+
+        public IEnumerable<Expr> GetArguments() => new Expr[] { operand };
+        public Function GetInternalFunction() => internalFunction;
     }
 
     public class Grouping : Expr
@@ -318,7 +324,13 @@ public abstract class Expr
         public Getter(Token name) => this.name = name;
     }
 
-    public class Call : Getter
+    public interface ICall
+    {
+        public IEnumerable<Expr> GetArguments();
+        public Function GetInternalFunction();
+    }
+
+    public class Call : Getter, ICall
     {
         public GetReference? callee;
 
@@ -350,6 +362,8 @@ public abstract class Expr
             return visitor.VisitCallExpr(this);
         }
 
+        public IEnumerable<Expr> GetArguments() => arguments;
+        public Function GetInternalFunction() => internalFunction;
     }
 
     public class Get : Getter

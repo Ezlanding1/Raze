@@ -59,91 +59,31 @@ public partial class Analyzer
 
         public override object VisitNewExpr(Expr.New expr)
         {
-            if (expr.call.internalFunction == null) return null;
-
-            if (expr.call.internalFunction.dead)
-            {
-                using (new SaveContext())
-                    expr.call.internalFunction.Accept(this);
-            }
-
-            if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Function && ((Expr.Function)symbolTable.Current).modifiers["inline"])
-            {
-                for (int i = 0; i < expr.call.internalFunction.Arity; i++)
-                {
-                    if (expr.call.internalFunction.parameters[i].modifiers["ref"] && !expr.call.internalFunction.parameters[i].modifiers["inlineRef"])
-                    {
-                        ((Expr.Function)symbolTable.Current).parameters[i].modifiers["inlineRef"] = false;
-                    }
-                }
-            }
+            HandleCall(expr.call);
             return null;
         }
         
         public override object VisitBinaryExpr(Expr.Binary expr)
         {
-            if (expr.internalFunction == null) return null;
-
-            if (expr.internalFunction.dead)
+            if (expr.internalFunction != null)
             {
-                using (new SaveContext())
-                    expr.internalFunction.Accept(this);
+                HandleCall(expr);
             }
-
-            if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Function && ((Expr.Function)symbolTable.Current).modifiers["inline"])
-            {
-                for (int i = 0; i < expr.internalFunction.Arity; i++)
-                {
-                    if (expr.internalFunction.parameters[i].modifiers["ref"] && !expr.internalFunction.parameters[i].modifiers["inlineRef"])
-                    {
-                        ((Expr.Function)symbolTable.Current).parameters[i].modifiers["inlineRef"] = false;
-                    }
-                }
-            }
-            return null;
+            return base.VisitBinaryExpr(expr);
         }
 
         public override object VisitUnaryExpr(Expr.Unary expr)
         {
-            if (expr.internalFunction == null) return null;
-
-            if (expr.internalFunction.dead)
-            {
-                using (new SaveContext())
-                    expr.internalFunction.Accept(this);
+            if (expr.internalFunction != null)
+            { 
+                HandleCall(expr);
             }
-
-            if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Function && ((Expr.Function)symbolTable.Current).modifiers["inline"])
-            {
-                for (int i = 0; i < expr.internalFunction.Arity; i++)
-                {
-                    if (expr.internalFunction.parameters[i].modifiers["ref"] && !expr.internalFunction.parameters[i].modifiers["inlineRef"])
-                    {
-                        ((Expr.Function)symbolTable.Current).parameters[i].modifiers["inlineRef"] = false;
-                    }
-                }
-            }
-            return null;
+            return base.VisitUnaryExpr(expr);
         }
 
         public override object VisitCallExpr(Expr.Call expr)
         {
-            if (expr.internalFunction.dead)
-            {
-                using (new SaveContext())
-                    expr.internalFunction.Accept(this);
-            }
-
-            if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Function && ((Expr.Function)symbolTable.Current).modifiers["inline"])
-            {
-                for (int i = 0; i < expr.internalFunction.Arity; i++)
-                {
-                    if (expr.internalFunction.parameters[i].modifiers["ref"] && !expr.internalFunction.parameters[i].modifiers["inlineRef"])
-                    {
-                        ((Expr.Function)symbolTable.Current).parameters[i].modifiers["inlineRef"] = false;
-                    }
-                }
-            }
+            HandleCall(expr);
             return null;
         }
 
@@ -184,6 +124,26 @@ public partial class Analyzer
             }
 
             return null;
+        }
+
+        private void HandleCall(Expr.ICall expr)
+        {
+            if (expr.GetInternalFunction().dead)
+            {
+                using (new SaveContext())
+                    expr.GetInternalFunction().Accept(this);
+            }
+
+            if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Function && ((Expr.Function)symbolTable.Current).modifiers["inline"])
+            {
+                for (int i = 0; i < expr.GetInternalFunction().Arity; i++)
+                {
+                    if (expr.GetInternalFunction().parameters[i].modifiers["ref"] && !expr.GetInternalFunction().parameters[i].modifiers["inlineRef"])
+                    {
+                        ((Expr.Function)symbolTable.Current).parameters[i].modifiers["inlineRef"] = false;
+                    }
+                }
+            }
         }
 
         private void SetInlineRef(Expr.StackData stack)

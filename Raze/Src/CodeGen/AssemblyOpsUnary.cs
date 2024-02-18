@@ -34,15 +34,18 @@ internal partial class AssemblyOps
         }
         private static AssemblyExpr.Value HandleOperand(ExprUtils.AssignableInstruction.Unary instruction, AssemblyOps assemblyOps)
         {
-            var operand2 = (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Unary.AssignType.AssignFirst) ? 
-                assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler) : 
-                instruction.instruction.operand);
+            AssemblyExpr.Value operand;
 
-            if (operand2.IsLiteral())
+            if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Unary.AssignType.AssignFirst))
             {
-                operand2 = ((AssemblyExpr.UnresolvedLiteral)operand2).CreateLiteral(AssemblyExpr.Register.RegisterSize._64Bits);
+                operand = assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler)
+                    .IfLiteralCreateLiteral(InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count-1].GetLastData().size));
             }
-            return operand2;
+            else
+            {
+                operand = instruction.instruction.operand.IfLiteralCreateLiteral(AssemblyExpr.Register.RegisterSize._64Bits);
+            }
+            return operand.NonLiteral(assemblyOps.assembler);
         }
 
         public static void DefaultUnOp(ExprUtils.AssignableInstruction.Unary instruction, AssemblyOps assemblyOps)
