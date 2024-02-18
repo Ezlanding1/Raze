@@ -573,6 +573,7 @@ public abstract class Expr
         }
         internal ExprUtils.Modifiers modifiers;
         public bool constructor;
+        public bool dead = true;
         public Block block;
 
         internal Function(ExprUtils.Modifiers modifiers, TypeReference _returnType, Token name, List<Parameter> parameters, Block block) : base(name)

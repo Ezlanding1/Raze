@@ -13,23 +13,18 @@ public partial class Analyzer
     {
         SymbolTable symbolTable = SymbolTableSingleton.SymbolTable;
 
-        HashSet<Expr.Definition> handledDefs = new();
-
         public OptimizationPass(List<Expr> expressions) : base(expressions)
         {
         }
 
         internal override void Run()
         {
-            foreach (Expr expr in expressions)
-            {
-                expr.Accept(this);
-            }
+            symbolTable.main.Accept(this);
         }
 
         public override object? VisitFunctionExpr(Expr.Function expr)
         {
-            handledDefs.Add(expr);
+            expr.dead = false;
 
             symbolTable.SetContext(expr);
 
@@ -62,9 +57,78 @@ public partial class Analyzer
             return null;
         }
 
+        public override object VisitNewExpr(Expr.New expr)
+        {
+            if (expr.call.internalFunction == null) return null;
+
+            if (expr.call.internalFunction.dead)
+            {
+                using (new SaveContext())
+                    expr.call.internalFunction.Accept(this);
+            }
+
+            if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Function && ((Expr.Function)symbolTable.Current).modifiers["inline"])
+            {
+                for (int i = 0; i < expr.call.internalFunction.Arity; i++)
+                {
+                    if (expr.call.internalFunction.parameters[i].modifiers["ref"] && !expr.call.internalFunction.parameters[i].modifiers["inlineRef"])
+                    {
+                        ((Expr.Function)symbolTable.Current).parameters[i].modifiers["inlineRef"] = false;
+                    }
+                }
+            }
+            return null;
+        }
+        
+        public override object VisitBinaryExpr(Expr.Binary expr)
+        {
+            if (expr.internalFunction == null) return null;
+
+            if (expr.internalFunction.dead)
+            {
+                using (new SaveContext())
+                    expr.internalFunction.Accept(this);
+            }
+
+            if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Function && ((Expr.Function)symbolTable.Current).modifiers["inline"])
+            {
+                for (int i = 0; i < expr.internalFunction.Arity; i++)
+                {
+                    if (expr.internalFunction.parameters[i].modifiers["ref"] && !expr.internalFunction.parameters[i].modifiers["inlineRef"])
+                    {
+                        ((Expr.Function)symbolTable.Current).parameters[i].modifiers["inlineRef"] = false;
+                    }
+                }
+            }
+            return null;
+        }
+
+        public override object VisitUnaryExpr(Expr.Unary expr)
+        {
+            if (expr.internalFunction == null) return null;
+
+            if (expr.internalFunction.dead)
+            {
+                using (new SaveContext())
+                    expr.internalFunction.Accept(this);
+            }
+
+            if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Function && ((Expr.Function)symbolTable.Current).modifiers["inline"])
+            {
+                for (int i = 0; i < expr.internalFunction.Arity; i++)
+                {
+                    if (expr.internalFunction.parameters[i].modifiers["ref"] && !expr.internalFunction.parameters[i].modifiers["inlineRef"])
+                    {
+                        ((Expr.Function)symbolTable.Current).parameters[i].modifiers["inlineRef"] = false;
+                    }
+                }
+            }
+            return null;
+        }
+
         public override object VisitCallExpr(Expr.Call expr)
         {
-            if (!handledDefs.Contains(expr.internalFunction))
+            if (expr.internalFunction.dead)
             {
                 using (new SaveContext())
                     expr.internalFunction.Accept(this);

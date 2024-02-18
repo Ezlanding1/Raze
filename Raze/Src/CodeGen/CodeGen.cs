@@ -256,7 +256,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     public AssemblyExpr.Value? VisitFunctionExpr(Expr.Function expr)
     {
-        if (expr.modifiers["inline"] && !expr.modifiers["operator"])
+        if (expr.modifiers["inline"] || expr.dead)
         {
             return null;
         }
