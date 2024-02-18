@@ -97,6 +97,18 @@ public partial class Analyzer
                 expr.callee.Accept(this);
             }
             HandleCall(expr);
+
+            if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Function && ((Expr.Function)symbolTable.Current).modifiers["inline"])
+            {
+                for (int i = 0; i < expr.GetInternalFunction().Arity; i++)
+                {
+                    if (expr.GetInternalFunction().parameters[i].modifiers["ref"] && !expr.GetInternalFunction().parameters[i].modifiers["inlineRef"])
+                    {
+                        ((Expr.Function)symbolTable.Current).parameters[i].modifiers["inlineRef"] = false;
+                    }
+                }
+            }
+
             return null;
         }
 
@@ -150,17 +162,6 @@ public partial class Analyzer
             foreach (var arg in expr.GetArguments())
             {
                 arg.Accept(this);
-            }
-
-            if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Function && ((Expr.Function)symbolTable.Current).modifiers["inline"])
-            {
-                for (int i = 0; i < expr.GetInternalFunction().Arity; i++)
-                {
-                    if (expr.GetInternalFunction().parameters[i].modifiers["ref"] && !expr.GetInternalFunction().parameters[i].modifiers["inlineRef"])
-                    {
-                        ((Expr.Function)symbolTable.Current).parameters[i].modifiers["inlineRef"] = false;
-                    }
-                }
             }
         }
 

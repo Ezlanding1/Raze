@@ -924,10 +924,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     internal static AssemblyExpr.Binary PartialRegisterOptimize(Expr.Type operand1Type, AssemblyExpr.RegisterPointer operand1, AssemblyExpr.Value operand2)
     {
-        if (operand1.Size >= AssemblyExpr.Register.RegisterSize._32Bits)
-        {
-            return new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, operand1, operand2);
-        }
         operand1.size = AssemblyExpr.Register.RegisterSize._32Bits;
 
         bool signed = Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Integer].Matches(operand1Type);

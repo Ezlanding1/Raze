@@ -420,17 +420,20 @@ public class InlinedCodeGen : CodeGen
 
     private AssemblyExpr.Value HandleParameterRegister(Expr.Parameter parameter, AssemblyExpr.Value arg)
     {
-        if (arg.IsLiteral() || IsRefParameter(parameter)) 
+        if (arg.IsLiteral() || parameter.modifiers["ref"])
         {
             return arg;
         }
-
-        AssemblyExpr.RegisterPointer registerPointer = ((AssemblyExpr.RegisterPointer)arg).AsRegister(this);
-        Emit(PartialRegisterOptimize(parameter.stack.type, registerPointer, arg));
-        return registerPointer;
-    }
-    private bool IsRefParameter(Expr.Parameter parameter)
-    {
-        return parameter.modifiers["ref"] || parameter.modifiers["inlineRef"];
+        if (arg.Size < AssemblyExpr.Register.RegisterSize._32Bits)
+        {
+            AssemblyExpr.RegisterPointer registerPointer = ((AssemblyExpr.RegisterPointer)arg).AsRegister(this);
+            Emit(PartialRegisterOptimize(parameter.stack.type, registerPointer, arg));
+            return registerPointer;
+        }
+        if (parameter.modifiers["inlineRef"]) 
+        {
+            return arg;
+        }
+        return arg.NonPointer(this);
     }
 }

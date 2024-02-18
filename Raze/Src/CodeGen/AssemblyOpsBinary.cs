@@ -51,7 +51,7 @@ internal partial class AssemblyOps
             }
             return operand1.NonLiteral(assemblyOps.assembler);
         }
-        public static AssemblyExpr.Value HandleOperand2(ExprUtils.AssignableInstruction.Binary instruction, AssemblyExpr.Value operand1, AssemblyOps assemblyOps)
+        public static AssemblyExpr.Value HandleOperand2(ExprUtils.AssignableInstruction.Binary instruction, ref AssemblyExpr.Value operand1, AssemblyOps assemblyOps)
         {
             AssemblyExpr.Value operand2;
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))
@@ -61,14 +61,17 @@ internal partial class AssemblyOps
                 {
                     if (operand2.Size < AssemblyExpr.Register.RegisterSize._32Bits)
                     {
-                        int varOffset = Convert.ToInt32(instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst)) + 1;
-                        Expr.Type type = assemblyOps.vars[assemblyOps.vars.Count - varOffset].GetLastData().type;
+                        int varOffset = Convert.ToInt32(instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst));
 
-                        AssemblyExpr.Register reg = ((AssemblyExpr.Pointer)operand2).AsRegister(assemblyOps.assembler);
-                        assemblyOps.assembler.Emit(CodeGen.PartialRegisterOptimize(type, reg, operand2));
+                        Expr.Type op1Type = assemblyOps.vars[assemblyOps.vars.Count - varOffset].GetLastData().type;
+                        AssemblyExpr.Register reg2 = ((AssemblyExpr.Pointer)operand1).AsRegister(assemblyOps.assembler);
+                        assemblyOps.assembler.Emit(CodeGen.PartialRegisterOptimize(op1Type, reg2, operand1));
+                        operand1 = reg2;
 
-                        ((AssemblyExpr.RegisterPointer)operand1).size = AssemblyExpr.Register.RegisterSize._32Bits;
-                        operand2 = reg;
+                        Expr.Type op2Type = assemblyOps.vars[assemblyOps.vars.Count - varOffset - 1].GetLastData().type;
+                        AssemblyExpr.Register op2Reg = ((AssemblyExpr.Pointer)operand2).AsRegister(assemblyOps.assembler);
+                        assemblyOps.assembler.Emit(CodeGen.PartialRegisterOptimize(op2Type, op2Reg, operand2));
+                        operand2 = op2Reg;
                     }
                     else
                     {
@@ -91,7 +94,7 @@ internal partial class AssemblyOps
 
         private static void CheckOperandSizeMismatch(AssemblyExpr.Value operand1, AssemblyExpr.Value operand2)
         {
-            if (operand1.Size < operand2.Size)
+            if (operand1.Size != operand2.Size)
             {
                 Diagnostics.errors.Push(new Error.BackendError("Invalid Assembly Block", "Operand size mistmatch"));
             }
@@ -100,7 +103,7 @@ internal partial class AssemblyOps
         public static void DefaultBinOp(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
             var operand1 = HandleOperand1(instruction, assemblyOps);
-            var operand2 = HandleOperand2(instruction, operand1, assemblyOps);
+            var operand2 = HandleOperand2(instruction, ref operand1, assemblyOps);
 
             assemblyOps.assembler.Emit(new AssemblyExpr.Binary(instruction.instruction.instruction, operand1, operand2));
 
@@ -148,7 +151,7 @@ internal partial class AssemblyOps
         public static void IMUL(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
             var operand1 = HandleOperand1(instruction, assemblyOps).NonPointer(assemblyOps.assembler);
-            var operand2 = HandleOperand2(instruction, operand1, assemblyOps);
+            var operand2 = HandleOperand2(instruction, ref operand1, assemblyOps);
 
             assemblyOps.assembler.Emit(new AssemblyExpr.Binary(instruction.instruction.instruction, operand1, operand2));
 
@@ -340,7 +343,7 @@ internal partial class AssemblyOps
         public static void CMP(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
             var operand1 = HandleOperand1(instruction, assemblyOps);
-            var operand2 = HandleOperand2(instruction, operand1, assemblyOps);
+            var operand2 = HandleOperand2(instruction, ref operand1, assemblyOps);
 
             assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.CMP, operand1, operand2));
 
