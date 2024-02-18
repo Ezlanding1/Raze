@@ -74,7 +74,7 @@ public class InlinedCodeGen : CodeGen
         alloc.Free(((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register, true);
 
         if (assembly.text[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == AssemblyExpr.Instruction.JMP
-            && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.value == Encoding.ASCII.GetBytes(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)))
+            && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.Name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
         {
             assembly.text.RemoveAt(assembly.text.Count - 1);
 
@@ -157,7 +157,7 @@ public class InlinedCodeGen : CodeGen
         UnlockOperand(ret);
 
         if (assembly.text[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == AssemblyExpr.Instruction.JMP
-            && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.value == Encoding.ASCII.GetBytes(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)))
+            && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.Name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
         {
             assembly.text.RemoveAt(assembly.text.Count - 1);
 
@@ -263,7 +263,7 @@ public class InlinedCodeGen : CodeGen
         UnlockOperand(ret);
 
         if (assembly.text[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == AssemblyExpr.Instruction.JMP
-            && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.value == Encoding.ASCII.GetBytes(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)))
+            && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.Name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
         {
             assembly.text.RemoveAt(assembly.text.Count - 1);
 
