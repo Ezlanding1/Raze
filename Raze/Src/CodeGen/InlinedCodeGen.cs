@@ -417,10 +417,10 @@ public class InlinedCodeGen : CodeGen
             }
         }
     }
-    
+
     private AssemblyExpr.Value HandleParameterRegister(Expr.Parameter parameter, AssemblyExpr.Value arg)
     {
-        if (IsRefParameter(parameter)) 
+        if (arg.IsLiteral() || IsRefParameter(parameter)) 
         {
             return arg;
         }

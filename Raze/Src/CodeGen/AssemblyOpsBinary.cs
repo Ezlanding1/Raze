@@ -38,11 +38,23 @@ internal partial class AssemblyOps
 
         public static AssemblyExpr.Value HandleOperand1(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
+            AssemblyExpr.Value operand1;
+
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst))
             {
-                return assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler).NonLiteral(assemblyOps.assembler);
+                operand1 = assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler);
             }
-            return instruction.instruction.operand1;
+            else
+            {
+                operand1 = instruction.instruction.operand1;
+            }
+
+            if (operand1.IsLiteral())
+            {
+                operand1 = ((AssemblyExpr.UnresolvedLiteral)operand1).CreateLiteral(InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count].GetLastData().size));
+            }
+
+            return operand1.NonLiteral(assemblyOps.assembler);
         }
         public static AssemblyExpr.Value HandleOperand2(ExprUtils.AssignableInstruction.Binary instruction, AssemblyExpr.Value operand1, AssemblyOps assemblyOps)
         {
@@ -161,7 +173,15 @@ internal partial class AssemblyOps
         public static void SAL_SAR(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
             var operand1 = HandleOperand1(instruction, assemblyOps);
-            var operand2 = HandleOperand2(instruction, operand1, assemblyOps);
+            var operand2 = (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond)) ?
+                assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler) :
+                instruction.instruction.operand2;
+
+            if (operand2.IsLiteral())
+            {
+                operand2 = ((AssemblyExpr.UnresolvedLiteral)operand2).CreateLiteral(AssemblyExpr.Register.RegisterSize._8Bits).NonLiteral(assemblyOps.assembler);
+            }
+
 
             if (!operand2.IsLiteral())
             {
@@ -226,13 +246,16 @@ internal partial class AssemblyOps
         {
             assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler);
 
-            var operand1 = (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst) ?
-                    assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler).NonPointerNonLiteral(assemblyOps.assembler) :
-                    instruction.instruction.operand1);
+            var operand1 = HandleOperand1(instruction, assemblyOps).NonPointer(assemblyOps.assembler);
 
             var operand2 = (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond)) ?
-                assemblyOps.vars[assemblyOps.count].Accept(assemblyOps.assembler).NonLiteral(assemblyOps.assembler) :
+                assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler) :
                 instruction.instruction.operand2;
+
+            if (operand2.IsLiteral())
+            {
+                operand2 = ((AssemblyExpr.UnresolvedLiteral)operand2).CreateLiteral(AssemblyExpr.Register.RegisterSize._8Bits).NonLiteral(assemblyOps.assembler);
+            }
 
             AssemblyExpr.Instruction emitOp;
             switch (instruction.instruction.instruction)
