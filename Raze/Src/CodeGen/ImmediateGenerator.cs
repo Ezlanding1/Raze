@@ -104,7 +104,7 @@ public partial class AssemblyExpr
             {
                 Diagnostics.errors.Push(new Error.BackendError("Invalid Literal", $"RefString literal with size '{size}' must have the same size as the system size '{InstructionUtils.SYS_SIZE}'"));
             }
-            return Encoding.ASCII.GetBytes(str);
+            return Encoding.ASCII.GetBytes(str + '\0');
         }
 
         private static void ThrowInvalidSizedLiteral(Parser.LiteralTokenType literalType, string str, Register.RegisterSize dataTypeSize)

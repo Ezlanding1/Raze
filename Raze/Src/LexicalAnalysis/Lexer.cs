@@ -144,7 +144,7 @@ public class Lexer
         // Intializes the Regexes for escape characters
         // In accordance to the escape character standard: https://www.ibm.com/docs/en/zos/2.4.0?topic=set-escape-sequences
 
-        stringEscapeCodes = new (Regex, char)[11];
+        stringEscapeCodes = new (Regex, char)[12];
 
         stringEscapeCodes[0] = (new Regex(@"\\\\"), '\\');
         stringEscapeCodes[1] = (new Regex(@"\\a"), '\a');
@@ -157,6 +157,7 @@ public class Lexer
         stringEscapeCodes[8] = (new Regex(@"\\'"), '\'');
         stringEscapeCodes[9] = (new Regex(@"\\\"""), '\"');
         stringEscapeCodes[10] =  (new Regex(@"\\\?"), '?');
+        stringEscapeCodes[11] =  (new Regex(@"\\0"), '\0');
     }
 }
 
