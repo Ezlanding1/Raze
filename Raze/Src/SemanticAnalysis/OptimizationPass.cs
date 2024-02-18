@@ -59,7 +59,16 @@ public partial class Analyzer
 
         public override object VisitNewExpr(Expr.New expr)
         {
-            HandleCall(expr.call);
+            if (expr.call.internalFunction.dead)
+            {
+                expr.call.Accept(this);
+                using (new SaveContext())
+                    expr.internalClass.Accept(this);
+            }
+            else
+            {
+                expr.call.Accept(this);
+            }
             return null;
         }
         
@@ -83,6 +92,10 @@ public partial class Analyzer
 
         public override object VisitCallExpr(Expr.Call expr)
         {
+            if (expr.callee != null)
+            {
+                expr.callee.Accept(this);
+            }
             HandleCall(expr);
             return null;
         }
@@ -132,6 +145,11 @@ public partial class Analyzer
             {
                 using (new SaveContext())
                     expr.GetInternalFunction().Accept(this);
+            }
+
+            foreach (var arg in expr.GetArguments())
+            {
+                arg.Accept(this);
             }
 
             if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Function && ((Expr.Function)symbolTable.Current).modifiers["inline"])
