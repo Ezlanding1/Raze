@@ -415,9 +415,9 @@ public abstract class Expr
     public partial class Assembly : Expr
     {
         internal List<ExprUtils.AssignableInstruction> block;
-        public List<GetReference> variables;
+        public List<(AssemblyExpr.Register.RegisterSize, GetReference)> variables;
 
-        internal Assembly(List<ExprUtils.AssignableInstruction> block, List<GetReference> variables)
+        internal Assembly(List<ExprUtils.AssignableInstruction> block, List<(AssemblyExpr.Register.RegisterSize, GetReference)> variables)
         {
             this.block = block;
             this.variables = variables;

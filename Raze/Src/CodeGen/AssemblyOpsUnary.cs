@@ -10,6 +10,24 @@ internal partial class AssemblyOps
 {
     internal class Unary
     {
+        public static AssemblyExpr.Value CreateOperand(AssemblyOps assemblyOps)
+        {
+            var operand = assemblyOps.vars[assemblyOps.count++].Item2.Accept(assemblyOps.assembler);
+
+            if (assemblyOps.vars[assemblyOps.count - 1].Item1 != (AssemblyExpr.Register.RegisterSize)(-1))
+            {
+                if (operand.IsLiteral())
+                {
+                    operand = ((AssemblyExpr.ILiteralBase)operand).CreateLiteral(assemblyOps.vars[assemblyOps.count - 1].Item1);
+                }
+                else
+                {
+                    ((AssemblyExpr.RegisterPointer)operand).size = assemblyOps.vars[assemblyOps.count - 1].Item1;
+                }
+            }
+            return operand;
+        }
+
         public static void ReturnOp(ref AssemblyExpr.Value operand, ExprUtils.AssignableInstruction.Unary.AssignType assignType, AssemblyOps assemblyOps)
         {
             if (((InlinedCodeGen)assemblyOps.assembler).inlineState.inline)
@@ -38,8 +56,8 @@ internal partial class AssemblyOps
 
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Unary.AssignType.AssignFirst))
             {
-                operand = assemblyOps.vars[assemblyOps.count++].Accept(assemblyOps.assembler)
-                    .IfLiteralCreateLiteral(InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count-1].GetLastData().size));
+                operand = CreateOperand(assemblyOps)
+                    .IfLiteralCreateLiteral(InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count-1].Item2.GetLastData().size));
             }
             else
             {

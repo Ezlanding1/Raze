@@ -137,11 +137,11 @@ public partial class Analyzer
                 switch (assigningVars.Item2) 
                 {
                     case 1 or 2:
-                        SetInlineRef(expr.variables[varIdx + (assigningVars.Item2 - 1)].GetLastData());
+                        SetInlineRef(expr.variables[varIdx + (assigningVars.Item2 - 1)].Item2.GetLastData());
                         break;
                     case 3:
-                        SetInlineRef(expr.variables[varIdx].GetLastData());
-                        SetInlineRef(expr.variables[varIdx+1].GetLastData());
+                        SetInlineRef(expr.variables[varIdx].Item2.GetLastData());
+                        SetInlineRef(expr.variables[varIdx+1].Item2.GetLastData());
                         break;
 
                 }

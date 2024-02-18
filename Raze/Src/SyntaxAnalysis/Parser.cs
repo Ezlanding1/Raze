@@ -732,10 +732,10 @@ public class Parser
         return bodyExprs;
     }
 
-    private (List<ExprUtils.AssignableInstruction>, List<Expr.GetReference>) GetAsmInstructions()
+    private (List<ExprUtils.AssignableInstruction>, List<(AssemblyExpr.Register.RegisterSize, Expr.GetReference)>) GetAsmInstructions()
     {
         List<ExprUtils.AssignableInstruction> instructions = new();
-        List<Expr.GetReference> variables = new();
+        List<(AssemblyExpr.Register.RegisterSize, Expr.GetReference)> variables = new();
 
         Expect(Token.TokenType.LBRACE, "'{' before Assembly Block body");
 
@@ -754,6 +754,7 @@ public class Parser
             {
                 var op = Previous();
 
+
                 if (TypeMatch(Token.TokenType.IDENTIFIER, Token.TokenType.DOLLAR, Token.TokenType.INTEGER, Token.TokenType.FLOATING, Token.TokenType.STRING, Token.TokenType.HEX, Token.TokenType.BINARY))
                 {
                     // Unary
@@ -761,12 +762,29 @@ public class Parser
 
                     if (Previous().type == Token.TokenType.DOLLAR)
                     {
+
                         if (!(TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this")))
                         {
                             Expected("IDENTIFIER, 'this'", "after escape '$'");
                         }
+
+                        Token variableName = Previous();
+
+                        AssemblyExpr.Register.RegisterSize op1Truncate = (AssemblyExpr.Register.RegisterSize)(-1);
+                        if (TypeMatch(Token.TokenType.MODULO) && TypeMatch(Token.TokenType.INTEGER))
+                        {
+                            if (new List<string> { "64", "32", "16", "8" }.Contains(Previous().lexeme))
+                            {
+                                op1Truncate = (AssemblyExpr.Register.RegisterSize)(int.Parse(Previous().lexeme) / 8);
+                            }
+                            else
+                            {
+
+                                Diagnostics.errors.Push(new Error.ParseError("Invalid Truncation", $"You may only truncate an assembly value to 64, 32, 16, or 8 bits. Got '{Previous().lexeme}'"));
+                            }
+                        }
                         value = null;
-                        variables.Add(new Expr.AmbiguousGetReference(Previous(), true));
+                        variables.Add((op1Truncate, new Expr.AmbiguousGetReference(variableName, true)));
                     }
                     else if (Previous().type == Token.TokenType.IDENTIFIER)
                     {
@@ -813,7 +831,23 @@ public class Parser
                             {
                                 Expected("IDENTIFIER, 'this'", "after escape '$'");
                             }
-                            variables.Add(new Expr.AmbiguousGetReference(Previous(), true));
+
+                            Token variableName = Previous();
+
+                            AssemblyExpr.Register.RegisterSize op2Truncate = (AssemblyExpr.Register.RegisterSize)(-1);
+                            if (TypeMatch(Token.TokenType.MODULO) && TypeMatch(Token.TokenType.INTEGER))
+                            {
+                                if (new List<string> { "64", "32", "16", "8" }.Contains(Previous().lexeme))
+                                {
+                                    op2Truncate = (AssemblyExpr.Register.RegisterSize)(int.Parse(Previous().lexeme) / 8);
+                                }
+                                else
+                                {
+                                    Diagnostics.errors.Push(new Error.ParseError("Invalid Truncation", $"You may only truncate an assembly value to 64, 32, 16, or 8 bits. Got '{Previous().lexeme}'"));
+                                }
+                            }
+
+                            variables.Add((op2Truncate, new Expr.AmbiguousGetReference(variableName, true)));
                             instructions.Add(new ExprUtils.AssignableInstruction.Binary(new AssemblyExpr.Binary(ConvertToInstruction(op.lexeme), value, null), (value == null) ? (ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst | ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond) : ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond, localReturn));
                         }
                         else

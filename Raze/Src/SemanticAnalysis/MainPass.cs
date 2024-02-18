@@ -340,7 +340,7 @@ public partial class Analyzer
         {
             foreach (var variable in expr.variables)
             {
-                variable.Accept(this);
+                variable.Item2.Accept(this);
             }
             if (expr.block.Any(x => x.HasReturn()))
             {
