@@ -688,20 +688,23 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         if (!expr._void)
         {
             AssemblyExpr.Value operand = expr.value.Accept(this)
-                .IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)expr.type.allocSize);
+                .IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)Math.Max((int)AssemblyExpr.Register.RegisterSize._32Bits, expr.type.allocSize));
 
             var rax = new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, operand.Size);
 
-            if (operand.IsRegister())
+            if ((operand.IsRegister() && (((AssemblyExpr.Register)operand).Name != AssemblyExpr.Register.RegisterName.RAX))
+                || operand.IsPointer())
             {
-                if (((AssemblyExpr.Register)operand).Name != AssemblyExpr.Register.RegisterName.RAX)
+                if (operand.Size < AssemblyExpr.Register.RegisterSize._32Bits)
+                {
+                    Emit(PartialRegisterOptimize(expr.type, rax, operand));
+                }
+                else
+                {
                     Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, operand));
+                }
             }
-            else if (operand.IsPointer())
-            {
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, operand));
-            }
-            else
+            else if (operand.IsLiteral())
             {
                 Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, operand));
             }
@@ -712,7 +715,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         {
             Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, InstructionUtils.SYS_SIZE), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 0 })));
         }
-        
+
         DoFooter();
 
         return null;
