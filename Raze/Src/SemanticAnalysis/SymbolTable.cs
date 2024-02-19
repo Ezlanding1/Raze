@@ -14,7 +14,7 @@ public partial class Analyzer
         private Expr.Definition? current = null;
         public Expr.Definition? Current { get => current; private set => current = value; }
 
-        public Expr.Function main = null;
+        public Expr.Function? main = null;
 
         private List<Expr.Definition> globals = new();
 

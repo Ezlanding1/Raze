@@ -19,7 +19,7 @@ public partial class Analyzer
 
         internal override void Run()
         {
-            symbolTable.main.Accept(this);
+            symbolTable.main?.Accept(this);
         }
 
         public override object? VisitFunctionExpr(Expr.Function expr)

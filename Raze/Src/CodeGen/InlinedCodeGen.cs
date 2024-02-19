@@ -333,7 +333,7 @@ public class InlinedCodeGen : CodeGen
 
         if (!expr._void)
         {
-            AssemblyExpr.Value operand = expr.value.Accept(this);
+            AssemblyExpr.Value operand = expr.value.Accept(this).IfLiteralCreateLiteral(InstructionUtils.ToRegisterSize(expr.type.allocSize));
 
             if (((InlineStateInlined)inlineState).callee == null)
             {
@@ -420,7 +420,11 @@ public class InlinedCodeGen : CodeGen
 
     private AssemblyExpr.Value HandleParameterRegister(Expr.Parameter parameter, AssemblyExpr.Value arg)
     {
-        if (arg.IsLiteral() || parameter.modifiers["ref"])
+        if (arg.IsLiteral())
+        {
+            return ((AssemblyExpr.ILiteralBase)arg).CreateLiteral(InstructionUtils.ToRegisterSize(parameter.stack.size));
+        }
+        if (parameter.modifiers["ref"])
         {
             return arg;
         }
