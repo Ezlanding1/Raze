@@ -111,6 +111,7 @@ public abstract partial class AssemblyExpr
         }
         // Note: This method should always shallow-clone the returned register
         internal abstract Register AsRegister(CodeGen assembler);
+        internal abstract RegisterPointer Clone();
         
     }
 
@@ -170,7 +171,8 @@ public abstract partial class AssemblyExpr
             this.size = size;
         }
 
-        internal override Register AsRegister(CodeGen assembler) => new(nameBox, Size);
+        internal override Register AsRegister(CodeGen assembler) => Clone();
+        internal override Register Clone() => new Register(nameBox, Size);
 
         public override T Accept<T>(IUnaryOperandVisitor<T> visitor)
         {
@@ -234,6 +236,7 @@ public abstract partial class AssemblyExpr
         {
             return IsOnStack() ? assembler.alloc.NextRegister(Size) : new Register(register.nameBox, Size);
         }
+        internal override RegisterPointer Clone() => new Pointer(register, -offset, size);
 
         public override T Accept<T>(IUnaryOperandVisitor<T> visitor)
         {

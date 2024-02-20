@@ -22,6 +22,7 @@ internal partial class AssemblyOps
                 }
                 else
                 {
+                    operand = ((AssemblyExpr.RegisterPointer)operand).Clone();
                     ((AssemblyExpr.RegisterPointer)operand).size = assemblyOps.vars[assemblyOps.count - 1].Item1;
                 }
             }
