@@ -13,7 +13,7 @@ public partial class Linker
         private static int ResolveLabelCalculateNewSize(List<byte> section, ReferenceInfo reference, Assembler.Instruction instruction)
         {
             section.RemoveRange(reference.location, reference.size);
-
+            
             reference.size = 0;
 
             foreach (byte[] bytes in instruction.ToBytes())
@@ -39,6 +39,7 @@ public partial class Linker
                     if (assembler.symbolTable.unresolvedReferences[i].reference == true)
                     {
                         ReferenceInfo reference = (ReferenceInfo)assembler.symbolTable.unresolvedReferences[i];
+                        assembler.symbolTable.sTableUnresRefIdx = i;
 
                         reference.location += sizeOffset;
 

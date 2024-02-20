@@ -11,6 +11,7 @@ public partial class Linker
     internal class SymbolTable
     {
         internal List<RefOrDefSymbolTableInfo> unresolvedReferences = new();
+        internal int sTableUnresRefIdx = -1;
 
         internal Dictionary<string, int> definitions = new();
     }

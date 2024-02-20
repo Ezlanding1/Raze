@@ -12,20 +12,20 @@ public partial class Assembler
     {
         public struct Operand
         {
-            internal OperandType operandType { get; private set; }
-            internal OperandSize size { get; private set; }
+            internal OperandType type { get; private set; }
+            internal OperandSize size { get; set; }
 
             internal Operand(OperandType operandType, OperandSize size)
             {
-                this.operandType = operandType;
+                this.type = operandType;
                 this.size = size;
             }
             internal Operand(OperandType operandType, int size) : this(operandType, (OperandSize)size)
             {
             }
 
-            internal bool Matches(Operand operand) => operand.operandType.HasFlag(this.operandType) && (operandType == OperandType.IMM ? (int)operand.size >= (int)this.size : operand.size == this.size);
-            internal bool Matches(OperandType operandType) => operandType.HasFlag(this.operandType);
+            internal bool Matches(Operand operand) => operand.type.HasFlag(this.type) && (type == OperandType.IMM ? (int)operand.size >= (int)this.size : operand.size == this.size);
+            internal bool Matches(OperandType operandType) => operandType.HasFlag(this.type);
 
             [Flags]
             internal enum OperandType
