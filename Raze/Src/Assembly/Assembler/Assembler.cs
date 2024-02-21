@@ -132,7 +132,7 @@ public partial class Assembler :
 
     public Instruction VisitUnary(AssemblyExpr.Unary instruction)
     {
-        encoding = encoder.GetEncoding(instruction, this, out AssemblyExpr.Literal.LiteralType refResolveType);
+        encoding = encoder.GetEncoding(instruction, this, out bool refResolveType);
 
         List<IInstruction> instructions = new();
 
@@ -161,7 +161,7 @@ public partial class Assembler :
 
         instructions.AddRange(operandInstructions);
 
-        if (Encoder.EncodingUtils.IsReferenceLiteralType(refResolveType))
+        if (nonResolvingPass && refResolveType)
         {
             ((Linker.ReferenceInfo)symbolTable.unresolvedReferences[^1]).size = instructions.Sum(x => x.GetBytes().Length);
         }
@@ -246,7 +246,7 @@ public partial class Assembler :
                 (ModRegRm.OpCodeExtension)encoding.OpCodeExtension,
                 Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1)
             ),
-            Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2, symbolTable, encoding.encodingType)
+            Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2, this, encoding.encodingType)
         } };
     }
 
@@ -296,7 +296,7 @@ public partial class Assembler :
                         (ModRegRm.OpCodeExtension)encoding.OpCodeExtension,
                         Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(ptr1.register)
                     ),
-                    Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2, symbolTable, encoding.encodingType)
+                    Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2, this, encoding.encodingType)
                 }
             };
         }
@@ -309,7 +309,7 @@ public partial class Assembler :
                     Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(ptr1.register)
                 ),
                 Encoder.EncodingUtils.GetDispInstruction(ptr1.offset),
-                Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2, symbolTable, encoding.encodingType)
+                Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2, this, encoding.encodingType)
             }
         };
     }
@@ -364,6 +364,6 @@ public partial class Assembler :
     public Instruction VisitImmediate(AssemblyExpr.Literal imm)
     {
         // No ModRegRm byte is emitted for a unary literal operand
-        return new Instruction(new IInstruction[] { Encoder.EncodingUtils.GetImmInstruction(encoding.operands[0].size, imm, symbolTable, encoding.encodingType) });
+        return new Instruction(new IInstruction[] { Encoder.EncodingUtils.GetImmInstruction(encoding.operands[0].size, imm, this, encoding.encodingType) });
     }
 }

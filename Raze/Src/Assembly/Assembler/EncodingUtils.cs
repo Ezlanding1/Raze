@@ -48,23 +48,23 @@ public partial class Assembler
                 _ => false
             };
 
-            internal static IInstruction GetImmInstruction(Operand.OperandSize size, AssemblyExpr.Literal op2Expr, Linker.SymbolTable symbolTable, Encoding.EncodingTypes encodingTypes)
+            internal static IInstruction GetImmInstruction(Operand.OperandSize size, AssemblyExpr.Literal op2Expr, Assembler assembler, Encoding.EncodingTypes encodingTypes)
             {
                 if (op2Expr.type == AssemblyExpr.Literal.LiteralType.RefData)
                 {
-                    return symbolTable.definitions.ContainsKey(((AssemblyExpr.LabelLiteral)op2Expr).Name) ? 
-                        GenerateImmFromInt(size, symbolTable.definitions[((AssemblyExpr.LabelLiteral)op2Expr).Name] + (long)Linker.Elf64.Elf64_Shdr.dataVirtualAddress) : 
+                    return assembler.symbolTable.definitions.ContainsKey(((AssemblyExpr.LabelLiteral)op2Expr).Name) ? 
+                        GenerateImmFromInt(size, assembler.symbolTable.definitions[((AssemblyExpr.LabelLiteral)op2Expr).Name] + (long)Linker.Elf64.Elf64_Shdr.dataVirtualAddress) : 
                         DefaultUnresolvedReference;
                 }
-                else if (op2Expr.type == AssemblyExpr.Literal.LiteralType.RefProcedure || op2Expr.type == AssemblyExpr.Literal.LiteralType.RefLocalProcedure)
+                else if (!assembler.nonResolvingPass && (op2Expr.type == AssemblyExpr.Literal.LiteralType.RefProcedure || op2Expr.type == AssemblyExpr.Literal.LiteralType.RefLocalProcedure))
                 {
-                    return symbolTable.definitions.ContainsKey(((AssemblyExpr.LabelLiteral)op2Expr).Name) ?
+                    return assembler.symbolTable.definitions.ContainsKey(((AssemblyExpr.LabelLiteral)op2Expr).Name) ?
                         GenerateImmFromInt(size,
                             CalculateJumpLocation(
                                 encodingTypes.HasFlag(Encoding.EncodingTypes.RelativeJump),
-                                symbolTable.definitions[((AssemblyExpr.LabelLiteral)op2Expr).Name],
-                                ((Linker.ReferenceInfo)symbolTable.unresolvedReferences[symbolTable.sTableUnresRefIdx]).location,
-                                ((Linker.ReferenceInfo)symbolTable.unresolvedReferences[symbolTable.sTableUnresRefIdx]).size
+                                assembler.symbolTable.definitions[((AssemblyExpr.LabelLiteral)op2Expr).Name],
+                                ((Linker.ReferenceInfo)assembler.symbolTable.unresolvedReferences[assembler.symbolTable.sTableUnresRefIdx]).location,
+                                ((Linker.ReferenceInfo)assembler.symbolTable.unresolvedReferences[assembler.symbolTable.sTableUnresRefIdx]).size
                            )
                         ) : 
                         DefaultUnresolvedReference;
@@ -151,9 +151,8 @@ public partial class Assembler
                 Diagnostics.errors.Push(new Error.ImpossibleError($"Cannot encode instruction with operands '{t1.ToUpper()}, {t2.ToUpper()}'"));
             }
 
-            internal static (Operand.OperandSize, Operand.OperandSize) HandleUnresolvedRef(AssemblyExpr expr, AssemblyExpr.Operand operand, Assembler assembler, out AssemblyExpr.Literal.LiteralType refResolveType)
+            internal static (Operand.OperandSize, Operand.OperandSize) HandleUnresolvedRef(AssemblyExpr expr, AssemblyExpr.Operand operand, Assembler assembler)
             {
-                refResolveType = (AssemblyExpr.Literal.LiteralType)(-1);
                 AssemblyExpr.Literal.LiteralType literalType = ((AssemblyExpr.Literal)operand).type;
 
                 if (literalType == AssemblyExpr.Literal.LiteralType.RefData)
@@ -161,7 +160,6 @@ public partial class Assembler
                     var literal = (AssemblyExpr.LabelLiteral)operand;
                     if (assembler.nonResolvingPass)
                     {
-                        refResolveType = AssemblyExpr.Literal.LiteralType.RefData;
                         literal.Name = "data." + literal.value;
                         assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.textLocation, -1));
                     }
@@ -176,11 +174,10 @@ public partial class Assembler
                     var literal = (AssemblyExpr.LabelLiteral)operand;
                     if (assembler.nonResolvingPass)
                     {
-                        refResolveType = AssemblyExpr.Literal.LiteralType.RefProcedure;
                         literal.Name = "text." + literal.Name;
                         assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.textLocation, -1));
                     }
-                    if (assembler.symbolTable.definitions.ContainsKey(literal.Name))
+                    else
                     {
                         return (
                             SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + Linker.Elf64.Elf64_Shdr.textVirtualAddress),
@@ -198,11 +195,10 @@ public partial class Assembler
                     var literal = (AssemblyExpr.LabelLiteral)operand;
                     if (assembler.nonResolvingPass)
                     {
-                        refResolveType = AssemblyExpr.Literal.LiteralType.RefLocalProcedure;
                         literal.Name = assembler.enclosingLbl + '.' + literal.Name;
                         assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.textLocation, -1));
                     }
-                    if (assembler.symbolTable.definitions.ContainsKey(literal.Name))
+                    else
                     {
                         return (
                             SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + Linker.Elf64.Elf64_Shdr.textVirtualAddress),

@@ -36,7 +36,7 @@ public partial class Linker
 
                 for (int i = 0; i < assembler.symbolTable.unresolvedReferences.Count; i++)
                 {
-                    if (assembler.symbolTable.unresolvedReferences[i].reference == true)
+                    if (assembler.symbolTable.unresolvedReferences[i].reference)
                     {
                         ReferenceInfo reference = (ReferenceInfo)assembler.symbolTable.unresolvedReferences[i];
                         assembler.symbolTable.sTableUnresRefIdx = i;
