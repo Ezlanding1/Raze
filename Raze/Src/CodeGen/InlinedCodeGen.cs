@@ -424,20 +424,14 @@ public class InlinedCodeGen : CodeGen
         {
             return ((AssemblyExpr.ILiteralBase)arg).CreateLiteral(InstructionUtils.ToRegisterSize(parameter.stack.size));
         }
-        if (parameter.modifiers["ref"])
-        {
-            return arg;
-        }
-        if (arg.Size < AssemblyExpr.Register.RegisterSize._32Bits)
-        {
-            AssemblyExpr.RegisterPointer registerPointer = ((AssemblyExpr.RegisterPointer)arg).AsRegister(this);
-            Emit(PartialRegisterOptimize(parameter.stack.type, registerPointer, arg));
-            return registerPointer;
-        }
-        if (parameter.modifiers["inlineRef"]) 
+        if (IsRefParameter(parameter))
         {
             return arg;
         }
         return arg.NonPointer(this);
+    }
+    private bool IsRefParameter(Expr.Parameter parameter)
+    {
+        return parameter.modifiers["ref"] || parameter.modifiers["inlineRef"];
     }
 }

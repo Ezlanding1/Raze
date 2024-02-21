@@ -33,7 +33,7 @@ public partial class AssemblyExpr
             (bool successfulParse, byte[] result) = size switch
             {
                 Register.RegisterSize._8BitsUpper or
-                Register.RegisterSize._8Bits => (sbyte.TryParse(str, out var literal), BitConverter.GetBytes(literal)),
+                Register.RegisterSize._8Bits => (sbyte.TryParse(str, out var literal), new byte[] { (byte)literal }),
                 Register.RegisterSize._16Bits => (short.TryParse(str, out var literal), BitConverter.GetBytes(literal)),
                 Register.RegisterSize._32Bits => (int.TryParse(str, out var literal), BitConverter.GetBytes(literal)),
                 Register.RegisterSize._64Bits => (long.TryParse(str, out var literal), BitConverter.GetBytes(literal))
@@ -59,7 +59,7 @@ public partial class AssemblyExpr
                 return size switch
                 {
                     Register.RegisterSize._8BitsUpper or
-                    Register.RegisterSize._8Bits => BitConverter.GetBytes(Convert.ToByte(str, _base)),
+                    Register.RegisterSize._8Bits => new byte[] { Convert.ToByte(str, _base) },
                     Register.RegisterSize._16Bits => BitConverter.GetBytes(Convert.ToUInt16(str, _base)),
                     Register.RegisterSize._32Bits => BitConverter.GetBytes(Convert.ToUInt32(str, _base)),
                     Register.RegisterSize._64Bits => BitConverter.GetBytes(Convert.ToInt64(str, _base))
