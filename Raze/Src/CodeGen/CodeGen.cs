@@ -323,7 +323,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             {
                 if (expr.datas.Length == 1)
                 {
-                    return ((Expr.StackRegister)stack).register;
+                    return ((Expr.StackRegister)stack).register.IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)((Expr.StackRegister)stack).size);
                 }
                 register = ((Expr.StackRegister)stack).register.NonPointerNonLiteral(this);
             }
@@ -579,7 +579,10 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     public AssemblyExpr.Value? VisitIfExpr(Expr.If expr)
     {
-        AssemblyExpr.Unary tJump = new AssemblyExpr.Unary(AssemblyExpr.Instruction.JMP, AssemblyExpr.Register.RegisterName.TMP);
+        AssemblyExpr.Unary endJump = new AssemblyExpr.Unary(
+            AssemblyExpr.Instruction.JMP,
+            new AssemblyExpr.LocalProcedureRef(CreateConditionalLabel(conditionalCount++))
+        );
 
         for (int i = 0; i < expr.conditionals.Count; i++)
         {
@@ -595,7 +598,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                     expr.conditionals[i].block.Accept(this);
 
                     Emit(new AssemblyExpr.LocalProcedure(ConditionalLabel));
-                    tJump.operand = new AssemblyExpr.LocalProcedureRef(ConditionalLabel);
+                    endJump.operand = new AssemblyExpr.LocalProcedureRef(ConditionalLabel);
 
                     conditionalCount++;
                     return null;
@@ -605,13 +608,16 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                     continue;
                 }
             }
-            Emit(new AssemblyExpr.Unary(InstructionUtils.ConditionalJumpReversed(cmpType), new AssemblyExpr.LocalProcedureRef(ConditionalLabel)));
+            int localConditionalCount = conditionalCount;
+            Emit(new AssemblyExpr.Unary(
+                InstructionUtils.ConditionalJumpReversed(cmpType),
+                new AssemblyExpr.LocalProcedureRef(CreateConditionalLabel(conditionalCount++))
+            ));
 
             expr.conditionals[i].block.Accept(this);
-            Emit(tJump);
+            Emit(endJump);
 
-            Emit(new AssemblyExpr.LocalProcedure(ConditionalLabel));
-            conditionalCount++;
+            Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(localConditionalCount)));
         }
 
         if (expr._else != null)
@@ -621,54 +627,53 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                 blockExpr.Accept(this);
             }
         }
-        Emit(new AssemblyExpr.LocalProcedure(ConditionalLabel));
-        tJump.operand = new AssemblyExpr.LocalProcedureRef(ConditionalLabel);
 
-        conditionalCount++;
+        Emit(new AssemblyExpr.LocalProcedure(((AssemblyExpr.LocalProcedureRef)endJump.operand).Name));
 
         return null;
     }
 
     AssemblyExpr.Value? Expr.IVisitor<AssemblyExpr.Value?>.VisitWhileExpr(Expr.While expr)
     {
-        Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.JMP, new AssemblyExpr.LocalProcedureRef(ConditionalLabel)));
+        int localConditionalCount = conditionalCount;
+        conditionalCount+=2;
 
-        var conditional = new AssemblyExpr.LocalProcedure(ConditionalLabel);
+        Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.JMP, new AssemblyExpr.LocalProcedureRef(CreateConditionalLabel(localConditionalCount + 1))));
 
-        conditionalCount++;
-
-        Emit(new AssemblyExpr.LocalProcedure(ConditionalLabel));
+        // Block Label
+        Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(localConditionalCount)));
 
         expr.conditional.block.Accept(this);
 
-        Emit(conditional);
+        // Condition Label
+        Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(localConditionalCount + 1)));
 
         Emit(new AssemblyExpr.Unary(InstructionUtils.ConditionalJump(HandleConditionalCmpType(expr.conditional.condition.Accept(this))),
-            new AssemblyExpr.LocalProcedureRef(ConditionalLabel)));
-        conditionalCount++;
+            new AssemblyExpr.LocalProcedureRef(CreateConditionalLabel(localConditionalCount))));
 
         return null;
     }
 
     public AssemblyExpr.Value? VisitForExpr(Expr.For expr)
     {
+        int localConditionalCount = conditionalCount;
+        conditionalCount += 2;
+
         expr.initExpr.Accept(this);
-        Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.JMP, new AssemblyExpr.LocalProcedureRef(ConditionalLabel)));
 
-        var conditional = new AssemblyExpr.LocalProcedure(ConditionalLabel);
+        Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.JMP, new AssemblyExpr.LocalProcedureRef(CreateConditionalLabel(localConditionalCount + 1))));
 
-        conditionalCount++;
-
-        Emit(new AssemblyExpr.LocalProcedure(ConditionalLabel));
+        // Block Label
+        Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(localConditionalCount)));
 
         expr.conditional.block.Accept(this);
         expr.updateExpr.Accept(this);
 
-        Emit(conditional);
+        // Condition Label
+        Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(localConditionalCount + 1)));
 
         Emit(new AssemblyExpr.Unary(InstructionUtils.ConditionalJump(HandleConditionalCmpType(expr.conditional.condition.Accept(this))),
-            new AssemblyExpr.LocalProcedureRef(ConditionalLabel)));
-        conditionalCount++;
+            new AssemblyExpr.LocalProcedureRef(CreateConditionalLabel(localConditionalCount))));
 
         return null;
     }
@@ -724,7 +729,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
     public virtual AssemblyExpr.Value? VisitAssignExpr(Expr.Assign expr)
     {
         AssemblyExpr.Value operand2 = expr.value.Accept(this);
-        AssemblyExpr.Value operand1 = expr.member.Accept(this);
+        AssemblyExpr.Value operand1 = expr.member.Accept(this).NonLiteral(this);
 
         if (operand2 == null) return null;
 
@@ -992,4 +997,3 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return (h2, h1);
     }
 }
-
