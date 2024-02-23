@@ -75,6 +75,10 @@ public partial class Assembler :
         {
             instructions.Add(rexPrefix);
         }
+        if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.ExpansionPrefix))
+        {
+            instructions.Add(new InstructionOpCodeExpansionPrefix());
+        }
 
         IEnumerable<IInstruction> operandInstructions = instruction.operand2.Accept(this, instruction.operand1).Instructions;
 
@@ -152,6 +156,10 @@ public partial class Assembler :
         if (Encoder.EncodingUtils.SetRexPrefix(instruction, encoding, out RexPrefix rexPrefix))
         {
             instructions.Add(rexPrefix);
+        }
+        if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.ExpansionPrefix))
+        {
+            instructions.Add(new InstructionOpCodeExpansionPrefix());
         }
 
         IEnumerable<IInstruction> operandInstructions = instruction.operand.Accept(this).Instructions;
