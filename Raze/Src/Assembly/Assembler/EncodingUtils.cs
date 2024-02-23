@@ -151,27 +151,23 @@ public partial class Assembler
                 Diagnostics.errors.Push(new Error.ImpossibleError($"Cannot encode instruction with operands '{t1.ToUpper()}, {t2.ToUpper()}'"));
             }
 
-            internal static (Operand.OperandSize, Operand.OperandSize) HandleUnresolvedRef(AssemblyExpr expr, AssemblyExpr.Operand operand, Assembler assembler)
+            internal static (Operand.OperandSize, Operand.OperandSize) HandleUnresolvedRef(AssemblyExpr expr, AssemblyExpr.LabelLiteral literal, Assembler assembler)
             {
-                AssemblyExpr.Literal.LiteralType literalType = ((AssemblyExpr.Literal)operand).type;
-
-                if (literalType == AssemblyExpr.Literal.LiteralType.RefData)
+                if (literal.type == AssemblyExpr.Literal.LiteralType.RefData)
                 {
-                    var literal = (AssemblyExpr.LabelLiteral)operand;
                     if (assembler.nonResolvingPass)
                     {
-                        literal.Name = "data." + literal.value;
+                        literal.Name = "data." + literal.Name;
                         assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.textLocation, -1));
                     }
-                    if (assembler.symbolTable.definitions.ContainsKey(literal.Name))
+                    else
                     {
                         var operandSize = SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + Linker.Elf64.Elf64_Shdr.dataVirtualAddress);
                         return (operandSize, operandSize);
                     }
                 }
-                else if (literalType == AssemblyExpr.Literal.LiteralType.RefProcedure)
+                else if (literal.type == AssemblyExpr.Literal.LiteralType.RefProcedure)
                 {
-                    var literal = (AssemblyExpr.LabelLiteral)operand;
                     if (assembler.nonResolvingPass)
                     {
                         literal.Name = "text." + literal.Name;
@@ -192,7 +188,6 @@ public partial class Assembler
                 }
                 else
                 {
-                    var literal = (AssemblyExpr.LabelLiteral)operand;
                     if (assembler.nonResolvingPass)
                     {
                         literal.Name = assembler.enclosingLbl + '.' + literal.Name;

@@ -27,40 +27,23 @@ public partial class Assembler
             }
         }
 
-        internal Encoding GetEncoding(AssemblyExpr.Binary binary, Assembler assembler)
+        internal Encoding GetEncoding(AssemblyExpr.OperandInstruction instruction, Assembler assembler, out bool refResolve)
         {
-            var encoding1 = binary.operand1.ToAssemblerOperand();
-            var encoding2 = binary.operand2.ToAssemblerOperand();
+            Operand[] operands = instruction.Operands.Select(x => x.ToAssemblerOperand()).ToArray();
 
-            if (instructionEncodings.TryGetValue(binary.instruction.ToString(), out var encodings))
+            if (instructionEncodings.TryGetValue(instruction.instruction.ToString(), out var encodings))
             {
-                foreach (Encoding encoding in encodings)
+                if (operands[^1].type == Operand.OperandType.IMM && EncodingUtils.IsReferenceLiteralType(((AssemblyExpr.Literal)instruction.Operands[^1]).type))
                 {
-                    if (encoding.Matches(encoding1, encoding2) && encoding.SpecialMatch(binary, encoding1, encoding2))
-                    {
-                        return encoding;
-                    }
-                }
-            }
-            Diagnostics.errors.Push(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
-            return new();
-        }
-        internal Encoding GetEncoding(AssemblyExpr.Unary unary, Assembler assembler, out bool refResolveType)
-        {
-            var encoding1 = unary.operand.ToAssemblerOperand();
-
-            if (instructionEncodings.TryGetValue(unary.instruction.ToString(), out var encodings))
-            {
-                if (encoding1.type == Operand.OperandType.IMM && EncodingUtils.IsReferenceLiteralType(((AssemblyExpr.LabelLiteral)unary.operand).type))
-                {
-                    refResolveType = true;
-                    (Operand.OperandSize absoluteJump, Operand.OperandSize relativeJump) = EncodingUtils.HandleUnresolvedRef(unary, unary.operand, assembler);
+                    refResolve = true;
+                    (Operand.OperandSize absoluteJump, Operand.OperandSize relativeJump) = 
+                        EncodingUtils.HandleUnresolvedRef(instruction, (AssemblyExpr.LabelLiteral)instruction.Operands[^1], assembler);
 
                     foreach (Encoding encoding in encodings)
                     {
-                        encoding1.size = encoding.encodingType.HasFlag(Encoding.EncodingTypes.RelativeJump) ? relativeJump : absoluteJump;
+                        operands[^1].size = encoding.encodingType.HasFlag(Encoding.EncodingTypes.RelativeJump) ? relativeJump : absoluteJump;
 
-                        if (encoding.Matches(encoding1) && encoding.SpecialMatch(unary, encoding1))
+                        if (encoding.Matches(operands) && encoding.SpecialMatch(instruction, operands))
                         {
                             return encoding;
                         }
@@ -68,10 +51,10 @@ public partial class Assembler
                 }
                 else
                 {
-                    refResolveType = false;
+                    refResolve = false;
                     foreach (Encoding encoding in encodings)
                     {
-                        if (encoding.Matches(encoding1) && encoding.SpecialMatch(unary, encoding1))
+                        if (encoding.Matches(operands) && encoding.SpecialMatch(instruction, operands))
                         {
                             return encoding;
                         }
@@ -79,7 +62,7 @@ public partial class Assembler
                 }
             }
             Diagnostics.errors.Push(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
-            refResolveType = false;
+            refResolve = false;
             return new();
         }
         internal Encoding GetEncoding(AssemblyExpr.Zero zero)

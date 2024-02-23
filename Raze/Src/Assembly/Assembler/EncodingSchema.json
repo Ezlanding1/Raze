@@ -25,7 +25,7 @@
   // NoModRegRM = Do not emit ModRegRM byte when operand1 is a register (R), and operand2 is an immediate (IMM)
   // SignExtends = Indicates that the immediate (IMM) operand2 will be sign extended. Will only match if MSB is 0
   // AddRegisterToOpCode = Add the register code of operand 1 to the last 3 bits of the instruction's OpCode. Only works when operand 1 is a register
-  // RelativeJump = Indicates that the instruction is unary and the operand is a REL (IMM) that should be relative, rather than absolute
+  // RelativeJump = Indicates that the instruction's operand (operand2 when binary) is a REL (IMM) that should be relative, rather than absolute
   // Any combination of these flags can be encoded by separating two EncodingTypes with bitwise or '|' or comma ','
 
 {

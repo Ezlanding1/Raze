@@ -534,9 +534,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                 string name = DataLabel;
                 EmitData(
                     new AssemblyExpr.Data(
-                        name, 
+                        name,
                         new(AssemblyExpr.Literal.LiteralType.String, AssemblyExpr.ImmediateGenerator.Generate(
-                            AssemblyExpr.Literal.LiteralType.RefData, expr.literal.lexeme, InstructionUtils.SYS_SIZE
+                            AssemblyExpr.Literal.LiteralType.String, expr.literal.lexeme, (AssemblyExpr.Register.RegisterSize)(expr.literal.lexeme.Length+1)
                         ))
                     )
                 );

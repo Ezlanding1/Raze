@@ -493,11 +493,17 @@ public abstract partial class AssemblyExpr
         public abstract Assembler.Encoder.Operand ToAssemblerOperand();
     }
 
-
-    public class Binary : TextExpr
+    public abstract class OperandInstruction : TextExpr
     {
         public Instruction instruction;
+        public abstract Value[] Operands { get; }
+    }
+
+    public class Binary : OperandInstruction
+    {
         public Value operand1, operand2;
+
+        public override Value[] Operands => new Value[] { operand1, operand2 };
 
         public Binary(Instruction instruction, Value operand1, Value operand2)
         {
@@ -517,18 +523,18 @@ public abstract partial class AssemblyExpr
         }
     }
 
-    public class Unary : TextExpr
+    public class Unary : OperandInstruction
     {
-        public Instruction instruction;
         public Value operand;
+
+        public override Value[] Operands => new Value[] { operand };
 
         public Unary(Instruction instruction, Value operand)
         {
             this.instruction = instruction;
             this.operand = operand;
         }
-
-        internal Unary(Instruction instruction, AssemblyExpr.Register.RegisterName operand) : this(instruction, new AssemblyExpr.Register(operand, Register.RegisterSize._64Bits))
+        internal Unary(Instruction instruction, Register.RegisterName operand) : this(instruction, new Register(operand, Register.RegisterSize._64Bits))
         {
         }
 
@@ -538,9 +544,10 @@ public abstract partial class AssemblyExpr
         }
     }
 
-    public class Zero : TextExpr
+    public class Zero : OperandInstruction
     {
-        public Instruction instruction;
+        public override Value[] Operands => new Value[0];
+
         public Zero(Instruction instruction)
         {
             this.instruction = instruction;

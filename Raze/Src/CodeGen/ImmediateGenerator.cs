@@ -91,7 +91,7 @@ public partial class AssemblyExpr
 
         private static byte[] ParseString(string str, Register.RegisterSize size)
         {
-            var value = Encoding.ASCII.GetBytes(str);
+            var value = Encoding.ASCII.GetBytes(str + '\0');
             if (value.Length > (int)size)
             {
                 ThrowInvalidSizedLiteral(Parser.LiteralTokenType.String, str, size);
@@ -104,7 +104,7 @@ public partial class AssemblyExpr
             {
                 Diagnostics.errors.Push(new Error.BackendError("Invalid Literal", $"RefString literal with size '{size}' must have the same size as the system size '{InstructionUtils.SYS_SIZE}'"));
             }
-            return Encoding.ASCII.GetBytes(str + '\0');
+            return Encoding.ASCII.GetBytes(str);
         }
 
         private static void ThrowInvalidSizedLiteral(Parser.LiteralTokenType literalType, string str, Register.RegisterSize dataTypeSize)

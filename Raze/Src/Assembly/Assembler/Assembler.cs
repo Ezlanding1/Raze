@@ -58,7 +58,7 @@ public partial class Assembler :
 
     public Instruction VisitBinary(AssemblyExpr.Binary instruction)
     {
-        encoding = encoder.GetEncoding(instruction, this);
+        encoding = encoder.GetEncoding(instruction, this, out bool refResolve);
 
         List<IInstruction> instructions = new();
 
@@ -87,6 +87,11 @@ public partial class Assembler :
         }
 
         instructions.AddRange(operandInstructions);
+
+        if (nonResolvingPass && refResolve)
+        {
+            ((Linker.ReferenceInfo)symbolTable.unresolvedReferences[^1]).size = instructions.Sum(x => x.GetBytes().Length);
+        }
 
         return new Instruction(instructions.ToArray());
     }
@@ -132,7 +137,7 @@ public partial class Assembler :
 
     public Instruction VisitUnary(AssemblyExpr.Unary instruction)
     {
-        encoding = encoder.GetEncoding(instruction, this, out bool refResolveType);
+        encoding = encoder.GetEncoding(instruction, this, out bool refResolve);
 
         List<IInstruction> instructions = new();
 
@@ -161,7 +166,7 @@ public partial class Assembler :
 
         instructions.AddRange(operandInstructions);
 
-        if (nonResolvingPass && refResolveType)
+        if (nonResolvingPass && refResolve)
         {
             ((Linker.ReferenceInfo)symbolTable.unresolvedReferences[^1]).size = instructions.Sum(x => x.GetBytes().Length);
         }
