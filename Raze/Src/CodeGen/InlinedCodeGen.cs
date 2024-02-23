@@ -82,6 +82,10 @@ public class InlinedCodeGen : CodeGen
             {
                 Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
             }
+            else
+            {
+                conditionalCount--;
+            }
         }
         else if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
         {
@@ -164,6 +168,10 @@ public class InlinedCodeGen : CodeGen
             if (((InlineStateInlined)inlineState).secondJump)
             {
                 Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
+            }
+            else
+            {
+                conditionalCount--;
             }
         }
         else if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
@@ -270,6 +278,10 @@ public class InlinedCodeGen : CodeGen
             if (((InlineStateInlined)inlineState).secondJump)
             {
                 Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
+            }
+            else
+            {
+                conditionalCount--;
             }
         }
         else if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
