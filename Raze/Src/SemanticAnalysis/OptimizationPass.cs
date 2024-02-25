@@ -100,9 +100,9 @@ public partial class Analyzer
 
             if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Function && ((Expr.Function)symbolTable.Current).modifiers["inline"])
             {
-                for (int i = 0; i < expr.GetInternalFunction().Arity; i++)
+                for (int i = 0; i < expr.InternalFunction.Arity; i++)
                 {
-                    if (expr.GetInternalFunction().parameters[i].modifiers["ref"] && !expr.GetInternalFunction().parameters[i].modifiers["inlineRef"])
+                    if (expr.InternalFunction.parameters[i].modifiers["ref"] && !expr.InternalFunction.parameters[i].modifiers["inlineRef"])
                     {
                         ((Expr.Function)symbolTable.Current).parameters[i].modifiers["inlineRef"] = false;
                     }
@@ -153,13 +153,13 @@ public partial class Analyzer
 
         private void HandleCall(Expr.ICall expr)
         {
-            if (expr.GetInternalFunction().dead)
+            if (expr.InternalFunction.dead)
             {
                 using (new SaveContext())
-                    expr.GetInternalFunction().Accept(this);
+                    expr.InternalFunction.Accept(this);
             }
 
-            foreach (var arg in expr.GetArguments())
+            foreach (var arg in expr.Arguments)
             {
                 arg.Accept(this);
             }

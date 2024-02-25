@@ -59,56 +59,7 @@ public class InlinedCodeGen : CodeGen
 
         inlineState = new InlineStateInlined(inlineState);
 
-        AssemblyExpr.Value operand = expr.operand.Accept(this);
-
-        expr.internalFunction.parameters[0].stack.stackRegister = true;
-        ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = LockOperand(HandleParameterRegister(expr.internalFunction.parameters[0], operand));
-
-        foreach (var bodyExpr in expr.internalFunction.block.block)
-        {
-            bodyExpr.Accept(this);
-            alloc.FreeAll(false);
-        }
-
-        expr.internalFunction.parameters[0].stack.stackRegister = false;
-        alloc.Free(((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register, true);
-
-        if (assembly.text[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == AssemblyExpr.Instruction.JMP
-            && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.Name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
-        {
-            assembly.text.RemoveAt(assembly.text.Count - 1);
-
-            if (((InlineStateInlined)inlineState).secondJump)
-            {
-                Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
-            }
-            else
-            {
-                conditionalCount--;
-            }
-        }
-        else if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
-        {
-            Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
-        }
-
-        var ret = ((InlineStateInlined)inlineState).callee;
-
-        alloc.Free(((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register, true);
-
-        if (ret != null)
-        {
-            if (ret.IsRegister())
-            {
-                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Register)ret).Name), ((AssemblyExpr.Register)ret).Size);
-            }
-            else if (ret.IsPointer() && !((AssemblyExpr.Pointer)ret).IsOnStack())
-            {
-                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Pointer)ret).register.Name), ((AssemblyExpr.Pointer)ret).Size);
-            }
-        }
-
-        UnlockOperand(ret);
+        var ret = HandleICall(expr);
 
         inlineState = inlineState.lastState;
 
@@ -135,61 +86,7 @@ public class InlinedCodeGen : CodeGen
 
         inlineState = new InlineStateInlined(inlineState);
 
-        AssemblyExpr.Value operand1 = expr.left.Accept(this);
-        AssemblyExpr.Value operand2 = expr.right.Accept(this);
-
-        expr.internalFunction.parameters[0].stack.stackRegister = true;
-        ((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register = LockOperand(HandleParameterRegister(expr.internalFunction.parameters[0], operand1));
-
-        expr.internalFunction.parameters[1].stack.stackRegister = true;
-        ((Expr.StackRegister)expr.internalFunction.parameters[1].stack).register = LockOperand(HandleParameterRegister(expr.internalFunction.parameters[1], operand2));
-
-        foreach (var bodyExpr in expr.internalFunction.block.block)
-        {
-            bodyExpr.Accept(this);
-            alloc.FreeAll(false);
-        }
-
-        expr.internalFunction.parameters[0].stack.stackRegister = false;
-        expr.internalFunction.parameters[1].stack.stackRegister = false;
-
-        var ret = ((InlineStateInlined)inlineState).callee;
-
-        alloc.Free(((Expr.StackRegister)expr.internalFunction.parameters[0].stack).register, true);
-        alloc.Free(((Expr.StackRegister)expr.internalFunction.parameters[1].stack).register, true);
-
-        UnlockOperand(ret);
-
-        if (assembly.text[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == AssemblyExpr.Instruction.JMP
-            && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.Name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
-        {
-            assembly.text.RemoveAt(assembly.text.Count - 1);
-
-            if (((InlineStateInlined)inlineState).secondJump)
-            {
-                Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
-            }
-            else
-            {
-                conditionalCount--;
-            }
-        }
-        else if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
-        {
-            Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
-        }
-
-        if (ret != null)
-        {
-            if (ret.IsRegister())
-            {
-                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Register)ret).Name), ((AssemblyExpr.Register)ret).Size);
-            }
-            else if (ret.IsPointer() && !((AssemblyExpr.Pointer)ret).IsOnStack())
-            {
-                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Pointer)ret).register.Name), ((AssemblyExpr.Pointer)ret).Size);
-            }
-        }
+        var ret = HandleICall(expr);
 
         inlineState = inlineState.lastState;
 
@@ -240,15 +137,29 @@ public class InlinedCodeGen : CodeGen
             }
         }
 
-        for (int i = 0; i < expr.arguments.Count; i++)
-        {
-            AssemblyExpr.Value arg = expr.arguments[i].Accept(this);
+        var ret = HandleICall(expr);
 
-            expr.internalFunction.parameters[i].stack.stackRegister = true;
-            ((Expr.StackRegister)expr.internalFunction.parameters[i].stack).register = LockOperand(HandleParameterRegister(expr.internalFunction.parameters[i], arg));
+        if (instanceArg != null)
+        {
+            alloc.Free(instanceArg, true);
         }
 
-        foreach (var bodyExpr in expr.internalFunction.block.block)
+        inlineState = inlineState.lastState;
+
+        return ret;
+    }
+
+    private AssemblyExpr.Value? HandleICall(Expr.ICall call)
+    {
+        AssemblyExpr.Value[] args = call.Arguments.Select(x => x.Accept(this)).ToArray();
+
+        for (int i = 0; i < call.Arguments.Count; i++)
+        {
+            call.InternalFunction.parameters[i].stack.stackRegister = true;
+            ((Expr.StackRegister)call.InternalFunction.parameters[i].stack).register = LockOperand(HandleParameterRegister(call.InternalFunction.parameters[i], args[i]));
+        }
+
+        foreach (var bodyExpr in call.InternalFunction.block.block)
         {
             bodyExpr.Accept(this);
             alloc.FreeAll(false);
@@ -256,38 +167,15 @@ public class InlinedCodeGen : CodeGen
 
         var ret = ((InlineStateInlined)inlineState).callee;
 
-        if (instanceArg != null)
+        for (int i = 0; i < call.Arguments.Count; i++)
         {
-            alloc.Free(instanceArg, true);
-        }
-
-        for (int i = 0; i < expr.arguments.Count; i++)
-        {
-            expr.internalFunction.parameters[i].stack.stackRegister = false;
-
-            alloc.Free(((Expr.StackRegister)expr.internalFunction.parameters[i].stack).register, true);
+            call.InternalFunction.parameters[i].stack.stackRegister = false;
+            alloc.Free(((Expr.StackRegister)call.InternalFunction.parameters[i].stack).register, true);
         }
 
         UnlockOperand(ret);
 
-        if (assembly.text[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == AssemblyExpr.Instruction.JMP
-            && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.Name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
-        {
-            assembly.text.RemoveAt(assembly.text.Count - 1);
-
-            if (((InlineStateInlined)inlineState).secondJump)
-            {
-                Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
-            }
-            else
-            {
-                conditionalCount--;
-            }
-        }
-        else if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
-        {
-            Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
-        }
+        HandleInlinedReturnOptimization();
 
         if (ret != null)
         {
@@ -300,8 +188,6 @@ public class InlinedCodeGen : CodeGen
                 alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Pointer)ret).register.Name), ((AssemblyExpr.Pointer)ret).Size);
             }
         }
-
-        inlineState = inlineState.lastState;
 
         return ret;
     }
@@ -445,5 +331,27 @@ public class InlinedCodeGen : CodeGen
     private bool IsRefParameter(Expr.Parameter parameter)
     {
         return parameter.modifiers["ref"] || parameter.modifiers["inlineRef"];
+    }
+
+    private void HandleInlinedReturnOptimization()
+    {
+        if (assembly.text[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == AssemblyExpr.Instruction.JMP
+            && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.Name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
+        {
+            assembly.text.RemoveAt(assembly.text.Count - 1);
+
+            if (((InlineStateInlined)inlineState).secondJump)
+            {
+                Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
+            }
+            else
+            {
+                conditionalCount--;
+            }
+        }
+        else if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
+        {
+            Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
+        }
     }
 }

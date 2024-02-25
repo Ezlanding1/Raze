@@ -68,8 +68,8 @@ public abstract class Expr
             return visitor.VisitBinaryExpr(this);
         }
 
-        public IEnumerable<Expr> GetArguments() => new Expr[] { left, right };
-        public Function GetInternalFunction() => internalFunction;
+        public IList<Expr> Arguments => new Expr[] { left, right };
+        public Function InternalFunction => internalFunction;
     }
 
     public class Unary : Expr, ICall
@@ -90,8 +90,8 @@ public abstract class Expr
             return visitor.VisitUnaryExpr(this);
         }
 
-        public IEnumerable<Expr> GetArguments() => new Expr[] { operand };
-        public Function GetInternalFunction() => internalFunction;
+        public IList<Expr> Arguments => new Expr[] { operand };
+        public Function InternalFunction => internalFunction;
     }
 
     public class Grouping : Expr
@@ -326,8 +326,8 @@ public abstract class Expr
 
     public interface ICall
     {
-        public IEnumerable<Expr> GetArguments();
-        public Function GetInternalFunction();
+        public IList<Expr> Arguments { get; }
+        public Function InternalFunction { get; }
     }
 
     public class Call : Getter, ICall
@@ -362,8 +362,8 @@ public abstract class Expr
             return visitor.VisitCallExpr(this);
         }
 
-        public IEnumerable<Expr> GetArguments() => arguments;
-        public Function GetInternalFunction() => internalFunction;
+        public IList<Expr> Arguments => arguments;
+        public Function InternalFunction => internalFunction;
     }
 
     public class Get : Getter
