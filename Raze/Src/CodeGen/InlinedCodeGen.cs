@@ -318,10 +318,6 @@ public class InlinedCodeGen : CodeGen
 
     private AssemblyExpr.Value HandleParameterRegister(Expr.Parameter parameter, AssemblyExpr.Value arg)
     {
-        if (arg.IsLiteral())
-        {
-            return ((AssemblyExpr.ILiteralBase)arg).CreateLiteral(InstructionUtils.ToRegisterSize(parameter.stack.size));
-        }
         if (IsRefParameter(parameter))
         {
             return arg;
