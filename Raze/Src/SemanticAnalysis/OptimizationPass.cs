@@ -98,17 +98,21 @@ public partial class Analyzer
             }
             HandleCall(expr);
 
-            if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Function && ((Expr.Function)symbolTable.Current).modifiers["inline"])
+            if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Function && expr.internalFunction.modifiers["inline"])
             {
-                for (int i = 0; i < expr.InternalFunction.Arity; i++)
+                for (int i = 0; i < expr.internalFunction.Arity; i++)
                 {
-                    if (expr.InternalFunction.parameters[i].modifiers["ref"] && !expr.InternalFunction.parameters[i].modifiers["inlineRef"])
+                    var parameter = expr.internalFunction.parameters[i];
+                    if ((parameter.modifiers["ref"] || !parameter.modifiers["inlineRef"]) && expr.arguments[i] is Expr.AmbiguousGetReference ambiguousGetRef)
                     {
-                        ((Expr.Function)symbolTable.Current).parameters[i].modifiers["inlineRef"] = false;
+                        ((Expr.Function)symbolTable.Current).parameters
+                            .Where(x => x.stack == ambiguousGetRef.GetLastData())
+                            .ToList()
+                            .ForEach(x => x.modifiers["inlineRef"] = false);
                     }
                 }
             }
-
+  
             return null;
         }
 
