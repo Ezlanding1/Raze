@@ -142,6 +142,7 @@ internal abstract partial class ExprUtils
                 switch (instruction.instruction)
                 {
                     case AssemblyExpr.Instruction.INC:
+                    case AssemblyExpr.Instruction.DEC:
                         AssemblyOps.Unary.DefaultUnOp(this, assemblyOps);
                         return;
                     case AssemblyExpr.Instruction.DEREF:
@@ -160,6 +161,7 @@ internal abstract partial class ExprUtils
                 switch (instruction.instruction)
                 {
                     case AssemblyExpr.Instruction.INC:
+                    case AssemblyExpr.Instruction.DEC:
                     //case "DEREF":
                         return (variablesUsed, (int)AssignType.AssignFirst);
                     default:

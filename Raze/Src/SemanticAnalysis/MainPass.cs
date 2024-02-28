@@ -156,7 +156,7 @@ public partial class Analyzer
                 return expr.internalFunction._returnType.type;
             }
 
-            if (Primitives.SymbolToPrimitiveName(expr.op) == "Increment")
+            if (Primitives.SymbolToPrimitiveName(expr.op) == "Increment" || Primitives.SymbolToPrimitiveName(expr.op) == "Decrement")
             {
                 callReturn = true;
             }
