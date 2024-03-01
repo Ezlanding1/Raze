@@ -157,7 +157,11 @@ public partial class Assembler
                 {
                     if (assembler.nonResolvingPass)
                     {
-                        literal.Name = "data." + literal.Name;
+                        if (!literal.scoped)
+                        {
+                            literal.Name = "data." + literal.Name;
+                            literal.scoped = true;
+                        }
                         assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.textLocation, -1));
                     }
                     else
@@ -170,7 +174,11 @@ public partial class Assembler
                 {
                     if (assembler.nonResolvingPass)
                     {
-                        literal.Name = "text." + literal.Name;
+                        if (!literal.scoped)
+                        {
+                            literal.Name = "text." + literal.Name;
+                            literal.scoped = true;
+                        }
                         assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.textLocation, -1));
                     }
                     else
@@ -190,7 +198,11 @@ public partial class Assembler
                 {
                     if (assembler.nonResolvingPass)
                     {
-                        literal.Name = assembler.enclosingLbl + '.' + literal.Name;
+                        if (!literal.scoped)
+                        {
+                            literal.Name = assembler.enclosingLbl + '.' + literal.Name;
+                            literal.scoped = true;
+                        }
                         assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.textLocation, -1));
                     }
                     else

@@ -383,6 +383,7 @@ public abstract partial class AssemblyExpr
 
     public class LabelLiteral : Literal
     {
+        internal bool scoped;
         internal string Name 
         {
             get => Encoding.ASCII.GetString(this.value);
