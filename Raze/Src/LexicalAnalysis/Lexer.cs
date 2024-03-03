@@ -15,15 +15,15 @@ public class Lexer
     List<Token> tokens;
     TokenDefinition[] tokenDefinitions;
     public static (Regex, char)[] stringEscapeCodes;
-    string text;
+    StreamReader streamReader;
     int line;
     int col;
     int index;
 
-    public Lexer(string text)
+    public Lexer(FileInfo fileName)
     {
         this.tokens = new();
-        this.text = text;
+        this.streamReader = new StreamReader(fileName.OpenRead());
         this.line = 1;
         this.col = 0;
         this.index = 0;
@@ -32,12 +32,17 @@ public class Lexer
 
     public List<Token> Tokenize()
     {
-        string lexeme;
-        while ((lexeme = text.Substring(index)) != "")
+        string line;
+        while ((line = streamReader.ReadLine()) != null)
         {
-            Token token = Generate(lexeme);
-            if (token != null)
-                tokens.Add(token);
+            string lexeme;
+            while ((lexeme = line.Substring(index)) != "")
+            {
+                Token token = Generate(lexeme);
+                if (token != null)
+                    tokens.Add(token);
+            }
+            index = 0;
         }
         return tokens;
     }

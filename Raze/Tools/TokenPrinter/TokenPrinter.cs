@@ -8,9 +8,9 @@ namespace Raze.Tools;
 
 public class InputPrinter
 {
-    public static void PrintInput(string input)
+    public static void PrintInput(FileInfo fileName)
     {
-        Console.WriteLine(input);
+        Console.WriteLine(File.ReadAllText(fileName.FullName));
     }
 }
 public class TokenPrinter

@@ -15,9 +15,9 @@ internal class Shell
 
     static void Main(string[] args)
     {
-        if (args.Length == 1 && args[0].EndsWith(fileExtension))
+        if (args.Length == 1 && args[0].EndsWith(fileExtension) && File.Exists(args[0]))
         {
-            Run(File.ReadAllText(args[0]));
+            Run(args[0]);
         }
         else
         {
@@ -26,7 +26,7 @@ internal class Shell
         }
     }
 
-    static void Run(string text)
+    static void Run(string fileName)
     {
         #if DEBUG
         var watch = Stopwatch.StartNew();
@@ -37,11 +37,11 @@ internal class Shell
             Raze.SystemInfo systemInfo = new Raze.SystemInfo(Raze.SystemInfo.CPU_Architecture.AMD_x86_64, Raze.SystemInfo.OsAbi.Linux, Raze.SystemInfo.BitFormat._64BitFormat);
 
             #if DEBUG
-            Raze.Tools.InputPrinter.PrintInput(text);
+            Raze.Tools.InputPrinter.PrintInput(fileName);
             #endif
 
             // Pass Input Into Lexer
-            Raze.Lexer lexer = new Raze.Lexer(text);
+            Raze.Lexer lexer = new Raze.Lexer(fileName);
             var tokens = lexer.Tokenize();
 
             #if DEBUG
