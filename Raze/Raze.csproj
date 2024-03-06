@@ -8,4 +8,16 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Remove="Src\Assembly\Assembler\EncodingSchema.json" />
+    <None Remove="Src\Assembly\Assembler\Resources\EncodingSchema.yml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Src\Assembly\Assembler\Resources\EncodingSchema.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Src\Assembly\Assembler\Resources\EncodingSchema.yml" />
+  </ItemGroup>
+
 </Project>

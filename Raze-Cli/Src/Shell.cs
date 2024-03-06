@@ -51,7 +51,10 @@ internal partial class Shell
 
         initCommand.SetHandler((fileArgument) =>
             {
-                File.Copy(InitTemplates.defaultTemplate, fileArgument);
+                using (var fs = File.Create(fileArgument))
+                {
+                    InitTemplates.DefaultTemplate.CopyTo(fs);
+                }
             },
             initOptions.FileArgument
         );

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -15,16 +16,14 @@ public partial class Assembler
 
         internal Encoder() 
         {
-            string path = Path.Join(Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location), "EncodingSchema.json");
+            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Raze.Src.Assembly.Assembler.Resources.EncodingSchema.json");
 
-            if (File.Exists(path)) 
+            if (stream is null)
             {
-                this.instructionEncodings = JsonSerializer.Deserialize<Dictionary<string, List<Encoding>>>(File.ReadAllText(path));
+                Diagnostics.errors.Push(new Error.ImpossibleError($"Could not locate Encoding Schema file"));
             }
-            else
-            {
-                Diagnostics.errors.Push(new Error.ImpossibleError($"Could not locate Encoding Schema file. Path: '{path}'"));
-            }
+
+            instructionEncodings = JsonSerializer.Deserialize<Dictionary<string, List<Encoding>>>(stream);
         }
 
         internal Encoding GetEncoding(AssemblyExpr.OperandInstruction instruction, Assembler assembler, out bool refResolve)
