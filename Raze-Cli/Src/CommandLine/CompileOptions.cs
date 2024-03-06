@@ -1,0 +1,78 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.CommandLine;
+using System.CommandLine.Binding;
+
+namespace Raze_Cli;
+
+internal partial class Shell
+{
+    class CompileOptions
+    {
+        public required FileInfo FileArgument { get; set; }
+        public required string OutputOption { get; set; }
+        public bool DebugOption 
+        { 
+            set
+            {
+                if (value)
+                {
+                    DebugInputOption = true;
+                    DebugTokensOption = true;
+                    DebugAstOption = true;
+                    DebugAssemblyOption = true;
+                    DebugErrorsOption = true;
+                }
+            }
+        }
+        public required bool DebugInputOption { get; set; }
+        public required bool DebugTokensOption { get; set; }
+        public required bool DebugAstOption { get; set; }
+        public required bool DebugAssemblyOption { get; set; }
+        public required bool DebugErrorsOption { get; set; }
+        public required bool DryRunOption { get; set; }
+    }
+
+    class CompileOptionsBinder : BinderBase<CompileOptions>, ICommandOptions
+    {
+        public required Argument<FileInfo> FileArgument { get; init; }
+        public required Option<string> OutputOption { get; init; }
+        public required Option<bool> DebugOption { get; init; }
+        public required Option<bool> DebugInputOption { get; init; }
+        public required Option<bool> DebugTokensOption { get; init; }
+        public required Option<bool> DebugAstOption { get; init; }
+        public required Option<bool> DebugAssemblyOption { get; init; }
+        public required Option<bool> DebugErrorsOption { get; init; }
+        public required Option<bool> DryRunOption { get; init; }
+
+        public List<Option> GetOptions()
+        {
+            return new List<Option>() { OutputOption, DebugOption, DebugInputOption, DebugTokensOption, DebugAstOption, DebugAssemblyOption, DebugErrorsOption, DryRunOption };
+        }
+        public List<Argument> GetArguments()
+        {
+            return new List<Argument>() { FileArgument };
+        }
+
+        protected override CompileOptions GetBoundValue(BindingContext bindingContext)
+        {
+            var compileOptions = new CompileOptions()
+            {
+                FileArgument = bindingContext.ParseResult.GetValueForArgument(FileArgument),
+                OutputOption = bindingContext.ParseResult.GetValueForOption(OutputOption),
+                DebugInputOption = bindingContext.ParseResult.GetValueForOption(DebugInputOption),
+                DebugTokensOption = bindingContext.ParseResult.GetValueForOption(DebugTokensOption),
+                DebugAstOption = bindingContext.ParseResult.GetValueForOption(DebugAstOption),
+                DebugAssemblyOption = bindingContext.ParseResult.GetValueForOption(DebugAssemblyOption),
+                DebugErrorsOption = bindingContext.ParseResult.GetValueForOption(DebugErrorsOption),
+                DryRunOption = bindingContext.ParseResult.GetValueForOption(DryRunOption)
+            };
+            compileOptions.DebugOption = bindingContext.ParseResult.GetValueForOption(DebugOption);
+
+            return compileOptions;
+        }
+    }
+}
