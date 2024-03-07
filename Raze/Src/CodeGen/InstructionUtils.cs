@@ -149,8 +149,7 @@ public class InstructionUtils
             return (AssemblyExpr.Register.RegisterSize)size;
         }
 
-        Diagnostics.Panic(new Error.ImpossibleError($"Invalid Register Size ({size})"));
-        return 0;
+        throw Diagnostics.Panic(new Error.ImpossibleError($"Invalid Register Size ({size})"));
     }
 
 

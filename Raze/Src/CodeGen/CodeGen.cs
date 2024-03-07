@@ -302,8 +302,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     public AssemblyExpr.Value? VisitTypeReferenceExpr(Expr.TypeReference expr)
     {
-        Diagnostics.Panic(new Error.ImpossibleError("Type accepted in assembler"));
-        return null;
+        throw Diagnostics.Panic(new Error.ImpossibleError("Type accepted in assembler"));
     }
 
     public AssemblyExpr.Value? VisitAmbiguousGetReferenceExpr(Expr.AmbiguousGetReference expr)
@@ -404,8 +403,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     public AssemblyExpr.Value? VisitGetExpr(Expr.Get expr)
     {
-        Diagnostics.Panic(new Error.ImpossibleError("Get accepted in assembler"));
-        return null;
+        throw Diagnostics.Panic(new Error.ImpossibleError("Get accepted in assembler"));
     }
 
     public AssemblyExpr.Value? VisitLogicalExpr(Expr.Logical expr)
@@ -551,8 +549,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             case Parser.LiteralTokenType.Boolean:
                 return new AssemblyExpr.UnresolvedLiteral((AssemblyExpr.Literal.LiteralType)expr.literal.type, expr.literal.lexeme);
             default:
-                Diagnostics.Panic(new Error.ImpossibleError($"Invalid Literal Type ({expr.literal.type})"));
-                return null;
+                throw Diagnostics.Panic(new Error.ImpossibleError($"Invalid Literal Type ({expr.literal.type})"));
         }
         
     }
@@ -788,8 +785,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             case "true": return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 1 });
             case "false": return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 0 });
             default: 
-                Diagnostics.Panic(new Error.ImpossibleError($"'{expr.keyword}' is not a keyword"));
-                return null;
+                throw Diagnostics.Panic(new Error.ImpossibleError($"'{expr.keyword}' is not a keyword"));
         }
     }
     public AssemblyExpr.Value? VisitAssemblyExpr(Expr.Assembly expr)

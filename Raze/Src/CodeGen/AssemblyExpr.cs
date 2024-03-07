@@ -269,7 +269,7 @@ public abstract partial class AssemblyExpr
         
         public string value;
 
-        public override Register.RegisterSize Size { get { Diagnostics.Panic(new Error.ImpossibleError("Attempted access of UnresolvedRegister size")); return 0; } }
+        public override Register.RegisterSize Size { get => throw Diagnostics.Panic(new Error.ImpossibleError("Attempted access of UnresolvedRegister size")); }
 
         internal UnresolvedLiteral(Literal.LiteralType type, string value) : base(2)
         {
@@ -282,35 +282,23 @@ public abstract partial class AssemblyExpr
             return type >= Literal.LiteralType.RefData? new LabelLiteral(type, value, size) : new Literal(type, value, size);
         }
 
-        public override T Accept<T>(IBinaryOperandVisitor<T> visitor, Operand operand)
-        {
-            Diagnostics.Panic(new Error.ImpossibleError("Literal left unresolved")); return default;
-        }
+        public override T Accept<T>(IBinaryOperandVisitor<T> visitor, Operand operand) =>
+            throw Diagnostics.Panic(new Error.ImpossibleError("Literal left unresolved"));
 
-        public override T Accept<T>(IUnaryOperandVisitor<T> visitor)
-        {
-            Diagnostics.Panic(new Error.ImpossibleError("Literal left unresolved")); return default;
-        }
+        public override T Accept<T>(IUnaryOperandVisitor<T> visitor) =>
+            throw Diagnostics.Panic(new Error.ImpossibleError("Literal left unresolved"));
 
-        public override Assembler.Encoder.Operand ToAssemblerOperand()
-        {
-            Diagnostics.Panic(new Error.ImpossibleError("Literal left unresolved")); return default;
-        }
+        public override Assembler.Encoder.Operand ToAssemblerOperand() =>
+            throw Diagnostics.Panic(new Error.ImpossibleError("Literal left unresolved"));
 
-        public override T VisitOperandImmediate<T>(IBinaryOperandVisitor<T> visitor, Literal imm)
-        {
-            Diagnostics.Panic(new Error.ImpossibleError("Literal left unresolved")); return default;
-        }
+        public override T VisitOperandImmediate<T>(IBinaryOperandVisitor<T> visitor, Literal imm) =>
+            throw Diagnostics.Panic(new Error.ImpossibleError("Literal left unresolved"));
 
-        public override T VisitOperandMemory<T>(IBinaryOperandVisitor<T> visitor, Pointer ptr)
-        {
-            Diagnostics.Panic(new Error.ImpossibleError("Literal left unresolved")); return default;
-        }
+        public override T VisitOperandMemory<T>(IBinaryOperandVisitor<T> visitor, Pointer ptr) =>
+            throw Diagnostics.Panic(new Error.ImpossibleError("Literal left unresolved"));
 
-        public override T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg)
-        {
-            Diagnostics.Panic(new Error.ImpossibleError("Literal left unresolved")); return default;
-        }
+        public override T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg) =>
+            throw Diagnostics.Panic(new Error.ImpossibleError("Literal left unresolved"));
     }
 
     public class Literal : Value, ILiteralBase

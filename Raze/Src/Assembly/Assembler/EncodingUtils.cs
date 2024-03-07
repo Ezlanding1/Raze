@@ -16,8 +16,7 @@ public partial class Assembler
                 
             internal static Instruction EncodingError()
             {
-                Diagnostics.Panic(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
-                return new Instruction();
+                throw Diagnostics.Panic(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
             }
 
             internal static Instruction.ModRegRm.RegisterCode ExprRegisterToModRegRmRegister(AssemblyExpr.Register register) => (register.Name, register.Size) switch

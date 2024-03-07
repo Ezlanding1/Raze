@@ -243,8 +243,7 @@ internal partial class AssemblyOps
                     emitOp = AssemblyExpr.Instruction.IDIV;
                     break;
                 default:
-                    Diagnostics.Panic(new Error.ImpossibleError("Impossible instruction in IDIV_DIV_IMOD_MOD"));
-                    return;
+                    throw Diagnostics.Panic(new Error.ImpossibleError("Impossible instruction in IDIV_DIV_IMOD_MOD"));
             }
             var rax = assemblyOps.assembler.alloc.CallAlloc(operand1.Size);
             var rdx = new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDX, operand1.Size);

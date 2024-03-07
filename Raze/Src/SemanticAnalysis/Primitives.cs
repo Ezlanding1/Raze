@@ -106,8 +106,7 @@ public partial class Analyzer
                 case (Parser.LiteralTokenType.Boolean, Parser.LiteralTokenType.Boolean): return Parser.LiteralTokenType.Boolean; // BOOLEAN OP BOOLEAN
 
                 default:
-                    Diagnostics.Panic(new Error.ImpossibleError($"Unrecognized literal operation"));
-                    return 0;
+                    throw Diagnostics.Panic(new Error.ImpossibleError($"Unrecognized literal operation"));
             }
             return Parser.VoidTokenType;
         }
@@ -216,8 +215,7 @@ public partial class Analyzer
                 case Parser.LiteralTokenType.Boolean: return Parser.LiteralTokenType.Boolean; // BOOLEAN OP
 
                 default:
-                    Diagnostics.Panic(new Error.ImpossibleError($"Unrecognized literal operation"));
-                    return 0;
+                    throw Diagnostics.Panic(new Error.ImpossibleError($"Unrecognized literal operation"));
             }
             return Parser.VoidTokenType;
         }

@@ -60,9 +60,7 @@ public partial class Assembler
                     }
                 }
             }
-            Diagnostics.Panic(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
-            refResolve = false;
-            return new();
+            throw Diagnostics.Panic(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
         }
         internal Encoding GetEncoding(AssemblyExpr.Zero zero)
         {
@@ -73,8 +71,7 @@ public partial class Assembler
                     return encodings[0];
                 }
             }
-            Diagnostics.Panic(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
-            return new();
+            throw Diagnostics.Panic(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
         }
     }
 }
