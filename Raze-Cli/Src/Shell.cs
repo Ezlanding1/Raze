@@ -64,14 +64,14 @@ internal partial class Shell
 
     static void CompileProgram(CompileOptions compileOptions)
     {
+        Diagnostics.debugErrors = compileOptions.DebugErrorsOption;
         try
         {
             Run(compileOptions);
         }
         catch (Exception exception)
         {
-            string errorMessage = compileOptions.DebugErrorsOption? exception.Message : exception.ToString();
-            Diagnostics.errors.Push(new Error.ImpossibleError(errorMessage));
+            Diagnostics.Panic(new Error.ImpossibleError(exception));
         }
     }
 }

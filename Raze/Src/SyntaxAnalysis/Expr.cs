@@ -527,7 +527,7 @@ public abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            Diagnostics.errors.Push(new Error.ImpossibleError("type accepted"));
+            Diagnostics.Panic(new Error.ImpossibleError("type accepted"));
             return default;
         }
 

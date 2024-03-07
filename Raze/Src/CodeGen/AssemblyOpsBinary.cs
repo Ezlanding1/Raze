@@ -87,7 +87,7 @@ internal partial class AssemblyOps
         {
             if (operand1.Size != operand2.Size)
             {
-                Diagnostics.errors.Push(new Error.BackendError("Invalid Assembly Block", "Operand size mistmatch"));
+                Diagnostics.ReportError(new Error.BackendError("Invalid Assembly Block", "Operand size mistmatch"));
             }
         }
 
@@ -112,8 +112,8 @@ internal partial class AssemblyOps
 
         public static void CheckLEA(AssemblyExpr.Value operand1, AssemblyExpr.Value operand2)
         {
-            if (!operand1.IsRegister()) { Diagnostics.errors.Push(new Error.BackendError("Invalid Assembly Block", $"'LEA' Instruction's first operand must be a register. Got {operand1.GetType().Name}")); }
-            if (!operand2.IsPointer()) { Diagnostics.errors.Push(new Error.BackendError("Invalid Assembly Block", $"'LEA' Instruction's second operand must be a pointer. Got {operand2.GetType().Name}")); }
+            if (!operand1.IsRegister()) { Diagnostics.ReportError(new Error.BackendError("Invalid Assembly Block", $"'LEA' Instruction's first operand must be a register. Got {operand1.GetType().Name}")); }
+            if (!operand2.IsPointer()) { Diagnostics.ReportError(new Error.BackendError("Invalid Assembly Block", $"'LEA' Instruction's second operand must be a pointer. Got {operand2.GetType().Name}")); }
         }
         public static void LEA(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
@@ -171,7 +171,7 @@ internal partial class AssemblyOps
 
                     if (operand2.Size != AssemblyExpr.Register.RegisterSize._8Bits)
                     {
-                        Diagnostics.errors.Push(new Error.BackendError("Invalid Assembly Block", "Instruction operand sizes don't match"));
+                        Diagnostics.ReportError(new Error.BackendError("Invalid Assembly Block", "Instruction operand sizes don't match"));
                     }
 
                     assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, cl, operand2));
@@ -243,7 +243,7 @@ internal partial class AssemblyOps
                     emitOp = AssemblyExpr.Instruction.IDIV;
                     break;
                 default:
-                    Diagnostics.errors.Push(new Error.ImpossibleError("Impossible instruction in IDIV_DIV_IMOD_MOD"));
+                    Diagnostics.Panic(new Error.ImpossibleError("Impossible instruction in IDIV_DIV_IMOD_MOD"));
                     return;
             }
             var rax = assemblyOps.assembler.alloc.CallAlloc(operand1.Size);

@@ -302,7 +302,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     public AssemblyExpr.Value? VisitTypeReferenceExpr(Expr.TypeReference expr)
     {
-        Diagnostics.errors.Push(new Error.ImpossibleError("Type accepted in assembler"));
+        Diagnostics.Panic(new Error.ImpossibleError("Type accepted in assembler"));
         return null;
     }
 
@@ -404,7 +404,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     public AssemblyExpr.Value? VisitGetExpr(Expr.Get expr)
     {
-        Diagnostics.errors.Push(new Error.ImpossibleError("Get accepted in assembler"));
+        Diagnostics.Panic(new Error.ImpossibleError("Get accepted in assembler"));
         return null;
     }
 
@@ -551,7 +551,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             case Parser.LiteralTokenType.Boolean:
                 return new AssemblyExpr.UnresolvedLiteral((AssemblyExpr.Literal.LiteralType)expr.literal.type, expr.literal.lexeme);
             default:
-                Diagnostics.errors.Push(new Error.ImpossibleError($"Invalid Literal Type ({expr.literal.type})"));
+                Diagnostics.Panic(new Error.ImpossibleError($"Invalid Literal Type ({expr.literal.type})"));
                 return null;
         }
         
@@ -788,7 +788,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             case "true": return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 1 });
             case "false": return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 0 });
             default: 
-                Diagnostics.errors.Push(new Error.ImpossibleError($"'{expr.keyword}' is not a keyword"));
+                Diagnostics.Panic(new Error.ImpossibleError($"'{expr.keyword}' is not a keyword"));
                 return null;
         }
     }

@@ -20,7 +20,7 @@ public partial class Assembler
 
             if (stream is null)
             {
-                Diagnostics.errors.Push(new Error.ImpossibleError($"Could not locate Encoding Schema file"));
+                Diagnostics.Panic(new Error.ImpossibleError($"Could not locate Encoding Schema file"));
             }
 
             instructionEncodings = JsonSerializer.Deserialize<Dictionary<string, List<Encoding>>>(stream);
@@ -60,7 +60,7 @@ public partial class Assembler
                     }
                 }
             }
-            Diagnostics.errors.Push(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
+            Diagnostics.Panic(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
             refResolve = false;
             return new();
         }
@@ -73,7 +73,7 @@ public partial class Assembler
                     return encodings[0];
                 }
             }
-            Diagnostics.errors.Push(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
+            Diagnostics.Panic(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
             return new();
         }
     }

@@ -62,7 +62,7 @@ public class SystemInfo
             case CPU_Architecture.AMD_x86_64:
                 return Endianness.LittleEndian;
         }
-        Diagnostics.errors.Push(new Error.ImpossibleError($"CPU Architecture '{architecture}' not supported"));
+        Diagnostics.Panic(new Error.ImpossibleError($"CPU Architecture '{architecture}' not supported"));
         return 0;
     }
     
@@ -73,7 +73,7 @@ public class SystemInfo
             case CPU_Architecture.AMD_x86_64:
                 return 0x1000;
         }
-        Diagnostics.errors.Push(new Error.ImpossibleError($"CPU Architecture '{architecture}' not supported"));
+        Diagnostics.Panic(new Error.ImpossibleError($"CPU Architecture '{architecture}' not supported"));
         return 0;
     }
 }

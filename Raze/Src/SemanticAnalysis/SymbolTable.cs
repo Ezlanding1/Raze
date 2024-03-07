@@ -76,7 +76,7 @@ public partial class Analyzer
             AddDefinition((Expr.DataType)definition);
             foreach (var duplicate in definition.declarations.GroupBy(x => x.name.lexeme).Where(x => x.Count() > 1).Select(x => x.ElementAt(0)))
             {
-                Diagnostics.errors.Push(new Error.AnalyzerError("Double Declaration", $"A variable named '{duplicate.name.lexeme}' is already declared in this scope"));
+                Diagnostics.ReportError(new Error.AnalyzerError("Double Declaration", $"A variable named '{duplicate.name.lexeme}' is already declared in this scope"));
             }
         }
 
@@ -147,7 +147,7 @@ public partial class Analyzer
 
             if (variable == null)
             {
-                Diagnostics.errors.Push(new Error.AnalyzerError("Undefined Reference", $"The variable '{key.lexeme}' does not exist in the current context"));
+                Diagnostics.ReportError(new Error.AnalyzerError("Undefined Reference", $"The variable '{key.lexeme}' does not exist in the current context"));
                 return VarNotFoundData;
             }
             return variable;
@@ -176,7 +176,7 @@ public partial class Analyzer
 
             if (current.definitionType == Expr.Definition.DefinitionType.Function)
             {
-                Diagnostics.errors.Push(new Error.ImpossibleError("Requested function's definitions"));
+                Diagnostics.Panic(new Error.ImpossibleError("Requested function's definitions"));
             }
 
             if (TryGetValue(((Expr.DataType)current).definitions, key, out var value))
@@ -192,12 +192,12 @@ public partial class Analyzer
 
             if (_class == null)
             {
-                Diagnostics.errors.Push(new Error.AnalyzerError("Undefined Reference", $"The class '{key.lexeme}' does not exist in the current context"));
+                Diagnostics.ReportError(new Error.AnalyzerError("Undefined Reference", $"The class '{key.lexeme}' does not exist in the current context"));
                 return new SpecialObjects.Any(key);
             }
             else if (_class.definitionType == Expr.Definition.DefinitionType.Function)
             {
-                Diagnostics.errors.Push(new Error.AnalyzerError("Undefined Reference", $"The function '{key.lexeme}' cannot be used as a type"));
+                Diagnostics.ReportError(new Error.AnalyzerError("Undefined Reference", $"The function '{key.lexeme}' cannot be used as a type"));
                 return ClassNotFoundDefinition;
             }
             return _class;
@@ -237,12 +237,12 @@ public partial class Analyzer
 
             if (_class == null)
             {
-                Diagnostics.errors.Push(new Error.AnalyzerError("Undefined Reference", $"The class '{key.lexeme}' does not exist in the current context"));
+                Diagnostics.ReportError(new Error.AnalyzerError("Undefined Reference", $"The class '{key.lexeme}' does not exist in the current context"));
                 return new SpecialObjects.Any(key);
             }
             else if (_class.definitionType == Expr.Definition.DefinitionType.Function)
             {
-                Diagnostics.errors.Push(new Error.AnalyzerError("Undefined Reference", $"The function '{key.lexeme}' cannot be used as a type"));
+                Diagnostics.ReportError(new Error.AnalyzerError("Undefined Reference", $"The function '{key.lexeme}' cannot be used as a type"));
                 return ClassNotFoundDefinition;
             }
             return _class;
@@ -281,7 +281,7 @@ public partial class Analyzer
             {
                 if (!types.Any(x => x == TypeCheckUtils.anyType))
                 {
-                    Diagnostics.errors.Push(new Error.AnalyzerError("Undefined Reference", $"The function '{key}({string.Join(", ", (object?[])types)})' does not exist in the current context"));
+                    Diagnostics.ReportError(new Error.AnalyzerError("Undefined Reference", $"The function '{key}({string.Join(", ", (object?[])types)})' does not exist in the current context"));
                 }
                 return FunctionNotFoundDefinition;
             }
@@ -306,7 +306,7 @@ public partial class Analyzer
         public void UpContext()
         {
             if (current == null)
-                Diagnostics.errors.Push(new Error.ImpossibleError("Up Context Called On 'GLOBAL' context (no enclosing)"));
+                Diagnostics.Panic(new Error.ImpossibleError("Up Context Called On 'GLOBAL' context (no enclosing)"));
 
             current = (Expr.Definition)current.enclosing;
         }
@@ -331,18 +331,18 @@ public partial class Analyzer
                 {
                     if (duplicate.name.lexeme == "Main")
                     {
-                        Diagnostics.errors.Push(new Error.AnalyzerError("Double Declaration", "A Program may have only one 'Main' method"));
+                        Diagnostics.ReportError(new Error.AnalyzerError("Double Declaration", "A Program may have only one 'Main' method"));
                     }
 
-                    Diagnostics.errors.Push(new Error.AnalyzerError("Double Declaration", $"A function '{duplicate}' is already defined in this scope"));
+                    Diagnostics.ReportError(new Error.AnalyzerError("Double Declaration", $"A function '{duplicate}' is already defined in this scope"));
                 }
                 else if (duplicate.definitionType == Expr.Definition.DefinitionType.Primitive)
                 {
-                    Diagnostics.errors.Push(new Error.AnalyzerError("Double Declaration", $"A primitive class named '{duplicate.name.lexeme}' is already defined in this scope"));
+                    Diagnostics.ReportError(new Error.AnalyzerError("Double Declaration", $"A primitive class named '{duplicate.name.lexeme}' is already defined in this scope"));
                 }
                 else
                 {
-                    Diagnostics.errors.Push(new Error.AnalyzerError("Double Declaration", $"A class named '{duplicate.name.lexeme}' is already defined in this scope"));
+                    Diagnostics.ReportError(new Error.AnalyzerError("Double Declaration", $"A class named '{duplicate.name.lexeme}' is already defined in this scope"));
                 }
             }
         }
@@ -406,7 +406,7 @@ public partial class Analyzer
                 {
                     if (item.definitionType != Expr.Definition.DefinitionType.Function)
                     {
-                        Diagnostics.errors.Push(new Error.AnalyzerError("Invalid Call", $"{item.definitionType} is not invokable"));
+                        Diagnostics.ReportError(new Error.AnalyzerError("Invalid Call", $"{item.definitionType} is not invokable"));
                         return false;
                     }
                     if (ParamMatch(types, (Expr.Function)item))
@@ -417,7 +417,7 @@ public partial class Analyzer
                         }
                         else
                         {
-                            Diagnostics.errors.Push(new Error.AnalyzerError("Ambiguous Call", $"Call is ambiguous between {value} and {(Expr.Function)item}"));
+                            Diagnostics.ReportError(new Error.AnalyzerError("Ambiguous Call", $"Call is ambiguous between {value} and {(Expr.Function)item}"));
                             return false;
                         }
                     }

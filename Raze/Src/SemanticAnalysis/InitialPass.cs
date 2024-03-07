@@ -46,7 +46,7 @@ public partial class Analyzer
 
                 if (expr.modifiers["operator"])
                 {
-                    Diagnostics.errors.Push(new Error.AnalyzerError("Invalid Operator Definition", $"Top level operator function definitions are not allowed"));
+                    Diagnostics.ReportError(new Error.AnalyzerError("Invalid Operator Definition", $"Top level operator function definitions are not allowed"));
                     expr.modifiers["operator"] = false;
                 }
             }
@@ -86,7 +86,7 @@ public partial class Analyzer
                     case "Indexer":
                         if (expr.Arity != 2)
                         {
-                            Diagnostics.errors.Push(new Error.AnalyzerError("Invalid Operator Definition", $"The '{expr.name.lexeme}' operator must have an arity of 2"));
+                            Diagnostics.ReportError(new Error.AnalyzerError("Invalid Operator Definition", $"The '{expr.name.lexeme}' operator must have an arity of 2"));
                         }
                         break;
                     // Unary
@@ -96,11 +96,11 @@ public partial class Analyzer
                     case "Not":
                         if (expr.Arity != 1)
                         {
-                            Diagnostics.errors.Push(new Error.AnalyzerError("Invalid Operator Definition", $"The '{expr.name.lexeme}' operator must have an arity of 1"));
+                            Diagnostics.ReportError(new Error.AnalyzerError("Invalid Operator Definition", $"The '{expr.name.lexeme}' operator must have an arity of 1"));
                         }
                         break;
                     default:
-                        Diagnostics.errors.Push(new Error.AnalyzerError("Invalid Operator Definition", $"'{expr.name.lexeme}' is not a recognized operator"));
+                        Diagnostics.ReportError(new Error.AnalyzerError("Invalid Operator Definition", $"'{expr.name.lexeme}' is not a recognized operator"));
                         expr.modifiers["operator"] = false;
                         break;
                 }
@@ -206,16 +206,16 @@ public partial class Analyzer
         {
             if (symbolTable.CurrentIsTop())
             {
-                Diagnostics.errors.Push(new Error.AnalyzerError("Top Level Assembly Block", "Assembly Blocks must be placed in an unsafe function"));
+                Diagnostics.ReportError(new Error.AnalyzerError("Top Level Assembly Block", "Assembly Blocks must be placed in an unsafe function"));
             }
             else if (symbolTable.Current.definitionType != Expr.Definition.DefinitionType.Function)
             {
-                Diagnostics.errors.Push(new Error.AnalyzerError("ASM Block Not In Function", "Assembly Blocks must be placed in functions"));
+                Diagnostics.ReportError(new Error.AnalyzerError("ASM Block Not In Function", "Assembly Blocks must be placed in functions"));
             }
 
             if ((symbolTable.Current?.definitionType == Expr.Definition.DefinitionType.Function) && !((Expr.Function)symbolTable.Current).modifiers["unsafe"])
             {
-                Diagnostics.errors.Push(new Error.AnalyzerError("Unsafe Code in Safe Function", "Mark a function with 'unsafe' to include unsafe code"));
+                Diagnostics.ReportError(new Error.AnalyzerError("Unsafe Code in Safe Function", "Mark a function with 'unsafe' to include unsafe code"));
             }
 
             return base.VisitAssemblyExpr(expr);
@@ -261,7 +261,7 @@ public partial class Analyzer
         {
             if (expr.member.HandleThis() && (symbolTable.NearestEnclosingClass()?.definitionType != Expr.Definition.DefinitionType.Primitive))
             {
-                Diagnostics.errors.Push(new Error.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword cannot be assigned to"));
+                Diagnostics.ReportError(new Error.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword cannot be assigned to"));
             }
 
             expr.member.Accept(this);
@@ -278,7 +278,7 @@ public partial class Analyzer
             }
             else
             {
-                Diagnostics.errors.Push(new Error.ImpossibleError("Invalid primitive superclass"));
+                Diagnostics.Panic(new Error.ImpossibleError("Invalid primitive superclass"));
             }
 
             foreach (var blockExpr in expr.definitions)
@@ -299,7 +299,7 @@ public partial class Analyzer
 
         private void HandleTopLevelCode()
         {
-            if (symbolTable.CurrentIsTop()) Diagnostics.errors.Push(new Error.AnalyzerError("Top Level Code", "Top level code is not allowed"));
+            if (symbolTable.CurrentIsTop()) Diagnostics.ReportError(new Error.AnalyzerError("Top Level Code", "Top level code is not allowed"));
         }
 
         private void GetVariableDefinition(ExprUtils.QueueList<Token> typeName, Expr.StackData stack)
@@ -336,16 +336,16 @@ public partial class Analyzer
 
             if (constructor._returnType.typeName != null)
             {
-                Diagnostics.errors.Push(new Error.AnalyzerError("Constructor With Non-Void Return Type", "The return type of a constructor must be 'void'"));
+                Diagnostics.ReportError(new Error.AnalyzerError("Constructor With Non-Void Return Type", "The return type of a constructor must be 'void'"));
             }
             if (constructor.modifiers["static"])
             {
-                Diagnostics.errors.Push(new Error.AnalyzerError("Constructor Marked 'static'", "A constructor cannot have the 'static' modifier"));
+                Diagnostics.ReportError(new Error.AnalyzerError("Constructor Marked 'static'", "A constructor cannot have the 'static' modifier"));
                 constructor.modifiers["static"] = false;
             }
             if (constructor.modifiers["operator"])
             {
-                Diagnostics.errors.Push(new Error.AnalyzerError("Constructor Marked 'operator'", "A constructor cannot have the 'operator' modifier"));
+                Diagnostics.ReportError(new Error.AnalyzerError("Constructor Marked 'operator'", "A constructor cannot have the 'operator' modifier"));
                 constructor.modifiers["static"] = false;
             }
         }

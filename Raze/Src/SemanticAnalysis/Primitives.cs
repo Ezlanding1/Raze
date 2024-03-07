@@ -27,7 +27,7 @@ public partial class Analyzer
         {
             if (type1 == Parser.VoidTokenType || type2 == Parser.VoidTokenType)
             {
-                Diagnostics.errors.Push(InvalidOperation(op, type1, type2));
+                Diagnostics.ReportError(InvalidOperation(op, type1, type2));
                 return Parser.VoidTokenType;
             }
 
@@ -41,7 +41,7 @@ public partial class Analyzer
             }
             if ((type1 == Floating || type2 == Floating) && (pName == "BitwiseShiftLeft" || pName == "BitwiseShiftRight" || pName == "BitwiseAnd" || pName == "BitwiseOr" || pName == "BitwiseXor"))
             {
-                Diagnostics.errors.Push(InvalidOperation(op, type1, type2));
+                Diagnostics.ReportError(InvalidOperation(op, type1, type2));
                 return Parser.VoidTokenType;
             }
             if (pName == "EqualTo" || pName == "NotEqualTo" || pName == "GreaterThan" || pName == "LessThan" || pName == "GreaterThanOrEqualTo" || pName == "LessThanOrEqualTo")
@@ -56,7 +56,7 @@ public partial class Analyzer
                 }
                 else
                 {
-                    Diagnostics.errors.Push(InvalidOperation(op, type1, type2));
+                    Diagnostics.ReportError(InvalidOperation(op, type1, type2));
                 }
             }
 
@@ -67,46 +67,46 @@ public partial class Analyzer
                 case (Integer, Parser.LiteralTokenType.String):
                 case (Parser.LiteralTokenType.String, Integer):
                 case (Integer, RefString):
-                case (RefString, Integer): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // INTEGER OP STRING
+                case (RefString, Integer): Diagnostics.ReportError(InvalidOperation(op, type1, type2)); break;  // INTEGER OP STRING
                 case (Integer, Binary): case (Binary, Integer): return Integer; // INTEGER OP BINARY
                 case (Integer, Hex): case (Hex, Integer): return Integer; // INTEGER OP HEX
-                case (Integer, Parser.LiteralTokenType.Boolean): case (Parser.LiteralTokenType.Boolean, Integer): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // INTEGER OP BOOLEAN
+                case (Integer, Parser.LiteralTokenType.Boolean): case (Parser.LiteralTokenType.Boolean, Integer): Diagnostics.ReportError(InvalidOperation(op, type1, type2)); break;  // INTEGER OP BOOLEAN
 
                 case (Floating, Floating): return Floating; // FLOATING OP FLOATING
                 case (Floating, Parser.LiteralTokenType.String):
                 case (Parser.LiteralTokenType.String, Floating):
                 case (Floating, RefString):
-                case (RefString, Floating): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break; // FLOATING OP STRING
-                case (Floating, Binary): case (Binary, Floating): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // FLOATING OP BINARY
-                case (Floating, Hex): case (Hex, Floating): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // FLOATING OP HEX
-                case (Floating, Parser.LiteralTokenType.Boolean): case (Parser.LiteralTokenType.Boolean, Floating): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // FLOATING OP BOOLEAN
+                case (RefString, Floating): Diagnostics.ReportError(InvalidOperation(op, type1, type2)); break; // FLOATING OP STRING
+                case (Floating, Binary): case (Binary, Floating): Diagnostics.ReportError(InvalidOperation(op, type1, type2)); break;  // FLOATING OP BINARY
+                case (Floating, Hex): case (Hex, Floating): Diagnostics.ReportError(InvalidOperation(op, type1, type2)); break;  // FLOATING OP HEX
+                case (Floating, Parser.LiteralTokenType.Boolean): case (Parser.LiteralTokenType.Boolean, Floating): Diagnostics.ReportError(InvalidOperation(op, type1, type2)); break;  // FLOATING OP BOOLEAN
 
                 case (Parser.LiteralTokenType.String, Parser.LiteralTokenType.String):
-                case (RefString, RefString): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break; // STRING OP STRING
+                case (RefString, RefString): Diagnostics.ReportError(InvalidOperation(op, type1, type2)); break; // STRING OP STRING
                 case (Parser.LiteralTokenType.String, Binary):
                 case (Binary, Parser.LiteralTokenType.String):
                 case (RefString, Binary):
-                case (Binary, RefString): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // STRING OP BINARY
+                case (Binary, RefString): Diagnostics.ReportError(InvalidOperation(op, type1, type2)); break;  // STRING OP BINARY
                 case (Parser.LiteralTokenType.String, Hex):
                 case (Hex, Parser.LiteralTokenType.String):
                 case (RefString, Hex):
-                case (Hex, RefString): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // STRING OP HEX
+                case (Hex, RefString): Diagnostics.ReportError(InvalidOperation(op, type1, type2)); break;  // STRING OP HEX
                 case (Parser.LiteralTokenType.String, Parser.LiteralTokenType.Boolean):
                 case (Parser.LiteralTokenType.Boolean, Parser.LiteralTokenType.String):
                 case (RefString, Parser.LiteralTokenType.Boolean):
-                case (Parser.LiteralTokenType.Boolean, RefString): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // STRING OP BOOLEAN
+                case (Parser.LiteralTokenType.Boolean, RefString): Diagnostics.ReportError(InvalidOperation(op, type1, type2)); break;  // STRING OP BOOLEAN
 
                 case (Binary, Binary): return Integer; // BINARY OP BINARY
-                case (Binary, Hex): case (Hex, Binary): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // BINARY OP HEX
-                case (Binary, Parser.LiteralTokenType.Boolean): case (Parser.LiteralTokenType.Boolean, Binary): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // BINARY OP BOOLEAN
+                case (Binary, Hex): case (Hex, Binary): Diagnostics.ReportError(InvalidOperation(op, type1, type2)); break;  // BINARY OP HEX
+                case (Binary, Parser.LiteralTokenType.Boolean): case (Parser.LiteralTokenType.Boolean, Binary): Diagnostics.ReportError(InvalidOperation(op, type1, type2)); break;  // BINARY OP BOOLEAN
 
                 case (Hex, Hex): return Integer; // HEX OP HEX
-                case (Hex, Parser.LiteralTokenType.Boolean): case (Parser.LiteralTokenType.Boolean, Hex): Diagnostics.errors.Push(InvalidOperation(op, type1, type2)); break;  // HEX OP BOOLEAN
+                case (Hex, Parser.LiteralTokenType.Boolean): case (Parser.LiteralTokenType.Boolean, Hex): Diagnostics.ReportError(InvalidOperation(op, type1, type2)); break;  // HEX OP BOOLEAN
 
                 case (Parser.LiteralTokenType.Boolean, Parser.LiteralTokenType.Boolean): return Parser.LiteralTokenType.Boolean; // BOOLEAN OP BOOLEAN
 
                 default:
-                    Diagnostics.errors.Push(new Error.ImpossibleError($"Unrecognized literal operation"));
+                    Diagnostics.Panic(new Error.ImpossibleError($"Unrecognized literal operation"));
                     return 0;
             }
             return Parser.VoidTokenType;
@@ -185,7 +185,7 @@ public partial class Analyzer
         {
             if (type1 == Parser.VoidTokenType)
             {
-                Diagnostics.errors.Push(InvalidOperation(op, type1));
+                Diagnostics.ReportError(InvalidOperation(op, type1));
                 return Parser.VoidTokenType;
             }
 
@@ -195,7 +195,7 @@ public partial class Analyzer
 
             if (pName == "Increment" || pName == "Decrement")
             {
-                Diagnostics.errors.Push(new Error.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter"));
+                Diagnostics.ReportError(new Error.AnalyzerError("Invalid Operator Argument", "Cannot assign when non-variable is passed to 'ref' parameter"));
                 return Parser.VoidTokenType;
             }
 
@@ -203,11 +203,11 @@ public partial class Analyzer
             {
                 case Integer: return Integer; // INTEGER OP
 
-                case Floating: Diagnostics.errors.Push(InvalidOperation(op, Floating)); break;  // FLOATING OP
+                case Floating: Diagnostics.ReportError(InvalidOperation(op, Floating)); break;  // FLOATING OP
 
-                case Parser.LiteralTokenType.String: Diagnostics.errors.Push(InvalidOperation(op, Parser.LiteralTokenType.String)); break;  // STRING OP
+                case Parser.LiteralTokenType.String: Diagnostics.ReportError(InvalidOperation(op, Parser.LiteralTokenType.String)); break;  // STRING OP
 
-                case RefString: Diagnostics.errors.Push(InvalidOperation(op, RefString)); break;  // REF_STRING OP
+                case RefString: Diagnostics.ReportError(InvalidOperation(op, RefString)); break;  // REF_STRING OP
 
                 case Binary: return Integer; // BINARY OP
 
@@ -216,7 +216,7 @@ public partial class Analyzer
                 case Parser.LiteralTokenType.Boolean: return Parser.LiteralTokenType.Boolean; // BOOLEAN OP
 
                 default:
-                    Diagnostics.errors.Push(new Error.ImpossibleError($"Unrecognized literal operation"));
+                    Diagnostics.Panic(new Error.ImpossibleError($"Unrecognized literal operation"));
                     return 0;
             }
             return Parser.VoidTokenType;

@@ -16,7 +16,7 @@ public partial class Assembler
                 
             internal static Instruction EncodingError()
             {
-                Diagnostics.errors.Push(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
+                Diagnostics.Panic(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
                 return new Instruction();
             }
 
@@ -148,7 +148,7 @@ public partial class Assembler
 
             internal static void ThrowIvalidEncodingType(string t1, string t2)
             {
-                Diagnostics.errors.Push(new Error.ImpossibleError($"Cannot encode instruction with operands '{t1.ToUpper()}, {t2.ToUpper()}'"));
+                Diagnostics.Panic(new Error.ImpossibleError($"Cannot encode instruction with operands '{t1.ToUpper()}, {t2.ToUpper()}'"));
             }
 
             internal static (Operand.OperandSize, Operand.OperandSize) HandleUnresolvedRef(AssemblyExpr expr, AssemblyExpr.LabelLiteral literal, Assembler assembler)

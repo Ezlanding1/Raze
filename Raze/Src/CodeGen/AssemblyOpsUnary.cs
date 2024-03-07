@@ -83,7 +83,7 @@ internal partial class AssemblyOps
 
             if (operand.IsLiteral())
             {
-                Diagnostics.errors.Push(new Error.BackendError("Invalid Assembly Instruction", "'DEREF' instruction's operand may not be literal"));
+                Diagnostics.ReportError(new Error.BackendError("Invalid Assembly Instruction", "'DEREF' instruction's operand may not be literal"));
                 return;
             }
 

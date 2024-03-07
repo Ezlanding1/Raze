@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,26 +9,44 @@ namespace Raze;
 
 public static class Diagnostics
 {
-    public static ErrorStack errors = new();
-
+    const string InternalErrorHeading = "Internal Error:";
+    const string ErrorPadding = "\n\n";
+    private static bool errorEncountered = false;
+    public static bool debugErrors;
+    
     public static void ThrowCompilerErrors()
     {
-        if (errors.Count == 0) return;
-
-        errors.ComposeErrorReport();
-        Environment.Exit(65);
+        if (errorEncountered)
+        {
+            Environment.Exit(65);
+        }
     }
 
-    public static void Panic(Error error)
+    public static void ReportError(Error error)
     {
-        if (errors.Count != 0)
+        errorEncountered = true;
+        if (error is Error.ImpossibleError impossibleError)
         {
-            errors.ComposeErrorReport();
+            Panic(impossibleError);
         }
-        
-        Console.WriteLine("INTERNAL ERROR:");
-        Console.WriteLine(error.ComposeErrorMessage());
+        PrintError(error);
+    }
+
+    [DoesNotReturn]
+    public static Exception Panic(Error.ImpossibleError error)
+    {
+        Console.WriteLine(InternalErrorHeading);
+        PrintError(error);
 
         Environment.Exit(70);
+        return new();
+    }
+
+    private static void PrintError(Error error)
+    {
+        Console.ForegroundColor = ConsoleColor.DarkRed;
+        Console.WriteLine(error.ComposeErrorMessage());
+        Console.WriteLine(ErrorPadding);
+        Console.ResetColor();
     }
 }
