@@ -83,11 +83,11 @@ public class Lexer
                     string str = match.ToString();
                     if (str.Length == 2)
                     {
-                        Diagnostics.ReportError(new Error.LexError(line, col, "Invalid Literal", "Empty String Literal"));
+                        Diagnostics.Report(new Diagnostic.LexDiagnostic(Diagnostic.DiagnosticName.EmptyStringLiteral, new object[] { }, line, col));
                     }
                     if (str[^1] != '\'' || str.Length == 1)
                     {
-                        Diagnostics.ReportError(new Error.LexError(line, col, "Non Terminated String", $"\'{((str.Length <= StringTruncateLength) ? str + "'" : str.Substring(0, StringTruncateLength) + "'...")} was not terminated"));
+                        Diagnostics.Report(new Diagnostic.LexDiagnostic(Diagnostic.DiagnosticName.NonTerminatedString, new object[] { (str.Length <= StringTruncateLength) ? str + "'" : str.Substring(0, StringTruncateLength) + "'..." }, line, col));
                     }
                     return new Token(pattern.type, Escape(str[1..^1]));
                 }
@@ -96,7 +96,7 @@ public class Lexer
                     string str = match.ToString();
                     if (str[^1] != '\"' || str.Length == 1)
                     {
-                        Diagnostics.ReportError(new Error.LexError(line, col, "Non Terminated String", $"\'{((str.Length <= StringTruncateLength) ? str + "'" : str.Substring(0, StringTruncateLength) + "'...")} was not terminated"));
+                        Diagnostics.Report(new Diagnostic.LexDiagnostic(Diagnostic.DiagnosticName.NonTerminatedString, new object[] { (str.Length <= StringTruncateLength) ? str + "'" : str.Substring(0, StringTruncateLength) + "'..." }, line, col));
                     }
                     return new Token(pattern.type, Escape(str[1..^1]));
                 }
@@ -105,7 +105,7 @@ public class Lexer
                     string floating = match.ToString();
                     if (floating[^1] == '.')
                     {
-                        Diagnostics.ReportError(new Error.LexError(line, col, "Invalid Formatted Number", $"'{floating}' is incorectly formatted"));
+                        Diagnostics.Report(new Diagnostic.LexDiagnostic(Diagnostic.DiagnosticName.InvalidFormattedNumber, new object[] { floating }, line, col));
                     }
                     return new Token(pattern.type, floating);
                 }
@@ -117,7 +117,7 @@ public class Lexer
             }
         }
 
-        Diagnostics.ReportError(new Error.LexError(line, col, "Illegal Char Error", $"Character '{lexeme[0]}' is Illegal"));
+        Diagnostics.Report(new Diagnostic.LexDiagnostic(Diagnostic.DiagnosticName.IllegalCharError, new object[] { lexeme[0] }, line, col));
         index++;
         return null;
     }

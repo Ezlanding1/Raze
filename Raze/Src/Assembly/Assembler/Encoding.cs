@@ -24,7 +24,7 @@ public partial class Assembler
                 {
                     if (!Enum.TryParse(value.Replace('|', ','), out encodingType))
                     {
-                        Diagnostics.Panic(new Error.ImpossibleError($"Invalid Encoding Type {value}"));
+                        Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Invalid Encoding Type {value}"));
                     }
                 }
             }

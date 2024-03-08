@@ -77,7 +77,7 @@ partial class Syntaxes
             {
                 if (instruction.register.Name == AssemblyExpr.Register.RegisterName.TMP)
                 {
-                    Diagnostics.Panic(new Error.ImpossibleError("TMP Register Emitted"));
+                    Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("TMP Register Emitted"));
                 }
 
                 if (instruction.offset == 0)
@@ -91,7 +91,7 @@ partial class Syntaxes
             {
                 if (instruction.Name == AssemblyExpr.Register.RegisterName.TMP)
                 {
-                    Diagnostics.Panic(new Error.ImpossibleError("TMP Register Cannot Be Emitted"));
+                    Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("TMP Register Cannot Be Emitted"));
                 }
 
                 return $"{RegisterToString[(instruction.Name, instruction.Size)]}";
@@ -116,7 +116,7 @@ partial class Syntaxes
             {
                 if (instruction.register.Name == AssemblyExpr.Register.RegisterName.TMP)
                 {
-                    Diagnostics.Panic(new Error.ImpossibleError("TMP Register Cannot Be Emitted"));
+                    Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("TMP Register Cannot Be Emitted"));
                 }
 
                 if (instruction.offset == 0)

@@ -527,7 +527,7 @@ public abstract class Expr
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            throw Diagnostics.Panic(new Error.ImpossibleError("type accepted"));
+            throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("type accepted"));
         }
 
         public virtual bool Match(Type type)

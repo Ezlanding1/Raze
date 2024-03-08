@@ -102,14 +102,14 @@ public partial class AssemblyExpr
         {
             if (InstructionUtils.SYS_SIZE != size)
             {
-                Diagnostics.ReportError(new Error.BackendError("Invalid Literal", $"RefString literal with size '{size}' must have the same size as the system size '{InstructionUtils.SYS_SIZE}'"));
+                Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.InvalidLiteralSize_SystemSize, "RefString", size, InstructionUtils.SYS_SIZE));
             }
             return Encoding.ASCII.GetBytes(str);
         }
 
         private static void ThrowInvalidSizedLiteral(Parser.LiteralTokenType literalType, string str, Register.RegisterSize dataTypeSize)
         {
-            Diagnostics.ReportError(new Error.BackendError("Invalid Literal", $"{literalType} literal '{str}' exceeds size of assigned data type '{dataTypeSize}'"));
+            Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.InvalidLiteralSize, literalType, str, dataTypeSize));
         }
     }
 }

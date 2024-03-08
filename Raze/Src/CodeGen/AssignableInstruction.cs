@@ -79,7 +79,7 @@ internal abstract partial class ExprUtils
                         AssemblyOps.Binary.CMP(this, assemblyOps);
                         return;
                     default:
-                        Diagnostics.ReportError(new Error.BackendError("Invalid Assembly Block", $"Instruction '{instruction.instruction}' not supported"));
+                        Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.UnsupportedInstruction, instruction.instruction));
                         return;
                 }
             }
@@ -149,7 +149,7 @@ internal abstract partial class ExprUtils
                         AssemblyOps.Unary.DEREF(this, assemblyOps);
                         return;
                     default:
-                        Diagnostics.ReportError(new Error.BackendError("Invalid Assembly Block", $"Instruction '{instruction.instruction}' not supported"));
+                        Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.UnsupportedInstruction, instruction.instruction));
                         break;
                 }
             }
@@ -192,7 +192,7 @@ internal abstract partial class ExprUtils
                         AssemblyOps.Zero.DefaultZOp(this, assemblyOps);
                         break;
                     default:
-                        Diagnostics.ReportError(new Error.BackendError("Invalid Assembly Block", $"Instruction '{instruction.instruction}' not supported"));
+                        Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.UnsupportedInstruction, instruction.instruction));
                         break;
                 }
             }

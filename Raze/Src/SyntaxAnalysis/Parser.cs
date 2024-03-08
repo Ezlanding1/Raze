@@ -67,9 +67,7 @@ public class Parser
             {
                 ExprUtils.Modifiers modifiers = ExprUtils.Modifiers.FunctionModifierTemplate();
 
-                if (IsAtEnd()) return null;
-
-                while (modifiers.ContainsModifier(current.lexeme))
+                while (modifiers.ContainsModifier(current?.lexeme))
                 {
                     modifiers[current.lexeme] = true;
                     Advance();
@@ -78,6 +76,8 @@ public class Parser
                 Expr.TypeReference _return = new(null);
 
                 Expect(Token.TokenType.IDENTIFIER, definitionType.lexeme + " name");
+
+                if (IsAtEnd()) return null;
 
                 if (current.type == Token.TokenType.DOT || current.type == Token.TokenType.IDENTIFIER)
                 {
@@ -121,7 +121,7 @@ public class Parser
                     Expect(Token.TokenType.COMMA, "',' between parameters");
                     if (IsAtEnd())
                     {
-                        Diagnostics.ReportError(new Error.ParseError("Unexpected End In Function Parameters", $"Function '{name.lexeme}' reached an unexpected end during its parameters"));
+                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedEndInFunctionParameters, name.lexeme));
                         return new Expr.Function(modifiers, _return, name, parameters, new(new()));
                     }
                 }
@@ -135,7 +135,7 @@ public class Parser
 
                 if (Enum.GetNames<LiteralTokenType>().Contains(name.type.ToString()))
                 {
-                    Diagnostics.ReportError(new Error.ParseError("Invalid Class", $"The name of a class may not be a literal ({name.lexeme})"));
+                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidClassName, name.lexeme));
                 }
 
                 List<Expr.Declare> declarations = new();
@@ -158,7 +158,7 @@ public class Parser
                         }
                         else
                         {
-                            Diagnostics.ReportError(new Error.ParseError("Invalid Class Definition", $"A class may only contain declarations and definitions. {GotInfo()}"));
+                            Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidClassDefinition, current?.lexeme));
                             Advance();
                         }
                     }
@@ -179,7 +179,7 @@ public class Parser
 
                 if (Enum.GetNames<LiteralTokenType>().Contains(name.type.ToString()))
                 {
-                    Diagnostics.ReportError(new Error.ParseError("Invalid Primitive", $"The name of a primitive may not be a literal ({name.lexeme})"));
+                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidPrimitiveName, name.lexeme));
                 }
 
                 ExpectValue(Token.TokenType.IDENTIFIER, "sizeof", "'sizeof' keyword");
@@ -190,7 +190,7 @@ public class Parser
                 {
                     if (!new List<string>() { "8", "4", "2", "1" }.Contains(Previous().lexeme))
                     {
-                        Diagnostics.ReportError(new Error.ParseError("Invalid Primitive", $"The size of primitive classes must be the integers '8', '4', '2', or '1'. Got: '{Previous().lexeme}'"));
+                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidPrimitiveSize, Previous().lexeme));
                     }
                     else
                     {
@@ -202,7 +202,7 @@ public class Parser
                     Expected("INTEGER", "size (in bytes) of primitive");
                 }
 
-                string superclassName = null;
+                string? superclassName = null;
 
                 if (ValueMatch("extends"))
                 {
@@ -212,7 +212,8 @@ public class Parser
 
                     if (!Enum.GetNames<LiteralTokenType>().Contains(superclassName))
                     {
-                        Diagnostics.ReportError(new Error.ParseError("Invalid Primitive", $"The superclass of a primitive must be a valid literal ({string.Join(", ", Enum.GetValues<LiteralTokenType>())}). Got: '{Previous().lexeme}'"));
+                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidPrimitiveSuperclass, Previous().lexeme));
+                        superclassName = null;
                     }
                 }
 
@@ -227,7 +228,7 @@ public class Parser
                     }
                     else if (!IsAtEnd())
                     {
-                        Diagnostics.ReportError(new Error.ParseError("Invalid Class Definition", $"A primitive class may only contain definitions. {GotInfo()}"));
+                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidClassDefinition, current?.lexeme));
                         Advance();
                     }
                     else
@@ -293,12 +294,12 @@ public class Parser
                     {
                         if (ReservedValueMatch("if"))
                         {
-                            Diagnostics.ReportError(new Error.ParseError("Invalid Else If", "'else if' conditional has no matching 'if'"));
+                            Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.NoMatchingIf, "else if"));
                             return new Expr.If(new(GetCondition(), GetBlock("else if")));
                         }
                         else
                         {
-                            Diagnostics.ReportError(new Error.ParseError("Invalid Else", "'else' conditional has no matching 'if'"));
+                            Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.NoMatchingIf, "else"));
                             return GetBlock("else");
                         }
 
@@ -507,7 +508,7 @@ public class Parser
                 {
                     if (variable.IsMethod())
                     {
-                        Diagnostics.ReportError(new Error.ParseError("Invalid Assign Statement", "Cannot assign to a method"));
+                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssignStatement, "method"));
                     }
                     expr = new Expr.Assign(variable, NoSemicolon());
                 }
@@ -515,7 +516,7 @@ public class Parser
                 {
                     if (variable.IsMethod())
                     {
-                        Diagnostics.ReportError(new Error.ParseError("Invalid Assign Statement", "Cannot assign to a method"));
+                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssignStatement, "method"));
                     }
                     var op = tokens[index - 2];
                     expr = new Expr.Assign(variable, new Expr.Binary(variable, op, NoSemicolon()));
@@ -576,7 +577,7 @@ public class Parser
             }
             else
             {
-                Diagnostics.ReportError(new Error.ParseError("Invalid Class Definition", $"A class may only contain declarations and definitions"));
+                Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidClassDefinition));
                 return null;
             }
             Expect(Token.TokenType.SEMICOLON, "';' after expression");
@@ -589,13 +590,13 @@ public class Parser
     {
         if (variable is not Expr.AmbiguousGetReference)
         {
-            Diagnostics.ReportError(new Error.ParseError("Invalid Declare Statement", "Cannot declare to a non-type value"));
+            Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidDeclareStatement));
         }
 
         var name = Previous();
         if (name.lexeme == "this")
         {
-            Diagnostics.ReportError(new Error.ParseError("Invalid 'This' Keyword", "The 'this' keyword may only be used in a member to reference the enclosing class"));
+            Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidThisKeyword));
             name.type = Token.TokenType.IDENTIFIER;
         }
 
@@ -668,7 +669,7 @@ public class Parser
 
     private void End()
     {
-        Diagnostics.ReportError(new Error.ParseError("Expression Reached Unexpected End", $"Expression '{Previous().lexeme}' reached an unexpected end"));
+        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.ExpressionReachedUnexpectedEnd, current?.lexeme));
     }
 
     private List<Expr> GetArgs()
@@ -682,15 +683,15 @@ public class Parser
             {
                 if (TypeMatch(Token.TokenType.COMMA))
                 {
-                    Diagnostics.ReportError(new Error.ParseError("Invalid Function Arguments", "Unexpected comma ','"));
+                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedTokenInFunctionArguments, "Unexpected comma ','"));
                     while (TypeMatch(Token.TokenType.COMMA))
                     {
-                        Diagnostics.ReportError(new Error.ParseError("Invalid Function Arguments", "Unexpected comma ','"));
+                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedTokenInFunctionArguments, "Unexpected comma ','"));
                     }
                 }
                 if (TypeMatch(Token.TokenType.RPAREN))
                 {
-                    Diagnostics.ReportError(new Error.ParseError("Invalid Function Arguments", "Unexpected comma ','"));
+                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedTokenInFunctionArguments, "Unexpected comma ','"));
                     break;
                 }
             }
@@ -746,7 +747,7 @@ public class Parser
             bool localReturn = false;
             if (ReservedValueMatch("return"))
             {
-                if (returned) { Diagnostics.ReportError(new Error.ParseError("Invalid Assembly Block", "Only one return may appear in an assembly block")); }
+                if (returned) { Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssemblyBlockReturn)); }
                 returned = true;
                 localReturn = true;
             }
@@ -780,7 +781,7 @@ public class Parser
                             else
                             {
 
-                                Diagnostics.ReportError(new Error.ParseError("Invalid Truncation", $"You may only truncate an assembly value to 64, 32, 16, or 8 bits. Got '{Previous().lexeme}'"));
+                                Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidTruncationSize, Previous().lexeme));
                             }
                         }
                         value = null;
@@ -795,7 +796,7 @@ public class Parser
                         }
                         else
                         {
-                            Diagnostics.ReportError(new Error.ParseError("Invalid Assembly Register", $"Invalid assembly register '{identifier}'"));
+                            Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssemblyRegister, identifier));
                             value = new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.TMP, AssemblyExpr.Register.RegisterSize._8Bits);
                         }
                     }
@@ -817,7 +818,7 @@ public class Parser
                             }
                             else
                             {
-                                Diagnostics.ReportError(new Error.ParseError("Invalid Assembly Register", $"Invalid assembly register given '{identifier.lexeme}'"));
+                                Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssemblyRegister, identifier.lexeme));
                                 instructions.Add(new ExprUtils.AssignableInstruction.Binary(new AssemblyExpr.Binary(ConvertToInstruction(op.lexeme), value, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.TMP, AssemblyExpr.Register.RegisterSize._8Bits)), ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
                             }
                         }
@@ -843,7 +844,7 @@ public class Parser
                                 }
                                 else
                                 {
-                                    Diagnostics.ReportError(new Error.ParseError("Invalid Truncation", $"You may only truncate an assembly value to 64, 32, 16, or 8 bits. Got '{Previous().lexeme}'"));
+                                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidTruncationSize, Previous().lexeme));
                                 }
                             }
 
@@ -862,7 +863,7 @@ public class Parser
                 }
                 else
                 {
-                    if (localReturn) { Diagnostics.ReportError(new Error.ParseError("Invalid Assembly Block", "Return on a zero instruction is not allowed")); }
+                    if (localReturn) { Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssemblyBlockReturnArity)); }
                     // Zero
                     instructions.Add(new ExprUtils.AssignableInstruction.Zero(new AssemblyExpr.Zero(ConvertToInstruction(op.lexeme))));
                 }
@@ -870,7 +871,7 @@ public class Parser
             }
             else
             {
-                Diagnostics.ReportError(new Error.ParseError("Invalid Assembly Statement", $"'{Previous().lexeme}' is invalid in an assembly block"));
+                Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssignStatement, Previous().lexeme));
                 Advance();
             }
 
@@ -893,7 +894,7 @@ public class Parser
         {
             return instruction;
         }
-        Diagnostics.ReportError(new Error.ParseError("Invalid Assembly Block", $"Instruction '{strInstruction}' not supported"));
+        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnsupportedInstruction, strInstruction));
         return 0;
     }
 
@@ -1004,15 +1005,13 @@ public class Parser
             Advance();
             return;
         }
-        Expected(type + " : " + value, errorMessage);
+        Expected($"{{ {type} : {value} }}", errorMessage);
     }
 
     private void Expected(string type, string errorMessage)
     {
-        Diagnostics.ReportError(new Error.ParseError($"{type}", "Expected " + errorMessage + "\n" + GotInfo()));
+        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.TokenExpected, type, errorMessage, current?.lexeme));
     }
-
-    private string GotInfo() => $"Got: '{current?.lexeme}'";
 
     private Token Previous(int sub = 1)
     {

@@ -38,26 +38,20 @@ public partial class Analyzer
     {
         if (main == null)
         {
-            Diagnostics.ReportError(new Error.AnalyzerError("Entrypoint Not Found", "Program does not contain a Main method"));
+            Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.EntrypointNotFound));
             return;
         }
 
-        if (!main.modifiers["static"])
+        if (main._returnType.type.name.lexeme != "void" && !TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Integer].Matches(main._returnType.type))
         {
-            Diagnostics.ReportError(new Error.AnalyzerError("Invalid Main Function", "The Main function must be marked 'static'"));
-            main.modifiers["static"] = true;
-        }
-
-        if (main._returnType.type.name.lexeme != "void" && !Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Integer].Matches(main._returnType.type))
-        {
-            Diagnostics.ReportError(new Error.AnalyzerError("Invalid Main Function", $"Main can only return types 'number', and 'void'. Got '{main._returnType.type}'"));
+            Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidMainFunctionReturnType, main._returnType.type));
         }
 
         foreach (var item in main.modifiers.EnumerateTrueModifiers())
         {
             if (item != "static")
             {
-                Diagnostics.ReportError(new Error.AnalyzerError("Invalid Main Function", $"Main cannot have the '{item}' modifier"));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidMainFunctionModifier_NoInclude, item));
                 main.modifiers[item] = false;
             }
         }

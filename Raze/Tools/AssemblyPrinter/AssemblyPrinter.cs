@@ -32,7 +32,7 @@ public class AssemblyPrinter
 
         if (Syntax == null)
         {
-            Diagnostics.Panic(new Error.ImpossibleError("No Syntax Type Defined"));
+            Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("No Syntax Type Defined"));
         }
         
         Syntax.Run(Syntax.header);

@@ -46,7 +46,7 @@ public partial class Analyzer
 
                 if (expr.modifiers["operator"])
                 {
-                    Diagnostics.ReportError(new Error.AnalyzerError("Invalid Operator Definition", $"Top level operator function definitions are not allowed"));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.TopLevelCode));
                     expr.modifiers["operator"] = false;
                 }
             }
@@ -86,7 +86,7 @@ public partial class Analyzer
                     case "Indexer":
                         if (expr.Arity != 2)
                         {
-                            Diagnostics.ReportError(new Error.AnalyzerError("Invalid Operator Definition", $"The '{expr.name.lexeme}' operator must have an arity of 2"));
+                            Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOperatorArity, expr.name.lexeme, 2));
                         }
                         break;
                     // Unary
@@ -96,11 +96,11 @@ public partial class Analyzer
                     case "Not":
                         if (expr.Arity != 1)
                         {
-                            Diagnostics.ReportError(new Error.AnalyzerError("Invalid Operator Definition", $"The '{expr.name.lexeme}' operator must have an arity of 1"));
+                            Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOperatorArity, expr.name.lexeme, 1));
                         }
                         break;
                     default:
-                        Diagnostics.ReportError(new Error.AnalyzerError("Invalid Operator Definition", $"'{expr.name.lexeme}' is not a recognized operator"));
+                        Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UnrecognizedOperator, expr.name.lexeme));
                         expr.modifiers["operator"] = false;
                         break;
                 }
@@ -206,16 +206,16 @@ public partial class Analyzer
         {
             if (symbolTable.CurrentIsTop())
             {
-                Diagnostics.ReportError(new Error.AnalyzerError("Top Level Assembly Block", "Assembly Blocks must be placed in an unsafe function"));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.TopLevelCode));
             }
             else if (symbolTable.Current.definitionType != Expr.Definition.DefinitionType.Function)
             {
-                Diagnostics.ReportError(new Error.AnalyzerError("ASM Block Not In Function", "Assembly Blocks must be placed in functions"));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidStatementLocation, "Assembly blocks", "functions"));
             }
 
             if ((symbolTable.Current?.definitionType == Expr.Definition.DefinitionType.Function) && !((Expr.Function)symbolTable.Current).modifiers["unsafe"])
             {
-                Diagnostics.ReportError(new Error.AnalyzerError("Unsafe Code in Safe Function", "Mark a function with 'unsafe' to include unsafe code"));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UnsafeCodeInSafeFunction));
             }
 
             return base.VisitAssemblyExpr(expr);
@@ -261,7 +261,7 @@ public partial class Analyzer
         {
             if (expr.member.HandleThis() && (symbolTable.NearestEnclosingClass()?.definitionType != Expr.Definition.DefinitionType.Primitive))
             {
-                Diagnostics.ReportError(new Error.AnalyzerError("Invalid 'This' Keyword", "The 'this' keyword cannot be assigned to"));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidAssignStatement, "'this'"));
             }
 
             expr.member.Accept(this);
@@ -276,9 +276,9 @@ public partial class Analyzer
             {
                 expr.superclass.type = TypeCheckUtils.literalTypes[literalTokenType];
             }
-            else
+            else if (expr.superclass.name != null)
             {
-                Diagnostics.Panic(new Error.ImpossibleError("Invalid primitive superclass"));
+                Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Invalid primitive superclass"));
             }
 
             foreach (var blockExpr in expr.definitions)
@@ -299,7 +299,7 @@ public partial class Analyzer
 
         private void HandleTopLevelCode()
         {
-            if (symbolTable.CurrentIsTop()) Diagnostics.ReportError(new Error.AnalyzerError("Top Level Code", "Top level code is not allowed"));
+            if (symbolTable.CurrentIsTop()) Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.TopLevelCode));
         }
 
         private void GetVariableDefinition(ExprUtils.QueueList<Token> typeName, Expr.StackData stack)
@@ -336,17 +336,17 @@ public partial class Analyzer
 
             if (constructor._returnType.typeName != null)
             {
-                Diagnostics.ReportError(new Error.AnalyzerError("Constructor With Non-Void Return Type", "The return type of a constructor must be 'void'"));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.ConstructorWithNonVoidReturnType));
             }
             if (constructor.modifiers["static"])
             {
-                Diagnostics.ReportError(new Error.AnalyzerError("Constructor Marked 'static'", "A constructor cannot have the 'static' modifier"));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidConstructorModifier, "static"));
                 constructor.modifiers["static"] = false;
             }
             if (constructor.modifiers["operator"])
             {
-                Diagnostics.ReportError(new Error.AnalyzerError("Constructor Marked 'operator'", "A constructor cannot have the 'operator' modifier"));
-                constructor.modifiers["static"] = false;
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidConstructorModifier, "operator"));
+                constructor.modifiers["operator"] = false;
             }
         }
     }

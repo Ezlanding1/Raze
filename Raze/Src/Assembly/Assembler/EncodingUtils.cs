@@ -16,7 +16,7 @@ public partial class Assembler
                 
             internal static Instruction EncodingError()
             {
-                throw Diagnostics.Panic(new Error.ImpossibleError("Invalid/Unsupported Instruction"));
+                throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Invalid/Unsupported Instruction"));
             }
 
             internal static Instruction.ModRegRm.RegisterCode ExprRegisterToModRegRmRegister(AssemblyExpr.Register register) => (register.Name, register.Size) switch
@@ -147,7 +147,7 @@ public partial class Assembler
 
             internal static void ThrowIvalidEncodingType(string t1, string t2)
             {
-                Diagnostics.Panic(new Error.ImpossibleError($"Cannot encode instruction with operands '{t1.ToUpper()}, {t2.ToUpper()}'"));
+                Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Cannot encode instruction with operands '{t1.ToUpper()}, {t2.ToUpper()}'"));
             }
 
             internal static (Operand.OperandSize, Operand.OperandSize) HandleUnresolvedRef(AssemblyExpr expr, AssemblyExpr.LabelLiteral literal, Assembler assembler)

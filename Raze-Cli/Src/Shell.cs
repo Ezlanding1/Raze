@@ -71,7 +71,7 @@ internal partial class Shell
         }
         catch (Exception exception)
         {
-            Diagnostics.Panic(new Error.ImpossibleError(exception));
+            Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic(exception));
         }
     }
 }

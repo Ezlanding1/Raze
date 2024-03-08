@@ -18,7 +18,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                 {
                     if (registerStates[i].HasState(RegisterState.RegisterStates.Free)) { return i; }
                 }
-                throw Diagnostics.Panic(new Error.ImpossibleError("Requesting stack memory using the RegisterAlloc class is not implemented in this version of the compiler"));
+                throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Requesting stack memory using the RegisterAlloc class is not implemented in this version of the compiler"));
             }
         }
 

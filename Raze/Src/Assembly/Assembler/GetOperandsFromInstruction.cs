@@ -62,7 +62,7 @@ public partial class Assembler
                         case "P":
                             operands[i] = new Operand(Operand.OperandType.P, Operand.OperandSize._8Bits);
                             break;
-                        default: throw Diagnostics.Panic(new Error.ImpossibleError($"Invalid Encoding Type '{instruction}'"));
+                        default: throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Invalid Encoding Type '{instruction}'"));
                     };
 
 
@@ -78,7 +78,7 @@ public partial class Assembler
                         case "16": return Operand.OperandSize._16Bits;
                         case "8": return Operand.OperandSize._8Bits;
                         case "8U": return Operand.OperandSize._8BitsUpper;
-                        default: throw Diagnostics.Panic(new Error.ImpossibleError($"Invalid Encoding Type '{instruction}'"));
+                        default: throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Invalid Encoding Type '{instruction}'"));
                     }
                 }
             }

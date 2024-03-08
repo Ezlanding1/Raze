@@ -37,11 +37,15 @@ public partial class Analyzer
             { "null", null },
         };
 
-        public static void MustMatchType(Expr.Type type1, Expr.Type type2, string error = "You cannot assign type '{0}' to type '{1}'")
+        public static void MustMatchType(Expr.Type type1, Expr.Type type2, bool _return=false)
         {
             if (!type2.Matches(type1))
             {
-                Diagnostics.ReportError(new Error.AnalyzerError("Type Mismatch", string.Format(error, type2, type1)));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
+                    _return? Diagnostic.DiagnosticName.TypeMismatch_Return : Diagnostic.DiagnosticName.TypeMismatch, 
+                    type2,
+                    type1
+                ));
             }
         }
 
@@ -55,7 +59,7 @@ public partial class Analyzer
                 var conditionType = condition.Accept(visitor);
                 if (!literalTypes[Parser.LiteralTokenType.Boolean].Matches(conditionType))
                 {
-                    Diagnostics.ReportError(new Error.AnalyzerError("Type Mismatch", $"'{conditionalName}' expects condition to return 'BOOLEAN'. Got '{conditionType}'"));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.TypeMismatch_Statement, conditionalName, "BOOLEAN", conditionType));
                 }
             }
             block.Accept(visitor);
@@ -82,7 +86,7 @@ public partial class Analyzer
                 if (ret.Item3 == null)
                     continue;
 
-                MustMatchType(expr._returnType.type, ret.Item1, "You cannot return type '{0}' from type '{1}'");
+                MustMatchType(expr._returnType.type, ret.Item1, true);
 
                 ret.Item3.type = expr._returnType.type;
             }
@@ -90,11 +94,11 @@ public partial class Analyzer
             {
                 if (_return.Count == 0)
                 {
-                    Diagnostics.ReportError(new Error.AnalyzerError("No Return", "A Function must have a 'return' expression"));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.NoReturn));
                 }
                 else
                 {
-                    Diagnostics.ReportError(new Error.AnalyzerError("No Return", "A Function must have a 'return' expression from all code paths"));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.NoReturn_FromAllPaths));
                 }
             }
             _return.Clear();
@@ -104,22 +108,22 @@ public partial class Analyzer
         {
             if (!expr.constructor && callee.constructor)
             {
-                Diagnostics.ReportError(new Error.AnalyzerError("Constructor Called As Method", "A Constructor may not be called as a method of its class"));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.ConstructorCalledAsMethod));
             }
             else if (expr.constructor && !callee.constructor)
             {
-                Diagnostics.ReportError(new Error.AnalyzerError("Method Called As Constructor", "A Method may not be called as a constructor of its class"));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.MethodCalledAsConstructor));
             }
 
             if (expr.callee != null)
             {
                 if (expr.instanceCall && callee.modifiers["static"])
                 {
-                    Diagnostics.ReportError(new Error.AnalyzerError("Static Method Called From Instance", "You cannot call a static method from an instance"));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.StaticMethodCalledFromInstanceContext));
                 }
                 if (!expr.instanceCall && !callee.modifiers["static"] && !expr.constructor)
                 {
-                    Diagnostics.ReportError(new Error.AnalyzerError("Instance Method Called From Static Context", "You cannot call an instance method from a static context"));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InstanceMethodCalledFromStaticContext));
                 }
             }
         }

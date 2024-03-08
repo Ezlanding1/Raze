@@ -64,7 +64,7 @@ public partial class Assembler
             {
                 if (reg.Name == AssemblyExpr.Register.RegisterName.TMP)
                 {
-                    Diagnostics.Panic(new Error.ImpossibleError("TMP Register Emitted"));
+                    Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("TMP Register Emitted"));
                 }
             }
         }

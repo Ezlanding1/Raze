@@ -76,7 +76,7 @@ public partial class Analyzer
             AddDefinition((Expr.DataType)definition);
             foreach (var duplicate in definition.declarations.GroupBy(x => x.name.lexeme).Where(x => x.Count() > 1).Select(x => x.ElementAt(0)))
             {
-                Diagnostics.ReportError(new Error.AnalyzerError("Double Declaration", $"A variable named '{duplicate.name.lexeme}' is already declared in this scope"));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, "variable", duplicate.name.lexeme));
             }
         }
 
@@ -147,7 +147,7 @@ public partial class Analyzer
 
             if (variable == null)
             {
-                Diagnostics.ReportError(new Error.AnalyzerError("Undefined Reference", $"The variable '{key.lexeme}' does not exist in the current context"));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UndefinedReference, "variable", key.lexeme));
                 return VarNotFoundData;
             }
             return variable;
@@ -176,7 +176,7 @@ public partial class Analyzer
 
             if (current.definitionType == Expr.Definition.DefinitionType.Function)
             {
-                Diagnostics.Panic(new Error.ImpossibleError("Requested function's definitions"));
+                Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Requested function's definitions"));
             }
 
             if (TryGetValue(((Expr.DataType)current).definitions, key, out var value))
@@ -192,12 +192,12 @@ public partial class Analyzer
 
             if (_class == null)
             {
-                Diagnostics.ReportError(new Error.AnalyzerError("Undefined Reference", $"The class '{key.lexeme}' does not exist in the current context"));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UndefinedReference, "class", key.lexeme));
                 return new SpecialObjects.Any(key);
             }
             else if (_class.definitionType == Expr.Definition.DefinitionType.Function)
             {
-                Diagnostics.ReportError(new Error.AnalyzerError("Undefined Reference", $"The function '{key.lexeme}' cannot be used as a type"));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UndefinedReference, "function", key.lexeme));
                 return ClassNotFoundDefinition;
             }
             return _class;
@@ -237,12 +237,12 @@ public partial class Analyzer
 
             if (_class == null)
             {
-                Diagnostics.ReportError(new Error.AnalyzerError("Undefined Reference", $"The class '{key.lexeme}' does not exist in the current context"));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UndefinedReference, "class", key.lexeme));
                 return new SpecialObjects.Any(key);
             }
             else if (_class.definitionType == Expr.Definition.DefinitionType.Function)
             {
-                Diagnostics.ReportError(new Error.AnalyzerError("Undefined Reference", $"The function '{key.lexeme}' cannot be used as a type"));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UndefinedReference, "function", key.lexeme));
                 return ClassNotFoundDefinition;
             }
             return _class;
@@ -281,7 +281,7 @@ public partial class Analyzer
             {
                 if (!types.Any(x => x == TypeCheckUtils.anyType))
                 {
-                    Diagnostics.ReportError(new Error.AnalyzerError("Undefined Reference", $"The function '{key}({string.Join(", ", (object?[])types)})' does not exist in the current context"));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UndefinedReference, "function", key+string.Join(", ", (object?[])types)));
                 }
                 return FunctionNotFoundDefinition;
             }
@@ -306,7 +306,7 @@ public partial class Analyzer
         public void UpContext()
         {
             if (current == null)
-                Diagnostics.Panic(new Error.ImpossibleError("Up Context Called On 'GLOBAL' context (no enclosing)"));
+                Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Up Context Called On 'GLOBAL' context (no enclosing)"));
 
             current = (Expr.Definition)current.enclosing;
         }
@@ -331,18 +331,18 @@ public partial class Analyzer
                 {
                     if (duplicate.name.lexeme == "Main")
                     {
-                        Diagnostics.ReportError(new Error.AnalyzerError("Double Declaration", "A Program may have only one 'Main' method"));
+                        Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.MainDoubleDeclaration));
                     }
 
-                    Diagnostics.ReportError(new Error.AnalyzerError("Double Declaration", $"A function '{duplicate}' is already defined in this scope"));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, "function", duplicate));
                 }
                 else if (duplicate.definitionType == Expr.Definition.DefinitionType.Primitive)
                 {
-                    Diagnostics.ReportError(new Error.AnalyzerError("Double Declaration", $"A primitive class named '{duplicate.name.lexeme}' is already defined in this scope"));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, "primitive class", duplicate.name.lexeme));
                 }
                 else
                 {
-                    Diagnostics.ReportError(new Error.AnalyzerError("Double Declaration", $"A class named '{duplicate.name.lexeme}' is already defined in this scope"));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, "class", duplicate.name.lexeme));
                 }
             }
         }
@@ -406,7 +406,7 @@ public partial class Analyzer
                 {
                     if (item.definitionType != Expr.Definition.DefinitionType.Function)
                     {
-                        Diagnostics.ReportError(new Error.AnalyzerError("Invalid Call", $"{item.definitionType} is not invokable"));
+                        Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidCall, item.definitionType));
                         return false;
                     }
                     if (ParamMatch(types, (Expr.Function)item))
@@ -417,7 +417,7 @@ public partial class Analyzer
                         }
                         else
                         {
-                            Diagnostics.ReportError(new Error.AnalyzerError("Ambiguous Call", $"Call is ambiguous between {value} and {(Expr.Function)item}"));
+                            Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.AmbiguousCall, value, (Expr.Function)item));
                             return false;
                         }
                     }
