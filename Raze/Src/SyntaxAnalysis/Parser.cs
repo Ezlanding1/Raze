@@ -93,38 +93,34 @@ public class Parser
                 if (IsAtEnd()) return null;
 
                 List<Expr.Parameter> parameters = new();
-                while (!TypeMatch(Token.TokenType.RPAREN))
+                while (TypeMatch(Token.TokenType.IDENTIFIER, Token.TokenType.RESERVED))
                 {
                     ExprUtils.Modifiers paramModifers = ExprUtils.Modifiers.ParameterModifierTemplate();
 
+                    MovePrevious();
                     paramModifers["ref"] = ReservedValueMatch("ref");
+                    Advance();
 
-                    if (!Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter type"))
-                    {
-                        Advance();
-                        continue;
-                    }
                     var typeName = GetTypeReference();
+                    if (Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter"))
+                        parameters.Add(new Expr.Parameter(typeName, Previous(), paramModifers));
 
-                    if (!Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter"))
+                    if (TypeMatch(Token.TokenType.IDENTIFIER))
                     {
-                        Advance();
-                        continue;
+                        Expected(Token.TokenType.COMMA.ToString(), "',' between parameters");
                     }
-                    Token variable = Previous();
-
-                    parameters.Add(new Expr.Parameter(typeName, variable, paramModifers));
-                    if (TypeMatch(Token.TokenType.RPAREN))
+                    else if (!TypeMatch(Token.TokenType.COMMA))
                     {
                         break;
                     }
-                    Expect(Token.TokenType.COMMA, "',' between parameters");
+
                     if (IsAtEnd())
                     {
                         Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedEndInFunctionParameters, name.lexeme));
                         return new Expr.Function(modifiers, _return, name, parameters, new(new()));
                     }
                 }
+                Expect(Token.TokenType.RPAREN, "')' after function name");
 
                 return new Expr.Function(modifiers, _return, name, parameters, GetBlock(definitionType.lexeme));
             }
@@ -258,7 +254,7 @@ public class Parser
         }
         else if (TypeMatch(Token.TokenType.LBRACE))
         {
-            current = tokens[--index];
+            MovePrevious();
             return GetBlock("disconnected block");
         }
         return Conditional();
@@ -683,15 +679,15 @@ public class Parser
             {
                 if (TypeMatch(Token.TokenType.COMMA))
                 {
-                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedTokenInFunctionArguments, "Unexpected comma ','"));
+                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedTokenInFunctionArguments, "comma ','"));
                     while (TypeMatch(Token.TokenType.COMMA))
                     {
-                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedTokenInFunctionArguments, "Unexpected comma ','"));
+                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedTokenInFunctionArguments, "comma ','"));
                     }
                 }
                 if (TypeMatch(Token.TokenType.RPAREN))
                 {
-                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedTokenInFunctionArguments, "Unexpected comma ','"));
+                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedTokenInFunctionArguments, "comma ','"));
                     break;
                 }
             }
@@ -977,7 +973,7 @@ public class Parser
             }
         }
         if (t == 1)
-            current = tokens[--index];
+            MovePrevious();
         return (t == 2);
     }
 
@@ -990,11 +986,6 @@ public class Parser
         }
         Expected(type.ToString(), errorMessage);
 
-        if (index+1 < tokens.Count && !SynchronizationTokens.Contains(Previous(-1).type))
-        {
-            Advance();
-            return Expect(type, errorMessage);
-        }
         return false;
     }
 
@@ -1028,6 +1019,7 @@ public class Parser
         }
         current = null;
     }
+    private void MovePrevious() => current = tokens[--index];
 
     private bool IsAtEnd()
     {
