@@ -53,7 +53,18 @@ public abstract partial class Diagnostic
             $"{DiagnosticType.Impossible}{SeverityLevel}\n{details}\n{(Diagnostics.debugErrors? stackTrace : "")}";
     }
 
-    // A diagnostic raised durning Lexing ( Raze.Lexer )
+    // A diagnostic raised during Driver ( Raze_Driver )
+    public class DriverDiagnostic : Diagnostic
+    {
+        public DriverDiagnostic(DiagnosticName name, params object[] info) : base(name, info)
+        {
+        }
+
+        internal override string GetDiagnosticMessage() =>
+            $"{DiagnosticType.Driver}{SeverityLevel}\n{details}";
+    }
+
+    // A diagnostic raised during Lexing ( Raze.Lexer )
     public class LexDiagnostic : Diagnostic
     {
         int line, col;

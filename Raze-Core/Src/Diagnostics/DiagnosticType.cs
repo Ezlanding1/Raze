@@ -11,6 +11,7 @@ public abstract partial class Diagnostic
     public enum DiagnosticType
     {
         Impossible,
+        Driver,
         Lexer,
         Parser,
         Analyzer,
