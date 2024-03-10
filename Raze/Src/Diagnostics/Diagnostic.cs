@@ -27,9 +27,8 @@ public abstract partial class Diagnostic
     {
         string? stackTrace;
 
-        public ImpossibleDiagnostic(string details, string? stackTrace) : base(DiagnosticName.Impossible)
+        public ImpossibleDiagnostic(string details, string? stackTrace) : base(DiagnosticName.Impossible, details)
         {
-            this.details = details;
             this.stackTrace = stackTrace;
         }
         public ImpossibleDiagnostic(string details) : this(details, GetStackTrace())
@@ -51,7 +50,7 @@ public abstract partial class Diagnostic
         }
 
         internal override string GetDiagnosticMessage() => 
-            $"{DiagnosticType.Impossible}{Severity.Error}\n{details}\n{(Diagnostics.debugErrors? stackTrace : "")}";
+            $"{DiagnosticType.Impossible}{SeverityLevel}\n{details}\n{(Diagnostics.debugErrors? stackTrace : "")}";
     }
 
     // A diagnostic raised durning Lexing ( Raze.Lexer )

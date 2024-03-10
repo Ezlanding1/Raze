@@ -24,11 +24,6 @@ public static class Diagnostics
 
     public static void Report(Diagnostic diagnostic)
     {
-        if (diagnostic is Diagnostic.ImpossibleDiagnostic impossibleDiagnostic)
-        {
-            Panic(impossibleDiagnostic);
-        }
-
         switch (diagnostic.SeverityLevel)
         {
             case Diagnostic.Severity.Info:
@@ -41,14 +36,17 @@ public static class Diagnostics
                 PrintDiagnostic(diagnostic, ConsoleColor.DarkRed);
                 errorEncountered = true;
                 break;
+            case Diagnostic.Severity.Exception:
+                Panic(diagnostic);
+                break;
         }
     }
 
     [DoesNotReturn]
-    public static Exception Panic(Diagnostic.ImpossibleDiagnostic impossibleDiagnostic)
+    public static Exception Panic(Diagnostic diagnostic)
     {
         Console.WriteLine(InternalErrorHeading);
-        PrintDiagnostic(impossibleDiagnostic, ConsoleColor.DarkRed);
+        PrintDiagnostic(diagnostic, ConsoleColor.DarkRed);
 
         Environment.Exit(70);
         return new();

@@ -19,6 +19,7 @@ public abstract partial class Diagnostic
 
     public enum Severity
     {
+        Exception,
         Error,
         Warning,
         Info

@@ -10,7 +10,7 @@ public abstract partial class Diagnostic
 {
     private static Dictionary<DiagnosticName, (string details, Severity severity)> DiagnosticInfo = new()
     {
-        { DiagnosticName.Impossible, ("", Severity.Error) },
+        { DiagnosticName.Impossible, ("{0}", Severity.Exception) },
 
         // LexerError
         { DiagnosticName.EmptyStringLiteral, ("A String literal may not be empty", Severity.Error) },
