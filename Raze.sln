@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32602.215
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Raze-Cli", ".\Raze-Cli\Raze-Cli.csproj", "{389743DC-B80D-46B5-94C3-02E677295FE8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Raze-Driver", "Raze-Driver\Raze-Driver.csproj", "{389743DC-B80D-46B5-94C3-02E677295FE8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Raze", ".\Raze\Raze.csproj", "{8A5A45C6-0CB4-4641-B915-C6F3BB46A5C9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Raze-Core", "Raze-Core\Raze-Core.csproj", "{8A5A45C6-0CB4-4641-B915-C6F3BB46A5C9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -13,14 +13,14 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{8A5A45C6-0CB4-4641-B915-C6F3BB46A5C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8A5A45C6-0CB4-4641-B915-C6F3BB46A5C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{8A5A45C6-0CB4-4641-B915-C6F3BB46A5C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8A5A45C6-0CB4-4641-B915-C6F3BB46A5C9}.Release|Any CPU.Build.0 = Release|Any CPU
 		{389743DC-B80D-46B5-94C3-02E677295FE8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{389743DC-B80D-46B5-94C3-02E677295FE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{389743DC-B80D-46B5-94C3-02E677295FE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{389743DC-B80D-46B5-94C3-02E677295FE8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A5A45C6-0CB4-4641-B915-C6F3BB46A5C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A5A45C6-0CB4-4641-B915-C6F3BB46A5C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A5A45C6-0CB4-4641-B915-C6F3BB46A5C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A5A45C6-0CB4-4641-B915-C6F3BB46A5C9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

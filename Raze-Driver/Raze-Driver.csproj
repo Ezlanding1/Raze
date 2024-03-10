@@ -1,9 +1,9 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
-    <RootNamespace>Raze_Cli</RootNamespace>
+    <RootNamespace>Raze_Driver</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Raze\Raze.csproj" />
+    <ProjectReference Include="..\Raze-Core\Raze-Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Raze_Cli;
+namespace Raze_Driver;
 
 internal partial class Shell
 {

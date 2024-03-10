@@ -7,7 +7,7 @@ using System.CommandLine;
 using System.Diagnostics;
 using Raze;
 
-namespace Raze_Cli;
+namespace Raze_Driver;
 
 internal partial class Shell
 {
