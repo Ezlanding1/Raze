@@ -15,7 +15,7 @@ public partial class Linker
         {
             return new Elf64.Elf64_Ehdr(
                 (Elf64.Elf64_Ehdr.EI_CLASS)systemInfo.bitFormat,
-                (Elf64.Elf64_Ehdr.EI_DATA)systemInfo.endianess,
+                (Elf64.Elf64_Ehdr.EI_DATA)systemInfo.endianness,
                 (Elf64.Elf64_Ehdr.EI_OSABI)systemInfo.osabi,
                 Elf64.Elf64_Ehdr.E_type.ET_EXEC,
                 (Elf64.Elf64_Ehdr.E_machine)systemInfo.architecture,

@@ -46,12 +46,12 @@ public partial class Linker
                     new Elf64.Elf64_Phdr(
                         Elf64.Elf64_Phdr.P_type.PT_LOAD,
                         sectionFlags,
-                        systemInfo.alignment * (ulong)programHeaders.Count,
-                        (sectionVirtualAddress + (systemInfo.alignment * (ulong)i)),
+                        (ulong)systemInfo.alignment * (ulong)programHeaders.Count,
+                        (sectionVirtualAddress + ((ulong)systemInfo.alignment * (ulong)i)),
                         0,
-                        systemInfo.alignment,
-                        systemInfo.alignment,
-                        systemInfo.alignment
+                        (ulong)systemInfo.alignment,
+                        (ulong)systemInfo.alignment,
+                        (ulong)systemInfo.alignment
                     )
                 );
             }
@@ -61,12 +61,12 @@ public partial class Linker
                    new Elf64.Elf64_Phdr(
                        Elf64.Elf64_Phdr.P_type.PT_LOAD,
                        sectionFlags,
-                       systemInfo.alignment * (ulong)programHeaders.Count,
-                       sectionVirtualAddress + (systemInfo.alignment * (ulong)sectionSegments),
+                       (ulong)systemInfo.alignment * (ulong)programHeaders.Count,
+                       sectionVirtualAddress + ((ulong)systemInfo.alignment * (ulong)sectionSegments),
                        0,
                        (ulong)sectionRemainder,
                        (ulong)sectionRemainder,
-                       systemInfo.alignment
+                       (ulong)systemInfo.alignment
                    )
                );
             }

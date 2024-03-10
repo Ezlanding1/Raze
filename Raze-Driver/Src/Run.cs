@@ -12,7 +12,7 @@ internal partial class Shell
     static void Run(CompileOptions compileOptions)
     {
         // Store SytemInfo Data
-        Raze.SystemInfo systemInfo = new Raze.SystemInfo(Raze.SystemInfo.CPU_Architecture.AMD_x86_64, Raze.SystemInfo.OsAbi.Linux, Raze.SystemInfo.BitFormat._64BitFormat);
+        Raze.SystemInfo systemInfo = compileOptions.SystemInfo;
 
         DebugPrinter.PrintInput(compileOptions);
 

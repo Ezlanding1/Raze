@@ -25,12 +25,12 @@ public partial class Linker
         fs.Write(
             Elf64.ToReadOnlySpan(programHeaders)
         );
-        fs.Write(GetPaddingBytes((ulong)fs.Position, systemInfo.alignment));
+        fs.Write(GetPaddingBytes((ulong)fs.Position, (ulong)systemInfo.alignment));
 
         fs.Write(assembler.text.ToArray(), 0, assembler.text.Count);
-        fs.Write(GetPaddingBytes((ulong)assembler.text.Count, systemInfo.alignment));
+        fs.Write(GetPaddingBytes((ulong)assembler.text.Count, (ulong)systemInfo.alignment));
         fs.Write(assembler.data.ToArray(), 0, assembler.data.Count);
-        fs.Write(GetPaddingBytes((ulong)assembler.data.Count, systemInfo.alignment));
+        fs.Write(GetPaddingBytes((ulong)assembler.data.Count, (ulong)systemInfo.alignment));
     }
 
     private static byte[] GetPaddingBytes(ulong segmentCount, ulong alignment)

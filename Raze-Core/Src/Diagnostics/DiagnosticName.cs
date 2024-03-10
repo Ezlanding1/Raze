@@ -12,6 +12,11 @@ public abstract partial class Diagnostic
     {
         Impossible = -1,
 
+        // DriverError
+        UnsupportedSystem_CPU_Architecture,
+        UnsupportedSystem_OsAbi,
+        UnsupportedSystem_BitFormat,
+
         // LexerError
         EmptyStringLiteral,
         NonTerminatedString,

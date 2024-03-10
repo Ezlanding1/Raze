@@ -12,6 +12,11 @@ public abstract partial class Diagnostic
     {
         { DiagnosticName.Impossible, ("{0}", Severity.Exception) },
 
+        // DriverError
+        { DiagnosticName.UnsupportedSystem_CPU_Architecture, ("Unsuppored CPU_Architecture '{0}'", Severity.Exception) },
+        { DiagnosticName.UnsupportedSystem_OsAbi, ("Unsuppored OsABI '{0}'", Severity.Exception) },
+        { DiagnosticName.UnsupportedSystem_BitFormat, ("Unsuppored BitFormat '{0}'", Severity.Exception) },
+
         // LexerError
         { DiagnosticName.EmptyStringLiteral, ("A String literal may not be empty", Severity.Error) },
         { DiagnosticName.NonTerminatedString, ("String '{0}' was not terminated", Severity.Error) },

@@ -47,7 +47,8 @@ internal partial class Shell
         outputOption.SetDefaultValue("output.elf");
         outputOption.AddAlias("-o");
 
-        return new() {
+        return new()
+        {
             FileArgument = fileArgument,
             OutputOption = outputOption,
             DebugOption = debugOption,
@@ -56,7 +57,10 @@ internal partial class Shell
             DebugAstOption = GenerateSimpleOption("--debug-ast", "Print AST graph to Console"),
             DebugAssemblyOption = GenerateSimpleOption("--debug-assembly", "Print output assembly to Console"),
             DebugErrorsOption = GenerateSimpleOption("--debug-errors", "Print full stacktrace of internal exceptions to Console"),
-            DryRunOption = dryRunOption
+            DryRunOption = dryRunOption,
+            Architecture = GenerateSystemInfoOption("--sysinfo-architecture", "Target CPU architecture"),
+            Osabi = GenerateSystemInfoOption("--sysinfo-osabi", "Target OS ABI"),
+            BitFormat = GenerateSystemInfoOption("--sysinfo-bitformat", "Target bit format")
         };
     }
 
@@ -68,5 +72,14 @@ internal partial class Shell
             Description = description
         };
         return simpleOption;
+    }
+
+    private static Option<string?> GenerateSystemInfoOption(string name, string description)
+    {
+        return new Option<string?>(
+            name: name,
+            description: description,
+            getDefaultValue: () => null
+        );
     }
 }
