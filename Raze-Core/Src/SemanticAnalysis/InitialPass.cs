@@ -143,8 +143,6 @@ public partial class Analyzer
 
         public override object? VisitDeclareExpr(Expr.Declare expr)
         {
-            HandleTopLevelCode();
-
             GetVariableDefinition(expr.typeName, expr.stack);
 
             return base.VisitDeclareExpr(expr);
@@ -166,40 +164,14 @@ public partial class Analyzer
             return null;
         }
 
-        public override object? VisitIfExpr(Expr.If expr)
-        {
-            HandleTopLevelCode();
-            return base.VisitIfExpr(expr);
-        }
-
-        public override object? VisitWhileExpr(Expr.While expr)
-        {
-            HandleTopLevelCode();
-            return base.VisitWhileExpr(expr);
-        }
-
-        public override object? VisitForExpr(Expr.For expr)
-        {
-            HandleTopLevelCode();
-            return base.VisitForExpr(expr);
-        }
-
         public override object? VisitNewExpr(Expr.New expr)
         {
-            HandleTopLevelCode();
-
             expr.call.callee ??= new Expr.AmbiguousGetReference(new ExprUtils.QueueList<Token>(), false);
             ((Expr.AmbiguousGetReference)expr.call.callee).typeName.Enqueue(expr.call.name);
 
             expr.call.Accept(this);
 
             return null;
-        }
-
-        public override object? VisitReturnExpr(Expr.Return expr)
-        {
-            HandleTopLevelCode();
-            return base.VisitReturnExpr(expr);
         }
 
         public override object? VisitAssemblyExpr(Expr.Assembly expr)
@@ -235,8 +207,6 @@ public partial class Analyzer
 
         public override object? VisitInstanceGetReferenceExpr(Expr.InstanceGetReference expr)
         {
-            HandleTopLevelCode();
-
             foreach (Expr.Getter get in expr.getters)
             {
                 get.Accept(this);
@@ -289,17 +259,6 @@ public partial class Analyzer
             symbolTable.UpContext();
 
             return null;
-        }
-
-        public override object? VisitIsExpr(Expr.Is expr)
-        {
-            HandleTopLevelCode();
-            return null;
-        }
-
-        private void HandleTopLevelCode()
-        {
-            if (symbolTable.CurrentIsTop()) Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.TopLevelCode));
         }
 
         private void GetVariableDefinition(ExprUtils.QueueList<Token> typeName, Expr.StackData stack)

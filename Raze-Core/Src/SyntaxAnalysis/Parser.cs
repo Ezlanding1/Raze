@@ -88,22 +88,38 @@ public class Parser
                 }
 
                 Token name = Previous();
-
                 Expect(Token.TokenType.LPAREN, "'(' after function name");
-                if (IsAtEnd()) return null;
 
                 List<Expr.Parameter> parameters = new();
-                while (TypeMatch(Token.TokenType.IDENTIFIER, Token.TokenType.RESERVED))
+
+                while (true)
                 {
+                    if (IsAtEnd())
+                    {
+                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedEndInFunctionParameters, name.lexeme));
+                        return new Expr.Function(modifiers, _return, name, parameters, new(new()));
+                    }
+
+                    if (TypeMatch(SynchronizationTokens) || TypeMatch(Token.TokenType.LBRACE))
+                    {
+                        MovePrevious();
+                        break;
+                    }
+
                     ExprUtils.Modifiers paramModifers = ExprUtils.Modifiers.ParameterModifierTemplate();
 
-                    MovePrevious();
                     paramModifers["ref"] = ReservedValueMatch("ref");
-                    Advance();
 
-                    var typeName = GetTypeReference();
-                    if (Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter"))
-                        parameters.Add(new Expr.Parameter(typeName, Previous(), paramModifers));
+                    if (TypeMatch(Token.TokenType.IDENTIFIER))
+                    {
+                        var typeName = GetTypeReference();
+                        if (Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter"))
+                            parameters.Add(new Expr.Parameter(typeName, Previous(), paramModifers));
+                    }
+                    else
+                    {
+                        PanicUntil(SynchronizationTokens.Append(Token.TokenType.LBRACE).ToArray(), Token.TokenType.IDENTIFIER, "identifier as function parameter name");
+                    }
 
                     if (TypeMatch(Token.TokenType.IDENTIFIER))
                     {
@@ -113,13 +129,8 @@ public class Parser
                     {
                         break;
                     }
-
-                    if (IsAtEnd())
-                    {
-                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedEndInFunctionParameters, name.lexeme));
-                        return new Expr.Function(modifiers, _return, name, parameters, new(new()));
-                    }
                 }
+
                 Expect(Token.TokenType.RPAREN, "')' after function name");
 
                 return new Expr.Function(modifiers, _return, name, parameters, GetBlock(definitionType.lexeme));
@@ -203,7 +214,7 @@ public class Parser
                 if (ValueMatch("extends"))
                 {
                     Expect(Token.TokenType.IDENTIFIER, "superclass of primitive type");
-                    
+
                     superclassName = Previous().lexeme;
 
                     if (!Enum.GetNames<LiteralTokenType>().Contains(superclassName))
@@ -242,23 +253,31 @@ public class Parser
 
     private Expr Definition()
     {
-        return SymbolTableSingleton.SymbolTable.AddGlobal(_Definition()) ?? Entity();
+        return SymbolTableSingleton.SymbolTable.AddGlobal(_Definition()) ??  Entity() ?? InvalidTopLevelCode();
     }
 
-    private Expr Entity()
+    private Expr? Entity()
     {
         if (ReservedValueMatch("asm"))
         {
             var instructions = GetAsmInstructions();
             return new Expr.Assembly(instructions.Item1, instructions.Item2);
         }
-        else if (TypeMatch(Token.TokenType.LBRACE))
+        return null;
+    }
+
+    private Expr InvalidTopLevelCode()
+    {
+        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.TopLevelCode));
+        if (TypeMatch(Token.TokenType.LBRACE))
         {
             MovePrevious();
             return GetBlock("disconnected block");
         }
         return Conditional();
     }
+
+    private Expr NonTopLevelStart() => Entity() ?? Conditional();
 
     private Expr Conditional()
     {
@@ -697,7 +716,7 @@ public class Parser
 
     private Expr GetCondition()
     {
-        Expect(Token.TokenType.LPAREN, "'(' after conditional");
+        Expect(Token.TokenType.LPAREN, "'(' before conditional");
         var condition = Logical();
         Expect(Token.TokenType.RPAREN, "')' after conditional");
         return condition;
@@ -714,17 +733,17 @@ public class Parser
         if (!TypeMatch(Token.TokenType.LBRACE))
         {
             Expected("LBRACE", "'{' before " + bodytype + " body");
-            Advance();
-            return new();
+            Expect(Token.TokenType.RBRACE, "'}' after " + bodytype + " body");
+            return bodyExprs;
         }
         while (!TypeMatch(Token.TokenType.RBRACE))
         {
-            bodyExprs.Add(Start());
             if (IsAtEnd())
             {
                 Expect(Token.TokenType.RBRACE, "'}' after " + bodytype + " body");
                 break;
             }
+            bodyExprs.Add(NonTopLevelStart());
         }
         return bodyExprs;
     }
@@ -884,6 +903,19 @@ public class Parser
         return (instructions, variables);
     }
 
+    private void PanicUntilSynchronized(Token.TokenType expectedToken, string errorMessage) => PanicUntil(SynchronizationTokens, expectedToken, errorMessage);
+    private void PanicUntil(Token.TokenType[] types, Token.TokenType expectedToken, string errorMessage)
+    {
+        string panicInvalidTokens = current.lexeme;
+        Advance();
+        while (!(IsAtEnd() || TypeMatch(types)))
+        {
+            panicInvalidTokens += " " + current.lexeme;
+            Advance();
+        }
+        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.TokenExpected, expectedToken, errorMessage, panicInvalidTokens));
+        MovePrevious();
+    }
     private AssemblyExpr.Instruction ConvertToInstruction(string strInstruction)
     {
         if (Enum.TryParse(strInstruction, out AssemblyExpr.Instruction instruction))
