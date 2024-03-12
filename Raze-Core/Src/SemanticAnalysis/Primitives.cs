@@ -176,7 +176,7 @@ public partial class Analyzer
         }
         public static Diagnostic.AnalyzerDiagnostic InvalidOperation(Token op, string type1, string type2)
         {
-            return new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOperatorCall_Arity2, type1, type2, $"'{SymbolToPrimitiveName(op)}({type1}, {type2})");
+            return new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOperatorCall_Arity2, type1, type2, $"{SymbolToPrimitiveName(op)}({type1}, {type2})");
         }
 
         // Unary Operation
