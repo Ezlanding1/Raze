@@ -40,6 +40,11 @@ internal partial class Shell
 
         public SystemInfo SystemInfo { get; set; }
 
+        public bool SystemInfoModified =>
+            this.SystemInfo.architecture != SystemInfoGenerator.GetArchitecture ||
+            this.SystemInfo.osabi != SystemInfoGenerator.GetOsabi ||
+            this.SystemInfo.bitFormat != SystemInfoGenerator.GetBitFormat;
+
         public CompileOptions(SystemInfo.CPU_Architecture? architecture, SystemInfo.OsAbi? osAbi, SystemInfo.BitFormat? bitFormat)
         {
             SystemInfo = new SystemInfo

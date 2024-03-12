@@ -16,6 +16,7 @@ public abstract partial class Diagnostic
         { DiagnosticName.UnsupportedSystem_CPU_Architecture, ("Unsuppored CPU_Architecture '{0}'", Severity.Exception) },
         { DiagnosticName.UnsupportedSystem_OsAbi, ("Unsuppored OsABI '{0}'", Severity.Exception) },
         { DiagnosticName.UnsupportedSystem_BitFormat, ("Unsuppored BitFormat '{0}'", Severity.Exception) },
+        { DiagnosticName.TargetSystemModified, ("Cannot run the binary on your system. Try compiling for your system or using the 'compile' command instead", Severity.Exception) },
 
         // LexerError
         { DiagnosticName.EmptyStringLiteral, ("A String literal may not be empty", Severity.Error) },

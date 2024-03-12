@@ -43,6 +43,11 @@ internal partial class Shell
 
         runCommand.SetHandler((compileOptions) =>
             {
+                if (compileOptions.SystemInfoModified)
+                {
+                    Diagnostics.Panic(new Diagnostic.DriverDiagnostic(Diagnostic.DiagnosticName.TargetSystemModified));
+                }
+
                 CompileProgram(compileOptions);
                 Process.Start(compileOptions.OutputOption);
             },

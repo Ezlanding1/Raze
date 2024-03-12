@@ -8,11 +8,11 @@ namespace Raze;
 
 public class SystemInfo
 {
-    internal CPU_Architecture architecture;
-    internal OsAbi osabi;
-    internal Endianness endianness;
-    internal BitFormat bitFormat;
-    internal int alignment;
+    public readonly CPU_Architecture architecture;
+    public readonly OsAbi osabi;
+    public readonly Endianness endianness;
+    public readonly BitFormat bitFormat;
+    public readonly int alignment;
 
     public SystemInfo(CPU_Architecture architecture, OsAbi osabi, Endianness endianness, BitFormat bitFormat, int alignment)
     {

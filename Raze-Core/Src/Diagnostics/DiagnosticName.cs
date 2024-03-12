@@ -16,6 +16,7 @@ public abstract partial class Diagnostic
         UnsupportedSystem_CPU_Architecture,
         UnsupportedSystem_OsAbi,
         UnsupportedSystem_BitFormat,
+        TargetSystemModified,
 
         // LexerError
         EmptyStringLiteral,
