@@ -109,10 +109,11 @@ public abstract partial class AssemblyExpr
         public RegisterPointer(int valueType) : base(valueType)
         {
         }
+        internal abstract Register GetRegister();
         // Note: This method should always shallow-clone the returned register
         internal abstract Register AsRegister(CodeGen assembler);
         internal abstract RegisterPointer Clone();
-        
+
     }
 
     public class Register : RegisterPointer
@@ -171,6 +172,7 @@ public abstract partial class AssemblyExpr
             this.size = size;
         }
 
+        internal override Register GetRegister() => this;
         internal override Register AsRegister(CodeGen assembler) => Clone();
         internal override Register Clone() => new Register(nameBox, Size);
 
@@ -189,7 +191,7 @@ public abstract partial class AssemblyExpr
             return operand.VisitOperandRegister(visitor, this);
         }
         public override T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg)
-        {   
+        {
             return visitor.VisitRegisterRegister(this, reg);
         }
         public override T VisitOperandMemory<T>(IBinaryOperandVisitor<T> visitor, Pointer ptr)
@@ -205,7 +207,7 @@ public abstract partial class AssemblyExpr
     public class Pointer : RegisterPointer
     {
         internal Register register;
-        
+
         public int offset;
 
         internal Pointer(Register register, int offset, Register.RegisterSize size) : base(1)
@@ -229,6 +231,8 @@ public abstract partial class AssemblyExpr
         public Pointer(int offset, int size) : this(Register.RegisterName.RBP, offset, size)
         {
         }
+
+        internal override Register GetRegister() => register;
 
         public bool IsOnStack() => register.Name == Register.RegisterName.RBP;
 
@@ -266,7 +270,7 @@ public abstract partial class AssemblyExpr
     public class UnresolvedLiteral : Value, ILiteralBase
     {
         internal Literal.LiteralType type;
-        
+
         public string value;
 
         public override Register.RegisterSize Size { get => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Attempted access of UnresolvedRegister size")); }
@@ -279,7 +283,7 @@ public abstract partial class AssemblyExpr
 
         public Literal CreateLiteral(Register.RegisterSize size)
         {
-            return type >= Literal.LiteralType.RefData? new LabelLiteral(type, value, size) : new Literal(type, value, size);
+            return type >= Literal.LiteralType.RefData ? new LabelLiteral(type, value, size) : new Literal(type, value, size);
         }
 
         public override T Accept<T>(IBinaryOperandVisitor<T> visitor, Operand operand) =>
@@ -372,7 +376,7 @@ public abstract partial class AssemblyExpr
     public class LabelLiteral : Literal
     {
         internal bool scoped;
-        internal string Name 
+        internal string Name
         {
             get => Encoding.ASCII.GetString(this.value);
             set => this.value = Encoding.ASCII.GetBytes(value);
@@ -439,7 +443,7 @@ public abstract partial class AssemblyExpr
             return visitor.VisitLocalProcedure(this);
         }
     }
-    
+
     public class ProcedureRef : LabelLiteral
     {
         public ProcedureRef(string name) : base(LiteralType.RefProcedure, name)

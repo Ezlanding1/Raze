@@ -245,7 +245,7 @@ internal partial class AssemblyOps
                 default:
                     throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Impossible instruction in IDIV_DIV_IMOD_MOD"));
             }
-            var rax = assemblyOps.assembler.alloc.CallAlloc(operand1.Size);
+            var rax = assemblyOps.assembler.alloc.GetRegister(0, operand1.Size);
             var rdx = new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDX, operand1.Size);
 
             AssemblyExpr.Register paramStoreReg = null;
@@ -313,6 +313,7 @@ internal partial class AssemblyOps
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))
                 assemblyOps.assembler.alloc.Free(operand2);
 
+            assemblyOps.assembler.alloc.CallAlloc(operand1.Size, assemblyOps.assembler);
         }
 
         public static void CMP(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)

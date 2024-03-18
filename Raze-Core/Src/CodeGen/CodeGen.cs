@@ -66,7 +66,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         alloc.Free(operand2);
 
-        alloc.ReserveRegister(this);
+        alloc.SavePreservedRegistersBeforeCall(this);
 
         EmitCall(new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL, new AssemblyExpr.ProcedureRef(ToMangledName(expr.internalFunction))));
 
@@ -75,7 +75,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             alloc.FreeParameter(i, localParams[i], this);
         }
 
-        return alloc.CallAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnType.type.allocSize));
+        return alloc.CallAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnType.type.allocSize), this);
     }
 
     public virtual AssemblyExpr.Value? VisitCallExpr(Expr.Call expr)
@@ -155,7 +155,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             alloc.FreeParameter(i, localParams[i], this);
         }
 
-        alloc.ReserveRegister(this);
+        alloc.SavePreservedRegistersBeforeCall(this);
 
         EmitCall(new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL, new AssemblyExpr.ProcedureRef(ToMangledName(expr.internalFunction))));
 
@@ -164,7 +164,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.ADD, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes((expr.arguments.Count - InstructionUtils.paramRegister.Length) * 8))));
         }
         
-        return alloc.CallAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnType.type.allocSize));
+        return alloc.CallAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnType.type.allocSize), this);
     }
 
     public AssemblyExpr.Value? VisitClassExpr(Expr.Class expr)
@@ -561,11 +561,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         alloc.FreeParameter(0, localParam[0], this);
 
-        alloc.ReserveRegister(this);
+        alloc.SavePreservedRegistersBeforeCall(this);
 
         EmitCall(new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL, new AssemblyExpr.ProcedureRef(ToMangledName(expr.internalFunction))));
 
-        return alloc.CallAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnType.type.allocSize));
+        return alloc.CallAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnType.type.allocSize), this);
     }
 
     public AssemblyExpr.Value? VisitIfExpr(Expr.If expr)

@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Raze;
+﻿namespace Raze;
 
 public class InlinedCodeGen : CodeGen
 {
@@ -168,12 +162,15 @@ public class InlinedCodeGen : CodeGen
         }
 
         var ret = ((InlineStateInlined)inlineState).callee;
+        RegisterState? state = alloc.SaveRegisterState(ret);
 
         for (int i = 0; i < call.Arguments.Count; i++)
         {
             call.InternalFunction.parameters[i].stack.inlinedData = false;
             alloc.Free(call.InternalFunction.parameters[i].stack.value, true);
         }
+
+        alloc.SetRegisterState(state, ret);
 
         UnlockOperand(ret);
 
