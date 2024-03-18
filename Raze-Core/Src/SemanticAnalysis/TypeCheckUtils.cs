@@ -87,8 +87,6 @@ public partial class Analyzer
                     continue;
 
                 MustMatchType(expr._returnType.type, ret.Item1, true);
-
-                ret.Item3.type = expr._returnType.type;
             }
             if (_returnCount == 0 && !Primitives.IsVoidType(expr._returnType.type))
             {

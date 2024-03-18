@@ -21,7 +21,7 @@ public partial class Analyzer
         private List<(Token, Expr.StackData)> locals = new();
         Stack<int> framePointer = new();
 
-        private static Expr.StackData VarNotFoundData = new(TypeCheckUtils.anyType, false, false, 0, 0);
+        private static Expr.StackData VarNotFoundData = new(TypeCheckUtils.anyType, false);
         private static Expr.Class ClassNotFoundDefinition = TypeCheckUtils.anyType;
         public Expr.Function FunctionNotFoundDefinition = SpecialObjects.GenerateAnyFunction();
 
@@ -31,30 +31,20 @@ public partial class Analyzer
         }
 
 
-        public void Add(Token name, Expr.StackData variable)
+        public void AddVariable(Token name, Expr.StackData variable)
         {
-            current.size += variable._ref ? 8 : variable.size;
-            variable.stackOffset = current.size;
-            
             if (current.definitionType == Expr.Definition.DefinitionType.Function)
             {
                 locals.Add(new(name, variable));
             }
-        }
-
-        public void Add(Token name, Expr.StackData parameter, int i, int arity)
-        {
-            if (i < InstructionUtils.paramRegister.Length)
-            {
-                current.size += parameter._ref? 8 : parameter.size;
-                parameter.stackOffset = current.size;
-            }
             else
             {
-                parameter.plus = true;
-                parameter.stackOffset = (8 * ((arity - i))) + 8;
+                CodeGen.RegisterAlloc.AllocateVariable(current, variable);
             }
+        }
 
+        public void AddParameter(Token name, Expr.StackData parameter)
+        {
             if (current.definitionType == Expr.Definition.DefinitionType.Function)
             {
                 locals.Add(new(name, parameter));

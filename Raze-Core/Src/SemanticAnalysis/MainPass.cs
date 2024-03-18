@@ -260,7 +260,7 @@ public partial class Analyzer
 
             TypeCheckUtils.MustMatchType(expr.stack.type, assignType);
 
-            symbolTable.Add(name, expr.stack);
+            symbolTable.AddVariable(name, expr.stack);
 
             return TypeCheckUtils._voidType;
         }
@@ -282,13 +282,6 @@ public partial class Analyzer
 
             symbolTable.CreateBlock();
 
-            bool instance = !expr.modifiers["static"];
-
-            if (instance)
-            {
-                symbolTable.Current.size += (int)InstructionUtils.SYS_SIZE;
-            }
-
             for (int i = 0; i < expr.Arity; i++)
             {
                 Expr.Parameter paramExpr = expr.parameters[i];
@@ -299,7 +292,7 @@ public partial class Analyzer
                 }
                 paramExpr.stack._ref = paramExpr.modifiers["ref"];
 
-                symbolTable.Add(paramExpr.name, paramExpr.stack, i+Convert.ToInt16(instance), expr.Arity);
+                symbolTable.AddParameter(paramExpr.name, paramExpr.stack);
             }
 
             expr.block.Accept(this);
@@ -358,7 +351,7 @@ public partial class Analyzer
 
                 expr.call.Accept(this);
 
-                expr.internalClass = (Expr.DataType)expr.call.internalFunction.enclosing;
+                expr.internalClass = (Expr.Class)expr.call.internalFunction.enclosing;
             }
             return expr.internalClass;
         }

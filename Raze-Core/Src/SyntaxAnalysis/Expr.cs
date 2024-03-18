@@ -431,29 +431,33 @@ public abstract class Expr
 
     public class StackData
     {
-        public int stackOffset;
-        public Definition type;
-        public bool plus;
-        public bool _ref;
-        public int size;
-        public bool stackRegister;
+        internal DataType type { get; set; }
+        internal AssemblyExpr.Value value;
+        internal int size => type.allocSize;
+        internal bool _ref;
+        internal bool inlinedData;
+        internal AssemblyExpr.Pointer ValueAsPointer => (AssemblyExpr.Pointer)value;
+        internal AssemblyExpr.Register ValueAsRegister => (AssemblyExpr.Register)value;
 
-        public StackData() { }
-
-        public StackData(Definition type, bool _ref, bool plus, int size, int stackOffset)
+        public StackData()
         {
-            (this.stackOffset, this.type, this._ref, this.plus, this.size) = (stackOffset, type, _ref, plus, size);
         }
-    }
 
-    public class StackRegister : StackData
-    {
-        internal AssemblyExpr.Value register;
-
-        public StackRegister() { }
-
-        public StackRegister(Definition type, bool _ref, bool plus, int size, int stackOffset) : base(type, _ref, plus, size, stackOffset)
+        public StackData(DataType type, bool _ref)
         {
+            this.type = type;
+            this._ref = _ref;
+        }
+
+        public AssemblyExpr.Pointer CreateValueAsPointer(AssemblyExpr.Register.RegisterName name, int offset)
+        {
+            value = new AssemblyExpr.Pointer(name, -offset, size);
+            return ValueAsPointer;
+        }
+        public AssemblyExpr.Register CreateValueAsRegister(AssemblyExpr.Register.RegisterName name)
+        {
+            value = new AssemblyExpr.Register(name, size);
+            return ValueAsRegister;
         }
     }
 
@@ -475,7 +479,7 @@ public abstract class Expr
     public class New : Expr
     {
         public Call call;
-        public DataType internalClass;
+        public Class internalClass;
 
         public New(Call call)
         {
@@ -648,7 +652,8 @@ public abstract class Expr
         public DataType(Token name, List<Definition> definitions) : base(name)
         {
             this.definitions = definitions;
-            (_this.stackOffset, _this.size, _this.type) = (8, 8, this);
+            this._this.type = this;
+            this._this.value = new AssemblyExpr.Pointer(8, AssemblyExpr.Register.RegisterSize._64Bits);
         }
 
         public DataType(Token name, List<Definition> definitions, int size) : this(name, definitions)
@@ -671,6 +676,8 @@ public abstract class Expr
             this.declarations = declarations;
             this.superclass = superclass;
         }
+
+        public int CalculateSize() => size == 0? 1 : size;
 
         public override bool Matches(Type type)
         {
@@ -709,16 +716,14 @@ public abstract class Expr
     public class Return : Expr
     {
         public Expr value;
-        public DataType type;
-        public bool _void
-        {
-            get => Analyzer.Primitives.IsVoidType(type);
-        }
 
         public Return(Expr value)
         {
             this.value = value;
         }
+
+        public bool IsVoid(Definition current) =>
+            Analyzer.Primitives.IsVoidType(current);
 
         public override T Accept<T>(IVisitor<T> visitor)
         {

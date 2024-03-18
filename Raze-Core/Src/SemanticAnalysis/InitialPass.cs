@@ -115,7 +115,7 @@ public partial class Analyzer
 
             foreach (var parameter in expr.parameters)
             {
-                parameter.stack = (expr.modifiers["inline"]) ? new Expr.StackRegister() : new Expr.StackData();
+                parameter.stack = new Expr.StackData();
                 GetVariableDefinition(parameter.typeName, parameter.stack);
             }
 
@@ -267,8 +267,7 @@ public partial class Analyzer
             {
                 HandleTypeNameReference(typeName);
 
-                stack.size = (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Primitive) ? ((Expr.Primitive)symbolTable.Current).size : 8;
-                stack.type = symbolTable.Current;
+                stack.type = (Expr.DataType)symbolTable.Current;
             }
         }
 

@@ -151,12 +151,14 @@ public class InlinedCodeGen : CodeGen
 
     private AssemblyExpr.Value? HandleICall(Expr.ICall call)
     {
+        alloc.CreateBlock();
+
         AssemblyExpr.Value[] args = call.Arguments.Select(x => x.Accept(this)).ToArray();
 
         for (int i = 0; i < call.Arguments.Count; i++)
         {
-            call.InternalFunction.parameters[i].stack.stackRegister = true;
-            ((Expr.StackRegister)call.InternalFunction.parameters[i].stack).register = LockOperand(HandleParameterRegister(call.InternalFunction.parameters[i], args[i]));
+            call.InternalFunction.parameters[i].stack.inlinedData = true;
+            call.InternalFunction.parameters[i].stack.value = LockOperand(HandleParameterRegister(call.InternalFunction.parameters[i], args[i]));
         }
 
         foreach (var bodyExpr in call.InternalFunction.block.block)
@@ -169,8 +171,8 @@ public class InlinedCodeGen : CodeGen
 
         for (int i = 0; i < call.Arguments.Count; i++)
         {
-            call.InternalFunction.parameters[i].stack.stackRegister = false;
-            alloc.Free(((Expr.StackRegister)call.InternalFunction.parameters[i].stack).register, true);
+            call.InternalFunction.parameters[i].stack.inlinedData = false;
+            alloc.Free(call.InternalFunction.parameters[i].stack.value, true);
         }
 
         UnlockOperand(ret);
@@ -189,6 +191,7 @@ public class InlinedCodeGen : CodeGen
             }
         }
 
+        alloc.RemoveBlock();
         return ret;
     }
 
@@ -212,9 +215,9 @@ public class InlinedCodeGen : CodeGen
             operand2 = expr.value.Accept(this);
         }
 
-        if (((Expr.StackRegister)((Expr.Binary)expr.value).internalFunction.parameters[0].stack).register != operand2)
+        if (((Expr.Binary)expr.value).internalFunction.parameters[0].stack.value != operand2)
         {
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, ((Expr.StackRegister)((Expr.Binary)expr.value).internalFunction.parameters[0].stack).register, operand2));
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, ((Expr.Binary)expr.value).internalFunction.parameters[0].stack.value, operand2));
         }
 
         alloc.Free(operand2);
@@ -229,9 +232,9 @@ public class InlinedCodeGen : CodeGen
             return base.VisitReturnExpr(expr);
         }
 
-        if (!expr._void)
+        if (!expr.IsVoid(alloc.current))
         {
-            AssemblyExpr.Value operand = expr.value.Accept(this).IfLiteralCreateLiteral(InstructionUtils.ToRegisterSize(expr.type.allocSize));
+            AssemblyExpr.Value operand = expr.value.Accept(this).IfLiteralCreateLiteral(InstructionUtils.ToRegisterSize(((Expr.Function)alloc.current)._returnType.type.allocSize));
 
             if (((InlineStateInlined)inlineState).callee == null)
             {

@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace Raze;
 public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 {
-    internal class RegisterAlloc
+    internal partial class RegisterAlloc
     {
         private int RegisterIdx
         {
@@ -126,12 +126,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             }
         }
 
-        public int NameToIdx(AssemblyExpr.Register.RegisterName name)
-        {
-            int idx = -1;
-            while (++idx < InstructionUtils.storageRegisters.Length && InstructionUtils.storageRegisters[idx] != name) ;
-            return idx < InstructionUtils.storageRegisters.Length ? idx : -1;
-        }
+        public int NameToIdx(AssemblyExpr.Register.RegisterName name) => 
+            Array.IndexOf(InstructionUtils.storageRegisters, name);
 
         public void FreeParameter(int i, AssemblyExpr.Register? localParam, CodeGen assembler)
         {

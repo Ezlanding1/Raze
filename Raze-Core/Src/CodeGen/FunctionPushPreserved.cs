@@ -12,13 +12,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
     internal class FunctionPushPreserved
     {
         public bool leaf = true;
-        public int size;
         bool[] registers = new bool[5];
+        public int size;
         int count;
 
-        public FunctionPushPreserved(int size, int count)
+        public FunctionPushPreserved(int count)
         {
-            this.size = size;
             this.count = count;
         }
 
@@ -31,7 +30,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
             if (!((leaf || size == 0) && size <= 128))
             {
-                assemblyExprs.Insert(count++, StackAlloc.GenerateStackAlloc((size > 128) ? size - 128 : size));
+                assemblyExprs.Insert(count++, GenerateStackAlloc((size > 128) ? size - 128 : size));
             }
 
             for (int i = 0; i < registers.Length; i++)
@@ -59,18 +58,15 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             assemblyExprs.Add(new AssemblyExpr.Zero(AssemblyExpr.Instruction.RET));
         }
 
-        internal class StackAlloc
+        private static AssemblyExpr.Binary GenerateStackAlloc(int allocSize)
         {
-            public static AssemblyExpr.Binary GenerateStackAlloc(int allocSize)
-            {
-                return new AssemblyExpr.Binary(AssemblyExpr.Instruction.SUB, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE),
-                    new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes(AlignTo16(allocSize))));
-            }
+            return new AssemblyExpr.Binary(AssemblyExpr.Instruction.SUB, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE),
+                new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes(AlignTo16(allocSize))));
+        }
 
-            private static int AlignTo16(int i)
-            {
-                return (((int)Math.Ceiling(i / 16f)) * 16);
-            }
+        private static int AlignTo16(int i)
+        {
+            return (((int)Math.Ceiling(i / 16f)) * 16);
         }
     }
 }
