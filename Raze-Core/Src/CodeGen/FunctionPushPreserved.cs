@@ -15,6 +15,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         bool[] registers = new bool[5];
         public int size;
         int count;
+        Stack<int> footers = new();
 
         public FunctionPushPreserved(int count)
         {
@@ -25,6 +26,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         public void GenerateHeader(ISection.Text assemblyExprs)
         {
+            while (footers.Count > 0)
+            {
+                int location = footers.Pop();
+                GenerateFooter(assemblyExprs, location);
+            }
+
             assemblyExprs.Insert(count++, new AssemblyExpr.Unary(AssemblyExpr.Instruction.PUSH, AssemblyExpr.Register.RegisterName.RBP));
             assemblyExprs.Insert(count++, new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, AssemblyExpr.Register.RegisterName.RBP, AssemblyExpr.Register.RegisterName.RSP));
 
@@ -41,22 +48,24 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             }
         }
 
-        public void GenerateFooter(ISection.Text assemblyExprs)
+        private void GenerateFooter(ISection.Text assemblyExprs, int location)
         {
             for (int i = registers.Length - 1; i >= 0; i--)
             {
                 if (registers[i])
-                    assemblyExprs.Add(new AssemblyExpr.Unary(AssemblyExpr.Instruction.POP, new AssemblyExpr.Register(InstructionUtils.storageRegisters[i + 1], AssemblyExpr.Register.RegisterSize._64Bits)));
+                    assemblyExprs.Insert(location++, new AssemblyExpr.Unary(AssemblyExpr.Instruction.POP, new AssemblyExpr.Register(InstructionUtils.storageRegisters[i + 1], AssemblyExpr.Register.RegisterSize._64Bits)));
             }
 
-            assemblyExprs.Add(
+            assemblyExprs.Insert(location++,
                 leaf ?
                 new AssemblyExpr.Unary(AssemblyExpr.Instruction.POP, AssemblyExpr.Register.RegisterName.RBP) :
                 new AssemblyExpr.Zero(AssemblyExpr.Instruction.LEAVE)
             );
 
-            assemblyExprs.Add(new AssemblyExpr.Zero(AssemblyExpr.Instruction.RET));
+            assemblyExprs.Insert(location, new AssemblyExpr.Zero(AssemblyExpr.Instruction.RET));
         }
+
+        public void RegisterFooter(ISection.Text assemblyExprs) => footers.Push(assemblyExprs.Count);
 
         private static AssemblyExpr.Binary GenerateStackAlloc(int allocSize)
         {

@@ -835,7 +835,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     private void DoFooter()
     {
-        alloc.fncPushPreserved.GenerateFooter(assembly.text);
+        alloc.fncPushPreserved.RegisterFooter(assembly.text);
     }
 
     internal void EmitCall(AssemblyExpr.TextExpr instruction)
