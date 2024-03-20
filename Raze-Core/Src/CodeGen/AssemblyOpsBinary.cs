@@ -223,7 +223,11 @@ internal partial class AssemblyOps
 
         public static void IDIV_DIV_IMOD_MOD(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
-            assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler);
+            if (HandleOperand1Unsafe(instruction, assemblyOps) is not AssemblyExpr.RegisterPointer rp || rp.GetRegister().Name != AssemblyExpr.Register.RegisterName.RAX)
+            {
+                assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler);
+            }
+            assemblyOps.count--;
 
             var operand1 = HandleOperand1(instruction, assemblyOps).NonPointer(assemblyOps.assembler);
 
