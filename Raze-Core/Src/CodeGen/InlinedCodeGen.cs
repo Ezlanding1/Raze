@@ -157,8 +157,7 @@ public class InlinedCodeGen : CodeGen
 
         foreach (var bodyExpr in call.InternalFunction.block.block)
         {
-            bodyExpr.Accept(this);
-            alloc.FreeAll(false);
+            alloc.Free(bodyExpr.Accept(this), false);
         }
 
         var ret = ((InlineStateInlined)inlineState).callee;
