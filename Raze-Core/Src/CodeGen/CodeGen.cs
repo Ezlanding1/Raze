@@ -567,6 +567,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     public AssemblyExpr.Value? VisitIfExpr(Expr.If expr)
     {
+        bool multiBranch = expr._else != null || expr.conditionals.Count > 1;
+
         AssemblyExpr.Unary endJump = new AssemblyExpr.Unary(
             AssemblyExpr.Instruction.JMP,
             new AssemblyExpr.LocalProcedureRef(CreateConditionalLabel(conditionalCount++))
@@ -603,7 +605,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             ));
 
             expr.conditionals[i].block.Accept(this);
-            Emit(endJump);
+
+            if (multiBranch)
+            {
+                Emit(endJump);
+            }
 
             Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(localConditionalCount)));
         }
@@ -616,7 +622,10 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             }
         }
 
-        Emit(new AssemblyExpr.LocalProcedure(((AssemblyExpr.LocalProcedureRef)endJump.operand).Name));
+        if (multiBranch)
+        {
+            Emit(new AssemblyExpr.LocalProcedure(((AssemblyExpr.LocalProcedureRef)endJump.operand).Name));
+        }
 
         return null;
     }
