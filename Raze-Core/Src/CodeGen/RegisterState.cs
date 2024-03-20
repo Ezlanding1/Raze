@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace Raze;
 
-internal class RegisterState
+internal struct RegisterState
 {
-
     internal enum RegisterStates : byte
     {
         Free,
@@ -53,10 +52,4 @@ internal class RegisterState
             this.SetState(state);
         }
     }
-}
-
-internal class NeedableRegisterState : RegisterState
-{
-    public AssemblyExpr.Register.RegisterSize neededSize;
-    public int idx;
 }

@@ -176,18 +176,6 @@ public class InlinedCodeGen : CodeGen
 
         HandleInlinedReturnOptimization();
 
-        if (ret != null)
-        {
-            if (ret.IsRegister())
-            {
-                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Register)ret).Name), ((AssemblyExpr.Register)ret).Size);
-            }
-            else if (ret.IsPointer() && !((AssemblyExpr.Pointer)ret).IsOnStack())
-            {
-                alloc.GetRegister(alloc.NameToIdx(((AssemblyExpr.Pointer)ret).register.Name), ((AssemblyExpr.Pointer)ret).Size);
-            }
-        }
-
         alloc.RemoveBlock();
         return ret;
     }

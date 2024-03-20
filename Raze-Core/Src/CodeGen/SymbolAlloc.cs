@@ -74,6 +74,13 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             }
         }
 
+        public void InitializeFunction(Expr.Function function, CodeGen codeGen)
+        {
+            fncPushPreserved = new(codeGen.assembly.text.Count);
+            current = function;
+            CreateBlock();
+        }
+
         public void CreateBlock() => frameSize.Push(current.size);
 
         public void RemoveBlock()

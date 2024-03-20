@@ -264,10 +264,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         Emit(new AssemblyExpr.Procedure(ToMangledName(expr)));
 
-        alloc.fncPushPreserved = new(assembly.text.Count);
-
-        alloc.current = expr;
-        alloc.CreateBlock();
+        alloc.InitializeFunction(expr, this);
 
         alloc.AllocateParameters(expr, this);
 
