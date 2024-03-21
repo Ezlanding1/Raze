@@ -45,15 +45,24 @@ public class InstructionUtils
         "rbx"
     };
 
-    internal readonly static AssemblyExpr.Register.RegisterName[] storageRegisters = new AssemblyExpr.Register.RegisterName[]
+    internal readonly static (AssemblyExpr.Register.RegisterName Name, bool IsScratchRegister)[] storageRegisters = new (AssemblyExpr.Register.RegisterName, bool)[]
     {
-        AssemblyExpr.Register.RegisterName.RAX,
-        AssemblyExpr.Register.RegisterName.RBX,
-        AssemblyExpr.Register.RegisterName.R12,
-        AssemblyExpr.Register.RegisterName.R13,
-        AssemblyExpr.Register.RegisterName.R14,
-        AssemblyExpr.Register.RegisterName.R15
+        (AssemblyExpr.Register.RegisterName.RAX, true),
+        (AssemblyExpr.Register.RegisterName.RCX, true),
+        (AssemblyExpr.Register.RegisterName.RDX, true),
+        (AssemblyExpr.Register.RegisterName.RSI, true),
+        (AssemblyExpr.Register.RegisterName.RDI, true),
+        (AssemblyExpr.Register.RegisterName.R8, true),
+        (AssemblyExpr.Register.RegisterName.R9, true),
+        (AssemblyExpr.Register.RegisterName.R10, true),
+        (AssemblyExpr.Register.RegisterName.R11, true),
+        (AssemblyExpr.Register.RegisterName.RBX, false),
+        (AssemblyExpr.Register.RegisterName.R12, false),
+        (AssemblyExpr.Register.RegisterName.R13, false),
+        (AssemblyExpr.Register.RegisterName.R14, false),
+        (AssemblyExpr.Register.RegisterName.R15, false)
     };
+    internal readonly static int ScratchRegisterCount = storageRegisters.Where(x => x.IsScratchRegister).Count();
 
     internal readonly static Dictionary<string, (AssemblyExpr.Register.RegisterName, AssemblyExpr.Register.RegisterSize)> Registers = new()
     {

@@ -23,11 +23,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         }
 
         RegisterState[] registerStates = InstructionUtils.storageRegisters.Select(x => new RegisterState()).ToArray();
-        (AssemblyExpr.Register.RegisterSize neededSize, int idx)[] preservedRegisterInfo = { (0, 0) };
+        (AssemblyExpr.Register.RegisterSize neededSize, int idx)[] preservedRegisterInfo = 
+            InstructionUtils.storageRegisters.Where(x => x.IsScratchRegister).Select(x => ((AssemblyExpr.Register.RegisterSize)0, 0)).ToArray();
 
-        StrongBox<AssemblyExpr.Register.RegisterName>?[] registers = new StrongBox<AssemblyExpr.Register.RegisterName>[6];
+        StrongBox<AssemblyExpr.Register.RegisterName>?[] registers = new StrongBox<AssemblyExpr.Register.RegisterName>[InstructionUtils.storageRegisters.Length];
 
-        public AssemblyExpr.Register?[] paramRegisters = new AssemblyExpr.Register[6];
+        public AssemblyExpr.Register?[] paramRegisters = new AssemblyExpr.Register[InstructionUtils.paramRegister.Length];
 
         public FunctionPushPreserved fncPushPreserved;
 
@@ -35,7 +36,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         {
             if (registers[idx] == null)
             {
-                registers[idx] = new(InstructionUtils.storageRegisters[idx]);
+                registers[idx] = new(InstructionUtils.storageRegisters[idx].Name);
             }
             registerStates[idx].SetState(RegisterState.RegisterStates.Used);
 
@@ -44,7 +45,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         public AssemblyExpr.Register NextRegister(AssemblyExpr.Register.RegisterSize size)
         {
-            if (RegisterIdx != 0)
+            if (!InstructionUtils.storageRegisters[RegisterIdx].IsScratchRegister)
             {
                 fncPushPreserved.IncludeRegister(RegisterIdx);
             }
@@ -59,49 +60,49 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         {
             if (registerStates[RegisterIdx].HasState(RegisterState.RegisterStates.Free))
             {
-                registers[RegisterIdx] = new(InstructionUtils.storageRegisters[RegisterIdx]);
+                registers[RegisterIdx] = new(InstructionUtils.storageRegisters[RegisterIdx].Name);
             }
             return new AssemblyExpr.Register(registers[RegisterIdx], size);
         }
 
         public void SavePreservedRegistersBeforeCall(CodeGen assembler)
         {
-            int i = 0;
-            if (registerStates[i].HasState(RegisterState.RegisterStates.Free))
+            for (int i = 0; i < InstructionUtils.ScratchRegisterCount; i++)
             {
-                return;
+                if (registerStates[i].HasState(RegisterState.RegisterStates.Free))
+                {
+                    continue;
+                }
+
+                int newIdx = InstructionUtils.ScratchRegisterCount;
+                while (!registerStates[newIdx].HasState(RegisterState.RegisterStates.Free)) { newIdx++; }
+
+                _ReserveRegister(assembler, i, newIdx);
             }
-
-            int newIdx = RegisterIdx;
-            while (!registerStates[newIdx].HasState(RegisterState.RegisterStates.Free)) { newIdx++; }
-            fncPushPreserved.IncludeRegister(newIdx);
-
-            registers[i].Value = InstructionUtils.storageRegisters[newIdx];
-            assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, GetRegister(newIdx, AssemblyExpr.Register.RegisterSize._64Bits), new AssemblyExpr.Register(InstructionUtils.storageRegisters[i], AssemblyExpr.Register.RegisterSize._64Bits)));
-            registers[i] = null;
-
-            registerStates[newIdx].SetState(registerStates[i]);
-            registerStates[i].SetState(RegisterState.RegisterStates.Free);
         }
 
-        public void ReserveRegister(CodeGen assembler, int i = 0)
+        public void ReserveRegister(CodeGen assembler, int i) =>
+            _ReserveRegister(assembler, i, RegisterIdx);
+
+        private void _ReserveRegister(CodeGen assembler, int i, int newIdx)
         {
             if (registerStates[i].HasState(RegisterState.RegisterStates.Free))
             {
                 return;
             }
 
-            int newIdx = RegisterIdx;
-
-            if (registerStates[i].HasState(RegisterState.RegisterStates.Needed))
+            if (!InstructionUtils.storageRegisters[newIdx].IsScratchRegister)
             {
-                assembler.assembly.text.Insert(preservedRegisterInfo[i].idx, new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, GetRegister(newIdx, preservedRegisterInfo[i].neededSize), new AssemblyExpr.Register(InstructionUtils.storageRegisters[i], preservedRegisterInfo[i].neededSize)));
-                registerStates[i].RemoveState(RegisterState.RegisterStates.Needed);
+                fncPushPreserved.IncludeRegister(newIdx);
             }
 
-            registers[newIdx] = registers[i]; 
-            registers[newIdx].Value = InstructionUtils.storageRegisters[newIdx];
-            fncPushPreserved.IncludeRegister(newIdx);
+            registers[newIdx] = registers[i];
+            if (registerStates[i].HasState(RegisterState.RegisterStates.Needed))
+            {
+                assembler.assembly.text.Insert(preservedRegisterInfo[i].idx, new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, GetRegister(newIdx, preservedRegisterInfo[i].neededSize), new AssemblyExpr.Register(InstructionUtils.storageRegisters[i].Name, preservedRegisterInfo[i].neededSize)));
+                registerStates[i].RemoveState(RegisterState.RegisterStates.Needed);
+            }
+            registers[newIdx].Value = InstructionUtils.storageRegisters[newIdx].Name;
             registerStates[newIdx].SetState(registerStates[i]);
 
             Free(i, true);
@@ -118,11 +119,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             return (paramRegisters[i] = new AssemblyExpr.Register(InstructionUtils.paramRegister[i], size));
         }
 
-        public AssemblyExpr.Register CallAlloc(AssemblyExpr.Register.RegisterSize size, CodeGen codeGen)
+        public AssemblyExpr.Register NeededAlloc(AssemblyExpr.Register.RegisterSize size, CodeGen codeGen, int i = 0)
         {
-            (preservedRegisterInfo[0].neededSize, preservedRegisterInfo[0].idx) = (size, codeGen.assembly.text.Count);
-            registerStates[0].SetState(RegisterState.RegisterStates.Needed);
-            return GetRegister(0, size);
+            (preservedRegisterInfo[i].neededSize, preservedRegisterInfo[i].idx) = (size, codeGen.assembly.text.Count);
+            registerStates[i].SetState(RegisterState.RegisterStates.Needed);
+            return GetRegister(i, size);
         }
 
         public void Lock(AssemblyExpr.Register register) => Lock(NameToIdx(register.Name));
@@ -143,7 +144,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         }
 
         public int NameToIdx(AssemblyExpr.Register.RegisterName name) => 
-            Array.IndexOf(InstructionUtils.storageRegisters, name);
+            Array.IndexOf(InstructionUtils.storageRegisters.Select(x => x.Name).ToArray(), name);
 
         public void FreeParameter(int i, AssemblyExpr.Register? localParam, CodeGen assembler)
         {

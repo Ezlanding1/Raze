@@ -225,90 +225,65 @@ internal partial class AssemblyOps
         {
             if (HandleOperand1Unsafe(instruction, assemblyOps) is not AssemblyExpr.RegisterPointer rp || rp.GetRegister().Name != AssemblyExpr.Register.RegisterName.RAX)
             {
-                assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler);
+                assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler, 0);
             }
             assemblyOps.count--;
 
             var operand1 = HandleOperand1(instruction, assemblyOps).NonPointer(assemblyOps.assembler);
-
             var operand2 = HandleOperand2Unsafe(instruction, operand1, assemblyOps).NonLiteral(assemblyOps.assembler);
 
-            AssemblyExpr.Instruction emitOp;
-            switch (instruction.instruction.instruction)
+            var emitOp = instruction.instruction.instruction switch
             {
-                case AssemblyExpr.Instruction.IDIV:
-                case AssemblyExpr.Instruction.DIV:
-                    emitOp = instruction.instruction.instruction;
-                    break;
-                case AssemblyExpr.Instruction.MOD:
-                    emitOp = AssemblyExpr.Instruction.DIV;
-                    break;
-                case AssemblyExpr.Instruction.IMOD:
-                    emitOp = AssemblyExpr.Instruction.IDIV;
-                    break;
-                default:
-                    throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Impossible instruction in IDIV_DIV_IMOD_MOD"));
-            }
+                AssemblyExpr.Instruction.IDIV or AssemblyExpr.Instruction.DIV => instruction.instruction.instruction,
+                AssemblyExpr.Instruction.MOD => AssemblyExpr.Instruction.DIV,
+                AssemblyExpr.Instruction.IMOD => AssemblyExpr.Instruction.IDIV,
+                _ => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Impossible instruction in IDIV_DIV_IMOD_MOD")),
+            };
+
             var rax = assemblyOps.assembler.alloc.GetRegister(0, operand1.Size);
-            var rdx = new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDX, operand1.Size);
+            assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler, 2);
+            var rdx = assemblyOps.assembler.alloc.GetRegister(2, operand1.Size);
 
-            AssemblyExpr.Register paramStoreReg = null;
-
-            if (assemblyOps.assembler.alloc.paramRegisters[2] == null)
+            if (!(operand1.IsRegister() && ((AssemblyExpr.Register)operand1).Name == AssemblyExpr.Register.RegisterName.RAX))
             {
-                if (!(operand1.IsRegister() && ((AssemblyExpr.Register)operand1).Name == AssemblyExpr.Register.RegisterName.RAX))
-                {
-                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, operand1));
-                }
-                assemblyOps.assembler.alloc.NullReg(0);
-
-                assemblyOps.assembler.Emit(emitOp == AssemblyExpr.Instruction.DIV ? new AssemblyExpr.Binary(AssemblyExpr.Instruction.XOR, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDX, operand1.Size), new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDX, operand1.Size)) : new AssemblyExpr.Zero(AssemblyExpr.Instruction.CDQ));
-                assemblyOps.assembler.Emit(new AssemblyExpr.Unary(emitOp, operand2));
+                assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, operand1));
             }
-            else
-            {
-                paramStoreReg = assemblyOps.assembler.alloc.NextRegister(assemblyOps.assembler.alloc.paramRegisters[2].Size);
-                assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, paramStoreReg, assemblyOps.assembler.alloc.paramRegisters[2]));
 
-                if (!(operand1.IsRegister() && ((AssemblyExpr.Register)operand1).Name == AssemblyExpr.Register.RegisterName.RAX))
-                {
-                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, operand1));
-                }
-                assemblyOps.assembler.alloc.NullReg(0);
+            assemblyOps.assembler.Emit(emitOp == AssemblyExpr.Instruction.DIV ? 
+                new AssemblyExpr.Binary(AssemblyExpr.Instruction.XOR, rdx, rdx) : 
+                new AssemblyExpr.Zero(AssemblyExpr.Instruction.CDQ)
+            );
 
-                assemblyOps.assembler.Emit(emitOp == AssemblyExpr.Instruction.DIV ? new AssemblyExpr.Binary(AssemblyExpr.Instruction.XOR, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDX, operand1.Size), new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDX, operand1.Size)) : new AssemblyExpr.Zero(AssemblyExpr.Instruction.CDQ));
-                assemblyOps.assembler.Emit(new AssemblyExpr.Unary(emitOp, operand2));
+            assemblyOps.assembler.Emit(new AssemblyExpr.Unary(emitOp, operand2));
 
-            }
+            assemblyOps.assembler.alloc.NullReg(0);
+            assemblyOps.assembler.alloc.NullReg(2);
 
             if (instruction.returns && assemblyOps.assembler is InlinedCodeGen inlinedAssembler)
             {
                 if (instruction.instruction.instruction == AssemblyExpr.Instruction.IDIV || instruction.instruction.instruction == AssemblyExpr.Instruction.DIV)
                 {
+                    assemblyOps.assembler.alloc.FreeRegister(rdx);
                     if (inlinedAssembler.inlineState.inline)
                     {
                         var ret = assemblyOps.assembler.alloc.GetRegister(0, rax.Size);
                         ((InlinedCodeGen.InlineStateInlined)inlinedAssembler.inlineState).callee = ret;
                         inlinedAssembler.LockOperand(ret);
                     }
+                    assemblyOps.assembler.alloc.NeededAlloc(operand1.Size, assemblyOps.assembler);
                 }
                 else
                 {
                     assemblyOps.assembler.alloc.FreeRegister(rax);
-                    var reg = assemblyOps.assembler.alloc.NextRegister(rdx.Size);
-                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, reg, rdx));
+
                     if (inlinedAssembler.inlineState.inline)
                     {
-                        ((InlinedCodeGen.InlineStateInlined)inlinedAssembler.inlineState).callee = reg;
-                        inlinedAssembler.LockOperand(reg);
+                        var ret = assemblyOps.assembler.alloc.GetRegister(2, rdx.Size);
+                        ((InlinedCodeGen.InlineStateInlined)inlinedAssembler.inlineState).callee = ret;
+                        inlinedAssembler.LockOperand(ret);
                     }
+                    assemblyOps.assembler.alloc.NeededAlloc(operand1.Size, assemblyOps.assembler, 2);
                 }
-            }
-
-            if (paramStoreReg != null)
-            {
-                assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, assemblyOps.assembler.alloc.paramRegisters[2], paramStoreReg));
-                assemblyOps.assembler.alloc.FreeRegister(paramStoreReg);
             }
 
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst))
@@ -316,8 +291,6 @@ internal partial class AssemblyOps
 
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))
                 assemblyOps.assembler.alloc.Free(operand2);
-
-            assemblyOps.assembler.alloc.CallAlloc(operand1.Size, assemblyOps.assembler);
         }
 
         public static void CMP(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
