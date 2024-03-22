@@ -50,53 +50,34 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     public virtual AssemblyExpr.Value? VisitBinaryExpr(Expr.Binary expr)
     {
-        var localParams = new AssemblyExpr.Register?[2];
-
-        AssemblyExpr.Value operand1 = expr.left.Accept(this)
-            .IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)expr.internalFunction.parameters[0].stack.size);
-
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.AllocParam(0, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[0].stack.size), localParams, this), operand1));
-
-        alloc.Free(operand1);
-
-        AssemblyExpr.Value operand2 = expr.right.Accept(this)
-            .IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)expr.internalFunction.parameters[1].stack.size);
-
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.AllocParam(1, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[1].stack.size), localParams, this), operand2));
-
-        alloc.Free(operand2);
-
-        alloc.SavePreservedRegistersBeforeCall(this);
-
-        EmitCall(new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL, new AssemblyExpr.ProcedureRef(ToMangledName(expr.internalFunction))));
-
-        for (int i = 0; i < 2; i++)
-        {
-            alloc.FreeParameter(i, localParams[i], this);
-        }
-
-        return alloc.NeededAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnType.type.allocSize), this);
+        return HandleICall(expr);
     }
 
     public virtual AssemblyExpr.Value? VisitCallExpr(Expr.Call expr)
     {
-        bool instance = !expr.internalFunction.modifiers["static"];
+        return HandleICall(expr);
+    }
 
-        var localParams = new AssemblyExpr.Register?[Math.Min(expr.arguments.Count + Convert.ToInt16(instance), 6)];
+    private AssemblyExpr.Value HandleICall(Expr.ICall iCall) 
+    {
+        bool instance = !iCall.InternalFunction.modifiers["static"];
+
+        var localParams = new AssemblyExpr.Register?[Math.Min(iCall.Arguments.Count + Convert.ToInt16(instance), 6)];
 
         if (instance)
         {
-            if (!expr.constructor)
+            var call = (Expr.Call)iCall;
+            if (!call.constructor)
             {
-                if (expr.callee != null)
+                if (call.callee != null)
                 {
-                    var callee = expr.callee.Accept(this);
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.AllocParam(0, InstructionUtils.ToRegisterSize(expr.callee.GetLastSize()), localParams, this), callee));
+                    var callee = call.callee.Accept(this);
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.AllocParam(0, InstructionUtils.ToRegisterSize(call.callee.GetLastSize()), localParams, this), callee));
                     alloc.Free(callee);
                 }
                 else
                 {
-                    var enclosing = SymbolTableSingleton.SymbolTable.NearestEnclosingClass(expr.internalFunction);
+                    var enclosing = SymbolTableSingleton.SymbolTable.NearestEnclosingClass(call.internalFunction);
                     var size = enclosing.allocSize;
                     Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.AllocParam(0, InstructionUtils.ToRegisterSize(size), localParams, this), new AssemblyExpr.Pointer(8, size)));
                 }
@@ -107,20 +88,20 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             }
         }
 
-        for (int i = 0; i < expr.arguments.Count; i++)
+        for (int i = 0; i < iCall.Arguments.Count; i++)
         {
-            AssemblyExpr.Value arg = expr.arguments[i].Accept(this)
-                .IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)expr.internalFunction.parameters[i].stack.size);
+            AssemblyExpr.Value arg = iCall.Arguments[i].Accept(this)
+                .IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)iCall.InternalFunction.parameters[i].stack.size);
 
             if (i + Convert.ToUInt16(instance) < InstructionUtils.paramRegister.Length)
             {
-                if (expr.internalFunction.parameters[i].modifiers["ref"])
+                if (iCall.InternalFunction.parameters[i].modifiers["ref"])
                 {
                     Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, alloc.AllocParam(Convert.ToInt16(instance) + i, InstructionUtils.SYS_SIZE, localParams, this), arg));
                 }
                 else
                 {
-                    var paramReg = alloc.AllocParam(Convert.ToInt16(instance) + i, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[i].stack.size), localParams, this);
+                    var paramReg = alloc.AllocParam(Convert.ToInt16(instance) + i, InstructionUtils.ToRegisterSize(iCall.InternalFunction.parameters[i].stack.size), localParams, this);
 
                     if (!(arg.IsRegister() && HandleSeteOptimization((AssemblyExpr.Register)arg, paramReg)))
                     {
@@ -130,7 +111,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             }
             else
             {
-                if (expr.internalFunction.parameters[i].modifiers["ref"])
+                if (iCall.InternalFunction.parameters[i].modifiers["ref"])
                 {
                     AssemblyExpr.Register refRegister;
                     Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, (refRegister = alloc.NextRegister(InstructionUtils.SYS_SIZE)), arg));
@@ -148,7 +129,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         alloc.SavePreservedRegistersBeforeCall(this);
 
-        EmitCall(new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL, new AssemblyExpr.ProcedureRef(ToMangledName(expr.internalFunction))));
+        EmitCall(new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL, new AssemblyExpr.ProcedureRef(ToMangledName(iCall.InternalFunction))));
 
         if (instance)
         {
@@ -160,12 +141,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         }
 
 
-        if (expr.arguments.Count > InstructionUtils.paramRegister.Length && alloc.fncPushPreserved.leaf)
+        if (iCall.Arguments.Count > InstructionUtils.paramRegister.Length && alloc.fncPushPreserved.leaf)
         {
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.ADD, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes((expr.arguments.Count - InstructionUtils.paramRegister.Length) * 8))));
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.ADD, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes((iCall.Arguments.Count - InstructionUtils.paramRegister.Length) * 8))));
         }
-        
-        return alloc.NeededAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnType.type.allocSize), this);
+
+        return alloc.NeededAlloc(InstructionUtils.ToRegisterSize(iCall.InternalFunction._returnType.type.allocSize), this);
     }
 
     public AssemblyExpr.Value? VisitClassExpr(Expr.Class expr)
@@ -548,22 +529,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     public virtual AssemblyExpr.Value? VisitUnaryExpr(Expr.Unary expr)
     {
-        AssemblyExpr.Register?[] localParam = new AssemblyExpr.Register[1];
-
-        AssemblyExpr.Value operand = expr.operand.Accept(this)
-            .IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)expr.internalFunction.parameters[0].stack.size);
-
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.AllocParam(0, InstructionUtils.ToRegisterSize(expr.internalFunction.parameters[0].stack.size), localParam, this), operand));
-
-        alloc.Free(operand);
-
-        alloc.FreeParameter(0, localParam[0], this);
-
-        alloc.SavePreservedRegistersBeforeCall(this);
-
-        EmitCall(new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL, new AssemblyExpr.ProcedureRef(ToMangledName(expr.internalFunction))));
-
-        return alloc.NeededAlloc(InstructionUtils.ToRegisterSize(expr.internalFunction._returnType.type.allocSize), this);
+        return HandleICall(expr);
     }
 
     public AssemblyExpr.Value? VisitIfExpr(Expr.If expr)
