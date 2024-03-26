@@ -42,8 +42,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
     {
         foreach (Expr expr in expressions)
         {
-            expr.Accept(this);
-            alloc.FreeAll();
+            alloc.Free(expr.Accept(this));
         }
         return assembly;
     }
@@ -84,7 +83,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             }
             else
             {
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(InstructionUtils.paramRegister[0], InstructionUtils.SYS_SIZE), new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RBX, InstructionUtils.SYS_SIZE)));
+                var rbx = alloc.GetRegister(alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RBX), InstructionUtils.SYS_SIZE);
+                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(InstructionUtils.paramRegister[0], InstructionUtils.SYS_SIZE), rbx));
             }
         }
 
@@ -647,8 +647,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         alloc.CreateBlock();
         foreach (Expr blockExpr in expr.block)
         {
-            blockExpr.Accept(this);
-            alloc.FreeAll();
+            alloc.Free(blockExpr.Accept(this));
         }
         alloc.RemoveBlock();
         return null;
@@ -773,8 +772,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
     public AssemblyExpr.Value? VisitNewExpr(Expr.New expr)
     {
         // either dealloc on exit (handled by OS), require manual delete, or implement GC
-
+        alloc.ReserveRegister(this, 0);
         var rax = alloc.GetRegister(alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RAX), AssemblyExpr.Register.RegisterSize._64Bits);
+        alloc.ReserveRegister(this, 9);
         var rbx = alloc.GetRegister(alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RBX), AssemblyExpr.Register.RegisterSize._64Bits);
         alloc.fncPushPreserved.IncludeRegister(alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RBX));
 
@@ -790,15 +790,13 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits), ptr));
         Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 12 })));
         Emit(new AssemblyExpr.Zero(AssemblyExpr.Instruction.SYSCALL));
-           
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, rbx));
+
+        //Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, rbx));
         // }
 
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rbx, rax));
-
         alloc.FreeRegister(rax);
-        expr.call.Accept(this);
-        return new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RBX, AssemblyExpr.Register.RegisterSize._64Bits);
+        alloc.Free(expr.call.Accept(this));
+        return rbx;
     }
 
     public AssemblyExpr.Value? VisitIsExpr(Expr.Is expr)

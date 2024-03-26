@@ -134,12 +134,13 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         public bool IsLocked(int idx) => registerStates[idx].HasState(RegisterState.RegisterStates.Locked);
 
-        public void ListAccept<T, T2>(List<T> list, Expr.IVisitor<T2> visitor) where T : Expr
+        public void ListAccept<T, T2>(List<T> list, Expr.IVisitor<T2> visitor)
+            where T : Expr
+            where T2 : AssemblyExpr.Value
         {
             foreach (var expr in list)
             {
-                expr.Accept(visitor);
-                FreeAll();
+                Free(expr.Accept(visitor));
             }
         }
 
@@ -196,14 +197,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             }
             registers[idx] = null;
             registerStates[idx].SetState(RegisterState.RegisterStates.Free);
-        }
-
-        public void FreeAll(bool force = true)
-        {
-            for (int i = 0; i < registers.Length; i++)
-            {
-                Free(i, force);
-            }
         }
 
         public RegisterState? SaveRegisterState(AssemblyExpr.RegisterPointer? registerPointer) 
