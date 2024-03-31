@@ -53,8 +53,67 @@ public class Parser
         return expressions;
     }
 
-    private Expr Start()
+    private Expr Start() => Import();
+
+    private Expr Import()
     {
+        if (ReservedValueMatch("import"))
+        {
+            int idx = index;
+
+            while (TypeMatch(Token.TokenType.IDENTIFIER, Token.TokenType.DOT, Token.TokenType.DIVIDE, Token.TokenType.MULTIPLY))
+            {
+                if (IsAtEnd())
+                {
+                    End();
+                    return new Expr.InvalidExpr();
+                }
+            }
+            bool fromStmt = current.lexeme == "from";
+
+            index = idx-1;
+            Advance();
+
+            Expr.TypeReference? importRef = null;
+            string fileName = "";
+            bool importAll = false;
+
+            if (fromStmt)
+            {
+                if (TypeMatch(Token.TokenType.MULTIPLY))
+                {
+                    importAll = true;
+                }
+                else if (Expect(Token.TokenType.IDENTIFIER, "type reference name"))
+                {
+                    importRef = new(new());
+                    importRef.typeName.Enqueue(Previous());
+
+                    while (TypeMatch(Token.TokenType.DOT) && current.type != Token.TokenType.MULTIPLY)
+                    {
+                        Expect(Token.TokenType.IDENTIFIER, "variable name after '.'");
+                        importRef.typeName.Enqueue(Previous());
+                    }
+                    importAll = TypeMatch(Token.TokenType.MULTIPLY);
+                }
+                Advance();
+
+            }
+            else
+            {
+                importAll = true;
+            }
+
+            while (TypeMatch(Token.TokenType.IDENTIFIER, Token.TokenType.DOT, Token.TokenType.DIVIDE))
+            {
+                fileName += Previous().lexeme;
+            }
+
+            Expect(Token.TokenType.SEMICOLON, "';' after expression");
+
+            return new Expr.Import(new FileInfo(fileName), new Expr.Import.ImportPath(importRef, importAll));
+        }
+
         return Definition();
     }
 

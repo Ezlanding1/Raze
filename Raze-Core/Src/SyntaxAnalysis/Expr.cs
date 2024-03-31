@@ -45,6 +45,7 @@ public abstract class Expr
         public T VisitKeywordExpr(Keyword expr);
         public T VisitNewExpr(New expr);
         public T VisitIsExpr(Is expr);
+        public T VisitImportExpr(Import expr);
         public T VisitNoOpExpr(NoOp expr);
     }
 
@@ -774,7 +775,30 @@ public abstract class Expr
             return visitor.VisitIsExpr(this);
         }
     }
-    
+
+    public class Import : Expr
+    {
+        internal FileInfo fileInfo;
+        internal ImportPath importPath;
+        
+        internal Import(FileInfo fileInfo, ImportPath importPath)
+        {
+            this.fileInfo = fileInfo;
+            this.importPath = importPath;
+        }
+
+        public override T Accept<T>(IVisitor<T> visitor)
+        {
+            return visitor.VisitImportExpr(this);
+        }
+
+        internal class ImportPath(TypeReference? typeRef, bool importAll)
+        {
+            internal TypeReference? typeRef = typeRef;
+            internal bool importAll = importAll;
+        }
+    }
+
     public abstract class NoOp : Expr
     {
         public override T Accept<T>(IVisitor<T> visitor)
