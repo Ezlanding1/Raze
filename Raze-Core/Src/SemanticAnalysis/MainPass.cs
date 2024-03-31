@@ -18,7 +18,7 @@ public partial class Analyzer
             {
                 Expr.Type result = expr.Accept(this);
 
-                if (!Primitives.IsVoidType(result) && !callReturn)
+                if (CanBeReturned(result))
                 {
                     Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.ExpressionWithNonNullReturn, result));
                 }
@@ -38,7 +38,7 @@ public partial class Analyzer
             {
                 Expr.Type result = blockExpr.Accept(this);
 
-                if (!Primitives.IsVoidType(result) && !callReturn)
+                if (CanBeReturned(result))
                 {
                     Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.ExpressionWithNonNullReturn, result));
                 }
@@ -441,14 +441,14 @@ public partial class Analyzer
         public override Expr.Type VisitForExpr(Expr.For expr)
         {
             var result = expr.initExpr.Accept(this);
-            if (!Primitives.IsVoidType(result) && !callReturn)
+            if (CanBeReturned(result))
             {
                 Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.ExpressionWithNonNullReturn, result));
             }
             callReturn = false;
 
             result = expr.updateExpr.Accept(this);
-            if (!Primitives.IsVoidType(result) && !callReturn)
+            if (CanBeReturned(result))
             {
                 Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.ExpressionWithNonNullReturn, result));
             }
@@ -480,5 +480,7 @@ public partial class Analyzer
         {
             return TypeCheckUtils.anyType;
         }
+
+        public bool CanBeReturned(Expr.Type type) => !Primitives.IsVoidType(type) && type != TypeCheckUtils.anyType && !callReturn;
     }
 }

@@ -55,10 +55,12 @@ public class Parser
 
     private Expr Start()
     {
-        return Definition();
+        Expr expr = Definition();
+        SymbolTableSingleton.SymbolTable.AddGlobal(expr as Expr.Definition);
+        return expr;
     }
 
-    private Expr.Definition? _Definition()
+    private Expr Definition()
     {
         if (ReservedValueMatch("function", "class", "primitive"))
         {
@@ -72,19 +74,20 @@ public class Parser
                     modifiers[current.lexeme] = true;
                     Advance();
                 }
+                if (IsAtEnd()) return new Expr.InvalidExpr();
 
                 Expr.TypeReference _return = new(null);
 
                 Expect(Token.TokenType.IDENTIFIER, definitionType.lexeme + " name");
 
-                if (IsAtEnd()) return null;
+                if (IsAtEnd()) return new Expr.InvalidExpr();
 
                 if (current.type == Token.TokenType.DOT || current.type == Token.TokenType.IDENTIFIER)
                 {
                     _return.typeName = GetTypeReference();
 
                     if (!Expect(Token.TokenType.IDENTIFIER, definitionType.lexeme + " name"))
-                        return null;
+                        return new Expr.InvalidExpr();
                 }
 
                 Token name = Previous();
@@ -158,8 +161,7 @@ public class Parser
                     }
                     else if (!IsAtEnd())
                     {
-                        Expr.Definition? definitionExpr = _Definition();
-                        if (definitionExpr != null)
+                        if (Definition() is Expr.Definition definitionExpr)
                         {
                             definitions.Add(definitionExpr);
                         }
@@ -228,7 +230,7 @@ public class Parser
                 Expect(Token.TokenType.LBRACE, "'{' before primitive class body");
                 while (!TypeMatch(Token.TokenType.RBRACE))
                 {
-                    Expr.Definition? bodyExpr = _Definition();
+                    Expr.Definition? bodyExpr = Definition() as Expr.Definition;
                     if (bodyExpr != null)
                     {
                         definitions.Add(bodyExpr);
@@ -248,22 +250,17 @@ public class Parser
                 return new Expr.Primitive(name, definitions, size, superclassName);
             }
         }
-        return null;
+        return Entity(true);
     }
 
-    private Expr Definition()
-    {
-        return SymbolTableSingleton.SymbolTable.AddGlobal(_Definition()) ??  Entity() ?? InvalidTopLevelCode();
-    }
-
-    private Expr? Entity()
+    private Expr Entity(bool topLevel)
     {
         if (ReservedValueMatch("asm"))
         {
             var instructions = GetAsmInstructions();
             return new Expr.Assembly(instructions.Item1, instructions.Item2);
         }
-        return null;
+        return topLevel ? InvalidTopLevelCode() : Conditional();
     }
 
     private Expr InvalidTopLevelCode()
@@ -277,7 +274,7 @@ public class Parser
         return Conditional();
     }
 
-    private Expr NonTopLevelStart() => Entity() ?? Conditional();
+    private Expr NonTopLevelStart() => Entity(false);
 
     private Expr Conditional()
     {
@@ -572,7 +569,6 @@ public class Parser
                 return new Expr.New(newCallExpr);
             }
         }
-
         End();
         Advance();
         return new Expr.InvalidExpr();
@@ -684,7 +680,7 @@ public class Parser
 
     private void End()
     {
-        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.ExpressionReachedUnexpectedEnd, current?.lexeme));
+        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.ExpressionReachedUnexpectedEnd, (current == null)? Previous().lexeme : current.lexeme));
     }
 
     private List<Expr> GetArgs()
@@ -1044,7 +1040,7 @@ public class Parser
     private void Advance()
     {
         index++;
-        if (!IsAtEnd())
+        if (!(index >= tokens.Count || index < 0))
         {
             current = tokens[index];
             return;
@@ -1053,8 +1049,5 @@ public class Parser
     }
     private void MovePrevious() => current = tokens[--index];
 
-    private bool IsAtEnd()
-    {
-        return (index >= tokens.Count || index < 0);
-    }
+    private bool IsAtEnd() => current == null;
 }

@@ -782,7 +782,6 @@ public abstract class Expr
             return visitor.VisitNoOpExpr(this);
         }
     }
-
     public class InvalidExpr : NoOp { }
     public class SynchronizationExpr : NoOp { }
 }

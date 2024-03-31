@@ -303,13 +303,10 @@ public partial class Analyzer
 
         public bool CurrentIsTop() => current == null;
 
-        public Expr.Definition? AddGlobal(Expr.Definition definition)
+        public void AddGlobal(Expr.Definition? definition)
         {
-            if (definition != null) 
-            {
+            if (definition is not null) 
                 globals.Add(definition);
-            }
-            return definition;
         }
 
         public void CheckGlobals() { CheckDuplicates(globals); }
