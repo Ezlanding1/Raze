@@ -16,7 +16,7 @@ public partial class Analyzer
 
         public Expr.Function? main = null;
 
-        private List<Expr.Definition> globals = new();
+        public List<Expr.Definition> globals = new();
 
         private List<(Token, Expr.StackData)> locals = new();
         Stack<int> framePointer = new();
@@ -25,11 +25,70 @@ public partial class Analyzer
         private static Expr.Class ClassNotFoundDefinition = TypeCheckUtils.anyType;
         public Expr.Function FunctionNotFoundDefinition = SpecialObjects.GenerateAnyFunction();
 
+        Dictionary<string, Expr.Class> imports = new();
+        public bool isImport;
+
         public void SetContext(Expr.Definition? current)
         {
             this.current = current;
         }
 
+        public void AddImport(Expr.Import import)
+        {
+            if (!import.fileInfo.Exists)
+            {
+                Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.ImportNotFound, import.fileInfo.FullName));
+                return;
+            }
+
+            if (!imports.TryGetValue(import.fileInfo.FullName, out Expr.Class? importClass))
+            {
+                importClass = RunImport(import);
+            }
+
+            using (new SaveContext())
+            {
+                SetContext(importClass);
+                if (import.importPath.typeRef.typeName.Count != 0)
+                {
+                    InitialPass.HandleTypeNameReference(import.importPath.typeRef.typeName);
+                }
+                import.importPath.typeRef.type = (Expr.DataType)Current;
+            }
+
+            if (import.importPath.importAll)
+            {
+                foreach (Expr.Definition definition in import.importPath.typeRef.type.definitions)
+                {
+                    AddGlobal(definition);
+                }
+            }
+            else
+            {
+                AddGlobal(import.importPath.typeRef.type);
+            }
+        }
+
+        private Expr.Class RunImport(Expr.Import import)
+        {
+            using (new SaveImportData(globals, isImport, Diagnostics.file))
+            {
+                (globals, isImport, Diagnostics.file) = (new(), true, import.fileInfo);
+
+                Lexer lexer = new Lexer(import.fileInfo);
+                var tokens = lexer.Tokenize();
+
+                Parser parser = new Parser(tokens);
+                List<Expr> expressions = parser.Parse();
+
+                Analyzer analyzer = new Analyzer(expressions);
+                analyzer.Analyze();
+
+                var importClass = SpecialObjects.GenerateImportToplevelWrapper(import, expressions);
+                imports[import.fileInfo.FullName] = importClass;
+                return importClass;
+            }
+        }
 
         public void AddVariable(Token name, Expr.StackData variable)
         {

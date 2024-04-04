@@ -43,6 +43,7 @@ public abstract partial class Diagnostic
         InvalidTruncationSize,
         InvalidAssemblyRegister,
         TokenExpected,
+        ImportNotFound,
         
         // AnalyzerError
         TypeMismatch,

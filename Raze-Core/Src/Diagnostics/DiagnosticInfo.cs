@@ -43,6 +43,7 @@ public abstract partial class Diagnostic
         { DiagnosticName.InvalidTruncationSize, ("You may only truncate an assembly value to 64, 32, 16, or 8 bits. Got '{0}'", Severity.Error) },
         { DiagnosticName.InvalidAssemblyRegister, ("Invalid assembly register '{0}'", Severity.Error) },
         { DiagnosticName.TokenExpected, ("Expected token {0}. Expected {1}. Got: '{2}'", Severity.Error) },
+        { DiagnosticName.ImportNotFound, ("Import with file path '{0}' not found", Severity.Error) },
         
         // AnalyzerError
         { DiagnosticName.TypeMismatch, ("You cannot assign type '{0}' to type '{1}'", Severity.Error) },

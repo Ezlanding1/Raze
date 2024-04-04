@@ -13,6 +13,7 @@ public static class Diagnostics
     const string DiagnosticPadding = "\n\n";
     private static bool errorEncountered = false;
     public static bool debugErrors;
+    public static FileInfo file;
     
     public static void ThrowCompilerErrors()
     {

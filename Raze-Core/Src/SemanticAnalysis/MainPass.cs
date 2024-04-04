@@ -476,6 +476,9 @@ public partial class Analyzer
             return TypeCheckUtils.keywordTypes[expr.keyword];
         }
 
+        public override Expr.Type VisitImportExpr(Expr.Import expr) =>
+            TypeCheckUtils._voidType;
+
         public override Expr.Type VisitNoOpExpr(Expr.NoOp expr)
         {
             return TypeCheckUtils.anyType;

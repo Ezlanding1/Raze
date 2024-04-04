@@ -27,7 +27,10 @@ public partial class Analyzer
         Pass<Expr.Type> mainPass = new MainPass(expressions);
         mainPass.Run();
 
-        CheckMain(SymbolTableSingleton.SymbolTable.main);
+        if (!SymbolTableSingleton.SymbolTable.isImport)
+        {
+            CheckMain(SymbolTableSingleton.SymbolTable.main);
+        }
 
         // AST Optimization Pass
         Pass<object?> optimizationPass = new OptimizationPass(expressions);

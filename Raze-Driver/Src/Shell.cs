@@ -69,6 +69,7 @@ internal partial class Shell
 
     static void CompileProgram(CompileOptions compileOptions)
     {
+        Diagnostics.file = compileOptions.FileArgument;
         Diagnostics.debugErrors = compileOptions.DebugErrorsOption;
         try
         {

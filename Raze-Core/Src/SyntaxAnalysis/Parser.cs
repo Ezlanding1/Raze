@@ -74,7 +74,7 @@ public class Parser
             index = idx-1;
             Advance();
 
-            Expr.TypeReference? importRef = null;
+            Expr.TypeReference? importRef = new(new());
             string fileName = "";
             bool importAll = false;
 
@@ -86,7 +86,6 @@ public class Parser
                 }
                 else if (Expect(Token.TokenType.IDENTIFIER, "type reference name"))
                 {
-                    importRef = new(new());
                     importRef.typeName.Enqueue(Previous());
 
                     while (TypeMatch(Token.TokenType.DOT) && current.type != Token.TokenType.MULTIPLY)
@@ -99,19 +98,22 @@ public class Parser
                 Advance();
 
             }
-            else
-            {
-                importAll = true;
-            }
 
             while (TypeMatch(Token.TokenType.IDENTIFIER, Token.TokenType.DOT, Token.TokenType.DIVIDE))
             {
                 fileName += Previous().lexeme;
             }
 
+            if (!fileName.EndsWith(".rz"))
+            {
+                fileName += ".rz";
+            }
+
             Expect(Token.TokenType.SEMICOLON, "';' after expression");
 
-            return new Expr.Import(new FileInfo(fileName), new Expr.Import.ImportPath(importRef, importAll));
+            var import = new Expr.Import(new FileInfo(fileName), new Expr.Import.ImportPath(importRef, importAll));
+            SymbolTableSingleton.SymbolTable.AddImport(import);
+            return import;
         }
 
         return Definition();
