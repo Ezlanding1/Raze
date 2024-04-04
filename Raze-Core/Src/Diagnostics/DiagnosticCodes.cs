@@ -36,4 +36,11 @@ public abstract partial class Diagnostic
 		
 		return DiagnosticCodePrefix + ((int)diagnosticName).ToString(formatting);
 	}
+
+    private string GetFileNameInfo()
+    {
+        string fileNameInfo = SymbolTableSingleton.SymbolTable.isImport ? $"Import: '{Analyzer.SpecialObjects.GetImportClassName(Diagnostics.file.Name)}'\n" : "";
+        fileNameInfo += $"File: '{(Diagnostics.debugErrors? Diagnostics.file.FullName : Diagnostics.file.Name)}'";
+        return fileNameInfo;
+    }
 }
