@@ -167,6 +167,8 @@ public partial class Analyzer
             return default;
         }
 
+        public virtual T VisitImportExpr(Expr.Import expr) => default;
+
         public virtual T VisitNoOpExpr(Expr.NoOp expr) => default;
     }
 }

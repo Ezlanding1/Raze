@@ -20,7 +20,10 @@ public abstract partial class Diagnostic
         this.details = string.Format(DiagnosticInfo[name].details, info);
     }
     
-    internal string ComposeDiagnosticMessage() => GetDiagnosticHeader(this) + "\n" + GetDiagnosticMessage();
+    internal string ComposeDiagnosticMessage() => 
+        GetDiagnosticHeader(this) +  "\n" + 
+        GetDiagnosticMessage() + "\n" +
+        GetFileNameInfo();
 
     // A diagnostic raised that is impossible to reach, undefined behavior, or otherwise unexpected
     public class ImpossibleDiagnostic : Diagnostic
@@ -50,7 +53,7 @@ public abstract partial class Diagnostic
         }
 
         internal override string GetDiagnosticMessage() => 
-            $"{DiagnosticType.Impossible}{SeverityLevel}\n{details}\n{(Diagnostics.debugErrors? stackTrace : "")}";
+            $"{DiagnosticType.Impossible}{SeverityLevel}\n{details}{(Diagnostics.debugErrors? "\n" + stackTrace : "")}";
     }
 
     // A diagnostic raised during Driver ( Raze_Driver )
@@ -93,15 +96,18 @@ public abstract partial class Diagnostic
     // An diagnostic raised during Analysis ( Raze.Analyzer )
     public class AnalyzerDiagnostic : Diagnostic
     {
-        string path;
+        string path = "";
 
         public AnalyzerDiagnostic(DiagnosticName name, params object[] info) : base(name, info)
         {
-            this.path = "at:\n\t" + SymbolTableSingleton.SymbolTable.Current?.ToString();
+            if (SymbolTableSingleton.SymbolTable.Current is not null)
+            {
+                this.path = "\nat:\n\t" + SymbolTableSingleton.SymbolTable.Current.ToString();
+            }
         }
 
         internal override string GetDiagnosticMessage() =>
-            $"{DiagnosticType.Analyzer}{SeverityLevel}\n{details}\n{path}";
+            $"{DiagnosticType.Analyzer}{SeverityLevel}\n{details}{path}";
     }
 
     // An diagnostic raised during codegen ( Raze.CodeGen )

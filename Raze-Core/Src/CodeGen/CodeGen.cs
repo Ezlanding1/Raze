@@ -804,6 +804,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Boolean, expr.value == "true"? new byte[] { 1 } : new byte[] { 0 });
     }
 
+    public AssemblyExpr.Value? VisitImportExpr(Expr.Import expr)
+    {
+        expr.importPath.typeRef.type?.Accept(this);
+        return null;
+    }
+
     public AssemblyExpr.Value? VisitNoOpExpr(Expr.NoOp expr)
     {
         return new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.TMP, AssemblyExpr.Register.RegisterSize._64Bits);

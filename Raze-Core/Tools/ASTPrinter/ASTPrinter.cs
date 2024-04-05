@@ -30,7 +30,7 @@ public class ASTPrinter : Expr.IVisitor<object?>
         }
     }
 
-    private void PrintAST(Expr expr)
+    private void PrintAST(Expr? expr)
     {
         if (expr != null)
         {
@@ -267,6 +267,15 @@ public class ASTPrinter : Expr.IVisitor<object?>
         PrintAST(expr.left);
         PrintAST("is");
         PrintAST(expr.right);
+        return null;
+    }
+    
+    public object? VisitImportExpr(Expr.Import expr)
+    {
+        PrintAST("import");
+        PrintAST(expr.importPath.typeRef);
+        PrintAST("from");
+        PrintAST(expr.fileInfo.ToString());
         return null;
     }
 

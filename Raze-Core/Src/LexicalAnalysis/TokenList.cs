@@ -95,7 +95,9 @@ internal class TokenList
         "is",
         "primitive",
         "this",
-        "ref"
+        "ref",
+        "import",
+        "from"
     };
 
     /*
