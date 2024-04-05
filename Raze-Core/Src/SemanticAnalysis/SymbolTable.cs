@@ -71,7 +71,7 @@ public partial class Analyzer
 
         private Expr.Class RunImport(Expr.Import import)
         {
-            using (new SaveImportData(globals, isImport, Diagnostics.file))
+            using (new SaveImportAndSymbolTableData(globals, isImport, Diagnostics.file))
             {
                 (globals, isImport, Diagnostics.file) = (new(), true, import.fileInfo);
 

@@ -806,7 +806,10 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     public AssemblyExpr.Value? VisitImportExpr(Expr.Import expr)
     {
-        expr.importPath.typeRef.type?.Accept(this);
+        using (new SaveImportData(Diagnostics.file))
+        {
+            expr.importPath.typeRef.type?.Accept(this);
+        }
         return null;
     }
 

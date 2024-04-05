@@ -19,11 +19,10 @@ public abstract partial class Diagnostic
         this.name = name;
         this.details = string.Format(DiagnosticInfo[name].details, info);
     }
-    
-    internal string ComposeDiagnosticMessage() => 
-        GetDiagnosticHeader(this) +  "\n" + 
-        GetDiagnosticMessage() + "\n" +
-        GetFileNameInfo();
+
+    internal string ComposeDiagnosticMessage() =>
+        GetDiagnosticHeader(this) + "\n" +
+        GetDiagnosticMessage();
 
     // A diagnostic raised that is impossible to reach, undefined behavior, or otherwise unexpected
     public class ImpossibleDiagnostic : Diagnostic
@@ -79,7 +78,7 @@ public abstract partial class Diagnostic
         }
 
         internal override string GetDiagnosticMessage() => 
-            $"{DiagnosticType.Lexer}{SeverityLevel}\n{details}\nLine: {line}, Col: {col + 1}";
+            $"{DiagnosticType.Lexer}{SeverityLevel}\n{details}\nLine: {line}, Col: {col + 1}\n{GetFileNameInfo()}";
     }
 
     // An diagnostic raised during Parsing ( Raze.Parser )
@@ -90,7 +89,7 @@ public abstract partial class Diagnostic
         }
 
         internal override string GetDiagnosticMessage() => 
-            $"{DiagnosticType.Parser}{SeverityLevel}\n{details}";
+            $"{DiagnosticType.Parser}{SeverityLevel}\n{details}\n{GetFileNameInfo()}";
     }
 
     // An diagnostic raised during Analysis ( Raze.Analyzer )
@@ -107,7 +106,7 @@ public abstract partial class Diagnostic
         }
 
         internal override string GetDiagnosticMessage() =>
-            $"{DiagnosticType.Analyzer}{SeverityLevel}\n{details}{path}";
+            $"{DiagnosticType.Analyzer}{SeverityLevel}\n{details}{path}\n{GetFileNameInfo()}";
     }
 
     // An diagnostic raised during codegen ( Raze.CodeGen )
@@ -118,6 +117,6 @@ public abstract partial class Diagnostic
         }
 
         internal override string GetDiagnosticMessage() =>
-            $"{DiagnosticType.Backend}{SeverityLevel}\n{details}";
+            $"{DiagnosticType.Backend}{SeverityLevel}\n{details}\n{GetFileNameInfo()}";
     }
 }

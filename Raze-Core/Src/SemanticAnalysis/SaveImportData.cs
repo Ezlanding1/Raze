@@ -6,16 +6,25 @@ using System.Threading.Tasks;
 
 namespace Raze;
 
-internal class SaveImportData(List<Expr.Definition> globals, bool isImport, FileInfo fileInfo) : IDisposable
+internal class SaveImportData(FileInfo fileInfo) : IDisposable
+{
+    FileInfo fileInfo = fileInfo;
+
+    public virtual void Dispose()
+    {
+        Diagnostics.file = fileInfo;
+    }
+}
+
+internal class SaveImportAndSymbolTableData(List<Expr.Definition> globals, bool isImport, FileInfo fileInfo) : SaveImportData(fileInfo)
 {
     private List<Expr.Definition> globals = globals;
     public bool isImport = isImport;
-    FileInfo fileInfo = fileInfo;
 
-    public void Dispose()
+    public override void Dispose()
     {
-        SymbolTableSingleton.SymbolTable.globals = globals;
         SymbolTableSingleton.SymbolTable.isImport = isImport;
-        Diagnostics.file = fileInfo;
+        SymbolTableSingleton.SymbolTable.globals = globals;
+        base.Dispose();
     }
 }
