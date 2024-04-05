@@ -808,7 +808,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
     {
         using (new SaveImportData(Diagnostics.file))
         {
-            expr.importPath.typeRef.type?.Accept(this);
+            expr.importType.typeRef.type?.Accept(this);
         }
         return null;
     }

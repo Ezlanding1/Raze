@@ -273,7 +273,7 @@ public class ASTPrinter : Expr.IVisitor<object?>
     public object? VisitImportExpr(Expr.Import expr)
     {
         PrintAST("import");
-        PrintAST(expr.importPath.typeRef);
+        PrintAST(expr.importType.typeRef);
         PrintAST("from");
         PrintAST(expr.fileInfo.ToString());
         return null;

@@ -99,8 +99,10 @@ public class Parser
 
             }
 
+            bool customPath = false;
             while (TypeMatch(Token.TokenType.IDENTIFIER, Token.TokenType.DOT, Token.TokenType.DIVIDE))
             {
+                if (Previous().type == Token.TokenType.DIVIDE) customPath = true;
                 fileName += Previous().lexeme;
             }
 
@@ -111,7 +113,7 @@ public class Parser
 
             Expect(Token.TokenType.SEMICOLON, "';' after expression");
 
-            var import = new Expr.Import(new FileInfo(fileName), new Expr.Import.ImportPath(importRef, importAll));
+            var import = new Expr.Import(new FileInfo(fileName), customPath, new Expr.Import.ImportType(importRef, importAll));
             SymbolTableSingleton.SymbolTable.AddImport(import);
             return import;
         }

@@ -47,6 +47,14 @@ internal partial class Shell
         outputOption.SetDefaultValue("output.elf");
         outputOption.AddAlias("-o");
 
+        var libraryOption = new Option<string[]?>(
+            name: "--library",
+            description: "Path to libraries",
+            getDefaultValue: () => null
+        )
+        { AllowMultipleArgumentsPerToken = true, Arity = ArgumentArity.ZeroOrMore };
+        libraryOption.AddAlias("-l");
+
         return new()
         {
             FileArgument = fileArgument,
@@ -60,7 +68,8 @@ internal partial class Shell
             DryRunOption = dryRunOption,
             Architecture = GenerateSystemInfoOption("--sysinfo-architecture", "Target CPU architecture"),
             Osabi = GenerateSystemInfoOption("--sysinfo-osabi", "Target OS ABI"),
-            BitFormat = GenerateSystemInfoOption("--sysinfo-bitformat", "Target bit format")
+            BitFormat = GenerateSystemInfoOption("--sysinfo-bitformat", "Target bit format"),
+            LibraryOption = libraryOption
         };
     }
 

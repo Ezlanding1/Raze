@@ -14,6 +14,7 @@ public static class Diagnostics
     private static bool errorEncountered = false;
     public static bool debugErrors;
     public static FileInfo file;
+    public static List<DirectoryInfo> importDirs;
     
     public static void ThrowCompilerErrors()
     {

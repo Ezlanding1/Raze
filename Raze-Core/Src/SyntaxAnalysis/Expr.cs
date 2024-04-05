@@ -779,12 +779,14 @@ public abstract class Expr
     public class Import : Expr
     {
         internal FileInfo fileInfo;
-        internal ImportPath importPath;
+        internal bool customPath;
+        internal ImportType importType;
         
-        internal Import(FileInfo fileInfo, ImportPath importPath)
+        internal Import(FileInfo fileInfo, bool customPath, ImportType importType)
         {
             this.fileInfo = fileInfo;
-            this.importPath = importPath;
+            this.customPath = customPath;
+            this.importType = importType;
         }
 
         public override T Accept<T>(IVisitor<T> visitor)
@@ -792,7 +794,7 @@ public abstract class Expr
             return visitor.VisitImportExpr(this);
         }
 
-        internal class ImportPath(TypeReference typeRef, bool importAll)
+        internal class ImportType(TypeReference typeRef, bool importAll)
         {
             internal TypeReference typeRef = typeRef;
             internal bool importAll = importAll;

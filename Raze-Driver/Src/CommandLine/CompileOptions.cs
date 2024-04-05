@@ -13,8 +13,8 @@ internal partial class Shell
 {
     class CompileOptions
     {
-        public required FileInfo FileArgument { get; set; }
-        public required string OutputOption { get; set; }
+        public required FileInfo FileArgument { get; init; }
+        public required string OutputOption { get; init; }
 
         public bool DebugOption
         {
@@ -36,9 +36,30 @@ internal partial class Shell
         public required bool DebugAssemblyOption { get; set; }
         public required bool DebugErrorsOption { get; set; }
 
-        public required bool DryRunOption { get; set; }
-
-        public SystemInfo SystemInfo { get; set; }
+        public required bool DryRunOption { get; init; }
+        public SystemInfo SystemInfo { get; init; }
+        public readonly List<DirectoryInfo> libraries = new();
+        public required string[]? LibraryArgument 
+        {
+            init
+            {
+                if (value == null)
+                {
+                    return;
+                }
+                foreach (var library in value)
+                {
+                    if (Directory.Exists(library))
+                    {
+                        libraries.Add(new DirectoryInfo(library));
+                    }
+                    else
+                    {
+                        throw new Exception();
+                    }
+                }
+            }
+        }
 
         public bool SystemInfoModified =>
             this.SystemInfo.architecture != SystemInfoGenerator.GetArchitecture ||
@@ -54,8 +75,6 @@ internal partial class Shell
                 bitFormat ?? SystemInfoGenerator.GetBitFormat
             );
         }
-
-
     }
 
     class CompileOptionsBinder : BinderBase<CompileOptions>, ICommandOptions
@@ -72,10 +91,11 @@ internal partial class Shell
         public required Option<string?> Architecture { get; init; }
         public required Option<string?> Osabi { get; init; }
         public required Option<string?> BitFormat { get; init; }
+        public required Option<string[]?> LibraryOption { get; init; }
 
         public List<Option> GetOptions()
         {
-            return new List<Option>() { OutputOption, DebugOption, DebugInputOption, DebugTokensOption, DebugAstOption, DebugAssemblyOption, DebugErrorsOption, DryRunOption, Architecture, Osabi, BitFormat };
+            return new List<Option>() { OutputOption, DebugOption, DebugInputOption, DebugTokensOption, DebugAstOption, DebugAssemblyOption, DebugErrorsOption, DryRunOption, Architecture, Osabi, BitFormat, LibraryOption };
         }
         public List<Argument> GetArguments()
         {
@@ -98,7 +118,8 @@ internal partial class Shell
                 DebugAstOption = bindingContext.ParseResult.GetValueForOption(DebugAstOption),
                 DebugAssemblyOption = bindingContext.ParseResult.GetValueForOption(DebugAssemblyOption),
                 DebugErrorsOption = bindingContext.ParseResult.GetValueForOption(DebugErrorsOption),
-                DryRunOption = bindingContext.ParseResult.GetValueForOption(DryRunOption)
+                DryRunOption = bindingContext.ParseResult.GetValueForOption(DryRunOption),
+                LibraryArgument = bindingContext.ParseResult.GetValueForOption(LibraryOption)
             };
             compileOptions.DebugOption = bindingContext.ParseResult.GetValueForOption(DebugOption);
 

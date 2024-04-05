@@ -71,6 +71,7 @@ internal partial class Shell
     {
         Diagnostics.file = compileOptions.FileArgument;
         Diagnostics.debugErrors = compileOptions.DebugErrorsOption;
+        Diagnostics.importDirs = compileOptions.libraries;
         try
         {
             Run(compileOptions);

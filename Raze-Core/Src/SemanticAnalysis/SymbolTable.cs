@@ -35,7 +35,7 @@ public partial class Analyzer
 
         public void AddImport(Expr.Import import)
         {
-            if (!import.fileInfo.Exists)
+            if (!ImportExists(import))
             {
                 Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.ImportNotFound, import.fileInfo.FullName));
                 return;
@@ -49,23 +49,23 @@ public partial class Analyzer
             using (new SaveContext())
             {
                 SetContext(importClass);
-                if (import.importPath.typeRef.typeName.Count != 0)
+                if (import.importType.typeRef.typeName.Count != 0)
                 {
-                    InitialPass.HandleTypeNameReference(import.importPath.typeRef.typeName);
+                    InitialPass.HandleTypeNameReference(import.importType.typeRef.typeName);
                 }
-                import.importPath.typeRef.type = (Expr.DataType)Current;
+                import.importType.typeRef.type = (Expr.DataType)Current;
             }
 
-            if (import.importPath.importAll)
+            if (import.importType.importAll)
             {
-                foreach (Expr.Definition definition in import.importPath.typeRef.type.definitions)
+                foreach (Expr.Definition definition in import.importType.typeRef.type.definitions)
                 {
                     AddGlobal(definition);
                 }
             }
             else
             {
-                AddGlobal(import.importPath.typeRef.type);
+                AddGlobal(import.importType.typeRef.type);
             }
         }
 
@@ -88,6 +88,23 @@ public partial class Analyzer
                 imports[import.fileInfo.FullName] = importClass;
                 return importClass;
             }
+        }
+        
+        private bool ImportExists(Expr.Import import)
+        {
+            if (!import.customPath)
+            {
+                foreach (DirectoryInfo directory in Diagnostics.importDirs)
+                {
+                    var path = Path.Join(directory.FullName, import.fileInfo.Name);
+                    if (File.Exists(path))
+                    {
+                        import.fileInfo = new(path);
+                        return true;
+                    }
+                }
+            }
+            return import.fileInfo.Exists;
         }
 
         public void AddVariable(Token name, Expr.StackData variable)
