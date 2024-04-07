@@ -46,10 +46,10 @@ public partial class Analyzer
 
         public static Expr.Class GenerateImportToplevelWrapper(Expr.Import import, List<Expr> exprs)
         {
-            string className = GetImportClassName(import.fileInfo.FullName);
+            string className = GetImportClassName(import.fileInfo.Name);
             return new Expr.Class(new(Token.TokenType.IDENTIFIER, className), new(), exprs.Where(x => x is Expr.Definition).Select(x => (Expr.Definition)x).ToList(), null);
         }
-        public static string GetImportClassName(string fullName) =>
-            fullName[..fullName.LastIndexOf(".rz")].Replace('.', '_');
+        public static string GetImportClassName(string name) =>
+            name[..name.LastIndexOf(".rz")].Replace('.', '_');
     }
 }

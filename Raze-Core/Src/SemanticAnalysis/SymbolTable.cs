@@ -89,7 +89,18 @@ public partial class Analyzer
                 return importClass;
             }
         }
-        
+
+        public void RunCodeGenOnImports(CodeGen codeGen)
+        {
+            using (new SaveImportData(Diagnostics.file))
+            {
+                foreach (Expr.Definition definition in imports.Values.SelectMany(x => x.definitions))
+                {
+                    definition.Accept(codeGen);
+                }
+            }
+        }
+
         private bool ImportExists(Expr.Import import)
         {
             if (!import.customPath)

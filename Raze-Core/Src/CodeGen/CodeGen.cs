@@ -40,6 +40,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
     
     public Assembly Generate()
     {
+        SymbolTableSingleton.SymbolTable.RunCodeGenOnImports(this);
         foreach (Expr expr in expressions)
         {
             alloc.Free(expr.Accept(this));
@@ -816,10 +817,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     public AssemblyExpr.Value? VisitImportExpr(Expr.Import expr)
     {
-        using (new SaveImportData(Diagnostics.file))
-        {
-            expr.importType.typeRef.type?.Accept(this);
-        }
         return null;
     }
 
