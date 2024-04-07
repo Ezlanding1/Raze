@@ -113,7 +113,7 @@ public class Parser
 
             Expect(Token.TokenType.SEMICOLON, "';' after expression");
 
-            var import = new Expr.Import(new FileInfo(fileName), customPath, new Expr.Import.ImportType(importRef, importAll));
+            var import = new Expr.Import(new Expr.Import.FileInfo(fileName), customPath, new Expr.Import.ImportType(importRef, importAll));
             SymbolTableSingleton.SymbolTable.AddImport(import);
             return import;
         }

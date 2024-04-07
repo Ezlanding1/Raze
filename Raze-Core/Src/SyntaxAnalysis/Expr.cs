@@ -799,6 +799,20 @@ public abstract class Expr
             internal TypeReference typeRef = typeRef;
             internal bool importAll = importAll;
         }
+
+        public class FileInfo(string fileName)
+        {
+            internal System.IO.FileInfo _fileInfo = new System.IO.FileInfo(fileName);
+
+            internal bool Exists => _fileInfo.Exists;
+            internal string Name => _fileInfo.Name;
+            internal string FullName => _fileInfo.FullName;
+
+            public override int GetHashCode() =>
+                _fileInfo.FullName.GetHashCode();
+            public override bool Equals(object? obj)
+                => obj is FileInfo import && import._fileInfo.FullName == this._fileInfo.FullName;
+        }
     }
 
     public abstract class NoOp : Expr

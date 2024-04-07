@@ -25,7 +25,7 @@ public partial class Analyzer
         private static Expr.Class ClassNotFoundDefinition = TypeCheckUtils.anyType;
         public Expr.Function FunctionNotFoundDefinition = SpecialObjects.GenerateAnyFunction();
 
-        Dictionary<string, Expr.Class> imports = new();
+        Dictionary<Expr.Import.FileInfo, Expr.Class> imports = new();
         public bool isImport;
 
         public void SetContext(Expr.Definition? current)
@@ -41,7 +41,7 @@ public partial class Analyzer
                 return;
             }
 
-            if (!imports.TryGetValue(import.fileInfo.FullName, out Expr.Class? importClass))
+            if (!imports.TryGetValue(import.fileInfo, out Expr.Class? importClass))
             {
                 importClass = RunImport(import);
             }
@@ -71,11 +71,11 @@ public partial class Analyzer
 
         private Expr.Class RunImport(Expr.Import import)
         {
-            using (new SaveImportAndSymbolTableData(globals, isImport, Diagnostics.file))
+            using (new SaveImportAndSymbolTableData(globals, Diagnostics.file))
             {
-                (globals, isImport, Diagnostics.file) = (new(), true, import.fileInfo);
+                (globals, isImport, Diagnostics.file) = (new(), true, import.fileInfo._fileInfo);
 
-                Lexer lexer = new Lexer(import.fileInfo);
+                Lexer lexer = new Lexer(import.fileInfo._fileInfo);
                 var tokens = lexer.Tokenize();
 
                 Parser parser = new Parser(tokens);
@@ -85,7 +85,7 @@ public partial class Analyzer
                 analyzer.Analyze();
 
                 var importClass = SpecialObjects.GenerateImportToplevelWrapper(import, expressions);
-                imports[import.fileInfo.FullName] = importClass;
+                imports[import.fileInfo] = importClass;
                 return importClass;
             }
         }
@@ -94,9 +94,14 @@ public partial class Analyzer
         {
             using (new SaveImportData(Diagnostics.file))
             {
-                foreach (Expr.Definition definition in imports.Values.SelectMany(x => x.definitions))
+                isImport = true;
+                foreach (var import in imports)
                 {
-                    definition.Accept(codeGen);
+                    Diagnostics.file = import.Key._fileInfo;
+                    foreach (var blockExpr in import.Value.definitions)
+                    {
+                        blockExpr.Accept(codeGen);
+                    }
                 }
             }
         }
