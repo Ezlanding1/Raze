@@ -65,6 +65,14 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             return new AssemblyExpr.Register(registers[RegisterIdx], size);
         }
 
+        private int NextPreservedRegisterIdx()
+        {
+            int idx = InstructionUtils.ScratchRegisterCount;
+            while (!registerStates[idx].HasState(RegisterState.RegisterStates.Free)) { idx++; }
+            fncPushPreserved.IncludeRegister(idx);
+            return idx;
+        }
+
         public void SavePreservedRegistersBeforeCall(CodeGen assembler)
         {
             for (int i = 0; i < InstructionUtils.ScratchRegisterCount; i++)
@@ -74,10 +82,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                     continue;
                 }
 
-                int newIdx = InstructionUtils.ScratchRegisterCount;
-                while (!registerStates[newIdx].HasState(RegisterState.RegisterStates.Free)) { newIdx++; }
-
-                _ReserveRegister(assembler, i, newIdx);
+                _ReserveRegister(assembler, i, NextPreservedRegisterIdx());
             }
         }
 
@@ -89,11 +94,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             if (registerStates[i].HasState(RegisterState.RegisterStates.Free))
             {
                 return;
-            }
-
-            if (!InstructionUtils.storageRegisters[newIdx].IsScratchRegister)
-            {
-                fncPushPreserved.IncludeRegister(newIdx);
             }
 
             registers[newIdx] = registers[i];
@@ -112,7 +112,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         {
             if (paramRegisters[i] != null)
             {
-                AssemblyExpr.Register newReg = NextRegister(paramRegisters[i].Size);
+                AssemblyExpr.Register newReg = GetRegister(NextPreservedRegisterIdx(), paramRegisters[i].Size);
                 assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, newReg, paramRegisters[i]));
                 localParams[i] = newReg;
             }
@@ -133,6 +133,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         public void Unlock(int idx) => registerStates[idx].RemoveState(RegisterState.RegisterStates.Locked);
 
         public bool IsLocked(int idx) => registerStates[idx].HasState(RegisterState.RegisterStates.Locked);
+        public bool IsNeeded(int idx) => registerStates[idx].HasState(RegisterState.RegisterStates.Needed);
 
         public void ListAccept<T, T2>(List<T> list, Expr.IVisitor<T2> visitor)
             where T : Expr

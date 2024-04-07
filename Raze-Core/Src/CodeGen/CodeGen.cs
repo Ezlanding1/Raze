@@ -105,7 +105,15 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
                     if (!(arg.IsRegister() && HandleSeteOptimization((AssemblyExpr.Register)arg, paramReg)))
                     {
-                        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, paramReg, arg));
+                        if (arg.IsRegister() && !alloc.IsNeeded(alloc.NameToIdx(((AssemblyExpr.Register)arg).Name)))
+                        {
+                            alloc.FreeRegister((AssemblyExpr.Register)arg);
+                            ((AssemblyExpr.Register)arg).nameBox.Value = paramReg.Name;
+                        }
+                        else
+                        {
+                            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, paramReg, arg));
+                        }
                     }
                 }
             }
@@ -570,6 +578,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                 InstructionUtils.ConditionalJumpReversed(cmpType),
                 new AssemblyExpr.LocalProcedureRef(CreateConditionalLabel(conditionalCount++))
             ));
+
+            alloc.Free(condition);
 
             expr.conditionals[i].block.Accept(this);
 
