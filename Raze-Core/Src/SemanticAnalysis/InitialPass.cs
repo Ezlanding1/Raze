@@ -180,12 +180,12 @@ public partial class Analyzer
             {
                 Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.TopLevelCode));
             }
-            else if (symbolTable.Current.definitionType != Expr.Definition.DefinitionType.Function)
+            else if (symbolTable.Current is not Expr.Function)
             {
                 Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidStatementLocation, "Assembly blocks", "functions"));
             }
 
-            if ((symbolTable.Current?.definitionType == Expr.Definition.DefinitionType.Function) && !((Expr.Function)symbolTable.Current).modifiers["unsafe"])
+            if ((symbolTable.Current is Expr.Function) && !((Expr.Function)symbolTable.Current).modifiers["unsafe"])
             {
                 Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UnsafeCodeInSafeFunction));
             }

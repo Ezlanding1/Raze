@@ -524,8 +524,6 @@ public abstract class Expr
     {
         public Type? enclosing;
         
-        public Definition.DefinitionType definitionType;
-
         public Type(Token name) : base(name)
         {
         }
@@ -557,13 +555,6 @@ public abstract class Expr
 
     public abstract class Definition : Type
     {
-        public enum DefinitionType
-        {
-            Function,
-            Class,
-            Primitive
-        }
-
         public int size;
 
         public Definition(Token name) : base(name)
@@ -595,7 +586,6 @@ public abstract class Expr
 
         internal Function(ExprUtils.Modifiers modifiers, TypeReference _returnType, Token name, List<Parameter> parameters, Block block) : base(name)
         {
-            this.definitionType = DefinitionType.Function;
             this.modifiers = modifiers;
             this._returnType = _returnType;
             this.parameters = parameters;
@@ -673,7 +663,6 @@ public abstract class Expr
 
         public Class(Token name, List<Declare> declarations, List<Definition> definitions, TypeReference superclass) : base(name, definitions)
         {
-            this.definitionType = DefinitionType.Class;
             this.declarations = declarations;
             this.superclass = superclass;
         }
@@ -699,7 +688,7 @@ public abstract class Expr
 
         public Primitive(Token name, List<Definition> definitions, int size, string? superclass) : base(name, definitions, size)
         {
-            this.definitionType = DefinitionType.Primitive;
+            this.superclass.typeName = superclass;
             this.superclass.name = superclass;
         }
 

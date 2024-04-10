@@ -200,7 +200,7 @@ public partial class Analyzer
                 }
             }
 
-            if (symbolTable.Current.definitionType != Expr.Definition.DefinitionType.Function)
+            if (symbolTable.Current is not Expr.Function)
             {
                 Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Call references non-function"));
             }
@@ -251,7 +251,7 @@ public partial class Analyzer
 
             if (symbolTable.Current == null) return TypeCheckUtils._voidType;
 
-            if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Class)
+            if (symbolTable.Current is Expr.Class)
             {
                 expr.classScoped = true;
             }
@@ -351,7 +351,7 @@ public partial class Analyzer
 
                 expr.call.Accept(this);
 
-                expr.internalClass = (Expr.Class)expr.call.internalFunction.enclosing;
+                expr.internalClass = expr.call.internalFunction.enclosing as Expr.Class ?? TypeCheckUtils.anyType;
             }
             return expr.internalClass;
         }

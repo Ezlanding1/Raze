@@ -259,11 +259,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         alloc.AllocateParameters(expr, this);
 
-        if (expr.constructor && expr.enclosing?.definitionType == Expr.Definition.DefinitionType.Class)
+        if (expr.constructor && expr.enclosing is Expr.Class _class)
         {
-            alloc.current = (Expr.Class)expr.enclosing;
+            alloc.current = _class;
             alloc.current.size = 0;
-            alloc.ListAccept(((Expr.Class)expr.enclosing).declarations, this);
+            alloc.ListAccept(_class.declarations, this);
             alloc.current = expr;
         }
 

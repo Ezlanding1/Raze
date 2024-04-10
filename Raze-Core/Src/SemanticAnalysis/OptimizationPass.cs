@@ -98,7 +98,7 @@ public partial class Analyzer
             }
             HandleCall(expr);
 
-            if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Function && expr.internalFunction.modifiers["inline"])
+            if (symbolTable.Current is Expr.Function && expr.internalFunction.modifiers["inline"])
             {
                 for (int i = 0; i < expr.internalFunction.Arity; i++)
                 {
@@ -171,7 +171,7 @@ public partial class Analyzer
 
         private void SetInlineRef(Expr.StackData stack)
         {
-            if (symbolTable.Current.definitionType == Expr.Definition.DefinitionType.Function && ((Expr.Function)symbolTable.Current).modifiers["inline"])
+            if (symbolTable.Current is Expr.Function && ((Expr.Function)symbolTable.Current).modifiers["inline"])
             {
                 foreach (var paramExpr in ((Expr.Function)symbolTable.Current).parameters)
                 {

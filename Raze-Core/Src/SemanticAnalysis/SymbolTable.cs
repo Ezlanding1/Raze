@@ -125,7 +125,7 @@ public partial class Analyzer
 
         public void AddVariable(Token name, Expr.StackData variable)
         {
-            if (current.definitionType == Expr.Definition.DefinitionType.Function)
+            if (current is Expr.Function)
             {
                 locals.Add(new(name, variable));
             }
@@ -137,7 +137,7 @@ public partial class Analyzer
 
         public void AddParameter(Token name, Expr.StackData parameter)
         {
-            if (current.definitionType == Expr.Definition.DefinitionType.Function)
+            if (current is Expr.Function)
             {
                 locals.Add(new(name, parameter));
             }
@@ -176,7 +176,7 @@ public partial class Analyzer
                 return null;
             }
 
-            if (current.definitionType == Expr.Definition.DefinitionType.Function)
+            if (current is Expr.Function)
             {
                 for (int i = locals.Count - 1; i >= 0; i--)
                 {
@@ -188,12 +188,12 @@ public partial class Analyzer
                 }
             }
 
-            if (!ignoreEnclosing && !(current.definitionType == Expr.Definition.DefinitionType.Function && (((Expr.Function)current).modifiers["static"])))
+            if (!ignoreEnclosing && !(current is Expr.Function && (((Expr.Function)current).modifiers["static"])))
             {
                 var x = NearestEnclosingClass();
-                switch (x?.definitionType)
+                switch (x)
                 {
-                    case Expr.Definition.DefinitionType.Class:
+                    case Expr.Class:
                         {
                             if (TryGetValue(((Expr.Class)x).declarations, key, out var value))
                             {
@@ -207,7 +207,7 @@ public partial class Analyzer
                             }
                         }
                         break;
-                    case Expr.Definition.DefinitionType.Primitive:
+                    case Expr.Primitive:
                         {
                             if (key.lexeme == "this")
                             {

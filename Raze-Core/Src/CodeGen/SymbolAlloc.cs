@@ -85,7 +85,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         public void RemoveBlock()
         {
-            if (current.definitionType == Expr.Definition.DefinitionType.Function)
+            if (current is Expr.Function)
             {
                 fncPushPreserved.size = Math.Max(fncPushPreserved.size, current.size);
             }

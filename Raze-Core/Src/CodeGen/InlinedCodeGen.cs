@@ -115,7 +115,7 @@ public class InlinedCodeGen : CodeGen
                 else
                 {
                     var enclosing = SymbolTableSingleton.SymbolTable.NearestEnclosingClass(expr.internalFunction);
-                    var size = (enclosing?.definitionType == Expr.Definition.DefinitionType.Primitive) ? enclosing.size : 8;
+                    var size = enclosing.allocSize;
                     instanceArg = new AssemblyExpr.Pointer(8, size);
                 }
             }
