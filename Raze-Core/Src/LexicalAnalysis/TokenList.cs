@@ -97,7 +97,8 @@ internal class TokenList
         "this",
         "ref",
         "import",
-        "from"
+        "from",
+        "extends"
     };
 
     /*

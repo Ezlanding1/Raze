@@ -74,6 +74,8 @@ public abstract partial class Diagnostic
         { DiagnosticName.InvalidMainFunctionModifier_Include, ("The Main function must have the '{0}' modifier", Severity.Error) },
         { DiagnosticName.InvalidMainFunctionModifier_NoInclude, ("The Main function may not have the '{0}' modifier", Severity.Error) },
         { DiagnosticName.InvalidMainFunctionReturnType, ("Main can only return types 'Integer', and 'void'. Got '{0}'", Severity.Error) },
+        { DiagnosticName.PrimitiveWithConstructor, ("A primitive may not have a constructor", Severity.Error) },
+        { DiagnosticName.CircularInheritance, ("Cicular inheritance between types '{0}' and '{1}'", Severity.Error) },
         
         // BackendError
         { DiagnosticName.InvalidLiteralSize, ("{0} literal '{1}' exceeds size of assigned data type '{2}'", Severity.Error) },

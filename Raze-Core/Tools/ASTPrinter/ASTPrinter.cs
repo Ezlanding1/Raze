@@ -103,9 +103,12 @@ public class ASTPrinter : Expr.IVisitor<object?>
 
     public object? VisitTypeReferenceExpr(Expr.TypeReference expr)
     {
-        foreach (var type in expr.typeName)
+        if (expr.typeName != null)
         {
-            PrintAST(type);
+            foreach (var type in expr.typeName)
+            {
+                PrintAST(type);
+            }
         }
         return null;
     }

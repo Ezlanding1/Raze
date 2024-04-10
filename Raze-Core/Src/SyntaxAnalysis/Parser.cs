@@ -74,12 +74,13 @@ public class Parser
             index = idx-1;
             Advance();
 
-            Expr.TypeReference? importRef = new(new());
+            Expr.TypeReference? importRef = new(null);
             string fileName = "";
             bool importAll = false;
 
             if (fromStmt)
             {
+                importRef.typeName = new();
                 if (TypeMatch(Token.TokenType.MULTIPLY))
                 {
                     importAll = true;
@@ -210,6 +211,14 @@ public class Parser
                     Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidClassName, name.lexeme));
                 }
 
+                Expr.TypeReference superclass = new(null);
+                if (ReservedValueMatch("extends"))
+                {
+                    Expect(Token.TokenType.IDENTIFIER, "superclass of type");
+
+                    superclass = new(GetTypeReference());
+                }
+
                 List<Expr.Declare> declarations = new();
                 List<Expr.Definition> definitions = new();
 
@@ -240,7 +249,7 @@ public class Parser
                     }
                 }
 
-                return new Expr.Class(name, declarations, definitions, new(null));
+                return new Expr.Class(name, declarations, definitions, superclass);
             }
             else if (definitionType.lexeme == "primitive")
             {
@@ -275,7 +284,7 @@ public class Parser
 
                 string? superclassName = null;
 
-                if (ValueMatch("extends"))
+                if (ReservedValueMatch("extends"))
                 {
                     Expect(Token.TokenType.IDENTIFIER, "superclass of primitive type");
 

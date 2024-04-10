@@ -152,6 +152,13 @@ public partial class Analyzer
         {
             symbolTable.AddDefinition(expr);
 
+            expr.superclass.Accept(this);
+            if (expr.superclass.type?.Matches(expr) == true)
+            {
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.CircularInheritance, expr.ToString(), expr.superclass.type.ToString()));
+                expr.superclass.type = TypeCheckUtils.anyType;
+            }
+
             Expr.ListAccept(expr.declarations, this);
             Expr.ListAccept(expr.definitions, this);
 
@@ -159,6 +166,12 @@ public partial class Analyzer
             {
                 expr.definitions.Add(new SpecialObjects.DefaultConstructor(((Expr.Class)symbolTable.Current).name));
             }
+
+            if (expr.superclass.type is Expr.Class _class)
+            {
+                expr.declarations.InsertRange(0, _class.declarations);
+            }
+            symbolTable.CheckDuplicates(expr.declarations);
 
             symbolTable.UpContext();
             return null;
@@ -218,18 +231,18 @@ public partial class Analyzer
         {
             using (new SaveContext())
             {
-                if (expr.typeName.Count != 0)
+                if (expr.typeName != null)
                 {
                     HandleTypeNameReference(expr.typeName);
+                    expr.type = (Expr.DataType)symbolTable.Current;
                 }
-                expr.type = (Expr.DataType)symbolTable.Current;
             }
             return null;
         }
 
         public override object? VisitAssignExpr(Expr.Assign expr)
         {
-            if (expr.member.HandleThis() && (symbolTable.NearestEnclosingClass()?.definitionType != Expr.Definition.DefinitionType.Primitive))
+            if (expr.member.HandleThis())
             {
                 Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidAssignStatement, "'this'"));
             }
@@ -242,11 +255,11 @@ public partial class Analyzer
         {
             symbolTable.AddDefinition(expr);
 
-            if (Enum.TryParse(expr.superclass.name, out Parser.LiteralTokenType literalTokenType))
+            if (Enum.TryParse(expr.superclass.typeName, out Parser.LiteralTokenType literalTokenType))
             {
                 expr.superclass.type = TypeCheckUtils.literalTypes[literalTokenType];
             }
-            else if (expr.superclass.name != null)
+            else if (expr.superclass.typeName != null)
             {
                 Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Invalid primitive superclass"));
             }
@@ -256,8 +269,12 @@ public partial class Analyzer
                 blockExpr.Accept(this);
             }
 
-            symbolTable.UpContext();
+            foreach (var item in expr.definitions.Where(x => x is Expr.Function function && function.constructor))
+            {
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.PrimitiveWithConstructor));
+            }
 
+            symbolTable.UpContext();
             return null;
         }
 

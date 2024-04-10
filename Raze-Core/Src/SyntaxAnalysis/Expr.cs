@@ -523,7 +523,7 @@ public abstract class Expr
     public class Type : Named
     {
         public Type? enclosing;
-        
+
         public Type(Token name) : base(name)
         {
         }
@@ -634,6 +634,8 @@ public abstract class Expr
 
     public abstract class DataType : Definition
     {
+        abstract public Type SuperclassType { get; }
+
         public List<Definition> definitions;
 
         public StackData _this = new();
@@ -656,7 +658,7 @@ public abstract class Expr
     public class Class : DataType
     {
         public TypeReference superclass;
-
+        public override Type SuperclassType => superclass.type;
         public List<Declare> declarations;
 
         public override int allocSize => 8;
@@ -665,6 +667,7 @@ public abstract class Expr
         {
             this.declarations = declarations;
             this.superclass = superclass;
+            this.superclass.typeName ??= new([new Token(Token.TokenType.IDENTIFIER, "object")]);
         }
 
         public int CalculateSize() => size == 0? 1 : size;
@@ -682,14 +685,14 @@ public abstract class Expr
 
     public class Primitive : DataType
     {
-        public (string? name, Type type) superclass = new();
+        public (string? typeName, Type type) superclass = new();
+        public override Type SuperclassType => superclass.type;
 
         public override int allocSize => size;
 
         public Primitive(Token name, List<Definition> definitions, int size, string? superclass) : base(name, definitions, size)
         {
             this.superclass.typeName = superclass;
-            this.superclass.name = superclass;
         }
 
         public override bool Match(Type type)

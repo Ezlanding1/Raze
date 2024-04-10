@@ -10,20 +10,15 @@ public partial class Analyzer
 {
     internal class SpecialObjects
     {
+        public class Object() : Expr.Class(new(Token.TokenType.IDENTIFIER, "object"), new(), new(), new(null));
+        
         public class Any : Expr.Class
         {
-            public Any(Token name) : base(name, new(), new(), null)
+            public Any(Token name) : base(name, new(), new(), new(null))
             {
             }
-
-            public override bool Match(Type type)
-            {
-                return true;
-            }
-            public override bool Matches(Type type)
-            {
-                return true;
-            }
+            public override bool Match(Type type) => true;
+            public override bool Matches(Type type) => true;
         }
 
         public static Expr.Function GenerateAnyFunction()
@@ -47,7 +42,7 @@ public partial class Analyzer
         public static Expr.Class GenerateImportToplevelWrapper(Expr.Import import, List<Expr> exprs)
         {
             string className = GetImportClassName(import.fileInfo.Name);
-            return new Expr.Class(new(Token.TokenType.IDENTIFIER, className), new(), exprs.Where(x => x is Expr.Definition).Select(x => (Expr.Definition)x).ToList(), null);
+            return new Expr.Class(new(Token.TokenType.IDENTIFIER, className), new(), exprs.Where(x => x is Expr.Definition).Select(x => (Expr.Definition)x).ToList(), new(null));
         }
         public static string GetImportClassName(string name) =>
             name[..name.LastIndexOf(".rz")].Replace('.', '_');

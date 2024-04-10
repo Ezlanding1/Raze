@@ -181,8 +181,24 @@ public partial class Analyzer
 
             if (expr.callee != null)
             {
-                symbolTable.SetContext((Expr.Definition)expr.callee.Accept(this));
-                symbolTable.SetContext(symbolTable.GetFunction(expr.name.lexeme, argumentTypes));
+                var callee = (Expr.DataType)expr.callee.Accept(this);
+                do
+                {
+                    symbolTable.SetContext(callee);
+                    callee = callee.SuperclassType as Expr.DataType;
+
+                    if (symbolTable.TryGetFunction(expr.name.lexeme, argumentTypes, out var symbol))
+                    {
+                        symbolTable.SetContext(symbol);
+                        break;
+                    }
+                }
+                while (callee != null);
+
+                if (callee == null) 
+                {
+                    symbolTable.FunctionSearchFail(expr.name.lexeme, argumentTypes);
+                }
             }
             else
             {

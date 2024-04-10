@@ -11,11 +11,10 @@ public partial class Analyzer
 {
     internal static class TypeCheckUtils
     {
-        public static Expr.Class anyType = new Analyzer.SpecialObjects.Any(new(Token.TokenType.RESERVED, "any"));
-
-        public static Expr.Class _voidType = new Expr.Class(new(Token.TokenType.RESERVED, "void"), new(), new(), new(null));
-
-        private static Expr.Type integralType = new(new Token((Token.TokenType)Parser.LiteralTokenType.Integer));
+        public readonly static Expr.Class objectType = new SpecialObjects.Object();
+        public readonly static Expr.Class anyType = new SpecialObjects.Any(new(Token.TokenType.IDENTIFIER, "any"));
+        public readonly static Expr.Class _voidType = new Expr.Class(new(Token.TokenType.RESERVED, "void"), new(), new(), new(null));
+        private readonly static Expr.Type integralType = new(new Token((Token.TokenType)Parser.LiteralTokenType.Integer));
 
         public static Dictionary<Parser.LiteralTokenType, Expr.Type> literalTypes = new Dictionary<Parser.LiteralTokenType, Expr.Type>()
         {

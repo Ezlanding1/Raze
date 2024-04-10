@@ -76,6 +76,8 @@ public abstract partial class Diagnostic
         InvalidMainFunctionModifier_Include,
         InvalidMainFunctionModifier_NoInclude,
         InvalidMainFunctionReturnType,
+        PrimitiveWithConstructor,
+        CircularInheritance,
 
         // BackendError
         InvalidLiteralSize,
