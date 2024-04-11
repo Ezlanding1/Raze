@@ -33,7 +33,7 @@ public partial class Analyzer
         {
             { "true", literalTypes[Parser.LiteralTokenType.Boolean] },
             { "false", literalTypes[Parser.LiteralTokenType.Boolean] },
-            { "null", null },
+            { "null", new SpecialObjects.Null() },
         };
 
         public static void MustMatchType(Expr.Type type1, Expr.Type type2, bool _return=false)

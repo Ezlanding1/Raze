@@ -10,13 +10,14 @@ public partial class Analyzer
 {
     internal class SpecialObjects
     {
-        public class Object() : Expr.Class(new(Token.TokenType.IDENTIFIER, "object"), new(), new(), new(null));
-        
-        public class Any : Expr.Class
+        public class Null() : Expr.Class(new(Token.TokenType.RESERVED, "null"), new(), new(), new(null))
         {
-            public Any(Token name) : base(name, new(), new(), new(null))
-            {
-            }
+            public override bool Matches(Type type) => type.Matches(TypeCheckUtils.objectType);
+        }
+        public class Object() : Expr.Class(new(Token.TokenType.IDENTIFIER, "object"), new(), new(), new(null));
+
+        public class Any(Token name) : Expr.Class(name, new(), new(), new(null))
+        {
             public override bool Match(Type type) => true;
             public override bool Matches(Type type) => true;
         }
