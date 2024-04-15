@@ -20,7 +20,7 @@ public class InlinedCodeGen : CodeGen
         public int inlineLabelIdx = -1;
         public bool secondJump = false;
 
-        public AssemblyExpr.RegisterPointer? callee;
+        public AssemblyExpr.Value? callee;
 
         public InlineStateInlined(InlineStateNoInline lastState) : base(lastState, true)
         {

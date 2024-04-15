@@ -78,6 +78,7 @@ public abstract partial class AssemblyExpr
         UGE_CMP,
         UL_CMP,
         ULE_CMP,
-        DEREF
+        DEREF,
+        RETURN
     }
 }

@@ -193,7 +193,7 @@ public partial class Analyzer
                 }
                 while (callee != null);
 
-                if (callee == null) 
+                if (symbolTable.Current == null) 
                 {
                     symbolTable.FunctionSearchFail(expr.name.lexeme, argumentTypes);
                 }

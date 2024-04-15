@@ -148,6 +148,9 @@ internal abstract partial class ExprUtils
                     case AssemblyExpr.Instruction.DEREF:
                         AssemblyOps.Unary.DEREF(this, assemblyOps);
                         return;
+                    case AssemblyExpr.Instruction.RETURN:
+                        AssemblyOps.Unary.RETURN(this, assemblyOps);
+                        break;
                     default:
                         Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.UnsupportedInstruction, instruction.instruction));
                         break;

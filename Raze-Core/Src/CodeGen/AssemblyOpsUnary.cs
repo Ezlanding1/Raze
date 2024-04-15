@@ -33,9 +33,8 @@ internal partial class AssemblyOps
         {
             if (((InlinedCodeGen)assemblyOps.assembler).inlineState.inline)
             {
-                var nonLiteral = operand.NonLiteral(assemblyOps.assembler);
-                ((InlinedCodeGen.InlineStateInlined)((InlinedCodeGen)assemblyOps.assembler).inlineState).callee = nonLiteral;
-                ((InlinedCodeGen)assemblyOps.assembler).LockOperand(nonLiteral);
+                ((InlinedCodeGen.InlineStateInlined)((InlinedCodeGen)assemblyOps.assembler).inlineState).callee = operand;
+                ((InlinedCodeGen)assemblyOps.assembler).LockOperand(operand);
             }
             else
             {
@@ -95,6 +94,19 @@ internal partial class AssemblyOps
             }
 
             assemblyOps.assembler.alloc.Free(deref);
+
+            if (instruction.assignType == ExprUtils.AssignableInstruction.Unary.AssignType.AssignFirst)
+                assemblyOps.assembler.alloc.Free(operand);
+        }
+
+        public static void RETURN(ExprUtils.AssignableInstruction.Unary instruction, AssemblyOps assemblyOps)
+        {
+            AssemblyExpr.Value operand = HandleOperandUnsafe(instruction, assemblyOps);
+
+            if (instruction.returns && assemblyOps.assembler is InlinedCodeGen)
+            {
+                ReturnOp(ref operand, instruction.assignType, assemblyOps);
+            }
 
             if (instruction.assignType == ExprUtils.AssignableInstruction.Unary.AssignType.AssignFirst)
                 assemblyOps.assembler.alloc.Free(operand);

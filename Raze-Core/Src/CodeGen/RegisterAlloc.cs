@@ -200,11 +200,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             registerStates[idx].SetState(RegisterState.RegisterStates.Free);
         }
 
-        public RegisterState? SaveRegisterState(AssemblyExpr.RegisterPointer? registerPointer) 
+        public RegisterState? SaveRegisterState(AssemblyExpr.Value? value) 
         {
             int idx;
 
-            if (registerPointer == null || (idx = NameToIdx(registerPointer.GetRegister().Name)) == -1)
+            if (value is not AssemblyExpr.RegisterPointer registerPointer || (idx = NameToIdx(registerPointer.GetRegister().Name)) == -1)
             {
                 return null;
             }
@@ -213,11 +213,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             state.SetState(registerStates[idx]);
             return state;
         }
-        public void SetRegisterState(RegisterState? state,  AssemblyExpr.RegisterPointer registerPointer)
+        public void SetRegisterState(RegisterState? state,  AssemblyExpr.Value? value)
         {
-            if (state == null)
+            if (state == null || value.IsLiteral())
                 return;
 
+            var registerPointer = (AssemblyExpr.RegisterPointer)value;
             int idx = NameToIdx(registerPointer.GetRegister().Name);
 
             registers[idx] = registerPointer.GetRegister().nameBox;
