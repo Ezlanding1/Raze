@@ -19,7 +19,9 @@ public partial class Analyzer
         public List<Expr.Definition> globals = NewGlobals();
 
         private List<(Token, Expr.StackData)> locals = new();
-        Stack<int> framePointer = new();
+        public Stack<int> framePointer = new();
+        public Dictionary<Expr.StackData, FrameData> frameData = new();
+        public ReturnFrameData returnFrameData = new();
 
         private static Expr.StackData VarNotFoundData = new(TypeCheckUtils.anyType, false);
         private static Expr.Class ClassNotFoundDefinition = TypeCheckUtils.anyType;
@@ -125,11 +127,13 @@ public partial class Analyzer
 
         private static List<Expr.Definition> NewGlobals() => [TypeCheckUtils.objectType];
 
-        public void AddVariable(Token name, Expr.StackData variable)
+        public void AddVariable(Token name, Expr.StackData variable, bool initializedOnDeclaration)
         {
             if (current is Expr.Function)
             {
                 locals.Add(new(name, variable));
+                if (!initializedOnDeclaration)
+                    frameData[variable] = new FrameData();
             }
             else
             {
@@ -158,7 +162,14 @@ public partial class Analyzer
 
         public void CreateBlock() => framePointer.Push(locals.Count);
 
-        public void RemoveBlock() => locals.RemoveRange(framePointer.Peek(), locals.Count - framePointer.Pop());
+        public void RemoveBlock()
+        {
+            for (int i = locals.Count-1; i > framePointer.Peek(); i--)
+            {
+                frameData.Remove(locals[i].Item2);
+            }
+            locals.RemoveRange(framePointer.Peek(), locals.Count - framePointer.Pop());
+        }
 
         // 'GetVariable' Methods:
 
@@ -172,13 +183,12 @@ public partial class Analyzer
 
             if (current is Expr.Function)
             {
-                for (int i = locals.Count - 1; i >= 0; i--)
+                var variableIdx = locals.FindLastIndex(x => key.lexeme == x.Item1.lexeme);
+
+                if (variableIdx != -1)
                 {
-                    if (key.lexeme == locals[i].Item1.lexeme)
-                    {
-                        isClassScoped = false;
-                        return locals[i].Item2;
-                    }
+                    isClassScoped = false;
+                    return locals[variableIdx].Item2;
                 }
             }
 
@@ -217,7 +227,7 @@ public partial class Analyzer
             isClassScoped = false;
             return null;
         }
-        public Expr.StackData? GetVariable(Token key, out bool isClassScoped, bool ignoreEnclosing=false)
+        public Expr.StackData GetVariable(Token key, out bool isClassScoped, bool ignoreEnclosing=false, bool assigns=false)
         {
             var variable = _GetVariable(key, out isClassScoped, ignoreEnclosing);
 
@@ -226,11 +236,24 @@ public partial class Analyzer
                 Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UndefinedReference, "variable", key.lexeme));
                 return VarNotFoundData;
             }
+
+            if (frameData.TryGetValue(variable, out FrameData? value))
+            {
+                if (!assigns && !value.initialized)
+                {
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.VariableUsedBeforeInitialization, key.lexeme));
+                }
+                else if (assigns) 
+                {
+                    frameData[variable].initialized = true;
+                }
+            }
+
             return variable;
         }
-        public Expr.StackData GetVariable(Token key)
+        public Expr.StackData GetVariable(Token key, bool assigns=false)
         {
-            return GetVariable(key, out _);
+            return GetVariable(key, out _, false, assigns);
         }
         public bool TryGetVariable(Token key, out Expr.StackData symbol, out bool isClassScoped, bool ignoreEnclosing=false)
         {
@@ -524,6 +547,64 @@ public partial class Analyzer
                 }
             }
             return true;
+        }
+
+        public class FrameData
+        {
+            public bool initialized;
+
+            public FrameData() { }
+            public FrameData(bool initializedOnDeclaration)
+            {
+                initialized = initializedOnDeclaration;
+            }
+        }
+
+        public class ReturnFrameData : FrameData
+        {
+            public bool initializedOnAnyBranch;
+            public List<Expr.Type?> returnTypes = new();
+
+            public void Initialized(Expr.Type? returnType)
+            {
+                initialized = true;
+                initializedOnAnyBranch = true;
+                returnTypes.Add(returnType);
+            }
+        }
+
+        public void SetFrameDataStates(IEnumerable<bool> states)
+        {
+            for (int i = 0; i < locals.Count && frameData.ContainsKey(locals[i].Item2); i++)
+            {
+                frameData[locals[i].Item2].initialized = states.ElementAt(i);
+            }
+            returnFrameData.initialized = states.Last();
+        }
+        
+        public IEnumerable<bool> GetFrameData()
+        {
+            foreach (var local in locals.Select(x => x.Item2))
+            {
+                if (frameData.TryGetValue(local, out FrameData? value))
+                {
+                    yield return value.initialized;
+                }
+            }
+            yield return returnFrameData.initialized;
+        }
+
+        public void ResolveStates(List<bool> states)
+        {
+            SymbolTable symbolTable = SymbolTableSingleton.SymbolTable;
+
+            for (int i = 0; i < symbolTable.locals.Count && symbolTable.frameData.ContainsKey(symbolTable.locals[i].Item2); i++)
+            {
+                states[i] &= symbolTable.frameData[symbolTable.locals[i].Item2].initialized;
+                symbolTable.frameData[symbolTable.locals[i].Item2].initialized = false;
+            }
+            states[^1] &= symbolTable.returnFrameData.initialized;
+            symbolTable.returnFrameData.initialized = false;
         }
     }
 }

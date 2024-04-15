@@ -5,8 +5,8 @@ public partial class Analyzer
     internal class MainPass : Pass<Expr.Type>
     {
         SymbolTable symbolTable = SymbolTableSingleton.SymbolTable;
-        List<(Expr.Type?, bool, Expr.Return?)> _return = new();
         bool callReturn;
+        bool assigns;
 
         public MainPass(List<Expr> expressions) : base(expressions)
         {
@@ -22,10 +22,8 @@ public partial class Analyzer
                 {
                     Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.ExpressionWithNonNullReturn, result));
                 }
-                if (_return.Count != 0)
-                {
-                    _return.Clear();
-                }
+                symbolTable.returnFrameData.initialized = false;
+                symbolTable.returnFrameData.initializedOnAnyBranch = false;
                 callReturn = false;
             }
         }
@@ -272,11 +270,13 @@ public partial class Analyzer
                 expr.classScoped = true;
             }
 
-            Expr.Type assignType = expr.value.Accept(this);
+            Expr.Type assignType = expr.value?.Accept(this);
 
-            TypeCheckUtils.MustMatchType(expr.stack.type, assignType);
-
-            symbolTable.AddVariable(name, expr.stack);
+            if (assignType != null)
+            {
+                TypeCheckUtils.MustMatchType(expr.stack.type, assignType);
+            }
+            symbolTable.AddVariable(name, expr.stack, assignType != null);
 
             return TypeCheckUtils._voidType;
         }
@@ -295,7 +295,6 @@ public partial class Analyzer
         public override Expr.Type VisitFunctionExpr(Expr.Function expr)
         {
             symbolTable.SetContext(expr);
-
             symbolTable.CreateBlock();
 
             for (int i = 0; i < expr.Arity; i++)
@@ -313,7 +312,7 @@ public partial class Analyzer
 
             expr.block.Accept(this);
 
-            TypeCheckUtils.HandleFunctionReturns(expr, _return);
+            TypeCheckUtils.HandleFunctionReturns(expr);
 
             symbolTable.RemoveBlock();
             symbolTable.UpContext();
@@ -323,12 +322,26 @@ public partial class Analyzer
 
         public override Expr.Type VisitIfExpr(Expr.If expr)
         {
-            expr.conditionals.ForEach(x => TypeCheckUtils.TypeCheckConditional(this, "if", _return, x.condition, x.block));
-
             if (expr._else != null)
             {
-                TypeCheckUtils.TypeCheckConditional(this, "else", _return, null, expr._else);
+                var sStates = symbolTable.GetFrameData().ToList();
+                var states = Enumerable.Repeat(true, symbolTable.frameData.Count + 1).ToList();
+
+                expr.conditionals.ForEach(x =>
+                {
+                    TypeCheckUtils.TypeCheckConditional(this, "if", x.condition, x.block);
+                    symbolTable.ResolveStates(states);
+                });
+                TypeCheckUtils.TypeCheckConditional(this, "else", null, expr._else);
+                symbolTable.ResolveStates(states);
+
+                symbolTable.SetFrameDataStates(Enumerable.Range(0, symbolTable.frameData.Count + 1).Select(i => sStates[i] | states[i]));
             }
+            else
+            {
+                TypeCheckUtils.RunConditionals(this, "if", expr.conditionals);
+            }
+
             return TypeCheckUtils._voidType;
         }
 
@@ -338,7 +351,9 @@ public partial class Analyzer
 
             if (!expr.binary)
             {
+                assigns = true;
                 expr.member.Accept(this);
+                assigns = false;
             }
             TypeCheckUtils.MustMatchType(expr.member.GetLastData().type, assignType);
 
@@ -353,7 +368,7 @@ public partial class Analyzer
             }
             if (expr.block.Any(x => x.HasReturn()))
             {
-                _return.Add((null, false, null));
+                symbolTable.returnFrameData.Initialized(null);
             }
 
             return TypeCheckUtils._voidType;
@@ -393,12 +408,12 @@ public partial class Analyzer
             {
                 using (new SaveContext())
                 {
-                    expr.datas[0] = symbolTable.GetVariable(expr.typeName.Dequeue(), out expr.classScoped);
+                    expr.datas[0] = symbolTable.GetVariable(expr.typeName.Dequeue(), out expr.classScoped, assigns: expr.datas.Length > 1? false : assigns);
                     symbolTable.SetContext(expr.datas[0].type);
 
                     for (int i = 1; i < expr.datas.Length; i++)
                     {
-                        expr.datas[i] = symbolTable.GetVariable(expr.typeName.Dequeue());
+                        expr.datas[i] = symbolTable.GetVariable(expr.typeName.Dequeue(), assigns);
                         symbolTable.SetContext(expr.datas[i].type);
                     }
                     return expr.datas[^1].type;
@@ -426,7 +441,7 @@ public partial class Analyzer
             }
         }
 
-        public override Expr.Type VisitGetExpr(Expr.Get expr) => (expr.data = symbolTable.GetVariable(expr.name)).type;
+        public override Expr.Type VisitGetExpr(Expr.Get expr) => (expr.data = symbolTable.GetVariable(expr.name, assigns)).type;
 
         public override Expr.Type VisitLogicalExpr(Expr.Logical expr)
         {
@@ -449,8 +464,7 @@ public partial class Analyzer
 
         public override Expr.Type VisitWhileExpr(Expr.While expr)
         {
-            TypeCheckUtils.TypeCheckConditional(this, "while", _return, expr.conditional.condition, expr.conditional.block);
-
+            TypeCheckUtils.RunConditionals(this, "while", [expr.conditional]);
             return TypeCheckUtils._voidType;
         }
 
@@ -470,7 +484,7 @@ public partial class Analyzer
             }
             callReturn = false;
 
-            TypeCheckUtils.TypeCheckConditional(this, "for", _return, expr.conditional.condition, expr.conditional.block);
+            TypeCheckUtils.RunConditionals(this, "for", [expr.conditional]);
 
             return TypeCheckUtils._voidType;
         }
@@ -482,7 +496,7 @@ public partial class Analyzer
 
         public override Expr.Type VisitReturnExpr(Expr.Return expr)
         {
-            _return.Add((expr.value.Accept(this), false, expr));
+            symbolTable.returnFrameData.Initialized(expr.value.Accept(this));
 
             return TypeCheckUtils._voidType;
         }

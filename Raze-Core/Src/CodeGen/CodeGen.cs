@@ -173,12 +173,19 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     public AssemblyExpr.Value? VisitDeclareExpr(Expr.Declare expr)
     {
-        AssemblyExpr.Value operand = expr.value.Accept(this);
+        AssemblyExpr.Value operand = expr.value?.Accept(this);
         alloc.AllocateVariable(expr.stack);
 
         var _ref = expr.stack._ref;
 
-        if (operand == null) return null;
+        if (operand == null)
+        {
+            if (alloc.current is Expr.Class)
+            {
+                operand = GetDefaultValueOfType(expr.stack.type);
+            }
+            else return null;
+        }
 
         if (operand.IsPointer())
         {
@@ -977,5 +984,22 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         }
 
         return (h2, h1);
+    }
+
+    private AssemblyExpr.Literal GetDefaultValueOfType(Expr.Type type)
+    {
+        //return type switch
+        //{
+        //    _ when type.Matches(Analyzer.TypeCheckUtils.objectType) ||
+        //    type.Matches(Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Integer]) ||
+        //    type.Matches(Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.UnsignedInteger]) ||
+        //    type.Matches(Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Floating]) ||
+        //    type.Matches(Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.String]) ||
+        //    type.Matches(Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Binary]) ||
+        //    type.Matches(Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Hex]) ||
+        //    type.Matches(Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Boolean]) ||
+        //    type.Matches(Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.RefString]) => new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.UnsignedInteger, [0]),
+        //};
+        return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.UnsignedInteger, [0]);
     }
 }

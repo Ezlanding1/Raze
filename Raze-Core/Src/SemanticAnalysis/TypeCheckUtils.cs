@@ -41,7 +41,7 @@ public partial class Analyzer
             if (!type2.Matches(type1))
             {
                 Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
-                    _return? Diagnostic.DiagnosticName.TypeMismatch_Return : Diagnostic.DiagnosticName.TypeMismatch, 
+                    _return? Diagnostic.DiagnosticName.TypeMismatch_Return : Diagnostic.DiagnosticName.TypeMismatch,
                     type2,
                     type1
                 ));
@@ -50,9 +50,15 @@ public partial class Analyzer
 
         public static bool CannotBeRef(Expr expr) => expr is not Expr.GetReference || (expr is Expr.GetReference getRef && getRef.IsMethod());
 
-        public static void TypeCheckConditional(Expr.IVisitor<Expr.Type> visitor, string conditionalName, List<(Expr.Type?, bool, Expr.Return?)> _return, Expr? condition, Expr.Block block)
+        public static void RunConditionals(Expr.IVisitor<Expr.Type> visitor, string conditionalName, List<Expr.Conditional> conditionals)
         {
-            int _returnCount = _return.Count;
+            var savedStates = SymbolTableSingleton.SymbolTable.GetFrameData().ToList();
+            conditionals.ForEach(x => TypeCheckConditional(visitor, conditionalName, x.condition, x.block));
+            SymbolTableSingleton.SymbolTable.SetFrameDataStates(savedStates);
+        }
+
+        public static void TypeCheckConditional(Expr.IVisitor<Expr.Type> visitor, string conditionalName, Expr? condition, Expr.Block block)
+        {
             if (condition != null)
             {
                 var conditionType = condition.Accept(visitor);
@@ -62,43 +68,29 @@ public partial class Analyzer
                 }
             }
             block.Accept(visitor);
-
-            if (condition != null)
-            {
-                for (int i = _returnCount; i < _return.Count; i++)
-                {
-                    _return[i] = (_return[i].Item1, true, _return[i].Item3);
-                }
-            }
         }
 
-        public static void HandleFunctionReturns(Expr.Function expr, List<(Expr.Type?, bool, Expr.Return?)> _return)
+        public static void HandleFunctionReturns(Expr.Function expr)
         {
-            int _returnCount = 0;
-            foreach (var ret in _return)
-            {
-                if (!ret.Item2)
-                {
-                    _returnCount++;
-                }
+            SymbolTable symbolTable = SymbolTableSingleton.SymbolTable;
 
-                if (ret.Item3 == null)
-                    continue;
-
-                MustMatchType(expr._returnType.type, ret.Item1, true);
-            }
-            if (_returnCount == 0 && !Primitives.IsVoidType(expr._returnType.type))
+            foreach (var returnType in symbolTable.returnFrameData.returnTypes)
             {
-                if (_return.Count == 0)
+                if (returnType != null)
                 {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.NoReturn));
-                }
-                else
-                {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.NoReturn_FromAllPaths));
+                    MustMatchType(expr._returnType.type, returnType, true);
                 }
             }
-            _return.Clear();
+            if (!symbolTable.returnFrameData.initialized && !Primitives.IsVoidType(expr._returnType.type))
+            {
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
+                        symbolTable.returnFrameData.initializedOnAnyBranch?
+                            Diagnostic.DiagnosticName.NoReturn_FromAllPaths : 
+                            Diagnostic.DiagnosticName.NoReturn
+                    ));
+            }
+            symbolTable.returnFrameData.initialized = false;
+            symbolTable.returnFrameData.returnTypes.Clear();
         }
 
         public static void ValidateCall(Expr.Call expr, Expr.Function callee)

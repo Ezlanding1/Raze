@@ -134,7 +134,7 @@ public abstract class Expr
         public StackData stack = new();
         public bool classScoped;
 
-        internal Declare(ExprUtils.QueueList<Token> typeName, Token name, bool _ref, Expr value) : base(name)
+        internal Declare(ExprUtils.QueueList<Token> typeName, Token name, bool _ref, Expr? value) : base(name)
         {
             this.typeName = typeName;
             this.stack._ref = _ref;

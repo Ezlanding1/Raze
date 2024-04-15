@@ -78,6 +78,7 @@ public abstract partial class Diagnostic
         InvalidMainFunctionReturnType,
         PrimitiveWithConstructor,
         CircularInheritance,
+        VariableUsedBeforeInitialization,
 
         // BackendError
         InvalidLiteralSize,

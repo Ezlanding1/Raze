@@ -682,6 +682,11 @@ public class Parser
             name.type = Token.TokenType.IDENTIFIER;
         }
 
+        if (TypeMatch(Token.TokenType.SEMICOLON))
+        {
+            MovePrevious();
+            return new Expr.Declare(((Expr.AmbiguousGetReference)variable).typeName, name, ReservedValueMatch("ref"), null);
+        }
         Expect(Token.TokenType.EQUALS, "'=' when declaring variable");
 
         return new Expr.Declare(((Expr.AmbiguousGetReference)variable).typeName, name, ReservedValueMatch("ref"), NoSemicolon());

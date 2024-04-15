@@ -76,6 +76,7 @@ public abstract partial class Diagnostic
         { DiagnosticName.InvalidMainFunctionReturnType, ("Main can only return types 'Integer', and 'void'. Got '{0}'", Severity.Error) },
         { DiagnosticName.PrimitiveWithConstructor, ("A primitive may not have a constructor", Severity.Error) },
         { DiagnosticName.CircularInheritance, ("Cicular inheritance between types '{0}' and '{1}'", Severity.Error) },
+        { DiagnosticName.VariableUsedBeforeInitialization, ("Variable '{0}' used before initialization", Severity.Error) },
         
         // BackendError
         { DiagnosticName.InvalidLiteralSize, ("{0} literal '{1}' exceeds size of assigned data type '{2}'", Severity.Error) },
