@@ -180,23 +180,22 @@ public partial class Analyzer
             if (expr.callee != null)
             {
                 var callee = (Expr.DataType)expr.callee.Accept(this);
+                var currentCallee = callee;
                 do
                 {
-                    symbolTable.SetContext(callee);
-                    callee = callee.SuperclassType as Expr.DataType;
+                    symbolTable.SetContext(currentCallee);
 
                     if (symbolTable.TryGetFunction(expr.name.lexeme, argumentTypes, out var symbol))
                     {
                         symbolTable.SetContext(symbol);
-                        break;
+                        goto FunctionFound;
                     }
                 }
-                while (callee != null);
+                while ((currentCallee = currentCallee.SuperclassType as Expr.DataType) != null);
 
-                if (symbolTable.Current == null) 
-                {
-                    symbolTable.FunctionSearchFail(expr.name.lexeme, argumentTypes);
-                }
+                symbolTable.SetContext(callee);
+                symbolTable.SetContext(symbolTable.FunctionSearchFail(expr.name.lexeme, argumentTypes));
+                FunctionFound:;
             }
             else
             {
