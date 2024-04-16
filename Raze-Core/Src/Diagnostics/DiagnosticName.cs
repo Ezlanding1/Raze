@@ -17,6 +17,7 @@ public abstract partial class Diagnostic
         UnsupportedSystem_OsAbi,
         UnsupportedSystem_BitFormat,
         TargetSystemModified,
+        LibraryDirectoryPathNotFound,
 
         // LexerError
         EmptyStringLiteral,

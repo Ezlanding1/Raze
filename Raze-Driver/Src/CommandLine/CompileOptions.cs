@@ -55,7 +55,7 @@ internal partial class Shell
                     }
                     else
                     {
-                        throw new Exception();
+                        Diagnostics.Report(new Diagnostic.DriverDiagnostic(Diagnostic.DiagnosticName.LibraryDirectoryPathNotFound, library));
                     }
                 }
             }

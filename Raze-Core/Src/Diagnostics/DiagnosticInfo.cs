@@ -17,6 +17,7 @@ public abstract partial class Diagnostic
         { DiagnosticName.UnsupportedSystem_OsAbi, ("Unsuppored OsABI '{0}'", Severity.Exception) },
         { DiagnosticName.UnsupportedSystem_BitFormat, ("Unsuppored BitFormat '{0}'", Severity.Exception) },
         { DiagnosticName.TargetSystemModified, ("Cannot run the binary on your system. Try compiling for your system or using the 'compile' command instead", Severity.Exception) },
+        { DiagnosticName.LibraryDirectoryPathNotFound, ("Library directory path '{0}' not found", Severity.Exception) },
 
         // LexerError
         { DiagnosticName.EmptyStringLiteral, ("A String literal may not be empty", Severity.Error) },
