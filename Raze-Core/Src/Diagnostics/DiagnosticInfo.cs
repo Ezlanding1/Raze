@@ -62,7 +62,7 @@ public abstract partial class Diagnostic
         { DiagnosticName.InvalidCall, ("'{0}' is not invokable", Severity.Error) },
         { DiagnosticName.AmbiguousCall, ("Call is ambiguous between {0} and {1}", Severity.Error) },
         { DiagnosticName.InvalidOperatorCall_Arity1, ("Type {0} doesn't have a definition for '{1}'", Severity.Error) },
-        { DiagnosticName.InvalidOperatorCall_Arity2, ("Types '{0}' and '{1} doesn't have a definition for '{2}'", Severity.Error) },
+        { DiagnosticName.InvalidOperatorCall_Arity2, ("Types '{0}' and '{1}' don't have a definition for '{2}'", Severity.Error) },
         { DiagnosticName.InvalidOperatorArity, ("The '{0}' operator must have an arity of {1}", Severity.Error) },
         { DiagnosticName.UnrecognizedOperator, ("'{0}' is not a recognized operator", Severity.Error) },
         { DiagnosticName.InvalidStatementLocation, ("{0} must be placed in {1}", Severity.Error) },
