@@ -136,7 +136,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             alloc.Free(arg);
         }
 
-        alloc.SavePreservedRegistersBeforeCall(this);
+        alloc.SavePreservedRegistersBeforeCall(this, iCall.Arguments.Count + Convert.ToInt32(instance));
 
         EmitCall(new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL, new AssemblyExpr.ProcedureRef(ToMangledName(iCall.InternalFunction))));
 
