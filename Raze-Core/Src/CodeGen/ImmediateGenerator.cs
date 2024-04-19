@@ -17,7 +17,7 @@ public partial class AssemblyExpr
             return literalType switch
             {
                 Literal.LiteralType.Integer => ParseInteger(str, size),
-                Literal.LiteralType.UnsignedInteger => ParseUnsignedInteger(str, size),
+                Literal.LiteralType.UnsignedInteger => ParseUnsignedInteger(str, size, literalType),
                 Literal.LiteralType.Floating => ParseFloating(str, size),
                 Literal.LiteralType.Binary => ParseUnsignedInteger(str, size, literalType),
                 Literal.LiteralType.Hex => ParseUnsignedInteger(str, size, literalType),
@@ -45,11 +45,11 @@ public partial class AssemblyExpr
             }
             return result;
         }
-        private static byte[] ParseUnsignedInteger(string str, Register.RegisterSize size, Literal.LiteralType literalType=Literal.LiteralType.Integer)
+        private static byte[] ParseUnsignedInteger(string str, Register.RegisterSize size, Literal.LiteralType literalType)
         {
             (int _base, string prefix) = literalType switch
             {
-                Literal.LiteralType.Integer => (10, ""),
+                Literal.LiteralType.UnsignedInteger => (10, ""),
                 Literal.LiteralType.Hex => (16, "0x"),
                 Literal.LiteralType.Binary => (2, "0b"),
             };

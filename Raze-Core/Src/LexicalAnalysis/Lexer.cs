@@ -113,6 +113,10 @@ public class Lexer
                 {
                     return new Token(pattern.type, match.ToString()[2..]);
                 }
+                if (pattern.type == Token.TokenType.UNSIGNED_INTEGER)
+                {
+                    return new Token(pattern.type, match.ToString()[..^1]);
+                }
                 return new Token(pattern.type, match.ToString());
             }
         }
