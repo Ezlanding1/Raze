@@ -58,11 +58,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return HandleICall(expr);
     }
 
-    private AssemblyExpr.Value HandleICall(Expr.ICall iCall) 
+    private AssemblyExpr.Value? HandleICall(Expr.ICall iCall) 
     {
         bool instance = !iCall.InternalFunction.modifiers["static"];
 
-        var localParams = new AssemblyExpr.Register?[Math.Min(iCall.Arguments.Count + Convert.ToInt16(instance), 6)];
+        var localParams = new AssemblyExpr.Register[Math.Min(iCall.Arguments.Count + Convert.ToInt32(instance), 6)];
 
         if (instance)
         {
@@ -84,8 +84,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             }
             else
             {
-                var rbx = alloc.GetRegister(alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RBX), InstructionUtils.SYS_SIZE);
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(InstructionUtils.paramRegister[0], InstructionUtils.SYS_SIZE), rbx));
+                
+                localParams[0] = 
+                    alloc.ReserveScratchRegister(this, alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RDI), AssemblyExpr.Register.RegisterSize._64Bits);
             }
         }
 
@@ -106,7 +107,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
                     if (!(arg.IsRegister() && HandleSeteOptimization((AssemblyExpr.Register)arg, paramReg)))
                     {
-                        if (arg.IsRegister() && !alloc.IsNeeded(alloc.NameToIdx(((AssemblyExpr.Register)arg).Name)))
+                        if (arg.IsRegister() && !alloc.IsNeededOrNeededPreserved(alloc.NameToIdx(((AssemblyExpr.Register)arg).Name)))
                         {
                             alloc.FreeRegister((AssemblyExpr.Register)arg);
                             ((AssemblyExpr.Register)arg).nameBox.Value = paramReg.Name;
@@ -136,18 +137,13 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             alloc.Free(arg);
         }
 
-        alloc.SavePreservedRegistersBeforeCall(this, iCall.Arguments.Count + Convert.ToInt32(instance));
+        alloc.SaveScratchRegistersBeforeCall(this, iCall.Arguments.Count + Convert.ToInt32(instance));
 
-        EmitCall(new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL, new AssemblyExpr.ProcedureRef(ToMangledName(iCall.InternalFunction))));
-
-        if (instance)
-        {
-            alloc.FreeParameter(0, localParams[0], this);
-        }
-        for (int i = Convert.ToInt16(instance); i < localParams.Length; i++)
+        for (int i = 0; i < localParams.Length; i++)
         {
             alloc.FreeParameter(i, localParams[i], this);
         }
+        EmitCall(new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL, new AssemblyExpr.ProcedureRef(ToMangledName(iCall.InternalFunction))));
 
 
         if (iCall.Arguments.Count > InstructionUtils.paramRegister.Length && alloc.fncPushPreserved.leaf)
@@ -155,7 +151,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.ADD, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes((iCall.Arguments.Count - InstructionUtils.paramRegister.Length) * 8))));
         }
 
-        return alloc.NeededAlloc(InstructionUtils.ToRegisterSize(iCall.InternalFunction._returnType.type.allocSize), this);
+        return iCall.InternalFunction.constructor ? 
+            alloc.ReAllocConstructorReturnRegister(alloc.NameToIdx(localParams[0].Name)) : 
+            alloc.NeededAlloc(InstructionUtils.ToRegisterSize(iCall.InternalFunction._returnType.type.allocSize), this);
     }
 
     public AssemblyExpr.Value? VisitClassExpr(Expr.Class expr)
@@ -792,29 +790,30 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         // either dealloc on exit (handled by OS), require manual delete, or implement GC
         alloc.ReserveRegister(this, 0);
         var rax = alloc.GetRegister(alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RAX), AssemblyExpr.Register.RegisterSize._64Bits);
-        alloc.ReserveRegister(this, 9);
-        var rbx = alloc.GetRegister(alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RBX), AssemblyExpr.Register.RegisterSize._64Bits);
-        alloc.fncPushPreserved.IncludeRegister(alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RBX));
+        alloc.ReserveRegister(this, alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RDI));
+        var rdi = alloc.GetRegister(alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RDI), AssemblyExpr.Register.RegisterSize._64Bits);
 
         // Move the following into a runtime procedure, and pass in the expr.internalClass.size as a parameter
         // {
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 12 })));
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 0 })));
+        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [12])));
+        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rdi, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [0])));
         Emit(new AssemblyExpr.Zero(AssemblyExpr.Instruction.SYSCALL));
 
         var ptr = new AssemblyExpr.Pointer(rax, -expr.internalClass.CalculateSize(), 8);
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, rbx, ptr));
 
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits), ptr));
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 12 })));
+        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA,  rdi, ptr));
+        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [12])));
+
+        alloc.NullReg(alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RDI));
+        alloc.NeededAlloc(AssemblyExpr.Register.RegisterSize._64Bits, this, alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RDI));
+
         Emit(new AssemblyExpr.Zero(AssemblyExpr.Instruction.SYSCALL));
 
         //Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, rbx));
         // }
 
         alloc.FreeRegister(rax);
-        alloc.Free(expr.call.Accept(this));
-        return rbx;
+        return expr.call.Accept(this);
     }
 
     public AssemblyExpr.Value? VisitIsExpr(Expr.Is expr)

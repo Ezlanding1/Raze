@@ -16,8 +16,10 @@ internal struct RegisterState
         Used = 1,
         // Prevents the register from being freed (unless the 'force' option is specified). However, the register may change
         Locked = 2,
+        // Prevents the register from being changed to a scratch register. However, it may change to another preserved register
+        NeededPreserved = 4,
         // Prevents the register from being changed. If use of this register is required, it will move its contents to a new register first
-        Needed = 4
+        Needed = 8
     }
     private RegisterStates data;
 

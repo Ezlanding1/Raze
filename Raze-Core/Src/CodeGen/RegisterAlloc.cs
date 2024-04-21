@@ -71,7 +71,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             return idx;
         }
 
-        public void SavePreservedRegistersBeforeCall(CodeGen assembler, int arity)
+        public void SaveScratchRegistersBeforeCall(CodeGen codeGen, int arity)
         {
             for (int i = 0; i < InstructionUtils.ScratchRegisterCount; i++)
             {
@@ -81,12 +81,22 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                     continue;
                 }
 
-                _ReserveRegister(assembler, i, NextPreservedRegisterIdx());
+                int idx = NextPreservedRegisterIdx();
+                _ReserveRegister(codeGen, i, idx);
+                registerStates[idx].SetState(RegisterState.RegisterStates.NeededPreserved);
             }
         }
 
-        public void ReserveRegister(CodeGen assembler, int i) =>
-            _ReserveRegister(assembler, i, RegisterIdx);
+        public AssemblyExpr.Register ReserveScratchRegister(CodeGen codeGen, int i, AssemblyExpr.Register.RegisterSize size)
+        {
+            int idx = NextPreservedRegisterIdx();
+            _ReserveRegister(codeGen, i, idx);
+            registerStates[idx].SetState(RegisterState.RegisterStates.NeededPreserved);
+            return GetRegister(idx, size);
+        }
+
+        public void ReserveRegister(CodeGen codeGen, int i) =>
+            _ReserveRegister(codeGen, i, RegisterIdx);
 
         private void _ReserveRegister(CodeGen assembler, int i, int newIdx)
         {
@@ -107,16 +117,16 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             Free(i, true);
         }
 
-        public AssemblyExpr.Register AllocParam(int i, AssemblyExpr.Register.RegisterSize size, AssemblyExpr.Register?[] localParams, CodeGen codeGen)
+        public AssemblyExpr.Register AllocParam(int i, AssemblyExpr.Register.RegisterSize size, AssemblyExpr.Register[] localParams, CodeGen codeGen)
         {
             int idx = NameToIdx(InstructionUtils.paramRegister[i]);
             if (!registerStates[idx].HasState(RegisterState.RegisterStates.Free))
             {
                 int newIdx = NextPreservedRegisterIdx();
                 _ReserveRegister(codeGen, idx, newIdx);
-                localParams[i] = GetRegister(newIdx, size);
+                registerStates[newIdx].SetState(RegisterState.RegisterStates.NeededPreserved);
             }
-            return GetRegister(idx, size);
+            return localParams[i] = GetRegister(idx, size);
         }
 
         public AssemblyExpr.Register NeededAlloc(AssemblyExpr.Register.RegisterSize size, CodeGen codeGen, int i = 0)
@@ -126,6 +136,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             return GetRegister(i, size);
         }
 
+        public AssemblyExpr.Register ReAllocConstructorReturnRegister(int idx)
+        {
+            registerStates[idx].SetState(RegisterState.RegisterStates.NeededPreserved);
+            return GetRegister(idx, AssemblyExpr.Register.RegisterSize._64Bits);
+        }
+
         public void Lock(AssemblyExpr.Register register) => Lock(NameToIdx(register.Name));
         public void Lock(int idx) => registerStates[idx].SetState(RegisterState.RegisterStates.Used, RegisterState.RegisterStates.Locked);
 
@@ -133,7 +149,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         public void Unlock(int idx) => registerStates[idx].RemoveState(RegisterState.RegisterStates.Locked);
 
         public bool IsLocked(int idx) => registerStates[idx].HasState(RegisterState.RegisterStates.Locked);
-        public bool IsNeeded(int idx) => registerStates[idx].HasState(RegisterState.RegisterStates.Needed);
+        public bool IsNeededOrNeededPreserved(int idx) =>
+            registerStates[idx].HasState(RegisterState.RegisterStates.Needed) ||
+            registerStates[idx].HasState(RegisterState.RegisterStates.NeededPreserved);
 
         public void ListAccept<T, T2>(List<T> list, Expr.IVisitor<T2> visitor)
             where T : Expr
@@ -148,10 +166,10 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         public int NameToIdx(AssemblyExpr.Register.RegisterName name) => 
             Array.IndexOf(InstructionUtils.storageRegisters.Select(x => x.Name).ToArray(), name);
 
-        public void FreeParameter(int i, AssemblyExpr.Register? localParam, CodeGen assembler)
+        public void FreeParameter(int i, AssemblyExpr.Register localParam, CodeGen assembler)
         {
             Free(NameToIdx(InstructionUtils.paramRegister[i]));
-            if (localParam != null)
+            if (localParam.Name != InstructionUtils.paramRegister[i])
             {
                 assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(InstructionUtils.paramRegister[i], localParam.Size), localParam));
                 Free(NameToIdx(localParam.Name));
