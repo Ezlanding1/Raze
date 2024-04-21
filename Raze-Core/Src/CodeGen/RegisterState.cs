@@ -8,40 +8,33 @@ namespace Raze;
 
 internal struct RegisterState
 {
+    [Flags]
     internal enum RegisterStates : byte
     {
-        Free,
+        Free = 0,
         // Prevents the register from being alloc-ed somewhere else
-        Used,
+        Used = 1,
         // Prevents the register from being freed (unless the 'force' option is specified). However, the register may change
-        Locked,
+        Locked = 2,
         // Prevents the register from being changed. If use of this register is required, it will move its contents to a new register first
-        Needed
+        Needed = 4
     }
-    private byte data;
+    private RegisterStates data;
 
-    public bool HasState(RegisterStates state) => state switch
-    {
-        RegisterStates.Free => (data & (1 << 0)) == 0,
-        RegisterStates.Used => (data & (1 << 0)) > 0,
-        RegisterStates.Locked => (data & (1 << 1)) > 0,
-        RegisterStates.Needed => (data & (1 << 2)) > 0
-    };
+    public bool HasState(RegisterStates state) =>
+        state == RegisterStates.Free ?
+            data == 0 :
+            data.HasFlag(state);
 
-    public void SetState(RegisterStates state) => data = state switch
-    {
-        RegisterStates.Free => 0,
-        RegisterStates.Used => (byte)(data | (1 << 0)),
-        RegisterStates.Locked => (byte)(data | (1 << 1)),
-        RegisterStates.Needed => (byte)(data | (1 << 2))
-    };
-    public void RemoveState(RegisterStates state) => data = state switch
-    {
-        RegisterStates.Free => (byte)(data | (1 << 0)),
-        RegisterStates.Used => 0,
-        RegisterStates.Locked => (byte)(data & ~(1 << 1)),
-        RegisterStates.Needed => (byte)(data & ~(1 << 2))
-    };
+    public void SetState(RegisterStates state) => data =
+        state == RegisterStates.Free ?
+            0 :
+            data | state;
+
+    public void RemoveState(RegisterStates state) => data =
+        state == RegisterStates.Used ?
+            0 :
+            data & ~state;
 
     public void SetState(RegisterState state) => this.data = state.data;
 
