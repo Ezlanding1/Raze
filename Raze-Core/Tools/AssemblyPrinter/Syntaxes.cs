@@ -53,9 +53,9 @@ partial class Syntaxes
             {
                 if (instruction.literal.type == AssemblyExpr.Literal.LiteralType.String)
                 {
-                    return $"{instruction.name}: {InstructionUtils.dataSize[instruction.Size]} {UnescapeString(instruction.literal.value.SelectMany(x => x).ToArray())}";
+                    return $"{(string.IsNullOrEmpty(instruction.name) ? "" : (instruction.name + ": "))}{InstructionUtils.dataSize[instruction.Size]} {UnescapeString(instruction.literal.value.SelectMany(x => x).ToArray())}";
                 }
-                return $"{instruction.name}: {InstructionUtils.dataSize[instruction.Size]} {string.Join(", ", instruction.literal.value.Select(x => VisitImmediate(new(instruction.literal.type, x))))}";
+                return $"{(string.IsNullOrEmpty(instruction.name) ? "" : (instruction.name + ": "))}{InstructionUtils.dataSize[instruction.Size]} {string.Join(", ", instruction.literal.value.Select(x => VisitImmediate(new(instruction.literal.type, x))))}";
             }
 
             public string VisitProcedure(AssemblyExpr.Procedure instruction)

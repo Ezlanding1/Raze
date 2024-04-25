@@ -394,17 +394,17 @@ public abstract partial class AssemblyExpr
 
     public class Data : DataExpr
     {
-        public string name;
+        public string? name;
         internal (Literal.LiteralType type, IEnumerable<byte[]> value) literal;
         public Register.RegisterSize Size => (Register.RegisterSize)literal.value.ElementAt(0).Length;
 
-        internal Data(string name, Literal literal)
+        internal Data(string? name, Literal literal)
         {
             this.name = name;
             this.literal.type = literal.type;
             this.literal.value = [literal.value];
         }
-        internal Data(string name, Literal.LiteralType type, IEnumerable<byte[]> value)
+        internal Data(string? name, Literal.LiteralType type, IEnumerable<byte[]> value)
         {
             this.name = name;
             this.literal.type = type;
