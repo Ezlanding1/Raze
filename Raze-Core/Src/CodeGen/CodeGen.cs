@@ -520,9 +520,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                 EmitData(
                     new AssemblyExpr.Data(
                         name,
-                        new(AssemblyExpr.Literal.LiteralType.String, AssemblyExpr.ImmediateGenerator.Generate(
-                            AssemblyExpr.Literal.LiteralType.String, expr.literal.lexeme, (AssemblyExpr.Register.RegisterSize)(expr.literal.lexeme.Length+1)
-                        ))
+                        AssemblyExpr.Literal.LiteralType.String, AssemblyExpr.ImmediateGenerator.ParseRefString(
+                            expr.literal.lexeme, (AssemblyExpr.Register.RegisterSize)(expr.literal.lexeme.Length+1)
+                        )
                     )
                 );
                 dataCount++;

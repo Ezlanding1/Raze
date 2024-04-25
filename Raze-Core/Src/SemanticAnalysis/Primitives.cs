@@ -149,8 +149,8 @@ public partial class Analyzer
                 return (a + b).ToString();
             }
 
-            byte[] aData = null;
-            byte[] bData = null;
+            IEnumerable<byte[]> aData = null;
+            IEnumerable<byte[]> bData = null;
 
             int i = 1;
             while (aData == null || bData == null)
@@ -165,7 +165,7 @@ public partial class Analyzer
                 }
                 i++;
             }
-            assembler.EmitData(new AssemblyExpr.Data(assembler.DataLabel, new(AssemblyExpr.Literal.LiteralType.String, aData.Concat(bData).ToArray())));
+            assembler.EmitData(new AssemblyExpr.Data(assembler.DataLabel, AssemblyExpr.Literal.LiteralType.String, aData.Concat(bData)));
 
             return assembler.CreateDatalLabel(assembler.dataCount++);
         }

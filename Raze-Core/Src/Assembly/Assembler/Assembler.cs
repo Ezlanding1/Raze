@@ -108,8 +108,9 @@ public partial class Assembler :
     public Instruction VisitData(AssemblyExpr.Data instruction)
     {
         instruction.name = "data." + instruction.name;
-        symbolTable.definitions[instruction.name] = dataLocation; 
-        return new Instruction(new IInstruction[] { new RawInstruction(instruction.literal.value) });
+        symbolTable.definitions[instruction.name] = dataLocation;
+        IInstruction[] data = [new RawInstruction(instruction.literal.value.SelectMany(x => x).ToArray())];
+        return new Instruction(data);
     }
 
     public Instruction VisitGlobal(AssemblyExpr.Global instruction)

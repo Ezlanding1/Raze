@@ -45,6 +45,7 @@ public partial class AssemblyExpr
             }
             return result;
         }
+
         private static byte[] ParseUnsignedInteger(string str, Register.RegisterSize size, Literal.LiteralType literalType)
         {
             (int _base, string prefix) = literalType switch
@@ -71,6 +72,7 @@ public partial class AssemblyExpr
             }
             return new byte[(int)size];
         }
+
         private static byte[] ParseFloating(string str, Register.RegisterSize size)
         {
             (bool successfulParse, byte[] result) = size switch
@@ -98,6 +100,13 @@ public partial class AssemblyExpr
             }
             return value;
         }
+        
+        public static IEnumerable<byte[]> ParseRefString(string str, Register.RegisterSize size)
+        {
+            List<byte[]> value = Encoding.ASCII.GetBytes(str + '\0').Select(x => new byte[] { x }).ToList();
+            return value;
+        }
+
         private static byte[] ParseLabelReference(string str, Register.RegisterSize size)
         {
             if (InstructionUtils.SYS_SIZE != size)
