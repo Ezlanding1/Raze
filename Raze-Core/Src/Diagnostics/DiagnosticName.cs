@@ -74,12 +74,17 @@ public abstract partial class Diagnostic
         ConstructorWithNonVoidReturnType,
         InvalidConstructorModifier,
         EntrypointNotFound,
+        InvalidFunctionModifierPair,
         InvalidMainFunctionModifier_Include,
         InvalidMainFunctionModifier_NoInclude,
         InvalidMainFunctionReturnType,
         PrimitiveWithConstructor,
         CircularInheritance,
         VariableUsedBeforeInitialization,
+        AbstractFunctionNotInTrait,
+        InstanceOfTraitCreated,
+        InvalidOverrideModifier,
+        ClassDoesNotOverrideAbstractFunction,
 
         // BackendError
         InvalidLiteralSize,

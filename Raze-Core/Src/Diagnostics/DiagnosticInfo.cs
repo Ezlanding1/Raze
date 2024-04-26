@@ -72,12 +72,17 @@ public abstract partial class Diagnostic
         { DiagnosticName.ConstructorWithNonVoidReturnType, ("The return type of a constructor must be 'void'", Severity.Error) },
         { DiagnosticName.InvalidConstructorModifier, ("A constructor cannot have the {0} modifier", Severity.Error) },
         { DiagnosticName.EntrypointNotFound, ("Program does not contain a Main method", Severity.Error) },
+        { DiagnosticName.InvalidFunctionModifierPair, ("A function may not have the modifiers '{0}' and '{1}'", Severity.Error) },
         { DiagnosticName.InvalidMainFunctionModifier_Include, ("The Main function must have the '{0}' modifier", Severity.Error) },
         { DiagnosticName.InvalidMainFunctionModifier_NoInclude, ("The Main function may not have the '{0}' modifier", Severity.Error) },
         { DiagnosticName.InvalidMainFunctionReturnType, ("Main can only return types 'Integer', and 'void'. Got '{0}'", Severity.Error) },
         { DiagnosticName.PrimitiveWithConstructor, ("A primitive may not have a constructor", Severity.Error) },
         { DiagnosticName.CircularInheritance, ("Cicular inheritance between types '{0}' and '{1}'", Severity.Error) },
         { DiagnosticName.VariableUsedBeforeInitialization, ("Variable '{0}' used before initialization", Severity.Error) },
+        { DiagnosticName.AbstractFunctionNotInTrait, ("Abstract functions may only be defined in traits", Severity.Error) },
+        { DiagnosticName.InstanceOfTraitCreated, ("An instance of a trait may not be created", Severity.Error) },
+        { DiagnosticName.InvalidOverrideModifier, ("Function '{0}' has no suitable method to override", Severity.Error) },
+        { DiagnosticName.ClassDoesNotOverrideAbstractFunction, ("Class '{0}' does not contain a method to override the abstract function '{2}' in '{1}'", Severity.Error) },
         
         // BackendError
         { DiagnosticName.InvalidLiteralSize, ("{0} literal '{1}' exceeds size of assigned data type '{2}'", Severity.Error) },
