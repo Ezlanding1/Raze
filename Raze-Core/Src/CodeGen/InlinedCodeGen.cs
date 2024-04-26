@@ -145,6 +145,11 @@ public class InlinedCodeGen : CodeGen
 
     private AssemblyExpr.Value? HandleICall(Expr.ICall iCall)
     {
+        if (iCall.InternalFunction.Abstract)
+        {
+            return null;
+        }
+
         alloc.CreateBlock();
 
         AssemblyExpr.Value[] args = iCall.Arguments.Select(x => x.Accept(this)).ToArray();

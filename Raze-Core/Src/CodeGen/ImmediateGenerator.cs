@@ -101,7 +101,7 @@ public partial class AssemblyExpr
             return value;
         }
         
-        public static IEnumerable<byte[]> ParseRefString(string str, Register.RegisterSize size)
+        public static IEnumerable<byte[]> ParseRefString(string str)
         {
             List<byte[]> value = Encoding.ASCII.GetBytes(str + '\0').Select(x => new byte[] { x }).ToList();
             return value;
