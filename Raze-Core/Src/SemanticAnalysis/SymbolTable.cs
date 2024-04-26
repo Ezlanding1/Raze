@@ -135,10 +135,6 @@ public partial class Analyzer
                 if (!initializedOnDeclaration)
                     frameData[variable] = new FrameData();
             }
-            else
-            {
-                CodeGen.RegisterAlloc.AllocateVariable(current, variable);
-            }
         }
 
         public void AddParameter(Token name, Expr.StackData parameter)

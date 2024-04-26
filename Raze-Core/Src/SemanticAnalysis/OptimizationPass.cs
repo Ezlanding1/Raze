@@ -41,8 +41,13 @@ public partial class Analyzer
 
             base.VisitClassExpr(expr);
 
-            symbolTable.UpContext();
+            expr.size = 0;
+            foreach (var declaration in expr.declarations)
+            {
+                CodeGen.RegisterAlloc.AllocateVariable(expr, declaration.stack);
+            }
 
+            symbolTable.UpContext();
             return null;
         }
 

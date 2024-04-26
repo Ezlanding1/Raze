@@ -172,7 +172,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
     public AssemblyExpr.Value? VisitDeclareExpr(Expr.Declare expr)
     {
         AssemblyExpr.Value operand = expr.value?.Accept(this);
-        alloc.AllocateVariable(expr.stack);
+
+        if (alloc.current is not Expr.Class)
+        {
+            alloc.AllocateVariable(expr.stack);
+        }
 
         var _ref = expr.stack._ref;
 
@@ -267,7 +271,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         if (expr.constructor && expr.enclosing is Expr.Class _class)
         {
             alloc.current = _class;
-            alloc.current.size = 0;
             alloc.ListAccept(_class.declarations, this);
             alloc.current = expr;
         }
