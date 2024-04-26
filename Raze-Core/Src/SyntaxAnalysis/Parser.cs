@@ -125,7 +125,7 @@ public class Parser
 
     private Expr Definition()
     {
-        if (ReservedValueMatch("function", "class", "primitive"))
+        if (ReservedValueMatch("function", "class", "primitive", "trait"))
         {
             Token definitionType = Previous();
             if (definitionType.lexeme == "function")
@@ -199,10 +199,17 @@ public class Parser
 
                 Expect(Token.TokenType.RPAREN, "')' after function name");
 
+                if (TypeMatch(Token.TokenType.SEMICOLON))
+                {
+                    modifiers["virtual"] = true;
+                    return new Expr.Function(modifiers, _return, name, parameters, null);
+                }
                 return new Expr.Function(modifiers, _return, name, parameters, GetBlock(definitionType.lexeme));
             }
-            else if (definitionType.lexeme == "class")
+            else if (definitionType.lexeme == "class" || definitionType.lexeme == "trait")
             {
+                bool trait = definitionType.lexeme == "trait";
+
                 Expect(Token.TokenType.IDENTIFIER, definitionType.lexeme + " name");
                 Token name = Previous();
 
@@ -222,7 +229,7 @@ public class Parser
                 List<Expr.Declare> declarations = new();
                 List<Expr.Definition> definitions = new();
 
-                Expect(Token.TokenType.LBRACE, "'{' before class body");
+                Expect(Token.TokenType.LBRACE, "'{' before" + definitionType.lexeme + "body");
                 while (!TypeMatch(Token.TokenType.RBRACE))
                 {
                     Expr.Declare? declExpr = FullDeclare();
@@ -244,12 +251,12 @@ public class Parser
                     }
                     else
                     {
-                        Expect(Token.TokenType.RBRACE, "'}' after class body");
+                        Expect(Token.TokenType.RBRACE, "'}' after" + definitionType.lexeme + "body");
                         break;
                     }
                 }
 
-                return new Expr.Class(name, declarations, definitions, superclass);
+                return new Expr.Class(name, declarations, definitions, superclass, trait);
             }
             else if (definitionType.lexeme == "primitive")
             {
