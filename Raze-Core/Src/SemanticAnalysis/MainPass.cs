@@ -187,6 +187,16 @@ public partial class Analyzer
 
                     if (symbolTable.TryGetFunction(expr.name.lexeme, argumentTypes, out var symbol))
                     {
+                        if (callee != symbolTable.Current && symbol.modifiers["static"])
+                        {
+                            symbolTable.SetContext(callee);
+                            Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
+                                Diagnostic.DiagnosticName.UndefinedReference_Suggestion,
+                                "function",
+                                callee + "." + Expr.Call.CallNameToString(expr.name.lexeme, argumentTypes),
+                                symbol
+                            ));
+                        }
                         symbolTable.SetContext(symbol);
                         goto FunctionFound;
                     }

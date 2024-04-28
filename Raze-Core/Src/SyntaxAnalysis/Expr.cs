@@ -358,6 +358,9 @@ public abstract class Expr
             this.callee = callee;
         }
 
+        public static string CallNameToString(string name, Type[] types) =>
+            name + "(" + string.Join(", ", (object?[])types) + ")";
+
         public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitCallExpr(this);

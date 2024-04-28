@@ -59,6 +59,7 @@ public abstract partial class Diagnostic
         { DiagnosticName.DoubleDeclaration, ("A {0} '{1}' is already declared in this scope", Severity.Error) },
         { DiagnosticName.MainDoubleDeclaration, ("A program may have only one 'Main' method", Severity.Error) },
         { DiagnosticName.UndefinedReference, ("The {0} '{1}' does not exist in the current context", Severity.Error) },
+        { DiagnosticName.UndefinedReference_Suggestion, ("The {0} '{1}' does not exist in the current context. Did you mean '{2}'?", Severity.Error) },
         { DiagnosticName.InvalidCall, ("'{0}' is not invokable", Severity.Error) },
         { DiagnosticName.AmbiguousCall, ("Call is ambiguous between {0} and {1}", Severity.Error) },
         { DiagnosticName.InvalidOperatorCall_Arity1, ("Type {0} doesn't have a definition for '{1}'", Severity.Error) },

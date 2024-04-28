@@ -386,7 +386,7 @@ public partial class Analyzer
         {
             if (!types.Any(x => x == TypeCheckUtils.anyType))
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UndefinedReference, "function", key + "(" + string.Join(", ", (object?[])types) + ")"));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UndefinedReference, "function", Expr.Call.CallNameToString(key, types)));
             }
             return FunctionNotFoundDefinition;
         }

@@ -59,6 +59,7 @@ public abstract partial class Diagnostic
         DoubleDeclaration,
         MainDoubleDeclaration,
         UndefinedReference,
+        UndefinedReference_Suggestion,
         InvalidCall,
         AmbiguousCall,
         InvalidOperatorCall_Arity1,

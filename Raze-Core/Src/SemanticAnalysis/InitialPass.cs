@@ -309,6 +309,8 @@ public partial class Analyzer
         private void FindVirtualFunctionForOverride(Expr.Function function)
         {
             function.modifiers["virtual"] = false;
+            if (function.modifiers["static"]) return;
+
             using (new SaveContext())
             {
                 var superclass = symbolTable.NearestEnclosingClass()?.SuperclassType as Expr.DataType;
