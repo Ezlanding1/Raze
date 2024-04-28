@@ -98,7 +98,8 @@ internal class TokenList
         "ref",
         "import",
         "from",
-        "extends"
+        "extends",
+        "trait"
     };
 
     /*

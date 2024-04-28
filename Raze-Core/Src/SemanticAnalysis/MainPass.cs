@@ -309,9 +309,11 @@ public partial class Analyzer
                 symbolTable.AddParameter(paramExpr.name, paramExpr.stack);
             }
 
-            expr.block.Accept(this);
-
-            TypeCheckUtils.HandleFunctionReturns(expr);
+            if (!expr.Abstract)
+            {
+                expr.block.Accept(this);
+                TypeCheckUtils.HandleFunctionReturns(expr);
+            }
 
             symbolTable.RemoveBlock();
             symbolTable.UpContext();
@@ -382,6 +384,10 @@ public partial class Analyzer
                 expr.call.Accept(this);
 
                 expr.internalClass = expr.call.internalFunction.enclosing as Expr.Class ?? TypeCheckUtils.anyType;
+            }
+            if (expr.internalClass.trait)
+            {
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InstanceOfTraitCreated));
             }
             return expr.internalClass;
         }

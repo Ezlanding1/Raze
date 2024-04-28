@@ -88,7 +88,9 @@ internal abstract partial class ExprUtils
                 "static",
                 "unsafe",
                 "operator",
-                "inline"
+                "inline",
+                "virtual",
+                "override"
             );
         }
 

@@ -55,6 +55,10 @@ partial class Syntaxes
                 {
                     return $"{(string.IsNullOrEmpty(instruction.name) ? "" : (instruction.name + ": "))}{InstructionUtils.dataSize[instruction.Size]} {UnescapeString(instruction.literal.value.SelectMany(x => x).ToArray())}";
                 }
+                else if ((int)instruction.literal.type >= 9)
+                {
+                    return $"{(string.IsNullOrEmpty(instruction.name) ? "" : (instruction.name + ": "))}{InstructionUtils.dataSize[AssemblyExpr.Register.RegisterSize._64Bits]} {string.Join(", ", instruction.literal.value.Select(x => VisitImmediate(new AssemblyExpr.LabelLiteral(instruction.literal.type, x))))}";
+                }
                 return $"{(string.IsNullOrEmpty(instruction.name) ? "" : (instruction.name + ": "))}{InstructionUtils.dataSize[instruction.Size]} {string.Join(", ", instruction.literal.value.Select(x => VisitImmediate(new(instruction.literal.type, x))))}";
             }
 

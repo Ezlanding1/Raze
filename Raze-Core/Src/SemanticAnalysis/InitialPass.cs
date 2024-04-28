@@ -106,6 +106,16 @@ public partial class Analyzer
                 }
             }
 
+            if (expr.Abstract && (symbolTable.NearestEnclosingClass() == null || (symbolTable.NearestEnclosingClass() is Expr.Class _class  && !_class.trait)))
+            {
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.AbstractFunctionNotInTrait));
+            }
+            if (expr.modifiers["virtual"] && expr.modifiers["inline"])
+            {
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifierPair, "virtual", "inline"));
+                expr.modifiers["inline"] = false;
+            }
+
             if (expr.name.lexeme == "Main")
             {
                 symbolTable.main = expr;
@@ -118,8 +128,9 @@ public partial class Analyzer
                 parameter.stack = new Expr.StackData();
                 GetVariableDefinition(parameter.typeName, parameter.stack);
             }
+            FindVirtualFunctionForOverride(expr);
 
-            expr.block.Accept(this);
+            expr.block?.Accept(this);
 
             symbolTable.UpContext();
 
@@ -166,6 +177,8 @@ public partial class Analyzer
             {
                 expr.definitions.Add(new SpecialObjects.DefaultConstructor(((Expr.Class)symbolTable.Current).name));
             }
+
+            HandleTraitSuperclass(expr);
 
             if (expr.superclass.type is Expr.Class _class)
             {
@@ -276,6 +289,45 @@ public partial class Analyzer
 
             symbolTable.UpContext();
             return null;
+        }
+
+        private void HandleTraitSuperclass(Expr.Class _class)
+        {
+            var superclass = _class.SuperclassType as Expr.Class;
+            if (superclass?.trait == true)
+            {
+                foreach (var abstractFunction in superclass.definitions.Where(x => x is Expr.Function func && func.Abstract).Cast<Expr.Function>())
+                {
+                    if (!symbolTable.TryGetFunction(abstractFunction.name.lexeme, abstractFunction.parameters.Select(x => x.stack.type).ToArray(), out var virtualFunc))
+                    {
+                        Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.ClassDoesNotOverrideAbstractFunction, _class.name.lexeme, superclass.name.lexeme, abstractFunction.ToString()));
+                    }
+                }
+            }
+        }
+
+        private void FindVirtualFunctionForOverride(Expr.Function function)
+        {
+            function.modifiers["virtual"] = false;
+            using (new SaveContext())
+            {
+                var superclass = symbolTable.NearestEnclosingClass()?.SuperclassType as Expr.DataType;
+                while (superclass != null)
+                {
+                    symbolTable.SetContext(superclass);
+                    if (symbolTable.TryGetFunction(function.name.lexeme, function.parameters.Select(x => x.stack.type).ToArray(), out var virtualFunc))
+                    {
+                        function.modifiers["override"] = true;
+                        virtualFunc.modifiers["virtual"] = true;
+                        return;
+                    }
+                    superclass = superclass.SuperclassType as Expr.DataType;
+                }
+            }
+            if (function.modifiers["override"])
+            {
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOverrideModifier, function.ToString()));
+            }
         }
 
         private void GetVariableDefinition(ExprUtils.QueueList<Token> typeName, Expr.StackData stack)

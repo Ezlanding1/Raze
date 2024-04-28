@@ -582,9 +582,10 @@ public abstract class Expr
         internal ExprUtils.Modifiers modifiers;
         public bool constructor;
         public bool dead = true;
-        public Block block;
+        public Block? block;
+        public bool Abstract => block == null;
 
-        internal Function(ExprUtils.Modifiers modifiers, TypeReference _returnType, Token name, List<Parameter> parameters, Block block) : base(name)
+        internal Function(ExprUtils.Modifiers modifiers, TypeReference _returnType, Token name, List<Parameter> parameters, Block? block) : base(name)
         {
             this.modifiers = modifiers;
             this._returnType = _returnType;
@@ -653,6 +654,34 @@ public abstract class Expr
         {
             this.size = size;
         }
+
+        private List<Function>? virtualMethods;
+        public List<Function> GetVirtualMethods()
+        {
+            if (virtualMethods != null)
+            {
+                return virtualMethods;
+            }
+            virtualMethods = new List<Function>((SuperclassType as DataType)?.GetVirtualMethods() ?? []);
+
+            foreach (var function in definitions.Where(x => x is Function func && (func.modifiers["virtual"] || func.modifiers["override"])).Cast<Function>())
+            {
+                int idx = virtualMethods.FindIndex(x => Analyzer.SymbolTable.MatchFunction(function, x));
+                if (idx == -1)
+                {
+                    virtualMethods.Add(function);
+                }
+                else
+                {
+                    function.dead = function.dead && virtualMethods[idx].dead;
+                    virtualMethods[idx] = function;
+                }
+            }
+            return virtualMethods;
+        }
+
+        public int GetOffsetOfVTableMethod(Function function) =>
+            (GetVirtualMethods().ToList().IndexOf(function) + 1) * 8;
     }
 
     public class Class : DataType
@@ -660,21 +689,29 @@ public abstract class Expr
         public TypeReference superclass;
         public override Type SuperclassType => superclass.type;
         public List<Declare> declarations;
-
+        public bool trait;
         public override int allocSize => 8;
 
-        public Class(Token name, List<Declare> declarations, List<Definition> definitions, TypeReference superclass) : base(name, definitions)
+        public Class(Token name, List<Declare> declarations, List<Definition> definitions, TypeReference superclass, bool trait=false) : base(name, definitions)
         {
             this.declarations = declarations;
             this.superclass = superclass;
             this.superclass.typeName ??= new([new Token(Token.TokenType.IDENTIFIER, "object")]);
+            this.trait = trait;
         }
-
-        public int CalculateSize() => size == 0? 1 : size;
 
         public override bool Matches(Type type)
         {
             return type.Match(this) || (this.superclass.type != null && this.superclass.type.Matches(type));
+        }
+
+        public void CalculateSizeAndAllocateVariables()
+        {
+            size = GetVirtualMethods().Count != 0 ? 8 : 0;
+            foreach (var declaration in declarations)
+            {
+                CodeGen.RegisterAlloc.AllocateVariable(this, declaration.stack);
+            }
         }
 
         public override T Accept<T>(IVisitor<T> visitor)

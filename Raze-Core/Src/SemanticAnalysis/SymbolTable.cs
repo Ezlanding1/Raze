@@ -135,10 +135,6 @@ public partial class Analyzer
                 if (!initializedOnDeclaration)
                     frameData[variable] = new FrameData();
             }
-            else
-            {
-                CodeGen.RegisterAlloc.AllocateVariable(current, variable);
-            }
         }
 
         public void AddParameter(Token name, Expr.StackData parameter)
@@ -532,7 +528,7 @@ public partial class Analyzer
             return value != null;
         }
 
-        private bool ParamMatch(Expr.Type[] a, Expr.Function b)
+        private static bool ParamMatch(Expr.Type[] a, Expr.Function b)
         {
             if (a.Length != b.Arity)
             {
@@ -548,6 +544,9 @@ public partial class Analyzer
             }
             return true;
         }
+
+        public static bool MatchFunction(Expr.Function function1, Expr.Function function2) =>
+            function1.name.lexeme == function2.name.lexeme && ParamMatch(function1.parameters.Select(x => x.stack.type).ToArray(), function2);
 
         public class FrameData
         {

@@ -96,7 +96,7 @@ public class ASTPrinter : Expr.IVisitor<object?>
             }
         }
 
-        expr.block.Accept(this);
+        expr.block?.Accept(this);
 
         return null;
     }

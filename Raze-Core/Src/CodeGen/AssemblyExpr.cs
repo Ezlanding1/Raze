@@ -386,6 +386,10 @@ public abstract partial class AssemblyExpr
         {
             this.Name = name;
         }
+        internal LabelLiteral(LiteralType type, byte[] value) : base(type)
+        {
+            this.value = value;
+        }
         internal LabelLiteral(LiteralType type, string name, Register.RegisterSize dataTypeSize) : base(type)
         {
             this.value = ImmediateGenerator.Generate(type, name, dataTypeSize);
