@@ -38,8 +38,8 @@ public partial class Analyzer
         public override object? VisitClassExpr(Expr.Class expr)
         {
             symbolTable.SetContext(expr);
-
-            base.VisitClassExpr(expr);
+            
+            Expr.ListAccept(expr.declarations, this);
 
             symbolTable.UpContext();
 
