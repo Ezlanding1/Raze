@@ -129,6 +129,10 @@ public partial class Analyzer
                 GetVariableDefinition(parameter.typeName, parameter.stack);
             }
             FindVirtualFunctionForOverride(expr);
+            if (expr.modifiers["override"])
+            {
+                expr.dead = false;
+            }
 
             expr.block?.Accept(this);
 
@@ -310,7 +314,7 @@ public partial class Analyzer
         {
             using (new SaveContext())
             {
-                var superclass = symbolTable.NearestEnclosingClass()?.SuperclassType as Expr.Class;
+                var superclass = symbolTable.NearestEnclosingClass()?.SuperclassType as Expr.DataType;
                 while (superclass != null)
                 {
                     symbolTable.SetContext(superclass);
@@ -320,7 +324,7 @@ public partial class Analyzer
                         virtualFunc.modifiers["virtual"] = true;
                         return;
                     }
-                    superclass = superclass.superclass.type as Expr.Class;
+                    superclass = superclass.SuperclassType as Expr.DataType;
                 }
             }
             if (function.modifiers["override"])

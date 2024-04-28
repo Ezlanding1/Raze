@@ -222,7 +222,6 @@ public class Parser
                 if (ReservedValueMatch("extends"))
                 {
                     Expect(Token.TokenType.IDENTIFIER, "superclass of type");
-
                     superclass = new(GetTypeReference());
                 }
 

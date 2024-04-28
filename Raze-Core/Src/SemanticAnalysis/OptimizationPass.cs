@@ -40,7 +40,7 @@ public partial class Analyzer
             symbolTable.SetContext(expr);
 
             base.VisitClassExpr(expr);
-            expr.size = expr.definitions.Any(Expr.DataType.IsVirtualOrOverrideFunction) ? 8 : 0;
+            expr.size = expr.GetVirtualMethods().Count != 0 ? 8 : 0;
             foreach (var declaration in expr.declarations)
             {
                 CodeGen.RegisterAlloc.AllocateVariable(expr, declaration.stack);

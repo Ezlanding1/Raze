@@ -655,10 +655,28 @@ public abstract class Expr
             this.size = size;
         }
 
-        public readonly static Func<Definition, bool> IsVirtualOrOverrideFunction = (x) => x is Function func && (func.modifiers["virtual"] || func.modifiers["override"]) && !func.dead;
+        private List<Function>? virtualMethods;
+        public List<Function> GetVirtualMethods()
+        {
+            if (virtualMethods != null)
+            {
+                return virtualMethods;
+            }
+            virtualMethods = new List<Function>((SuperclassType as DataType)?.GetVirtualMethods() ?? []);
+
+            foreach (var function in definitions.Where(x => x is Function func && (func.modifiers["virtual"] || func.modifiers["override"])).Cast<Function>())
+            {
+                int idx = virtualMethods.FindIndex(x => Analyzer.SymbolTable.MatchFunction(function, x));
+                if (idx == -1)
+                    virtualMethods.Add(function);
+                else
+                    virtualMethods[idx] = function;
+            }
+            return virtualMethods;
+        }
 
         public int GetOffsetOfVTableMethod(Function function) =>
-            (definitions.Where(IsVirtualOrOverrideFunction).ToList().IndexOf(function) + 1) * 8;
+            (GetVirtualMethods().ToList().IndexOf(function) + 1) * 8;
     }
 
     public class Class : DataType
@@ -671,6 +689,7 @@ public abstract class Expr
 
         public Class(Token name, List<Declare> declarations, List<Definition> definitions, TypeReference superclass, bool trait=false) : base(name, definitions)
         {
+            this.size = -1;
             this.declarations = declarations;
             this.superclass = superclass;
             this.superclass.typeName ??= new([new Token(Token.TokenType.IDENTIFIER, "object")]);

@@ -200,8 +200,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     private void GenerateVirtualTable(Expr.Class expr)
     {
-        var virtualMethods =
-                expr.definitions.Where(Expr.DataType.IsVirtualOrOverrideFunction).Cast<Expr.Function>();
+        IEnumerable<Expr.Definition> virtualMethods = expr.GetVirtualMethods();
 
         if (virtualMethods.Any())
         {
@@ -213,7 +212,14 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             );
             foreach (Expr.Function function in virtualMethods)
             {
-                EmitData(new AssemblyExpr.Data(null, new AssemblyExpr.ProcedureRef(ToMangledName(function))));
+                if (!function.dead)
+                {
+                    EmitData(new AssemblyExpr.Data(null, new AssemblyExpr.ProcedureRef(ToMangledName(function))));
+                }
+                else
+                {
+                    EmitData(new AssemblyExpr.Data(null, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, Enumerable.Repeat<byte>(0, 8).ToArray())));
+                }
             }
             EmitData(new AssemblyExpr.Data("TYPEINFO_FOR_" + expr.name.lexeme,
                 AssemblyExpr.Literal.LiteralType.String, AssemblyExpr.ImmediateGenerator.ParseRefString(expr.name.lexeme))
@@ -841,7 +847,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     public AssemblyExpr.Value? VisitNewExpr(Expr.New expr)
     {
-        bool hasVTable = expr.internalClass.definitions.Any(Expr.DataType.IsVirtualOrOverrideFunction);
+        bool hasVTable = expr.internalClass.GetVirtualMethods().Any();
         int size = Math.Max(1, expr.internalClass.size);
 
         // either dealloc on exit (handled by OS), require manual delete, or implement GC
