@@ -83,6 +83,7 @@ public abstract partial class Diagnostic
         { DiagnosticName.InstanceOfTraitCreated, ("An instance of a trait may not be created", Severity.Error) },
         { DiagnosticName.InvalidOverrideModifier, ("Function '{0}' has no suitable method to override", Severity.Error) },
         { DiagnosticName.ClassDoesNotOverrideAbstractFunction, ("Class '{0}' does not contain a method to override the abstract function '{2}' in '{1}'", Severity.Error) },
+        { DiagnosticName.TypeMismatch_OverridenMethod, ("The return-type of overriden method '{0}' must match its virtual method's return-type '{1}'", Severity.Error) },
         
         // BackendError
         { DiagnosticName.InvalidLiteralSize, ("{0} literal '{1}' exceeds size of assigned data type '{2}'", Severity.Error) },

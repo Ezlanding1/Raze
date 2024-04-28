@@ -319,6 +319,14 @@ public partial class Analyzer
                     {
                         function.modifiers["override"] = true;
                         virtualFunc.modifiers["virtual"] = true;
+                        if (!function._returnType.type.Matches(virtualFunc._returnType.type))
+                        {
+                            Diagnostics.Panic(new Diagnostic.AnalyzerDiagnostic(
+                                Diagnostic.DiagnosticName.TypeMismatch_OverridenMethod, 
+                                function, 
+                                virtualFunc._returnType.type
+                            ));
+                        }
                         return;
                     }
                     superclass = superclass.SuperclassType as Expr.DataType;

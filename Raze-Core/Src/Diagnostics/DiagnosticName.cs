@@ -85,6 +85,7 @@ public abstract partial class Diagnostic
         InstanceOfTraitCreated,
         InvalidOverrideModifier,
         ClassDoesNotOverrideAbstractFunction,
+        TypeMismatch_OverridenMethod,
 
         // BackendError
         InvalidLiteralSize,
