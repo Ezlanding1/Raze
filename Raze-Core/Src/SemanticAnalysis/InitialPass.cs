@@ -128,7 +128,6 @@ public partial class Analyzer
                 parameter.stack = new Expr.StackData();
                 GetVariableDefinition(parameter.typeName, parameter.stack);
             }
-            FindVirtualFunctionForOverride(expr);
 
             expr.block?.Accept(this);
 
@@ -303,40 +302,6 @@ public partial class Analyzer
                         Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.ClassDoesNotOverrideAbstractFunction, _class.name.lexeme, superclass.name.lexeme, abstractFunction.ToString()));
                     }
                 }
-            }
-        }
-
-        private void FindVirtualFunctionForOverride(Expr.Function function)
-        {
-            function.modifiers["virtual"] = false;
-            if (function.modifiers["static"]) return;
-
-            using (new SaveContext())
-            {
-                var superclass = symbolTable.NearestEnclosingClass()?.SuperclassType as Expr.DataType;
-                while (superclass != null)
-                {
-                    symbolTable.SetContext(superclass);
-                    if (symbolTable.TryGetFunction(function.name.lexeme, function.parameters.Select(x => x.stack.type).ToArray(), out var virtualFunc))
-                    {
-                        function.modifiers["override"] = true;
-                        virtualFunc.modifiers["virtual"] = true;
-                        if (!function._returnType.type.Matches(virtualFunc._returnType.type))
-                        {
-                            Diagnostics.Panic(new Diagnostic.AnalyzerDiagnostic(
-                                Diagnostic.DiagnosticName.TypeMismatch_OverridenMethod, 
-                                function, 
-                                virtualFunc._returnType.type
-                            ));
-                        }
-                        return;
-                    }
-                    superclass = superclass.SuperclassType as Expr.DataType;
-                }
-            }
-            if (function.modifiers["override"])
-            {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOverrideModifier, function.ToString()));
             }
         }
 

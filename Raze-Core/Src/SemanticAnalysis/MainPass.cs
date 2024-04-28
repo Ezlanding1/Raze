@@ -306,6 +306,8 @@ public partial class Analyzer
             symbolTable.SetContext(expr);
             symbolTable.CreateBlock();
 
+            FindVirtualFunctionForOverride(expr);
+
             for (int i = 0; i < expr.Arity; i++)
             {
                 Expr.Parameter paramExpr = expr.parameters[i];
@@ -527,6 +529,40 @@ public partial class Analyzer
         public override Expr.Type VisitNoOpExpr(Expr.NoOp expr)
         {
             return TypeCheckUtils.anyType;
+        }
+
+        private void FindVirtualFunctionForOverride(Expr.Function function)
+        {
+            function.modifiers["virtual"] = false;
+            if (function.modifiers["static"]) return;
+
+            using (new SaveContext())
+            {
+                var superclass = symbolTable.NearestEnclosingClass()?.SuperclassType as Expr.DataType;
+                while (superclass != null)
+                {
+                    symbolTable.SetContext(superclass);
+                    if (symbolTable.TryGetFunction(function.name.lexeme, function.parameters.Select(x => x.stack.type).ToArray(), out var virtualFunc))
+                    {
+                        function.modifiers["override"] = true;
+                        virtualFunc.modifiers["virtual"] = true;
+                        if (!function._returnType.type.Matches(virtualFunc._returnType.type))
+                        {
+                            Diagnostics.Panic(new Diagnostic.AnalyzerDiagnostic(
+                                Diagnostic.DiagnosticName.TypeMismatch_OverridenMethod,
+                                function,
+                                virtualFunc._returnType.type
+                            ));
+                        }
+                        return;
+                    }
+                    superclass = superclass.SuperclassType as Expr.DataType;
+                }
+            }
+            if (function.modifiers["override"])
+            {
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOverrideModifier, function.ToString()));
+            }
         }
 
         public bool CanBeReturned(Expr.Type type) => !Primitives.IsVoidType(type) && type != TypeCheckUtils.anyType && !callReturn;
