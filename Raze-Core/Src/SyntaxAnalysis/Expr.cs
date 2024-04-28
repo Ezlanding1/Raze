@@ -668,9 +668,14 @@ public abstract class Expr
             {
                 int idx = virtualMethods.FindIndex(x => Analyzer.SymbolTable.MatchFunction(function, x));
                 if (idx == -1)
+                {
                     virtualMethods.Add(function);
+                }
                 else
+                {
+                    function.dead = function.dead && virtualMethods[idx].dead;
                     virtualMethods[idx] = function;
+                }
             }
             return virtualMethods;
         }
@@ -689,7 +694,6 @@ public abstract class Expr
 
         public Class(Token name, List<Declare> declarations, List<Definition> definitions, TypeReference superclass, bool trait=false) : base(name, definitions)
         {
-            this.size = -1;
             this.declarations = declarations;
             this.superclass = superclass;
             this.superclass.typeName ??= new([new Token(Token.TokenType.IDENTIFIER, "object")]);
@@ -699,6 +703,15 @@ public abstract class Expr
         public override bool Matches(Type type)
         {
             return type.Match(this) || (this.superclass.type != null && this.superclass.type.Matches(type));
+        }
+
+        public void CalculateSizeAndAllocateVariables()
+        {
+            size = GetVirtualMethods().Count != 0 ? 8 : 0;
+            foreach (var declaration in declarations)
+            {
+                CodeGen.RegisterAlloc.AllocateVariable(this, declaration.stack);
+            }
         }
 
         public override T Accept<T>(IVisitor<T> visitor)

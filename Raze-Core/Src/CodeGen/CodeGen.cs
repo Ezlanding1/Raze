@@ -188,7 +188,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         {
             GenerateVirtualTable(expr);
         }
-
         foreach (var blockExpr in expr.definitions)
         {
             blockExpr.Accept(this);

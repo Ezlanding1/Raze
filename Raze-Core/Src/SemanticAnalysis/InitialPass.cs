@@ -129,10 +129,6 @@ public partial class Analyzer
                 GetVariableDefinition(parameter.typeName, parameter.stack);
             }
             FindVirtualFunctionForOverride(expr);
-            if (expr.modifiers["override"])
-            {
-                expr.dead = false;
-            }
 
             expr.block?.Accept(this);
 
