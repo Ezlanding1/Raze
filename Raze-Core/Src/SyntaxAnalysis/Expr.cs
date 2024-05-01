@@ -694,6 +694,7 @@ public abstract class Expr
         public List<Declare> declarations;
         public bool trait;
         public override int allocSize => 8;
+        public bool emitVTable;
 
         public Class(Token name, List<Declare> declarations, List<Definition> definitions, TypeReference superclass, bool trait=false) : base(name, definitions)
         {
@@ -710,7 +711,7 @@ public abstract class Expr
 
         public void CalculateSizeAndAllocateVariables()
         {
-            size = GetVirtualMethods().Count != 0 ? 8 : 0;
+            size = (emitVTable || GetVirtualMethods().Count != 0) ? 8 : 0;
             foreach (var declaration in declarations)
             {
                 CodeGen.RegisterAlloc.AllocateVariable(this, declaration.stack);
@@ -789,18 +790,12 @@ public abstract class Expr
         }
     }
 
-    public class Is : Expr
+    public class Is(Expr left, TypeReference right) : Expr
     {
-        public Expr left;
-        public TypeReference right;
-
-        public string value;
-
-        public Is(Expr left, TypeReference right)
-        {
-            this.left = left;
-            this.right = right;
-        }
+        public Expr left = left;
+        public TypeReference right = right;
+        // true = true, false = false, null = unresolved (check vTables)
+        public bool? value;
 
         public override T Accept<T>(IVisitor<T> visitor)
         {

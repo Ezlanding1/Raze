@@ -11,7 +11,7 @@ namespace Raze;
 public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 {
     List<Expr> expressions;
-    
+
     internal Assembly assembly = new();
 
     private protected int conditionalCount;
@@ -22,9 +22,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
     private protected string CreateConditionalLabel(int i) => "L" + i;
 
     public int dataCount;
-    public string DataLabel 
+    public string DataLabel
     {
-        get { return CreateDatalLabel(dataCount); } 
+        get { return CreateDatalLabel(dataCount); }
     }
     public string CreateDatalLabel(int i) => "LC" + i;
 
@@ -37,7 +37,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         this.expressions = expressions;
         this.assemblyOps = new(this);
     }
-    
+
     public Assembly Generate()
     {
         SymbolTableSingleton.SymbolTable.RunCodeGenOnImports(this);
@@ -58,7 +58,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return HandleICall(expr);
     }
 
-    private AssemblyExpr.Value? HandleICall(Expr.ICall iCall) 
+    private AssemblyExpr.Value? HandleICall(Expr.ICall iCall)
     {
         bool instance = !iCall.InternalFunction.modifiers["static"];
 
@@ -84,8 +84,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             }
             else
             {
-                
-                localParams[0] = 
+
+                localParams[0] =
                     alloc.ReserveScratchRegister(this, alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RDI), AssemblyExpr.Register.RegisterSize._64Bits);
             }
         }
@@ -154,8 +154,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
             var reg = alloc.NextRegister(InstructionUtils.SYS_SIZE);
             Emit(new AssemblyExpr.Binary(
-                AssemblyExpr.Instruction.MOV, 
-                reg, 
+                AssemblyExpr.Instruction.MOV,
+                reg,
                 new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RDI, 8, InstructionUtils.SYS_SIZE)
             ));
             EmitCall(new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL,
@@ -175,8 +175,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.ADD, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes((iCall.Arguments.Count - InstructionUtils.paramRegister.Length) * 8))));
         }
 
-        return iCall.InternalFunction.constructor ? 
-            alloc.ReAllocConstructorReturnRegister(alloc.NameToIdx(localParams[0].Name)) : 
+        return iCall.InternalFunction.constructor ?
+            alloc.ReAllocConstructorReturnRegister(alloc.NameToIdx(localParams[0].Name)) :
             alloc.NeededAlloc(InstructionUtils.ToRegisterSize(iCall.InternalFunction._returnType.type.allocSize), this);
     }
 
@@ -199,9 +199,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     private void GenerateVirtualTable(Expr.Class expr)
     {
-        IEnumerable<Expr.Definition> virtualMethods = expr.GetVirtualMethods();
+        IEnumerable<Expr.Function> virtualMethods = expr.GetVirtualMethods();
 
-        if (virtualMethods.Any())
+        if (expr.emitVTable || virtualMethods.Any())
         {
             EmitData(new AssemblyExpr.Data("VTABLE_FOR_" + expr.name.lexeme,
                 new(
@@ -846,7 +846,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     public AssemblyExpr.Value? VisitNewExpr(Expr.New expr)
     {
-        bool hasVTable = expr.internalClass.GetVirtualMethods().Any();
+        bool hasVTable = expr.internalClass.emitVTable || expr.internalClass.GetVirtualMethods().Count != 0;
         int size = Math.Max(1, expr.internalClass.size);
 
         // either dealloc on exit (handled by OS), require manual delete, or implement GC
@@ -889,7 +889,29 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     public AssemblyExpr.Value? VisitIsExpr(Expr.Is expr)
     {
-        return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Boolean, expr.value == "true"? new byte[] { 1 } : new byte[] { 0 });
+        if (expr.value != null)
+        {
+            return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Boolean, ((bool)expr.value)? [1] : [0]);
+        }
+        else
+        {
+            var left = expr.left.Accept(this);
+            if (left.IsPointer())
+            {
+                var reg = alloc.NextRegister(AssemblyExpr.Register.RegisterSize._64Bits);
+                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, reg, left));
+                left = reg;
+            }
+            Emit(new AssemblyExpr.Binary(
+                AssemblyExpr.Instruction.CMP,
+                new AssemblyExpr.Pointer((AssemblyExpr.Register)left, 8, AssemblyExpr.Register.RegisterSize._64Bits),
+                new AssemblyExpr.DataRef("VTABLE_FOR_" + expr.right.type.name.lexeme)
+            ));
+            alloc.Free(left);
+            var register = alloc.NextRegister(AssemblyExpr.Register.RegisterSize._8Bits);
+            Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.SETE, register));
+            return register;
+        }
     }
 
     public AssemblyExpr.Value? VisitImportExpr(Expr.Import expr)

@@ -406,10 +406,22 @@ public partial class Analyzer
 
         public override Expr.Type VisitIsExpr(Expr.Is expr)
         {
-            expr.left.Accept(this);
+            var leftType = expr.left.Accept(this);
+            var rightType = expr.right.Accept(this);
 
-            using (new SaveContext())
-                expr.value = expr.right.Accept(this) == expr.right.type ? "1" : "0";
+            if ((expr.value = leftType.Matches(rightType)) != true)
+            {
+                if (rightType.Matches(leftType))
+                {
+                    expr.value = null;
+                    ((Expr.Class)rightType).emitVTable = true;
+                    ((Expr.Class)leftType).emitVTable = true;
+                }
+                else
+                {
+                    expr.value = false;
+                }
+            }
 
             return TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Boolean];
         }
