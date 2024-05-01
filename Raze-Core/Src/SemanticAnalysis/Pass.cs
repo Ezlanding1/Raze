@@ -54,9 +54,7 @@ public partial class Analyzer
 
         public virtual T VisitDeclareExpr(Expr.Declare expr)
         {
-            if (expr.value != null)
-                expr.value.Accept(this);
-
+            expr.value?.Accept(this);
             return default;
         }
 
@@ -146,6 +144,12 @@ public partial class Analyzer
         {
             expr.left.Accept(this);
             expr.right.Accept(this);
+            return default;
+        }
+
+        public virtual T VisitAsExpr(Expr.As expr)
+        {
+            expr._is.Accept(this);
             return default;
         }
 

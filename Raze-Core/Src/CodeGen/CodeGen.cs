@@ -895,23 +895,61 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         }
         else
         {
-            var left = expr.left.Accept(this);
-            if (left.IsPointer())
-            {
-                var reg = alloc.NextRegister(AssemblyExpr.Register.RegisterSize._64Bits);
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, reg, left));
-                left = reg;
-            }
-            Emit(new AssemblyExpr.Binary(
-                AssemblyExpr.Instruction.CMP,
-                new AssemblyExpr.Pointer((AssemblyExpr.Register)left, 8, AssemblyExpr.Register.RegisterSize._64Bits),
-                new AssemblyExpr.DataRef("VTABLE_FOR_" + expr.right.type.name.lexeme)
-            ));
+            var left = CompareVTables(expr);
             alloc.Free(left);
             var register = alloc.NextRegister(AssemblyExpr.Register.RegisterSize._8Bits);
             Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.SETE, register));
             return register;
         }
+    }
+
+    public AssemblyExpr.Value VisitAsExpr(Expr.As expr)
+    {
+        if (expr._is.value != null)
+        {
+            return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Boolean, ((bool)expr._is.value) ? [1] : [0]);
+        }
+        else
+        {
+            var left = CompareVTables(expr._is);
+            var register = alloc.NextRegister(AssemblyExpr.Register.RegisterSize._64Bits);
+            Emit(new AssemblyExpr.Binary(
+                AssemblyExpr.Instruction.MOV, 
+                register, 
+                left
+            ));
+            alloc.Free(left);
+            var register2 = alloc.NextRegister(AssemblyExpr.Register.RegisterSize._64Bits);
+            Emit(new AssemblyExpr.Binary(
+                AssemblyExpr.Instruction.MOV, 
+                register2, 
+                new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, Enumerable.Repeat<byte>(0, 8).ToArray())
+            ));
+            Emit(new AssemblyExpr.Binary(
+                AssemblyExpr.Instruction.CMOVNZ,
+                register,
+                register2
+            ));
+            alloc.Free(register2);
+            return register;
+        }
+    }
+    
+    private AssemblyExpr.Value CompareVTables(Expr.Is expr)
+    {
+        var left = expr.left.Accept(this);
+        if (left.IsPointer())
+        {
+            var reg = alloc.NextRegister(AssemblyExpr.Register.RegisterSize._64Bits);
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, reg, left));
+            left = reg;
+        }
+        Emit(new AssemblyExpr.Binary(
+            AssemblyExpr.Instruction.CMP,
+            new AssemblyExpr.Pointer((AssemblyExpr.Register)left, 8, AssemblyExpr.Register.RegisterSize._64Bits),
+            new AssemblyExpr.DataRef("VTABLE_FOR_" + expr.right.type.name.lexeme)
+        ));
+        return left;
     }
 
     public AssemblyExpr.Value? VisitImportExpr(Expr.Import expr)

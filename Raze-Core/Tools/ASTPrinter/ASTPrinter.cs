@@ -272,7 +272,15 @@ public class ASTPrinter : Expr.IVisitor<object?>
         PrintAST(expr.right);
         return null;
     }
-    
+
+    public object? VisitAsExpr(Expr.As expr)
+    {
+        PrintAST(expr._is.left);
+        PrintAST("as");
+        PrintAST(expr._is.right);
+        return null;
+    }
+
     public object? VisitImportExpr(Expr.Import expr)
     {
         PrintAST("import");

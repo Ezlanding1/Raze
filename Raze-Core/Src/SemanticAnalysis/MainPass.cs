@@ -426,6 +426,12 @@ public partial class Analyzer
             return TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Boolean];
         }
 
+        public override Expr.Type VisitAsExpr(Expr.As expr)
+        {
+            expr._is.Accept(this);
+            return expr._is.right.type;
+        }
+
         public override Expr.Type VisitTypeReferenceExpr(Expr.TypeReference expr)
         {
             return expr.type;

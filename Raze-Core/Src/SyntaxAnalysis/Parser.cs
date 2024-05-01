@@ -551,7 +551,7 @@ public class Parser
 
     private Expr Incrementative()
     {
-        Expr expr = Is();
+        Expr expr = IsOrAs();
         while (TypeMatch(Token.TokenType.PLUSPLUS, Token.TokenType.MINUSMINUS))
         {
             Token op = Previous();
@@ -560,13 +560,17 @@ public class Parser
         return expr;
     }
 
-    private Expr Is()
+    private Expr IsOrAs()
     {
         Expr expr = Primary();
-        while (ReservedValueMatch("is"))
+        while (ReservedValueMatch("is", "as"))
         {
-            Expect(Token.TokenType.IDENTIFIER, "type after 'is' operator");
-            expr = new Expr.Is(expr, new Expr.TypeReference(GetTypeReference()));
+            string value = Previous().lexeme;
+            Expect(Token.TokenType.IDENTIFIER, $"type after '{value}' operator");
+            expr = (value == "is") ?
+                new Expr.Is(expr, new Expr.TypeReference(GetTypeReference())) :
+                new Expr.As(expr, new Expr.TypeReference(GetTypeReference()));
+
         }
         return expr;
     }

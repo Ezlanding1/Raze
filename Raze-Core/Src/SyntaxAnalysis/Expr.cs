@@ -45,6 +45,7 @@ public abstract class Expr
         public T VisitKeywordExpr(Keyword expr);
         public T VisitNewExpr(New expr);
         public T VisitIsExpr(Is expr);
+        public T VisitAsExpr(As expr);
         public T VisitImportExpr(Import expr);
         public T VisitNoOpExpr(NoOp expr);
     }
@@ -800,6 +801,16 @@ public abstract class Expr
         public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitIsExpr(this);
+        }
+    }
+
+    public class As(Expr left, TypeReference right) : Expr
+    {
+        public readonly Is _is = new(left, right);
+
+        public override T Accept<T>(IVisitor<T> visitor)
+        {
+            return visitor.VisitAsExpr(this);
         }
     }
 
