@@ -12,7 +12,7 @@ public partial class Analyzer
     internal class OptimizationPass : Pass<object?>
     {
         SymbolTable symbolTable = SymbolTableSingleton.SymbolTable;
-        List<Expr.Class> classesToCalculateSize = new();
+        HashSet<Expr.Class> classesToCalculateSize = new();
 
         public OptimizationPass(List<Expr> expressions) : base(expressions)
         {
@@ -21,7 +21,7 @@ public partial class Analyzer
         internal override void Run()
         {
             symbolTable.main?.Accept(this);
-            classesToCalculateSize.ForEach(_class => _class.CalculateSizeAndAllocateVariables());
+            classesToCalculateSize.ToList().ForEach(_class => _class.CalculateSizeAndAllocateVariables());
         }
 
         public override object? VisitFunctionExpr(Expr.Function expr)
@@ -115,6 +115,17 @@ public partial class Analyzer
                 }
             }
   
+            return null;
+        }
+
+        public override object? VisitDeclareExpr(Expr.Declare expr)
+        {
+            if (symbolTable.Current is not Expr.Class)
+            {
+                using (new SaveContext())
+                    expr.stack.type.Accept(this);
+            }
+            expr.value?.Accept(this);
             return null;
         }
 
