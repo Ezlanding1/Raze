@@ -15,21 +15,18 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
     internal Assembly assembly = new();
 
     private protected int conditionalCount;
-    private protected string ConditionalLabel
-    {
-        get { return CreateConditionalLabel(conditionalCount); }
-    }
+    private protected string ConditionalLabel => CreateConditionalLabel(conditionalCount);
     private protected string CreateConditionalLabel(int i) => "L" + i;
 
     public int dataCount;
-    public string DataLabel
-    {
-        get { return CreateDatalLabel(dataCount); }
-    }
+    public string DataLabel => CreateDatalLabel(dataCount);
     public string CreateDatalLabel(int i) => "LC" + i;
 
+    static readonly AssemblyExpr.Literal NullLiteral = new(
+        AssemblyExpr.Literal.LiteralType.Integer, 
+        Enumerable.Repeat<byte>(0, (int)InstructionUtils.SYS_SIZE).ToArray()
+    );
     internal RegisterAlloc alloc = new();
-
     AssemblyOps assemblyOps;
 
     public CodeGen(List<Expr> expressions)
@@ -217,7 +214,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                 }
                 else
                 {
-                    EmitData(new AssemblyExpr.Data(null, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, Enumerable.Repeat<byte>(0, 8).ToArray())));
+                    EmitData(new AssemblyExpr.Data(null, NullLiteral));
                 }
             }
             EmitData(new AssemblyExpr.Data("TYPEINFO_FOR_" + expr.name.lexeme,
@@ -823,14 +820,13 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     public AssemblyExpr.Value? VisitKeywordExpr(Expr.Keyword expr)
     {
-        switch (expr.keyword)
+        return expr.keyword switch
         {
-            case "null": return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 0 });
-            case "true": return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 1 });
-            case "false": return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 0 });
-            default: 
-                throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"'{expr.keyword}' is not a keyword"));
-        }
+            "null" => NullLiteral,
+            "true" => new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [1]),
+            "false" => new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [0]),
+            _ => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"'{expr.keyword}' is not a keyword")),
+        };
     }
     public AssemblyExpr.Value? VisitAssemblyExpr(Expr.Assembly expr)
     {
@@ -923,7 +919,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             Emit(new AssemblyExpr.Binary(
                 AssemblyExpr.Instruction.MOV, 
                 register2, 
-                new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, Enumerable.Repeat<byte>(0, 8).ToArray())
+                NullLiteral
             ));
             Emit(new AssemblyExpr.Binary(
                 AssemblyExpr.Instruction.CMOVNZ,

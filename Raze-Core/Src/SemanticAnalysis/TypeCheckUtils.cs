@@ -115,6 +115,18 @@ public partial class Analyzer
                     Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InstanceMethodCalledFromStaticContext));
                 }
             }
+            ValidateFunctionParameterModifiers(expr);
+        }
+        public static void ValidateFunctionParameterModifiers(Expr.ICall iCall)
+        {
+            for (int i = 0; i < iCall.InternalFunction.Arity; i++)
+            {
+                if (iCall.InternalFunction.parameters[i].modifiers["ref"] && TypeCheckUtils.CannotBeRef(iCall.Arguments[i]))
+                {
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifier_Ref));
+                    iCall.InternalFunction.parameters[i].modifiers["ref"] = false;
+                }
+            }
         }
     }
 }

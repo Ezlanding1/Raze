@@ -50,167 +50,92 @@ public partial class Analyzer
 
         public override Expr.Type VisitBinaryExpr(Expr.Binary expr)
         {
-            Expr.Type[] argumentTypes =
-            {
-                expr.left.Accept(this),
-                expr.right.Accept(this)
-            };
-
             var context = symbolTable.Current;
-
+            string name = Primitives.SymbolToPrimitiveName(expr.op);
+            Expr.Type[] argumentTypes = [expr.left.Accept(this), expr.right.Accept(this)];
+            
             var (arg0, arg1) = (Primitives.IsLiteralTypeOrVoid(argumentTypes[0]), Primitives.IsLiteralTypeOrVoid(argumentTypes[1]));
-
             if (arg0.Item1 && arg1.Item1)
             {
                 var opType = Primitives.OperationType(expr.op, arg0.Item2, arg1.Item2);
-                if (opType != Parser.VoidTokenType)
-                {
-                    return TypeCheckUtils.literalTypes[opType];
-                }
-                return TypeCheckUtils.anyType;
+                return (opType != Parser.VoidTokenType) ? 
+                    TypeCheckUtils.literalTypes[opType] : 
+                    TypeCheckUtils.anyType;
             }
 
-            if (!arg0.Item1)
+            bool found = 
+                (!arg0.Item1 && ResolveCallReferenceUsingCallee(name, (Expr.DataType)argumentTypes[0], argumentTypes, true)) ||
+                (!arg1.Item1 && ResolveCallReferenceUsingCallee(name, (Expr.DataType)argumentTypes[1], argumentTypes.Reverse().ToArray(), true));
+
+            if (!found)
             {
-                symbolTable.SetContext((Expr.Definition)argumentTypes[0]);
-
-                if (symbolTable.TryGetFunction(Primitives.SymbolToPrimitiveName(expr.op), argumentTypes, out var symbol))
-                {
-                    expr.internalFunction = symbol;
-                }
-            }
-
-            if (expr.internalFunction == null && !arg1.Item1)
-            {
-                symbolTable.SetContext((Expr.Definition)argumentTypes[1]);
-
-                if (symbolTable.TryGetFunction(Primitives.SymbolToPrimitiveName(expr.op), new Expr.Type[] { argumentTypes[1], argumentTypes[0] }, out var symbol))
-                {
-                    expr.internalFunction = symbol;
-                }
-            }
-
-            if (expr.internalFunction == null)
-            {
-                if (argumentTypes[0] != TypeCheckUtils.anyType && argumentTypes[1] != TypeCheckUtils.anyType)
+                if (!argumentTypes.Any(x => x == TypeCheckUtils.anyType))
                 {
                     Diagnostics.Report(Primitives.InvalidOperation(expr.op, argumentTypes[0].ToString(), argumentTypes[1].ToString()));
                 }
                 expr.internalFunction = symbolTable.FunctionNotFoundDefinition;
-            }
-
-            symbolTable.SetContext(context);
-
-            if (expr.internalFunction == symbolTable.FunctionNotFoundDefinition)
-            {
                 callReturn = true;
+                symbolTable.SetContext(context);
                 return expr.internalFunction._returnType.type;
             }
 
-            if (expr.internalFunction.parameters[0].modifiers["ref"] && TypeCheckUtils.CannotBeRef(expr.left))
-            {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifier_Ref));
-                expr.internalFunction.parameters[0].modifiers["ref"] = false;
-            }
-            if (expr.internalFunction.parameters[1].modifiers["ref"] && TypeCheckUtils.CannotBeRef(expr.right))
-            {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifier_Ref));
-                expr.internalFunction.parameters[1].modifiers["ref"] = false;
-            }
-
+            expr.internalFunction = GetResolvedFunction();
+            TypeCheckUtils.ValidateFunctionParameterModifiers(expr);
+            symbolTable.SetContext(context);
             return expr.internalFunction._returnType.type;
         }
 
         public override Expr.Type VisitUnaryExpr(Expr.Unary expr)
         {
-            Expr.Type[] argumentTypes =
-            {
-                expr.operand.Accept(this)
-            };
-
             var context = symbolTable.Current;
+            string name = Primitives.SymbolToPrimitiveName(expr.op);
+            Expr.Type[] argumentTypes = [expr.operand.Accept(this)];
 
             var arg = Primitives.IsLiteralTypeOrVoid(argumentTypes[0]);
-
             if (arg.Item1)
             {
                 var opType = Primitives.OperationType(expr.op, arg.Item2);
-                if (opType != Parser.VoidTokenType)
-                {
-                    return TypeCheckUtils.literalTypes[opType];
-                }
-                return TypeCheckUtils.anyType;
+                return (opType != Parser.VoidTokenType)? 
+                    TypeCheckUtils.literalTypes[opType] : 
+                    TypeCheckUtils.anyType;
             }
 
-            symbolTable.SetContext((Expr.Definition)argumentTypes[0]);
-
-            expr.internalFunction = symbolTable.GetFunction(Primitives.SymbolToPrimitiveName(expr.op), argumentTypes);
-
-            symbolTable.SetContext(context);
-
-            if (expr.internalFunction == symbolTable.FunctionNotFoundDefinition)
+            if (!ResolveCallReferenceUsingCallee(name, (Expr.DataType)argumentTypes[0], argumentTypes, true))
             {
+                if (argumentTypes[0] != TypeCheckUtils.anyType)
+                {
+                    Diagnostics.Report(Primitives.InvalidOperation(expr.op, argumentTypes[0].ToString()));
+                }
+                expr.internalFunction = symbolTable.FunctionNotFoundDefinition;
                 callReturn = true;
+                symbolTable.SetContext(context);
                 return expr.internalFunction._returnType.type;
             }
 
-            if (Primitives.SymbolToPrimitiveName(expr.op) == "Increment" || Primitives.SymbolToPrimitiveName(expr.op) == "Decrement")
-            {
-                callReturn = true;
-            }
-
-            if (expr.internalFunction.parameters[0].modifiers["ref"] && TypeCheckUtils.CannotBeRef(expr.operand))
-            {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifier_Ref));
-                expr.internalFunction.parameters[0].modifiers["ref"] = false;
-            }
-
+            expr.internalFunction = GetResolvedFunction();
+            TypeCheckUtils.ValidateFunctionParameterModifiers(expr);
+            callReturn = new List<string>() { "Increment", "Decrement" }.Contains(name);
+            symbolTable.SetContext(context);
             return expr.internalFunction._returnType.type;
         }
 
         public override Expr.Type VisitCallExpr(Expr.Call expr)
         {
-            Expr.Type[] argumentTypes = new Expr.Type[expr.arguments.Count];
-
-            for (int i = 0; i < expr.arguments.Count; i++)
-            {
-                argumentTypes[i] = expr.arguments[i].Accept(this);
-            }
+            Expr.Type[] argumentTypes = expr.arguments.Select(arg => arg.Accept(this)).ToArray();
 
             if (expr.callee != null)
             {
                 var callee = (Expr.DataType)expr.callee.Accept(this);
-                var currentCallee = callee;
-                do
+                
+                if (!ResolveCallReferenceUsingCallee(expr.name.lexeme, callee, argumentTypes, false))
                 {
-                    symbolTable.SetContext(currentCallee);
-
-                    if (symbolTable.TryGetFunction(expr.name.lexeme, argumentTypes, out var symbol))
-                    {
-                        if (callee != symbolTable.Current && symbol.modifiers["static"])
-                        {
-                            symbolTable.SetContext(callee);
-                            Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
-                                Diagnostic.DiagnosticName.UndefinedReference_Suggestion,
-                                "function",
-                                callee + "." + Expr.Call.CallNameToString(expr.name.lexeme, argumentTypes),
-                                symbol
-                            ));
-                        }
-                        symbolTable.SetContext(symbol);
-                        goto FunctionFound;
-                    }
+                    symbolTable.SetContext(callee);
+                    symbolTable.SetContext(symbolTable.FunctionSearchFail(expr.name.lexeme, argumentTypes));
                 }
-                while ((currentCallee = currentCallee.SuperclassType as Expr.DataType) != null);
-
-                symbolTable.SetContext(callee);
-                symbolTable.SetContext(symbolTable.FunctionSearchFail(expr.name.lexeme, argumentTypes));
-                FunctionFound:;
             }
             else
             {
                 var context = symbolTable.Current;
-
                 symbolTable.SetContext(null);
                 if (symbolTable.TryGetFunction(expr.name.lexeme, argumentTypes, out var symbol))
                 {
@@ -223,12 +148,7 @@ public partial class Analyzer
                 }
             }
 
-            if (symbolTable.Current is not Expr.Function)
-            {
-                Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Call references non-function"));
-            }
-
-            expr.internalFunction = (Expr.Function)symbolTable.Current;
+            expr.internalFunction = GetResolvedFunction();
 
             if (expr.internalFunction == symbolTable.FunctionNotFoundDefinition)
             {
@@ -238,17 +158,44 @@ public partial class Analyzer
 
             TypeCheckUtils.ValidateCall(expr, expr.internalFunction);
 
-            for (int i = 0; i < expr.internalFunction.Arity; i++)
-            {
-                if (expr.internalFunction.parameters[i].modifiers["ref"] && TypeCheckUtils.CannotBeRef(expr.arguments[i]))
-                {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifier_Ref));
-                    expr.internalFunction.parameters[i].modifiers["ref"] = false;
-                }
-            }
-
             callReturn = true;
             return expr.internalFunction._returnType.type;
+        }
+
+        private bool ResolveCallReferenceUsingCallee(string name, Expr.DataType callee, Expr.Type[] argumentTypes, bool iCallIsOp)
+        {
+            var currentCallee = callee;
+            do
+            {
+                symbolTable.SetContext(currentCallee);
+
+                if (symbolTable.TryGetFunction(name, argumentTypes, out var symbol))
+                {
+                    if (callee != symbolTable.Current && (!iCallIsOp && symbol.modifiers["static"]))
+                    {
+                        symbolTable.SetContext(callee);
+                        Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
+                            Diagnostic.DiagnosticName.UndefinedReference_Suggestion,
+                            "function",
+                            callee + "." + Expr.Call.CallNameToString(name, argumentTypes),
+                            symbol
+                        ));
+                    }
+                    symbolTable.SetContext(symbol);
+                    return true;
+                }
+            }
+            while ((currentCallee = currentCallee.SuperclassType as Expr.DataType) != null);
+            return false;
+        }
+
+        private Expr.Function GetResolvedFunction()
+        {
+            if (symbolTable.Current is not Expr.Function function)
+            {
+                throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Call references non-function"));
+            }
+            return function;
         }
 
         public override Expr.Type VisitClassExpr(Expr.Class expr)
@@ -561,7 +508,7 @@ public partial class Analyzer
                 if (function.modifiers["virtual"])
                 {
                     Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifierPair, "static", "virtual"));
-            function.modifiers["virtual"] = false;
+                    function.modifiers["virtual"] = false;
                 }
                 return;
             }
