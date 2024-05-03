@@ -551,9 +551,22 @@ public partial class Analyzer
 
         private void FindVirtualFunctionForOverride(Expr.Function function)
         {
+            if (function.modifiers["static"])
+            {
+                if (function.modifiers["override"])
+                {
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifierPair, "static", "override"));
+                    function.modifiers["override"] = false;
+                }
+                if (function.modifiers["virtual"])
+                {
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifierPair, "static", "virtual"));
             function.modifiers["virtual"] = false;
-            if (function.modifiers["static"]) return;
+                }
+                return;
+            }
 
+            function.modifiers["virtual"] = false;
             using (new SaveContext())
             {
                 var superclass = symbolTable.NearestEnclosingClass()?.SuperclassType as Expr.DataType;
@@ -566,7 +579,7 @@ public partial class Analyzer
                         virtualFunc.modifiers["virtual"] = true;
                         if (!function._returnType.type.Matches(virtualFunc._returnType.type))
                         {
-                            Diagnostics.Panic(new Diagnostic.AnalyzerDiagnostic(
+                            Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
                                 Diagnostic.DiagnosticName.TypeMismatch_OverridenMethod,
                                 function,
                                 virtualFunc._returnType.type
