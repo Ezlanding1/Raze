@@ -16,7 +16,7 @@ public abstract partial class AssemblyExpr
         public T VisitLocalProcedure(LocalProcedure instruction);
         public T VisitBinary(Binary instruction);
         public T VisitUnary(Unary instruction);
-        public T VisitZero(Zero instruction);
+        public T VisitZero(Nullary instruction);
         public T VisitComment(Comment instruction);
     }
 
@@ -550,11 +550,11 @@ public abstract partial class AssemblyExpr
         }
     }
 
-    public class Zero : OperandInstruction
+    public class Nullary : OperandInstruction
     {
         public override Value[] Operands => new Value[0];
 
-        public Zero(Instruction instruction)
+        public Nullary(Instruction instruction)
         {
             this.instruction = instruction;
         }

@@ -962,7 +962,7 @@ public class Parser
                 {
                     if (localReturn) { Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssemblyBlockReturnArity)); }
                     // Zero
-                    instructions.Add(new ExprUtils.AssignableInstruction.Zero(new AssemblyExpr.Zero(ConvertToInstruction(op.lexeme))));
+                    instructions.Add(new ExprUtils.AssignableInstruction.Nullary(new AssemblyExpr.Nullary(ConvertToInstruction(op.lexeme))));
                 }
                 Expect(Token.TokenType.SEMICOLON, "';' after Assembly statement");
             }

@@ -29,7 +29,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                     { new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL, new AssemblyExpr.ProcedureRef(CodeGen.ToMangledName(main))) },
                     { new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._32Bits), (Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Integer].Matches(main._returnType.type)) ? new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._32Bits) : new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 0 })) },
                     { new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 60 })) },
-                    { new AssemblyExpr.Zero(AssemblyExpr.Instruction.SYSCALL) }
+                    { new AssemblyExpr.Nullary(AssemblyExpr.Instruction.SYSCALL) }
                 };
             }
         }

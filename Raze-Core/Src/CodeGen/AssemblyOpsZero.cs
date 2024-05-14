@@ -8,11 +8,11 @@ namespace Raze;
 
 internal partial class AssemblyOps
 {
-    internal class Zero
+    internal class Nullary
     {
-        public static void DefaultZOp(ExprUtils.AssignableInstruction.Zero instruction, AssemblyOps assemblyOps)
+        public static void DefaultOp(ExprUtils.AssignableInstruction.Nullary instruction, AssemblyOps assemblyOps)
         {
-            assemblyOps.assembler.Emit(new AssemblyExpr.Zero(instruction.instruction.instruction));
+            assemblyOps.assembler.Emit(new AssemblyExpr.Nullary(instruction.instruction.instruction));
         }
     }
 }

@@ -91,7 +91,7 @@ internal partial class AssemblyOps
             }
         }
 
-        public static void DefaultBinOp(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
+        public static void DefaultOp(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
             var operand1 = HandleOperand1(instruction, assemblyOps);
             var operand2 = HandleOperand2(instruction, ref operand1, assemblyOps);
@@ -223,7 +223,7 @@ internal partial class AssemblyOps
 
             assemblyOps.assembler.Emit(emitOp == AssemblyExpr.Instruction.DIV ? 
                 new AssemblyExpr.Binary(AssemblyExpr.Instruction.XOR, rdx, rdx) : 
-                new AssemblyExpr.Zero(AssemblyExpr.Instruction.CDQ)
+                new AssemblyExpr.Nullary(AssemblyExpr.Instruction.CDQ)
             );
 
             assemblyOps.assembler.Emit(new AssemblyExpr.Unary(emitOp, operand2));

@@ -15,7 +15,7 @@ internal abstract partial class ExprUtils
         public abstract bool HasReturn();
 
 
-        public class Binary : AssignableInstruction
+        public class Binary(AssemblyExpr.Binary instruction, Binary.AssignType assignType, bool returns) : AssignableInstruction
         {
             [Flags]
             public enum AssignType
@@ -24,18 +24,9 @@ internal abstract partial class ExprUtils
                 AssignFirst = 1,
                 AssignSecond = 2
             }
-            public AssignType assignType;
-
-            public bool returns;
-
-            public AssemblyExpr.Binary instruction;
-
-            public Binary(AssemblyExpr.Binary instruction, AssignType assignType, bool returns)
-            {
-                this.instruction = instruction;
-                this.assignType = assignType;
-                this.returns = returns;
-            }
+            public AssignType assignType = assignType;
+            public bool returns = returns;
+            public AssemblyExpr.Binary instruction = instruction;
 
             public override void Assign(AssemblyOps assemblyOps)
             {
@@ -47,7 +38,7 @@ internal abstract partial class ExprUtils
                     case AssemblyExpr.Instruction.AND:
                     case AssemblyExpr.Instruction.OR:
                     case AssemblyExpr.Instruction.XOR:
-                        AssemblyOps.Binary.DefaultBinOp(this, assemblyOps);
+                        AssemblyOps.Binary.DefaultOp(this, assemblyOps);
                         return;
                     case AssemblyExpr.Instruction.LEA:
                         AssemblyOps.Binary.LEA(this, assemblyOps);
@@ -88,35 +79,25 @@ internal abstract partial class ExprUtils
             {
                 int variablesUsed = ((int)assignType == 1 || (int)assignType == 2) ? 1 : ((int)assignType == 3) ? 2 : 0;
 
-                switch (instruction.instruction)
+                return instruction.instruction switch
                 {
-                    case AssemblyExpr.Instruction.MOV:
-                    case AssemblyExpr.Instruction.ADD:
-                    case AssemblyExpr.Instruction.SUB:
-                    case AssemblyExpr.Instruction.AND:
-                    case AssemblyExpr.Instruction.OR:
-                    case AssemblyExpr.Instruction.XOR:
-                    case AssemblyExpr.Instruction.LEA:
-                    //case "IMUL":
-                    case AssemblyExpr.Instruction.SAL:
-                    case AssemblyExpr.Instruction.SAR:
-                    //case "IDIV":
-                    //case "DIV":
-                    //case "IMOD":
-                    //case "MOD":
-                        return (variablesUsed, (int)AssignType.AssignFirst);
-                    default:
-                        return (variablesUsed, (int)AssignType.AssignNone);
-                }
+                    AssemblyExpr.Instruction.MOV or 
+                    AssemblyExpr.Instruction.ADD or 
+                    AssemblyExpr.Instruction.SUB or 
+                    AssemblyExpr.Instruction.AND or 
+                    AssemblyExpr.Instruction.OR or 
+                    AssemblyExpr.Instruction.XOR or 
+                    AssemblyExpr.Instruction.LEA or
+                    AssemblyExpr.Instruction.SAL or
+                    AssemblyExpr.Instruction.SAR => (variablesUsed, (int)AssignType.AssignFirst),                                                                                                                                                                                                                                                                                                                                       //case "MOD":
+                    _ => (variablesUsed, (int)AssignType.AssignNone),
+                };
             }
 
-            public override bool HasReturn()
-            {
-                return returns;
-            }
+            public override bool HasReturn() => returns;
         }
 
-        public class Unary : AssignableInstruction
+        public class Unary(AssemblyExpr.Unary instruction, Unary.AssignType assignType, bool returns) : AssignableInstruction
         {
             [Flags]
             public enum AssignType
@@ -124,18 +105,10 @@ internal abstract partial class ExprUtils
                 AssignNone = 0,
                 AssignFirst = 1
             }
-            public AssignType assignType;
+            public AssignType assignType = assignType;
+            public bool returns = returns;
 
-            public bool returns;
-
-            public AssemblyExpr.Unary instruction;
-
-            public Unary(AssemblyExpr.Unary instruction, AssignType assignType, bool returns)
-            {
-                this.instruction = instruction;
-                this.assignType = assignType;
-                this.returns = returns;
-            }
+            public AssemblyExpr.Unary instruction = instruction;
 
             public override void Assign(AssemblyOps assemblyOps)
             {
@@ -143,7 +116,7 @@ internal abstract partial class ExprUtils
                 {
                     case AssemblyExpr.Instruction.INC:
                     case AssemblyExpr.Instruction.DEC:
-                        AssemblyOps.Unary.DefaultUnOp(this, assemblyOps);
+                        AssemblyOps.Unary.DefaultOp(this, assemblyOps);
                         return;
                     case AssemblyExpr.Instruction.DEREF:
                         AssemblyOps.Unary.DEREF(this, assemblyOps);
@@ -161,38 +134,27 @@ internal abstract partial class ExprUtils
             {
                 int variablesUsed = ((int)assignType == 1) ? 1 : 0;
 
-                switch (instruction.instruction)
+                return instruction.instruction switch
                 {
-                    case AssemblyExpr.Instruction.INC:
-                    case AssemblyExpr.Instruction.DEC:
-                    //case "DEREF":
-                        return (variablesUsed, (int)AssignType.AssignFirst);
-                    default:
-                        return (variablesUsed, (int)AssignType.AssignNone);
-                }
+                    AssemblyExpr.Instruction.INC or 
+                    AssemblyExpr.Instruction.DEC => (variablesUsed, (int)AssignType.AssignFirst),
+                    _ => (variablesUsed, (int)AssignType.AssignNone),
+                };
             }
 
-            public override bool HasReturn()
-            {
-                return returns;
-            }
+            public override bool HasReturn() => returns;
         }
 
-        public class Zero : AssignableInstruction
+        public class Nullary(AssemblyExpr.Nullary instruction) : AssignableInstruction
         {
-            public AssemblyExpr.Zero instruction;
-
-            public Zero(AssemblyExpr.Zero instruction)
-            {
-                this.instruction = instruction;
-            }
+            public AssemblyExpr.Nullary instruction = instruction;
 
             public override void Assign(AssemblyOps assemblyOps)
             {
                 switch (instruction.instruction)
                 {
                     case AssemblyExpr.Instruction.SYSCALL:
-                        AssemblyOps.Zero.DefaultZOp(this, assemblyOps);
+                        AssemblyOps.Nullary.DefaultOp(this, assemblyOps);
                         break;
                     default:
                         Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.UnsupportedInstruction, instruction.instruction));
@@ -200,21 +162,9 @@ internal abstract partial class ExprUtils
                 }
             }
 
-            public override (int, int) GetAssigningVars()
-            {
-                int variablesUsed = 0;
+            public override (int, int) GetAssigningVars() => (0, 0);
 
-                switch (instruction.instruction)
-                {
-                    default:
-                        return (variablesUsed, 0);
-                }
-            }
-
-            public override bool HasReturn()
-            {
-                return false;
-            }
+            public override bool HasReturn() => false;
         }
     }
 }

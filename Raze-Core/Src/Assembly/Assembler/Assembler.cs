@@ -186,7 +186,7 @@ public partial class Assembler :
         return new Instruction(instructions.ToArray());
     }
 
-    public Instruction VisitZero(AssemblyExpr.Zero instruction)
+    public Instruction VisitZero(AssemblyExpr.Nullary instruction)
     {
         encoding = encoder.GetEncoding(instruction);
 

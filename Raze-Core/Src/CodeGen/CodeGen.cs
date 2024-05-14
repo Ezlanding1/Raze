@@ -855,7 +855,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         // {
         Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [12])));
         Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rdi, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [0])));
-        Emit(new AssemblyExpr.Zero(AssemblyExpr.Instruction.SYSCALL));
+        Emit(new AssemblyExpr.Nullary(AssemblyExpr.Instruction.SYSCALL));
 
         var ptr = new AssemblyExpr.Pointer(rax, -size, 8);
 
@@ -865,7 +865,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         alloc.NullReg(alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RDI));
         alloc.NeededAlloc(AssemblyExpr.Register.RegisterSize._64Bits, this, alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RDI));
 
-        Emit(new AssemblyExpr.Zero(AssemblyExpr.Instruction.SYSCALL));
+        Emit(new AssemblyExpr.Nullary(AssemblyExpr.Instruction.SYSCALL));
 
         //Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, rbx));
         // }

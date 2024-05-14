@@ -62,7 +62,7 @@ public partial class Assembler
             }
             throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Invalid/Unsupported Instruction"));
         }
-        internal Encoding GetEncoding(AssemblyExpr.Zero zero)
+        internal Encoding GetEncoding(AssemblyExpr.Nullary zero)
         {
             if (instructionEncodings.TryGetValue(zero.instruction.ToString(), out var encodings))
             {

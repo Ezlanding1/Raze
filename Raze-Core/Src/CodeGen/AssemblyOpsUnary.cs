@@ -61,7 +61,7 @@ internal partial class AssemblyOps
             return HandleOperandUnsafe(instruction, assemblyOps).NonLiteral(assemblyOps.assembler);
         }
 
-        public static void DefaultUnOp(ExprUtils.AssignableInstruction.Unary instruction, AssemblyOps assemblyOps)
+        public static void DefaultOp(ExprUtils.AssignableInstruction.Unary instruction, AssemblyOps assemblyOps)
         {
             AssemblyExpr.Value operand = HandleOperand(instruction, assemblyOps);
 

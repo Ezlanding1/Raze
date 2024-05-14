@@ -59,10 +59,10 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             assemblyExprs.Insert(location++,
                 leaf ?
                 new AssemblyExpr.Unary(AssemblyExpr.Instruction.POP, AssemblyExpr.Register.RegisterName.RBP) :
-                new AssemblyExpr.Zero(AssemblyExpr.Instruction.LEAVE)
+                new AssemblyExpr.Nullary(AssemblyExpr.Instruction.LEAVE)
             );
 
-            assemblyExprs.Insert(location, new AssemblyExpr.Zero(AssemblyExpr.Instruction.RET));
+            assemblyExprs.Insert(location, new AssemblyExpr.Nullary(AssemblyExpr.Instruction.RET));
         }
 
         public void RegisterFooter(ISection.Text assemblyExprs) => footers.Push(assemblyExprs.Count);

@@ -111,7 +111,7 @@ partial class Syntaxes
                 return $"{instruction.instruction}\t{instruction.operand.Accept(this)}";
             }
 
-            public string VisitZero(AssemblyExpr.Zero instruction)
+            public string VisitZero(AssemblyExpr.Nullary instruction)
             {
                 return $"{instruction.instruction}";
             }
@@ -359,7 +359,7 @@ partial class Syntaxes
                 throw new NotImplementedException();
             }
 
-            public string VisitZero(AssemblyExpr.Zero instruction)
+            public string VisitZero(AssemblyExpr.Nullary instruction)
             {
                 throw new NotImplementedException();
             }
