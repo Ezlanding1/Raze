@@ -93,7 +93,7 @@ public partial class AssemblyExpr
 
         private static byte[] ParseString(string str, Register.RegisterSize size)
         {
-            var value = Encoding.ASCII.GetBytes(str + '\0');
+            var value = Encoding.ASCII.GetBytes(str);
             if (value.Length > (int)size)
             {
                 ThrowInvalidSizedLiteral(Parser.LiteralTokenType.String, str, size);
