@@ -599,15 +599,15 @@ public class Parser
 
                 if (TypeMatch(Token.TokenType.EQUALS))
                 {
-                    if (variable.IsMethod())
+                    if (variable.IsMethodCall())
                     {
                         Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssignStatement, "method"));
                     }
                     expr = new Expr.Assign(variable, NoSemicolon());
                 }
-                else if (TypeMatch(new[] { Token.TokenType.PLUS, Token.TokenType.MINUS, Token.TokenType.MULTIPLY, Token.TokenType.DIVIDE, Token.TokenType.MODULO }, new[] { Token.TokenType.EQUALS }))
+                else if (TypeMatch([Token.TokenType.PLUS, Token.TokenType.MINUS, Token.TokenType.MULTIPLY, Token.TokenType.DIVIDE, Token.TokenType.MODULO], [Token.TokenType.EQUALS]))
                 {
-                    if (variable.IsMethod())
+                    if (variable.IsMethodCall())
                     {
                         Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssignStatement, "method"));
                     }
@@ -619,11 +619,7 @@ public class Parser
                     expr = new Expr.Binary(variable, Previous(), NoSemicolon());
                     Expect(Token.TokenType.RBRACKET, "']' after indexer");
                 }
-                else if (variable.IsMethod())
-                {
-                    expr = variable;
-                }
-                else if (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this"))
+                else if (!variable.IsMethodCall() && (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this")))
                 {
                     expr = Declare(variable);
                 }
@@ -711,25 +707,39 @@ public class Parser
         {
             getters.Add(new Expr.Call(callee.typeName.StackPop(), GetArgs(), (callee.typeName.Count == 0) ? null : callee));
         }
+        else if (callee.typeName.Count != 0 && TypeMatch(Token.TokenType.LBRACKET))
+        {
+            getters.Add(new Expr.Binary(callee, Previous(), Logical()));
+            Expect(Token.TokenType.RBRACKET, "']' after indexer");
+        }
         else
         {
             callee.instanceCall = true;
             return callee;
         }
 
-        while (TypeMatch(Token.TokenType.DOT))
+        while (true)
         {
-            Expect(Token.TokenType.IDENTIFIER, "variable name after '.'");
-
-            if (TypeMatch(Token.TokenType.LPAREN))
+            if (TypeMatch(Token.TokenType.DOT))
             {
-                var call = new Expr.Call(Previous(2), GetArgs(), new Expr.InstanceGetReference(getters));
-                getters = new() { call };
+                Expect(Token.TokenType.IDENTIFIER, "variable name after '.'");
+                if (TypeMatch(Token.TokenType.LPAREN))
+                {
+                    var call = new Expr.Call(Previous(2), GetArgs(), new Expr.InstanceGetReference(getters));
+                    getters = [call];
+                }
+                else
+                {
+                    getters.Add(new Expr.Get(Previous()));
+                }
             }
-            else
+            else if (TypeMatch(Token.TokenType.LBRACKET))
             {
-                getters.Add(new Expr.Get(Previous()));
+                var call = new Expr.Binary(new Expr.InstanceGetReference(getters), Previous(), Logical());
+                getters = [call];
+                Expect(Token.TokenType.RBRACKET, "']' after indexer");
             }
+            else break;
         }
 
         return new Expr.InstanceGetReference(getters);

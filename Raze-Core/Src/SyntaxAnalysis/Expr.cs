@@ -50,18 +50,18 @@ public abstract class Expr
         public T VisitNoOpExpr(NoOp expr);
     }
 
-    public class Binary : Expr, ICall
+    public class Binary : Getter, ICall
     {
+
         public Expr left;
-        public Token op;
+        public Token op => name;
         public Expr right;
 
         public Function internalFunction;
 
-        public Binary(Expr left, Token op, Expr right)
+        public Binary(Expr left, Token op, Expr right) : base(op)
         {
             this.left = left;
-            this.op = op;
             this.right = right;
         }
 
@@ -72,6 +72,8 @@ public abstract class Expr
 
         public IList<Expr> Arguments => new Expr[] { left, right };
         public Function InternalFunction => internalFunction;
+        public override DataType Type => internalFunction._returnType.type;
+        public override bool IsMethodCall => op.type != Token.TokenType.LBRACKET;
     }
 
     public class Unary : Expr, ICall
@@ -237,10 +239,11 @@ public abstract class Expr
 
     public abstract class GetReference : Expr
     {
-        public abstract StackData GetLastData();
+        public abstract StackData? GetLastData();
+        public abstract DataType GetLastType();
         public abstract int GetLastSize();
         public abstract bool HandleThis();
-        public abstract bool IsMethod();
+        public abstract bool IsMethodCall();
     }
 
     public class AmbiguousGetReference : GetReference
@@ -270,8 +273,9 @@ public abstract class Expr
             this.instanceCall = instanceCall;
         }
 
-        public override StackData GetLastData() => datas[^1];
-        public override int GetLastSize() => datas[^1].size;
+        public override StackData? GetLastData() => datas[^1];
+        public override DataType GetLastType() => GetLastData().type;
+        public override int GetLastSize() => GetLastData().size;
         public override bool HandleThis()
         {
             if (typeName.Count == 1 && typeName.Peek().lexeme == "this") 
@@ -281,12 +285,13 @@ public abstract class Expr
             }
             return false;
         }
-        public override bool IsMethod() => false;
+        public override bool IsMethodCall() => false;
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitAmbiguousGetReferenceExpr(this);
         }
+
     }
 
     public class InstanceGetReference : GetReference
@@ -300,8 +305,9 @@ public abstract class Expr
             this.getters = getters;
         }
 
-        public override StackData GetLastData() => ((Get)getters[^1]).data;
-        public override int GetLastSize() => (getters[^1] is Get) ? ((Get)getters[^1]).data.size : ((Call)getters[^1]).internalFunction._returnType.type.allocSize;
+        public override StackData? GetLastData() => (getters[^1] as Get)?.data;
+        public override DataType GetLastType() => getters[^1].Type;
+        public override int GetLastSize() => (getters[^1] is Get get) ? get.data.size : ((ICall)getters[^1]).InternalFunction._returnType.type.allocSize;
         public override bool HandleThis()
         {
             if (getters.Count == 1 && getters[0].name.lexeme == "this")
@@ -311,7 +317,7 @@ public abstract class Expr
             }
             return false;
         }
-        public override bool IsMethod() => getters[^1] is Call;
+        public override bool IsMethodCall() => getters[^1].IsMethodCall;
         public bool HasMethod() => getters.Any(x => x is Call);
 
         public override T Accept<T>(IVisitor<T> visitor)
@@ -320,10 +326,11 @@ public abstract class Expr
         }
     }
 
-    public abstract class Getter : Expr
+    public abstract class Getter(Token name) : Expr
     {
-        public Token name;
-        public Getter(Token name) => this.name = name;
+        public Token name = name;
+        public abstract DataType Type { get; }
+        public abstract bool IsMethodCall { get; }
     }
 
     public interface ICall
@@ -369,11 +376,15 @@ public abstract class Expr
 
         public IList<Expr> Arguments => arguments;
         public Function InternalFunction => internalFunction;
+        public override DataType Type => internalFunction._returnType.type;
+        public override bool IsMethodCall => true;
     }
 
     public class Get : Getter
     {
         public StackData data;
+        public override DataType Type => data.type;
+        public override bool IsMethodCall => false;
 
         public Get(Token name) : base(name) { }
 

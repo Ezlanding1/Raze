@@ -315,7 +315,7 @@ public partial class Analyzer
                 expr.member.Accept(this);
                 assigns = false;
             }
-            TypeCheckUtils.MustMatchType(expr.member.GetLastData().type, assignType);
+            TypeCheckUtils.MustMatchType(expr.member.GetLastType(), assignType);
 
             return TypeCheckUtils._voidType;
         }

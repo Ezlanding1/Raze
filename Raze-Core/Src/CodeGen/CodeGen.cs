@@ -146,7 +146,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             var call = (Expr.Call)iCall;
 
             var callee = (call.callee != null) ?
-                call.callee.GetLastData().type :
+                call.callee.GetLastType() :
                 SymbolTableSingleton.SymbolTable.NearestEnclosingClass(call.internalFunction);
 
             var reg = alloc.NextRegister(InstructionUtils.SYS_SIZE);

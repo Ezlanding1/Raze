@@ -94,27 +94,23 @@ public partial class Analyzer
 
         public override object VisitCallExpr(Expr.Call expr)
         {
-            if (expr.callee != null)
-            {
-                expr.callee.Accept(this);
-            }
+            expr.callee?.Accept(this);
             HandleCall(expr);
 
-            if (symbolTable.Current is Expr.Function && expr.internalFunction.modifiers["inline"])
+            if (symbolTable.Current is Expr.Function function && expr.internalFunction.modifiers["inline"])
             {
                 for (int i = 0; i < expr.internalFunction.Arity; i++)
                 {
                     var parameter = expr.internalFunction.parameters[i];
                     if ((parameter.modifiers["ref"] || !parameter.modifiers["inlineRef"]) && expr.arguments[i] is Expr.AmbiguousGetReference ambiguousGetRef)
                     {
-                        ((Expr.Function)symbolTable.Current).parameters
+                        function.parameters
                             .Where(x => x.stack == ambiguousGetRef.GetLastData())
                             .ToList()
                             .ForEach(x => x.modifiers["inlineRef"] = false);
                     }
                 }
             }
-  
             return null;
         }
 
@@ -146,10 +142,8 @@ public partial class Analyzer
             {
                 var assigningVars = instruction.GetAssigningVars();
 
-                if (assigningVars.Item1 == 0)
-                {
+                if (assigningVars.Item1 == 0) 
                     continue;
-                }
 
                 switch (assigningVars.Item2) 
                 {
@@ -164,7 +158,6 @@ public partial class Analyzer
                 }
                 varIdx += assigningVars.Item1;
             }
-
             return null;
         }
 
@@ -182,18 +175,14 @@ public partial class Analyzer
             }
         }
 
-        private void SetInlineRef(Expr.StackData stack)
+        private void SetInlineRef(Expr.StackData? stack)
         {
-            if (symbolTable.Current is Expr.Function && ((Expr.Function)symbolTable.Current).modifiers["inline"])
+            if (stack == null)
+                return;
+
+            if (symbolTable.Current is Expr.Function function && function.modifiers["inline"])
             {
-                foreach (var paramExpr in ((Expr.Function)symbolTable.Current).parameters)
-                {
-                    if (paramExpr.stack == stack)
-                    {
-                        paramExpr.modifiers["inlineRef"] = false;
-                        return;
-                    }
-                }
+                function.parameters.First(x => x.stack == stack).modifiers["inlineRef"] = false;
             }
         }
     }

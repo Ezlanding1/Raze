@@ -53,7 +53,7 @@ internal partial class AssemblyOps
         private static AssemblyExpr.Value HandleOperandUnsafe(ExprUtils.AssignableInstruction.Unary instruction, AssemblyOps assemblyOps)
         {
             return instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Unary.AssignType.AssignFirst) ?
-                CreateOperand(assemblyOps).IfLiteralCreateLiteral(InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count - 1].Item2.GetLastData().size)) :
+                CreateOperand(assemblyOps).IfLiteralCreateLiteral(InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count - 1].Item2.GetLastSize())) :
                 instruction.instruction.operand.IfLiteralCreateLiteral(AssemblyExpr.Register.RegisterSize._64Bits);
         }
         private static AssemblyExpr.Value HandleOperand(ExprUtils.AssignableInstruction.Unary instruction, AssemblyOps assemblyOps)

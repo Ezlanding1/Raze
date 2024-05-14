@@ -39,7 +39,7 @@ internal partial class AssemblyOps
         public static AssemblyExpr.Value HandleOperand1Unsafe(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
             return instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst) ?
-                Unary.CreateOperand(assemblyOps).IfLiteralCreateLiteral(InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count - 1].Item2.GetLastData().size)) :
+                Unary.CreateOperand(assemblyOps).IfLiteralCreateLiteral(InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count - 1].Item2.GetLastSize())) :
                 instruction.instruction.operand1.IfLiteralCreateLiteral(AssemblyExpr.Register.RegisterSize._64Bits);
         }
         public static AssemblyExpr.Value HandleOperand1(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
@@ -50,7 +50,7 @@ internal partial class AssemblyOps
         public static AssemblyExpr.Value HandleOperand2Unsafe(ExprUtils.AssignableInstruction.Binary instruction, AssemblyExpr.Value operand1, AssemblyOps assemblyOps)
         {
             return instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond) ?
-                Unary.CreateOperand(assemblyOps).IfLiteralCreateLiteral(InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count - 1].Item2.GetLastData().size)) :
+                Unary.CreateOperand(assemblyOps).IfLiteralCreateLiteral(InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count - 1].Item2.GetLastSize())) :
                 instruction.instruction.operand2.IfLiteralCreateLiteral(operand1.Size);
         }
         public static AssemblyExpr.Value HandleOperand2(ExprUtils.AssignableInstruction.Binary instruction, ref AssemblyExpr.Value operand1, AssemblyOps assemblyOps)
@@ -63,12 +63,12 @@ internal partial class AssemblyOps
                     instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst) &&
                     instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))
                 {
-                    Expr.Type op1Type = assemblyOps.vars[assemblyOps.vars.Count - 2].Item2.GetLastData().type;
+                    Expr.Type op1Type = assemblyOps.vars[assemblyOps.vars.Count - 2].Item2.GetLastType();
                     AssemblyExpr.Register reg2 = ((AssemblyExpr.Pointer)operand1).AsRegister(assemblyOps.assembler);
                     assemblyOps.assembler.Emit(CodeGen.PartialRegisterOptimize(op1Type, reg2, operand1));
                     operand1 = reg2;
 
-                    Expr.Type op2Type = assemblyOps.vars[assemblyOps.vars.Count - 1].Item2.GetLastData().type;
+                    Expr.Type op2Type = assemblyOps.vars[assemblyOps.vars.Count - 1].Item2.GetLastType();
                     AssemblyExpr.Register op2Reg = ((AssemblyExpr.Pointer)operand2).AsRegister(assemblyOps.assembler);
                     assemblyOps.assembler.Emit(CodeGen.PartialRegisterOptimize(op2Type, op2Reg, operand2));
                     operand2 = op2Reg;
