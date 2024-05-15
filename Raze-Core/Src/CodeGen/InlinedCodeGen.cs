@@ -2,29 +2,20 @@
 
 public class InlinedCodeGen : CodeGen
 {
-    public class InlineStateNoInline
+    public class InlineStateNoInline(InlineStateNoInline lastState, bool inline = false)
     {
-        public InlineStateNoInline lastState;
+        public InlineStateNoInline lastState = lastState;
 
-        public bool inline;
-
-        public InlineStateNoInline(InlineStateNoInline lastState, bool inline = false)
-        {
-            this.lastState = lastState;
-            this.inline = inline;
-        }
+        public bool inline = inline;
     }
 
-    public class InlineStateInlined : InlineStateNoInline
+    public class InlineStateInlined(InlineStateNoInline lastState, Expr.Function currentInlined)
+        : InlineStateNoInline(lastState, true)
     {
         public int inlineLabelIdx = -1;
         public bool secondJump = false;
-
+        public Expr.Function currentInlined = currentInlined;
         public AssemblyExpr.Value? callee;
-
-        public InlineStateInlined(InlineStateNoInline lastState) : base(lastState, true)
-        {
-        }
     }
 
     public InlineStateNoInline inlineState = new(null);
@@ -51,7 +42,7 @@ public class InlinedCodeGen : CodeGen
             return tmp;
         }
 
-        inlineState = new InlineStateInlined(inlineState);
+        inlineState = new InlineStateInlined(inlineState, expr.internalFunction);
 
         var ret = HandleICall(expr);
 
@@ -78,7 +69,7 @@ public class InlinedCodeGen : CodeGen
             return tmp;
         }
 
-        inlineState = new InlineStateInlined(inlineState);
+        inlineState = new InlineStateInlined(inlineState, expr.internalFunction);
 
         var ret = HandleICall(expr);
 
@@ -100,7 +91,7 @@ public class InlinedCodeGen : CodeGen
             return tmp;
         }
 
-        inlineState = new InlineStateInlined(inlineState);
+        inlineState = new InlineStateInlined(inlineState, expr.internalFunction);
 
         AssemblyExpr.Value? instanceArg = null;
 
@@ -221,35 +212,35 @@ public class InlinedCodeGen : CodeGen
             return base.VisitReturnExpr(expr);
         }
 
-        if (!expr.IsVoid(alloc.current))
+        if (!expr.IsVoid(((InlineStateInlined)inlineState).currentInlined))
         {
-            AssemblyExpr.Value operand = expr.value.Accept(this).IfLiteralCreateLiteral(InstructionUtils.ToRegisterSize(((Expr.Function)alloc.current)._returnType.type.allocSize));
+            var returnSize = InstructionUtils.ToRegisterSize(((InlineStateInlined)inlineState).currentInlined._returnType.type.allocSize);
+            AssemblyExpr.Value operand = expr.value.Accept(this).IfLiteralCreateLiteral(returnSize);
 
             if (((InlineStateInlined)inlineState).callee == null)
             {
-                ((InlineStateInlined)inlineState).callee = operand.NonLiteral(this);
+                alloc.Free(operand);
+                ((InlineStateInlined)inlineState).callee = alloc.NextRegister(returnSize);
+
+            }
+            if (operand.IsRegister())
+            {
+                var op = (AssemblyExpr.Register)operand;
+                if (op.Name != ((AssemblyExpr.Register)((InlineStateInlined)inlineState).callee).Name)
+                {
+                    if (!(HandleSeteOptimization((AssemblyExpr.Register)operand, ((InlineStateInlined)inlineState).callee)))
+                    {
+                        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(((AssemblyExpr.Register)((InlineStateInlined)inlineState).callee).Name, op.Size), operand));
+                    }
+                }
+            }
+            else if (operand.IsPointer())
+            {
+                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, ((InlineStateInlined)inlineState).callee, operand));
             }
             else
             {
-                if (operand.IsRegister())
-                {
-                    var op = (AssemblyExpr.Register)operand;
-                    if (op.Name != ((AssemblyExpr.Register)((InlineStateInlined)inlineState).callee).Name)
-                    {
-                        if (!(HandleSeteOptimization((AssemblyExpr.Register)operand, ((InlineStateInlined)inlineState).callee)))
-                        {
-                            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(((AssemblyExpr.Register)((InlineStateInlined)inlineState).callee).Name, op.Size), operand));
-                        }
-                    }
-                }
-                else if (operand.IsPointer())
-                {
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, ((InlineStateInlined)inlineState).callee, operand));
-                }
-                else
-                {
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, ((InlineStateInlined)inlineState).callee, operand));
-                }
+                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, ((InlineStateInlined)inlineState).callee, operand));
             }
         }
         else
