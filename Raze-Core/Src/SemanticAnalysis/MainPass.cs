@@ -162,7 +162,7 @@ public partial class Analyzer
             return expr.internalFunction._returnType.type;
         }
 
-        private bool ResolveCallReferenceUsingCallee(string name, Expr.DataType callee, Expr.Type[] argumentTypes, bool iCallIsOp)
+        private bool ResolveCallReferenceUsingCallee(string name, Expr.DataType callee, Expr.Type[] argumentTypes, bool invokableIsOp)
         {
             var currentCallee = callee;
             do
@@ -171,7 +171,7 @@ public partial class Analyzer
 
                 if (symbolTable.TryGetFunction(name, argumentTypes, out var symbol))
                 {
-                    if (callee != symbolTable.Current && (!iCallIsOp && symbol.modifiers["static"]))
+                    if (callee != symbolTable.Current && (!invokableIsOp && symbol.modifiers["static"]))
                     {
                         symbolTable.SetContext(callee);
                         Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(

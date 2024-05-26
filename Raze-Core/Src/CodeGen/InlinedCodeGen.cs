@@ -44,7 +44,7 @@ public class InlinedCodeGen : CodeGen
 
         inlineState = new InlineStateInlined(inlineState, expr.internalFunction);
 
-        var ret = HandleICall(expr);
+        var ret = HandleInvokable(expr);
 
         inlineState = inlineState.lastState;
 
@@ -71,7 +71,7 @@ public class InlinedCodeGen : CodeGen
 
         inlineState = new InlineStateInlined(inlineState, expr.internalFunction);
 
-        var ret = HandleICall(expr);
+        var ret = HandleInvokable(expr);
 
         inlineState = inlineState.lastState;
 
@@ -122,7 +122,7 @@ public class InlinedCodeGen : CodeGen
             }
         }
 
-        var ret = HandleICall(expr);
+        var ret = HandleInvokable(expr);
 
         if (instanceArg != null)
         {
@@ -134,24 +134,24 @@ public class InlinedCodeGen : CodeGen
         return ret;
     }
 
-    private AssemblyExpr.Value? HandleICall(Expr.ICall iCall)
+    private AssemblyExpr.Value? HandleInvokable(Expr.Invokable invokable)
     {
-        if (iCall.InternalFunction.Abstract)
+        if (invokable.internalFunction.Abstract)
         {
             return null;
         }
 
         alloc.CreateBlock();
 
-        AssemblyExpr.Value[] args = iCall.Arguments.Select(x => x.Accept(this)).ToArray();
+        AssemblyExpr.Value[] args = invokable.Arguments.Select(x => x.Accept(this)).ToArray();
 
-        for (int i = 0; i < iCall.Arguments.Count; i++)
+        for (int i = 0; i < invokable.Arguments.Count; i++)
         {
-            iCall.InternalFunction.parameters[i].stack.inlinedData = true;
-            iCall.InternalFunction.parameters[i].stack.value = LockOperand(HandleParameterRegister(iCall.InternalFunction.parameters[i], args[i]));
+            invokable.internalFunction.parameters[i].stack.inlinedData = true;
+            invokable.internalFunction.parameters[i].stack.value = LockOperand(HandleParameterRegister(invokable.internalFunction.parameters[i], args[i]));
         }
 
-        foreach (var bodyExpr in iCall.InternalFunction.block.block)
+        foreach (var bodyExpr in invokable.internalFunction.block.block)
         {
             alloc.Free(bodyExpr.Accept(this), false);
         }
@@ -159,10 +159,10 @@ public class InlinedCodeGen : CodeGen
         var ret = ((InlineStateInlined)inlineState).callee;
         RegisterState? state = alloc.SaveRegisterState(ret);
 
-        for (int i = 0; i < iCall.Arguments.Count; i++)
+        for (int i = 0; i < invokable.Arguments.Count; i++)
         {
-            iCall.InternalFunction.parameters[i].stack.inlinedData = false;
-            alloc.Free(iCall.InternalFunction.parameters[i].stack.value, true);
+            invokable.internalFunction.parameters[i].stack.inlinedData = false;
+            alloc.Free(invokable.internalFunction.parameters[i].stack.value, true);
         }
 
         alloc.SetRegisterState(state, ret);
@@ -172,7 +172,7 @@ public class InlinedCodeGen : CodeGen
         HandleInlinedReturnOptimization();
 
         alloc.RemoveBlock();
-        return HandleRefVariableDeref(iCall.InternalFunction.refReturn, ret);
+        return HandleRefVariableDeref(invokable.internalFunction.refReturn, ret);
     }
 
     public override AssemblyExpr.Value? VisitAssignExpr(Expr.Assign expr)

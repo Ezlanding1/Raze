@@ -78,7 +78,7 @@ public partial class Analyzer
         {
             if (expr.internalFunction != null)
             {
-                HandleCall(expr);
+                HandleInvokable(expr);
             }
             return base.VisitBinaryExpr(expr);
         }
@@ -87,7 +87,7 @@ public partial class Analyzer
         {
             if (expr.internalFunction != null)
             { 
-                HandleCall(expr);
+                HandleInvokable(expr);
             }
             return base.VisitUnaryExpr(expr);
         }
@@ -95,7 +95,7 @@ public partial class Analyzer
         public override object VisitCallExpr(Expr.Call expr)
         {
             expr.callee?.Accept(this);
-            HandleCall(expr);
+            HandleInvokable(expr);
 
             if (symbolTable.Current is Expr.Function function && expr.internalFunction.modifiers["inline"])
             {
@@ -161,12 +161,12 @@ public partial class Analyzer
             return null;
         }
 
-        private void HandleCall(Expr.ICall expr)
+        private void HandleInvokable(Expr.Invokable expr)
         {
-            if (expr.InternalFunction.dead)
+            if (expr.internalFunction.dead)
             {
                 using (new SaveContext())
-                    expr.InternalFunction.Accept(this);
+                    expr.internalFunction.Accept(this);
             }
 
             foreach (var arg in expr.Arguments)

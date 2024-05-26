@@ -30,9 +30,9 @@ public abstract class Expr
         public T VisitForExpr(For expr);
         public T VisitWhileExpr(While expr);
         public T VisitCallExpr(Call expr);
-        public T VisitAmbiguousGetReferenceExpr(AmbiguousGetReference expr); 
-        public T VisitInstanceGetReferenceExpr(InstanceGetReference expr); 
-        public T VisitGetExpr(Get expr); 
+        public T VisitAmbiguousGetReferenceExpr(AmbiguousGetReference expr);
+        public T VisitInstanceGetReferenceExpr(InstanceGetReference expr);
+        public T VisitGetExpr(Get expr);
         public T VisitTypeReferenceExpr(TypeReference expr);
         public T VisitLogicalExpr(Logical epxr);
         public T VisitBlockExpr(Block expr);
@@ -50,14 +50,11 @@ public abstract class Expr
         public T VisitNoOpExpr(NoOp expr);
     }
 
-    public class Binary : Getter, ICall
+    public class Binary : Invokable
     {
-
         public Expr left;
         public Token op => name;
         public Expr right;
-
-        public Function internalFunction;
 
         public Binary(Expr left, Token op, Expr right) : base(op)
         {
@@ -70,22 +67,17 @@ public abstract class Expr
             return visitor.VisitBinaryExpr(this);
         }
 
-        public IList<Expr> Arguments => new Expr[] { left, right };
-        public Function InternalFunction => internalFunction;
-        public override DataType Type => internalFunction._returnType.type;
+        public override IList<Expr> Arguments => [left, right];
         public override bool IsMethodCall => op.type != Token.TokenType.LBRACKET;
     }
 
-    public class Unary : Expr, ICall
+    public class Unary : Invokable
     {
-        public Token op;
+        public Token op => name;
         public Expr operand;
 
-        public Function internalFunction;
-
-        public Unary(Token op, Expr operand)
+        public Unary(Token op, Expr operand) : base(op)
         {
-            this.op = op;
             this.operand = operand;
         }
 
@@ -94,8 +86,7 @@ public abstract class Expr
             return visitor.VisitUnaryExpr(this);
         }
 
-        public IList<Expr> Arguments => new Expr[] { operand };
-        public Function InternalFunction => internalFunction;
+        public override IList<Expr> Arguments => [operand];
     }
 
     public class Grouping : Expr
@@ -243,8 +234,8 @@ public abstract class Expr
         public abstract Token GetLastName();
         public abstract DataType GetLastType();
         public abstract int GetLastSize();
-        public abstract bool HandleThis();
         public abstract bool IsMethodCall();
+        public abstract bool HandleThis();
     }
 
     public class AmbiguousGetReference : GetReference
@@ -278,16 +269,16 @@ public abstract class Expr
         public override Token GetLastName() => typeName[^1];
         public override DataType GetLastType() => GetLastData().type;
         public override int GetLastSize() => GetLastData().size;
+        public override bool IsMethodCall() => false;
         public override bool HandleThis()
         {
-            if (typeName.Count == 1 && typeName.Peek().lexeme == "this") 
-            { 
-                typeName.Peek().type = Token.TokenType.IDENTIFIER; 
-                return true; 
+            if (typeName.Count == 1 && typeName.Peek().lexeme == "this")
+            {
+                typeName.Peek().type = Token.TokenType.IDENTIFIER;
+                return true;
             }
             return false;
         }
-        public override bool IsMethodCall() => false;
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
@@ -310,7 +301,8 @@ public abstract class Expr
         public override StackData? GetLastData() => (getters[^1] as Get)?.data;
         public override Token GetLastName() => getters[^1].name;
         public override DataType GetLastType() => getters[^1].Type;
-        public override int GetLastSize() => (getters[^1] is Get get) ? get.data.size : ((ICall)getters[^1]).InternalFunction._returnType.type.allocSize;
+        public override int GetLastSize() => (getters[^1] is Get get) ? get.data.size : ((Invokable)getters[^1]).internalFunction._returnType.type.allocSize;
+        public override bool IsMethodCall() => getters[^1].IsMethodCall;
         public override bool HandleThis()
         {
             if (getters.Count == 1 && getters[0].name.lexeme == "this")
@@ -320,7 +312,6 @@ public abstract class Expr
             }
             return false;
         }
-        public override bool IsMethodCall() => getters[^1].IsMethodCall;
         public bool HasMethod() => getters.Any(x => x is Call);
 
         public override T Accept<T>(IVisitor<T> visitor)
@@ -336,13 +327,15 @@ public abstract class Expr
         public abstract bool IsMethodCall { get; }
     }
 
-    public interface ICall
+    public abstract class Invokable(Token name) : Getter(name)
     {
-        public IList<Expr> Arguments { get; }
-        public Function InternalFunction { get; }
+        public abstract IList<Expr> Arguments { get; }
+        public Function internalFunction;
+        public override DataType Type => internalFunction._returnType.type;
+        public override bool IsMethodCall => true;
     }
 
-    public class Call : Getter, ICall
+    public class Call : Invokable
     {
         public GetReference? callee;
 
@@ -358,9 +351,6 @@ public abstract class Expr
                 else return true;
             }
         }
-
-        public Function internalFunction;
-
         public List<Expr> arguments;
 
         public Call(Token name, List<Expr> arguments, GetReference? callee) : base(name)
@@ -377,10 +367,7 @@ public abstract class Expr
             return visitor.VisitCallExpr(this);
         }
 
-        public IList<Expr> Arguments => arguments;
-        public Function InternalFunction => internalFunction;
-        public override DataType Type => internalFunction._returnType.type;
-        public override bool IsMethodCall => true;
+        public override IList<Expr> Arguments => arguments;
     }
 
     public class Get : Getter
@@ -577,11 +564,11 @@ public abstract class Expr
 
         public Definition(Token name) : base(name)
         {
-            
+
         }
 
         public Definition(Token name, int size)
-            : this (name)
+            : this(name)
         {
             this.size = size;
         }
@@ -835,7 +822,7 @@ public abstract class Expr
         internal FileInfo fileInfo;
         internal bool customPath;
         internal ImportType importType;
-        
+
         internal Import(FileInfo fileInfo, bool customPath, ImportType importType)
         {
             this.fileInfo = fileInfo;

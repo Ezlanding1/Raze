@@ -117,11 +117,11 @@ public partial class Analyzer
             }
             ValidateFunctionParameterModifiers(expr);
         }
-        public static void ValidateFunctionParameterModifiers(Expr.ICall iCall)
+        public static void ValidateFunctionParameterModifiers(Expr.Invokable invokable)
         {
-            for (int i = 0; i < iCall.InternalFunction.Arity && iCall.InternalFunction.parameters[i].modifiers["ref"]; i++)
+            for (int i = 0; i < invokable.internalFunction.Arity && invokable.internalFunction.parameters[i].modifiers["ref"]; i++)
             {
-                ValidateRefVariable(iCall.Arguments[i], true);
+                ValidateRefVariable(invokable.Arguments[i], true);
             }
         }
         public static void ValidateRefVariable(Expr expr, bool assign)
