@@ -35,7 +35,6 @@ public abstract partial class Diagnostic
         { DiagnosticName.NoMatchingIf, ("'{0}' conditional has no matching 'if'", Severity.Error) },
         { DiagnosticName.InvalidAssignStatement, ("Cannot assign to {0}", Severity.Error) },
         { DiagnosticName.InvalidDeclareStatement, ("Cannot declare to a non-type value", Severity.Error) },
-        { DiagnosticName.InvalidFunctionModifier_Ref, ("Cannot assign when non-variable is passed to 'ref' parameter", Severity.Error) },
         { DiagnosticName.InvalidThisKeyword, ("The 'this' keyword may only be used in a member to reference the enclosing class", Severity.Error) },
         { DiagnosticName.ExpressionReachedUnexpectedEnd, ("Expression '{0}' reached an unexpected end", Severity.Error) },
         { DiagnosticName.UnexpectedTokenInFunctionArguments, ("Unexpected {0}", Severity.Error) },
@@ -76,6 +75,7 @@ public abstract partial class Diagnostic
         { DiagnosticName.InvalidFunctionModifierPair, ("A function may not have the modifiers '{0}' and '{1}'", Severity.Error) },
         { DiagnosticName.InvalidMainFunctionModifier_Include, ("The Main function must have the '{0}' modifier", Severity.Error) },
         { DiagnosticName.InvalidMainFunctionModifier_NoInclude, ("The Main function may not have the '{0}' modifier", Severity.Error) },
+        { DiagnosticName.InvalidParameterModifier_Ref, ("Cannot assign when non-variable is passed to 'ref' parameter", Severity.Error) },
         { DiagnosticName.InvalidMainFunctionReturnType, ("Main can only return types 'Integer', and 'void'. Got '{0}'", Severity.Error) },
         { DiagnosticName.PrimitiveWithConstructor, ("A primitive may not have a constructor", Severity.Error) },
         { DiagnosticName.CircularInheritance, ("Cicular inheritance between types '{0}' and '{1}'", Severity.Error) },
@@ -85,6 +85,8 @@ public abstract partial class Diagnostic
         { DiagnosticName.InvalidOverrideModifier, ("Function '{0}' has no suitable method to override", Severity.Error) },
         { DiagnosticName.ClassDoesNotOverrideAbstractFunction, ("Class '{0}' does not contain a method to override the abstract function '{2}' in '{1}'", Severity.Error) },
         { DiagnosticName.TypeMismatch_OverridenMethod, ("The return-type of overriden method '{0}' must match its virtual method's return-type '{1}'", Severity.Error) },
+        { DiagnosticName.DanglingPointerReturned, ("Local variable '{0}' cannot be returned as 'ref'", Severity.Error) },
+        { DiagnosticName.InvalidFunctionModifier_Ref, ("Cannot assign when non-variable is returned as 'ref'", Severity.Error) },
         
         // BackendError
         { DiagnosticName.InvalidLiteralSize, ("{0} literal '{1}' exceeds size of assigned data type '{2}'", Severity.Error) },

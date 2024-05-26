@@ -478,8 +478,16 @@ public partial class Analyzer
 
         public override Expr.Type VisitReturnExpr(Expr.Return expr)
         {
-            symbolTable.returnFrameData.Initialized(expr.value.Accept(this));
+            if (symbolTable.Current is Expr.Function function && function.refReturn)
+            {
+                TypeCheckUtils.ValidateRefVariable(expr.value, false);
+                if (expr.value is Expr.GetReference getRef && symbolTable.IsLocallyScoped(getRef.GetLastName().lexeme))
+                {
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DanglingPointerReturned, getRef.GetLastName().lexeme));
+                }
+            }
 
+            symbolTable.returnFrameData.Initialized(expr.value.Accept(this));
             return TypeCheckUtils._voidType;
         }
 

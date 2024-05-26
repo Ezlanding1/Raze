@@ -141,6 +141,8 @@ public class Parser
 
                 Expr.TypeReference _return = new(null);
 
+                bool refReturn = ReservedValueMatch("ref");
+
                 Expect(Token.TokenType.IDENTIFIER, definitionType.lexeme + " name");
 
                 if (IsAtEnd()) return new Expr.InvalidExpr();
@@ -163,7 +165,7 @@ public class Parser
                     if (IsAtEnd())
                     {
                         Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedEndInFunctionParameters, name.lexeme));
-                        return new Expr.Function(modifiers, _return, name, parameters, new(new()));
+                        return new Expr.Function(modifiers, refReturn, _return, name, parameters, new(new()));
                     }
 
                     if (TypeMatch(SynchronizationTokens) || TypeMatch(Token.TokenType.LBRACE))
@@ -202,9 +204,9 @@ public class Parser
                 if (TypeMatch(Token.TokenType.SEMICOLON))
                 {
                     modifiers["virtual"] = true;
-                    return new Expr.Function(modifiers, _return, name, parameters, null);
+                    return new Expr.Function(modifiers, refReturn, _return, name, parameters, null);
                 }
-                return new Expr.Function(modifiers, _return, name, parameters, GetBlock(definitionType.lexeme));
+                return new Expr.Function(modifiers, refReturn, _return, name, parameters, GetBlock(definitionType.lexeme));
             }
             else if (definitionType.lexeme == "class" || definitionType.lexeme == "trait")
             {

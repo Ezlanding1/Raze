@@ -24,14 +24,14 @@ public partial class Analyzer
 
         public static Expr.Function GenerateAnyFunction()
         {
-            Expr.Function function = new(ExprUtils.Modifiers.FunctionModifierTemplate(), new(null, TypeCheckUtils.anyType), new(Token.TokenType.IDENTIFIER, "any"), new(), new(new()));
+            Expr.Function function = new(ExprUtils.Modifiers.FunctionModifierTemplate(), false, new(null, TypeCheckUtils.anyType), new(Token.TokenType.IDENTIFIER, "any"), new(), new(new()));
             function.enclosing = TypeCheckUtils.anyType;
             return function;
         }
 
         public class DefaultConstructor : Expr.Function
         {
-            public DefaultConstructor(Token name) : base(null, new(null), name, new(), new(new()))
+            public DefaultConstructor(Token name) : base(null, false, new(null), name, new(), new(new()))
             {
                 this.modifiers = ExprUtils.Modifiers.FunctionModifierTemplate();
                 this.constructor = true;

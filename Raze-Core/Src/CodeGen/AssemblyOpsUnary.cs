@@ -12,7 +12,8 @@ internal partial class AssemblyOps
     {
         public static AssemblyExpr.Value CreateOperand(AssemblyOps assemblyOps)
         {
-            var operand = assemblyOps.vars[assemblyOps.count++].Item2.Accept(assemblyOps.assembler);
+            Expr expr = assemblyOps.vars[assemblyOps.count++].Item2;
+            var operand = expr.Accept(assemblyOps.assembler);
 
             if (assemblyOps.vars[assemblyOps.count - 1].Item1 != (AssemblyExpr.Register.RegisterSize)(-1))
             {

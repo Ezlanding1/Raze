@@ -256,6 +256,9 @@ public partial class Analyzer
             return (symbol = _GetVariable(key, out isClassScoped, ignoreEnclosing)) != null;
         }
 
+        public bool IsLocallyScoped(string key) =>
+            locals.FindLastIndex(x => key == x.Item1.lexeme) != -1;
+
         // 'GetDefinition' Methods:
 
         private Expr.Definition? _GetDefinition(Token key)

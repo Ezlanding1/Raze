@@ -35,7 +35,6 @@ public abstract partial class Diagnostic
         NoMatchingIf,
         InvalidAssignStatement,
         InvalidDeclareStatement,
-        InvalidFunctionModifier_Ref,
         InvalidThisKeyword,
         ExpressionReachedUnexpectedEnd,
         UnexpectedTokenInFunctionArguments,
@@ -78,6 +77,7 @@ public abstract partial class Diagnostic
         InvalidFunctionModifierPair,
         InvalidMainFunctionModifier_Include,
         InvalidMainFunctionModifier_NoInclude,
+        InvalidParameterModifier_Ref,
         InvalidMainFunctionReturnType,
         PrimitiveWithConstructor,
         CircularInheritance,
@@ -87,6 +87,8 @@ public abstract partial class Diagnostic
         InvalidOverrideModifier,
         ClassDoesNotOverrideAbstractFunction,
         TypeMismatch_OverridenMethod,
+        DanglingPointerReturned,
+        InvalidFunctionModifier_Ref,
 
         // BackendError
         InvalidLiteralSize,

@@ -172,7 +172,7 @@ public class InlinedCodeGen : CodeGen
         HandleInlinedReturnOptimization();
 
         alloc.RemoveBlock();
-        return ret;
+        return HandleRefVariableDeref(iCall.InternalFunction.refReturn, ret);
     }
 
     public override AssemblyExpr.Value? VisitAssignExpr(Expr.Assign expr)
@@ -214,8 +214,17 @@ public class InlinedCodeGen : CodeGen
 
         if (!expr.IsVoid(((InlineStateInlined)inlineState).currentInlined))
         {
+            AssemblyExpr.Instruction instruction = alloc.current is Expr.Function function ?
+                GetMoveInstruction(function.refReturn) :
+                AssemblyExpr.Instruction.MOV;
+
             var returnSize = InstructionUtils.ToRegisterSize(((InlineStateInlined)inlineState).currentInlined._returnType.type.allocSize);
             AssemblyExpr.Value operand = expr.value.Accept(this).IfLiteralCreateLiteral(returnSize);
+
+            if (((InlineStateInlined)inlineState).currentInlined.refReturn)
+            {
+                (instruction, operand) = PreserveRefPtrVariable(expr.value, (AssemblyExpr.Pointer)operand);
+            }
 
             if (((InlineStateInlined)inlineState).callee == null)
             {
@@ -230,17 +239,17 @@ public class InlinedCodeGen : CodeGen
                 {
                     if (!(HandleSeteOptimization((AssemblyExpr.Register)operand, ((InlineStateInlined)inlineState).callee)))
                     {
-                        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(((AssemblyExpr.Register)((InlineStateInlined)inlineState).callee).Name, op.Size), operand));
+                        Emit(new AssemblyExpr.Binary(instruction, new AssemblyExpr.Register(((AssemblyExpr.Register)((InlineStateInlined)inlineState).callee).Name, op.Size), operand));
                     }
                 }
             }
             else if (operand.IsPointer())
             {
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, ((InlineStateInlined)inlineState).callee, operand));
+                Emit(new AssemblyExpr.Binary(instruction, ((InlineStateInlined)inlineState).callee, operand));
             }
             else
             {
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, ((InlineStateInlined)inlineState).callee, operand));
+                Emit(new AssemblyExpr.Binary(instruction, ((InlineStateInlined)inlineState).callee, operand));
             }
         }
         else

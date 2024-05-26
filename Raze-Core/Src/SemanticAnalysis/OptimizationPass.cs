@@ -182,7 +182,11 @@ public partial class Analyzer
 
             if (symbolTable.Current is Expr.Function function && function.modifiers["inline"])
             {
-                function.parameters.First(x => x.stack == stack).modifiers["inlineRef"] = false;
+                var paramStack = function.parameters.FirstOrDefault(x => x.stack == stack);
+                if (paramStack != null)
+                {
+                    paramStack.modifiers["inlineRef"] = false;
+                }
             }
         }
     }

@@ -119,13 +119,21 @@ public partial class Analyzer
         }
         public static void ValidateFunctionParameterModifiers(Expr.ICall iCall)
         {
-            for (int i = 0; i < iCall.InternalFunction.Arity; i++)
+            for (int i = 0; i < iCall.InternalFunction.Arity && iCall.InternalFunction.parameters[i].modifiers["ref"]; i++)
             {
-                if (iCall.InternalFunction.parameters[i].modifiers["ref"] && TypeCheckUtils.CannotBeRef(iCall.Arguments[i]))
-                {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifier_Ref));
-                    iCall.InternalFunction.parameters[i].modifiers["ref"] = false;
-                }
+                ValidateRefVariable(iCall.Arguments[i], true);
+            }
+        }
+        public static void ValidateRefVariable(Expr expr, bool assign)
+        {
+            if (CannotBeRef(expr))
+            {
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
+                        assign? 
+                        Diagnostic.DiagnosticName.InvalidParameterModifier_Ref : 
+                        Diagnostic.DiagnosticName.InvalidFunctionModifier_Ref
+                    )
+                );
             }
         }
     }

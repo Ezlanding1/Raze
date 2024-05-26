@@ -240,6 +240,7 @@ public abstract class Expr
     public abstract class GetReference : Expr
     {
         public abstract StackData? GetLastData();
+        public abstract Token GetLastName();
         public abstract DataType GetLastType();
         public abstract int GetLastSize();
         public abstract bool HandleThis();
@@ -274,6 +275,7 @@ public abstract class Expr
         }
 
         public override StackData? GetLastData() => datas[^1];
+        public override Token GetLastName() => typeName[^1];
         public override DataType GetLastType() => GetLastData().type;
         public override int GetLastSize() => GetLastData().size;
         public override bool HandleThis()
@@ -306,6 +308,7 @@ public abstract class Expr
         }
 
         public override StackData? GetLastData() => (getters[^1] as Get)?.data;
+        public override Token GetLastName() => getters[^1].name;
         public override DataType GetLastType() => getters[^1].Type;
         public override int GetLastSize() => (getters[^1] is Get get) ? get.data.size : ((ICall)getters[^1]).InternalFunction._returnType.type.allocSize;
         public override bool HandleThis()
@@ -589,6 +592,7 @@ public abstract class Expr
     public class Function : Definition
     {
         public List<Parameter> parameters;
+        public bool refReturn;
         public TypeReference _returnType;
         public int Arity
         {
@@ -600,9 +604,10 @@ public abstract class Expr
         public Block? block;
         public bool Abstract => block == null;
 
-        internal Function(ExprUtils.Modifiers modifiers, TypeReference _returnType, Token name, List<Parameter> parameters, Block? block) : base(name)
+        internal Function(ExprUtils.Modifiers modifiers, bool refReturn, TypeReference _returnType, Token name, List<Parameter> parameters, Block? block) : base(name)
         {
             this.modifiers = modifiers;
+            this.refReturn = refReturn;
             this._returnType = _returnType;
             this.parameters = parameters;
             this.block = block;

@@ -45,15 +45,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return assembly;
     }
 
-    public virtual AssemblyExpr.Value? VisitBinaryExpr(Expr.Binary expr)
-    {
-        return HandleICall(expr);
-    }
+    public virtual AssemblyExpr.Value? VisitBinaryExpr(Expr.Binary expr) => HandleICall(expr);
 
-    public virtual AssemblyExpr.Value? VisitCallExpr(Expr.Call expr)
-    {
-        return HandleICall(expr);
-    }
+    public virtual AssemblyExpr.Value? VisitCallExpr(Expr.Call expr) => HandleICall(expr);
 
     private AssemblyExpr.Value? HandleICall(Expr.ICall iCall)
     {
@@ -94,7 +88,14 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
             if (i + Convert.ToUInt16(instance) < InstructionUtils.paramRegister.Length)
             {
-                if (iCall.InternalFunction.parameters[i].modifiers["ref"])
+                bool _ref = iCall.InternalFunction.parameters[i].modifiers["ref"];
+                if (_ref)
+                {
+                    (var instruction, arg) = PreserveRefPtrVariable(iCall.Arguments[i], (AssemblyExpr.Pointer)arg);
+                    _ref = instruction == AssemblyExpr.Instruction.LEA;
+                }
+
+                if (_ref)
                 {
                     Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, alloc.AllocParam(Convert.ToInt16(instance) + i, InstructionUtils.SYS_SIZE, localParams, this), arg));
                 }
@@ -174,7 +175,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         return iCall.InternalFunction.constructor ?
             alloc.ReAllocConstructorReturnRegister(alloc.NameToIdx(localParams[0].Name)) :
-            alloc.NeededAlloc(InstructionUtils.ToRegisterSize(iCall.InternalFunction._returnType.type.allocSize), this);
+            HandleRefVariableDeref(iCall.InternalFunction.refReturn, alloc.NeededAlloc(InstructionUtils.ToRegisterSize(iCall.InternalFunction._returnType.type.allocSize), this));
     }
 
     public AssemblyExpr.Value? VisitClassExpr(Expr.Class expr)
@@ -248,7 +249,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             AssemblyExpr.Register reg = ((AssemblyExpr.Pointer)operand).AsRegister(this);
             reg.size = _ref ? InstructionUtils.SYS_SIZE : ((AssemblyExpr.Pointer)operand).Size;
 
-            Emit(new AssemblyExpr.Binary(_ref? AssemblyExpr.Instruction.LEA : AssemblyExpr.Instruction.MOV, reg, operand));
+            Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref), reg, operand));
             _ref = false;
             operand = reg;
         }
@@ -261,7 +262,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                 if (expr.classScoped)
                 {
                     var stackPtr = (AssemblyExpr.Pointer)expr.stack.value;
-                    Emit(new AssemblyExpr.Binary(_ref ? AssemblyExpr.Instruction.LEA : AssemblyExpr.Instruction.MOV, alloc.CurrentRegister(InstructionUtils.SYS_SIZE), new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, (int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE)));
+                    Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref), alloc.CurrentRegister(InstructionUtils.SYS_SIZE), new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, (int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE)));
                     instruction.operand = new AssemblyExpr.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), -stackPtr.offset, expr.stack._ref ? InstructionUtils.SYS_SIZE : InstructionUtils.ToRegisterSize(expr.stack.size));
                 }
                 else
@@ -296,12 +297,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         if (expr.classScoped)
         {
-            Emit(new AssemblyExpr.Binary(_ref ? AssemblyExpr.Instruction.LEA : AssemblyExpr.Instruction.MOV, alloc.CurrentRegister(InstructionUtils.SYS_SIZE), new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, (int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE)));
-            Emit(new AssemblyExpr.Binary(_ref ? AssemblyExpr.Instruction.LEA : AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), -expr.stack.ValueAsPointer.offset, expr.stack._ref ? InstructionUtils.SYS_SIZE : InstructionUtils.ToRegisterSize(expr.stack.size)), operand));
+            Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref), alloc.CurrentRegister(InstructionUtils.SYS_SIZE), new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, (int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE)));
+            Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref), new AssemblyExpr.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), -expr.stack.ValueAsPointer.offset, expr.stack._ref ? InstructionUtils.SYS_SIZE : InstructionUtils.ToRegisterSize(expr.stack.size)), operand));
         }
         else
         {
-            Emit(new AssemblyExpr.Binary(_ref ? AssemblyExpr.Instruction.LEA : AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(-expr.stack.ValueAsPointer.offset, expr.stack._ref ? InstructionUtils.SYS_SIZE : InstructionUtils.ToRegisterSize(expr.stack.size)), operand));
+            Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref), new AssemblyExpr.Pointer(-expr.stack.ValueAsPointer.offset, expr.stack._ref ? InstructionUtils.SYS_SIZE : InstructionUtils.ToRegisterSize(expr.stack.size)), operand));
         }
 
         dealloc:
@@ -351,67 +352,51 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
     public AssemblyExpr.Value? VisitAmbiguousGetReferenceExpr(Expr.AmbiguousGetReference expr)
     {
-        if (expr.instanceCall)
+        if (!expr.instanceCall)
         {
-            AssemblyExpr.Register register = null;
-
-            if (expr.classScoped)
-            {
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, (register = alloc.NextRegister(InstructionUtils.SYS_SIZE)), new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, (int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE)));
-            }
-
-            var stack = expr.datas[0];
-
-            if (stack.inlinedData)
-            {
-                if (expr.datas.Length == 1)
-                {
-                    return stack.value.IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)stack.size);
-                }
-                register = stack.value.NonPointerNonLiteral(this);
-            }
-            else if (stack._ref)
-            {
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.CurrentRegister(InstructionUtils.SYS_SIZE), new AssemblyExpr.Pointer(new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RBP, InstructionUtils.SYS_SIZE), -stack.ValueAsPointer.offset, InstructionUtils.SYS_SIZE)));
-                alloc.NullReg();
-                register = alloc.NextRegister(InstructionUtils.SYS_SIZE);
-
-                if (expr.datas.Length == 1)
-                {
-                    return new AssemblyExpr.Pointer(register, 0, stack.size);
-                }
-            }
-            else if (register == null)
-            {
-                if (expr.datas.Length == 1)
-                {
-                    return stack.value;
-                }
-                register = alloc.NextRegister(InstructionUtils.SYS_SIZE);
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, register, stack.value));
-            }
-            else
-            {
-                if (expr.datas.Length == 1)
-                {
-                    return new AssemblyExpr.Pointer(register, -stack.ValueAsPointer.offset, stack.size);
-                }
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, register, new AssemblyExpr.Pointer(register, -stack.ValueAsPointer.offset, stack.size)));
-            }
-
-            for (int i = 1; i < expr.datas.Length; i++)
-            {
-                if (i == expr.datas.Length - 1)
-                {
-                    register.size = InstructionUtils.ToRegisterSize(expr.datas[i].size);
-                    return new AssemblyExpr.Pointer(register, -expr.datas[i].ValueAsPointer.offset, expr.datas[i].size);
-                }
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, register, new AssemblyExpr.Pointer(register, -expr.datas[i].ValueAsPointer.offset, expr.datas[i].size)));
-
-            }
-            return register;
+            return null;
         }
-        return null;
+
+        AssemblyExpr.Register register = null;
+
+        if (expr.classScoped)
+        {
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, (register = alloc.NextRegister(InstructionUtils.SYS_SIZE)), new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, (int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE)));
+        }
+
+        var stack = expr.datas[0];
+
+        if (stack.inlinedData)
+        {
+            if (expr.datas.Length == 1)
+            {
+                return stack.value.IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)stack.size);
+            }
+            register = stack.value.NonPointerNonLiteral(this);
+        }
+        else if (register == null)
+        {
+            if (expr.datas.Length == 1)
+            {
+                return HandleRefVariableDeref(stack._ref, stack.value, InstructionUtils.ToRegisterSize(stack.size));
+            }
+            register = alloc.NextRegister(InstructionUtils.SYS_SIZE);
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, register, stack.value));
+        }
+        else
+        {
+            if (expr.datas.Length == 1)
+            {
+                return HandleRefVariableDeref(stack._ref, new AssemblyExpr.Pointer(register, -stack.ValueAsPointer.offset, stack.size), InstructionUtils.ToRegisterSize(stack.size));
+            }
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, register, new AssemblyExpr.Pointer(register, -stack.ValueAsPointer.offset, stack.size)));
+        }
+
+        for (int i = 1; i < expr.datas.Length-1; i++)
+        {
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, register, new AssemblyExpr.Pointer(register, -expr.datas[i].ValueAsPointer.offset, expr.datas[i].size)));
+        }
+        return HandleRefVariableDeref(expr.GetLastData()?._ref == true, new AssemblyExpr.Pointer(register, -expr.datas[^1].ValueAsPointer.offset, expr.datas[^1].size));
     }
 
     public AssemblyExpr.Value? VisitInstanceGetReferenceExpr(Expr.InstanceGetReference expr)
@@ -433,16 +418,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             register = (AssemblyExpr.Register)firstGet;
         }
 
-        for (int i = 1; i < expr.getters.Count; i++)
+        for (int i = 1; i < expr.getters.Count-1; i++)
         {
-            if (i == expr.getters.Count-1)
-            {
-                register.size = InstructionUtils.ToRegisterSize(((Expr.Get)expr.getters[i]).data.size);
-                return new AssemblyExpr.Pointer(register, -((Expr.Get)expr.getters[i]).data.ValueAsPointer.offset, ((Expr.Get)expr.getters[i]).data.size);
-            }
             Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, register, new AssemblyExpr.Pointer(register, -((Expr.Get)expr.getters[i]).data.ValueAsPointer.offset, ((Expr.Get)expr.getters[i]).data.size)));
         }
-        return register;
+        return new AssemblyExpr.Pointer(register, -((Expr.Get)expr.getters[^1]).data.ValueAsPointer.offset, ((Expr.Get)expr.getters[^1]).data.size);
     }
 
     public AssemblyExpr.Value? VisitGetExpr(Expr.Get expr)
@@ -597,10 +577,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         
     }
 
-    public virtual AssemblyExpr.Value? VisitUnaryExpr(Expr.Unary expr)
-    {
-        return HandleICall(expr);
-    }
+    public virtual AssemblyExpr.Value? VisitUnaryExpr(Expr.Unary expr) => HandleICall(expr);
 
     public AssemblyExpr.Value? VisitIfExpr(Expr.If expr)
     {
@@ -729,8 +706,17 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
     {
         if (!expr.IsVoid(alloc.current))
         {
+            AssemblyExpr.Instruction instruction = alloc.current is Expr.Function function ?
+                GetMoveInstruction(function.refReturn) :
+                AssemblyExpr.Instruction.MOV;
+
             AssemblyExpr.Value operand = expr.value.Accept(this)
                 .IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)Math.Max((int)AssemblyExpr.Register.RegisterSize._32Bits, ((Expr.Function)alloc.current)._returnType.type.allocSize));
+
+            if (((Expr.Function)alloc.current).refReturn)
+            {
+                (instruction, operand) = PreserveRefPtrVariable(expr.value, (AssemblyExpr.Pointer)operand);
+            }
 
             var rax = new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, operand.Size);
 
@@ -743,12 +729,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                 }
                 else
                 {
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, operand));
+                    Emit(new AssemblyExpr.Binary(instruction, rax, operand));
                 }
             }
             else if (operand.IsLiteral())
             {
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, operand));
+                Emit(new AssemblyExpr.Binary(instruction, rax, operand));
             }
 
             alloc.Free(operand);
@@ -1128,4 +1114,19 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         //};
         return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.UnsignedInteger, [0]);
     }
+
+    private protected AssemblyExpr.Instruction GetMoveInstruction(bool isRef) =>
+        isRef ? AssemblyExpr.Instruction.LEA : AssemblyExpr.Instruction.MOV;
+
+    private static bool IsRefVariable(Expr expr) =>
+        !Analyzer.TypeCheckUtils.CannotBeRef(expr) && ((Expr.GetReference)expr).GetLastData()._ref;
+
+    private protected AssemblyExpr.Value? HandleRefVariableDeref(bool _ref, AssemblyExpr.Value register) =>
+        (register != null) ? HandleRefVariableDeref(_ref, register, register.Size) : null;
+
+    private protected AssemblyExpr.Value HandleRefVariableDeref(bool _ref, AssemblyExpr.Value register, AssemblyExpr.Register.RegisterSize size) =>
+        _ref ? new AssemblyExpr.Pointer(register.NonPointerNonLiteral(this).nameBox, 0, size) : register;
+
+    private protected static (AssemblyExpr.Instruction, AssemblyExpr.Value) PreserveRefPtrVariable(Expr expr, AssemblyExpr.Pointer pointer) =>
+        IsRefVariable(expr) ? (AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(pointer.register.nameBox, pointer.size)) : (AssemblyExpr.Instruction.LEA, pointer);
 }

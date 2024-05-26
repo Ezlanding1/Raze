@@ -219,6 +219,9 @@ public abstract partial class AssemblyExpr
         internal Pointer(Register register, int offset, int size) : this(register, offset, InstructionUtils.ToRegisterSize(size))
         {
         }
+        internal Pointer(StrongBox<Register.RegisterName> register, int offset, Register.RegisterSize size) : this(new Register(register, Register.RegisterSize._64Bits), offset, size)
+        {
+        }
         internal Pointer(Register.RegisterName register, int offset, Register.RegisterSize size) : this(new Register(register, Register.RegisterSize._64Bits), offset, size)
         {
         }
