@@ -23,20 +23,18 @@ internal partial class Shell
         DebugPrinter.PrintTokens(compileOptions, tokens);
 
         // Parse Tokens
-        Raze.Parser parser = new Raze.Parser(tokens);
-        List<Raze.Expr> expressions = parser.Parse();
+        Raze.Parser.Parse(tokens);
 
-        DebugPrinter.PrintAst(compileOptions, expressions);
+        DebugPrinter.PrintAst(compileOptions);
 
         // Run Analysis on the Code 
-        Raze.Analyzer analyzer = new Raze.Analyzer(expressions);
-        analyzer.Analyze();
-
+        Raze.Analyzer.Analyze();
+        
         // Throw any encountered compile errors
         Raze.Diagnostics.ThrowCompilerErrors();
 
         // Lower AST to ASM
-        Raze.CodeGen codeGen = new Raze.InlinedCodeGen(expressions);
+        Raze.CodeGen codeGen = new Raze.InlinedCodeGen();
         var assembly = codeGen.Generate();
 
         DebugPrinter.PrintAssembly(compileOptions, assembly);

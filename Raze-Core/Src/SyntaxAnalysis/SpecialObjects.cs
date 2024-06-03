@@ -40,10 +40,25 @@ public partial class Analyzer
             }
         }
 
-        public static Expr.Class GenerateImportToplevelWrapper(Expr.Import import, List<Expr> exprs)
+        public static Expr.Class GenerateImportToplevelWrapper(Expr.Import import)
         {
             string className = GetImportClassName(import.fileInfo.Name);
-            return new Expr.Class(new(Token.TokenType.IDENTIFIER, className), new(), exprs.Where(x => x is Expr.Definition).Select(x => (Expr.Definition)x).ToList(), new(null));
+            var importClass = new Expr.Class(new(Token.TokenType.IDENTIFIER, className), [], [], new(null));
+            return importClass;
+        }
+        public static void AddExprsToImportToplevelWrapper(Expr.Class importClass, List<Expr> exprs)
+        {
+            importClass.definitions.AddRange(exprs.Where(x => x is Expr.Definition).Select(x => (Expr.Definition)x).ToList());
+        }
+        public static void ParentExprsToImportTopLevelWrappers()
+        {
+            SymbolTableSingleton.SymbolTable.IterateImports(import =>
+            {
+                if (SymbolTableSingleton.SymbolTable.IsImport)
+                {
+                    import.importClass.definitions.ForEach(x => x.enclosing = import.importClass);
+                }
+            });
         }
         public static string GetImportClassName(string name) =>
             name[..name.LastIndexOf(".rz")].Replace('.', '_');

@@ -10,34 +10,29 @@ namespace Raze;
 
 public partial class Analyzer
 {
-    List<Expr> expressions;
-
-    public Analyzer(List<Expr> expressions)
+    public static void Analyze()
     {
-        this.expressions = expressions;
-    }
-
-    public void Analyze()
-    {
-        // Semantic Analysis Pass 1 
-        Pass<object?> initialPass = new InitialPass(expressions);
-        initialPass.Run();
-
-        // Semantic Analysis Pass 2 - Symbol Resolution And Type Check Analysis
-        Pass<Expr.Type> mainPass = new MainPass(expressions);
-        mainPass.Run();
-
-        if (!SymbolTableSingleton.SymbolTable.isImport)
-        {
-            CheckMain(SymbolTableSingleton.SymbolTable.main);
-        }
+        SymbolTableSingleton.SymbolTable.IterateImports(
+            x => {
+                // Semantic Analysis Pass 1 
+                Pass<object?> initialPass = new InitialPass(x.expressions);
+                initialPass.Run();
+            },
+            x => {
+                // Semantic Analysis Pass 2 - Symbol Resolution And Type Check Analysis
+                Pass<Expr.Type> mainPass = new MainPass(x.expressions);
+                mainPass.Run();
+            }
+        );
 
         // AST Optimization Pass
-        Pass<object?> optimizationPass = new OptimizationPass(expressions);
+        Pass<object?> optimizationPass = new OptimizationPass(SymbolTableSingleton.SymbolTable.GetMainImportData().expressions);
         optimizationPass.Run();
+
+        CheckMain(SymbolTableSingleton.SymbolTable.main);
     }
 
-    private void CheckMain(Expr.Function? main)
+    private static void CheckMain(Expr.Function? main)
     {
         if (main == null)
         {

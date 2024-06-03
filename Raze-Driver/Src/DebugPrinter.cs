@@ -28,13 +28,13 @@ internal partial class Shell
             }
         }
 
-        public static void PrintAst(CompileOptions compileOptions, List<Raze.Expr> expressions)
+        public static void PrintAst(CompileOptions compileOptions)
         {
             if (compileOptions.DebugAstOption)
             {
                 // Debug - Print AST
                 Raze.Tools.ASTPrinter astPrinter = new();
-                astPrinter.PrintAST(expressions);
+                astPrinter.PrintAST();
             }
         }
 

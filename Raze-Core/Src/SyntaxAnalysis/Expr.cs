@@ -841,9 +841,18 @@ public abstract class Expr
             internal bool importAll = importAll;
         }
 
-        public class FileInfo(string fileName)
+        public readonly struct FileInfo
         {
-            internal System.IO.FileInfo _fileInfo = new System.IO.FileInfo(fileName);
+            internal readonly System.IO.FileInfo _fileInfo;
+
+            public FileInfo(string fileName)
+            {
+                this._fileInfo = new System.IO.FileInfo(fileName);
+            }
+            public FileInfo(System.IO.FileInfo _fileInfo)
+            {
+                this._fileInfo = _fileInfo;
+            }
 
             internal bool Exists => _fileInfo.Exists;
             internal string Name => _fileInfo.Name;
@@ -852,7 +861,10 @@ public abstract class Expr
             public override int GetHashCode() =>
                 _fileInfo.FullName.GetHashCode();
             public override bool Equals(object? obj)
-                => obj is FileInfo import && import._fileInfo.FullName == this._fileInfo.FullName;
+                => obj is FileInfo fileInfo && fileInfo._fileInfo.FullName == this._fileInfo.FullName;
+
+            public static bool operator ==(FileInfo left, FileInfo right) => left.Equals(right);
+            public static bool operator !=(FileInfo left, FileInfo right) => !(left == right);
         }
     }
 

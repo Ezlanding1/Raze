@@ -20,7 +20,7 @@ public class InlinedCodeGen : CodeGen
 
     public InlineStateNoInline inlineState = new(null);
 
-    public InlinedCodeGen(List<Expr> expressions) : base(expressions)
+    public InlinedCodeGen()
     {
     }
 

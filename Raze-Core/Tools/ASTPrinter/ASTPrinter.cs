@@ -14,6 +14,10 @@ public class ASTPrinter : Expr.IVisitor<object?>
         offset = "";
     }
 
+    public void PrintAST()
+    {
+        PrintAST(SymbolTableSingleton.SymbolTable.GetMainImportData().expressions);
+    }
     public void PrintAST(List<Expr> exprs, bool first=true)
     {
         foreach (Expr expr in exprs)

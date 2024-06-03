@@ -16,7 +16,8 @@ public partial class Analyzer
 
         public Expr.Function? main = null;
 
-        public List<Expr.Definition> globals = NewGlobals();
+        public Expr.Import.FileInfo currentFileInfo = new(Diagnostics.mainFile);
+        public List<Expr.Definition> globals => imports[currentFileInfo].globals;
 
         private List<(Token, Expr.StackData)> locals = new();
         public Stack<int> framePointer = new();
@@ -27,12 +28,47 @@ public partial class Analyzer
         private static Expr.Class ClassNotFoundDefinition = TypeCheckUtils.anyType;
         public Expr.Function FunctionNotFoundDefinition = SpecialObjects.GenerateAnyFunction();
 
-        Dictionary<Expr.Import.FileInfo, Expr.Class> imports = new();
-        public bool isImport;
+        Dictionary<Expr.Import.FileInfo, ImportData> imports = new();
+        public bool IsImport => currentFileInfo != new Expr.Import.FileInfo(Diagnostics.mainFile);
+
+        public class ImportData(Expr.Class importClass, List<Expr> expressions, List<Expr.Definition> globals)
+        {
+            public readonly Expr.Class importClass = importClass; 
+            public readonly List<Expr> expressions = expressions; 
+            public readonly List<Expr.Definition> globals = globals;
+        }
 
         public void SetContext(Expr.Definition? current)
         {
             this.current = current;
+        }
+
+        public ImportData GetMainImportData() => imports[new(Diagnostics.mainFile)];
+
+        public void IterateImports(params Action<ImportData>[] actions)
+        {
+            foreach (var action in actions)
+            {
+                foreach (var import in imports)
+                {
+                    currentFileInfo = import.Key;
+                    action.Invoke(import.Value);
+                }
+            }
+        }
+
+        public void AddMainImport(List<Token> tokens)
+        {
+            var import = new Expr.Import(new(Diagnostics.mainFile), true, new(new(null), false));
+
+            var importClass = SpecialObjects.GenerateImportToplevelWrapper(import);
+            imports[import.fileInfo] = new(importClass, null, NewGlobals());
+            
+            Parser parser = new Parser(tokens);
+            List<Expr> expressions = parser.ParseImport();
+
+            SpecialObjects.AddExprsToImportToplevelWrapper(importClass, expressions);
+            imports[import.fileInfo] = new(importClass, expressions, this.globals);
         }
 
         public void AddImport(Expr.Import import)
@@ -43,11 +79,15 @@ public partial class Analyzer
                 return;
             }
 
-            if (!imports.TryGetValue(import.fileInfo, out Expr.Class? importClass))
-            {
-                importClass = RunImport(import);
-            }
+            Expr.Class importClass = imports.TryGetValue(import.fileInfo, out var value)?
+                value.importClass : 
+                ParseImport(import);
 
+            AddImportGlobalWrapper(import, importClass);
+        }
+
+        private void AddImportGlobalWrapper(Expr.Import import, Expr.Class importClass)
+        {
             using (new SaveContext())
             {
                 SetContext(importClass);
@@ -71,40 +111,23 @@ public partial class Analyzer
             }
         }
 
-        private Expr.Class RunImport(Expr.Import import)
+        private Expr.Class ParseImport(Expr.Import import)
         {
-            using (new SaveImportAndSymbolTableData(globals, Diagnostics.file))
+            var importClass = SpecialObjects.GenerateImportToplevelWrapper(import);
+            imports[import.fileInfo] = new(importClass, null, NewGlobals());
+            using (new SaveImportData(currentFileInfo))
             {
-                (globals, isImport, Diagnostics.file) = (NewGlobals(), true, import.fileInfo._fileInfo);
+                currentFileInfo = import.fileInfo;
 
                 Lexer lexer = new Lexer(import.fileInfo._fileInfo);
                 var tokens = lexer.Tokenize();
 
                 Parser parser = new Parser(tokens);
-                List<Expr> expressions = parser.Parse();
+                List<Expr> expressions = parser.ParseImport();
 
-                Analyzer analyzer = new Analyzer(expressions);
-                analyzer.Analyze();
-
-                var importClass = SpecialObjects.GenerateImportToplevelWrapper(import, expressions);
-                imports[import.fileInfo] = importClass;
+                SpecialObjects.AddExprsToImportToplevelWrapper(importClass, expressions);
+                imports[import.fileInfo] = new(importClass, expressions, this.globals);
                 return importClass;
-            }
-        }
-
-        public void RunCodeGenOnImports(CodeGen codeGen)
-        {
-            using (new SaveImportData(Diagnostics.file))
-            {
-                isImport = true;
-                foreach (var import in imports)
-                {
-                    Diagnostics.file = import.Key._fileInfo;
-                    foreach (var blockExpr in import.Value.definitions)
-                    {
-                        blockExpr.Accept(codeGen);
-                    }
-                }
             }
         }
 

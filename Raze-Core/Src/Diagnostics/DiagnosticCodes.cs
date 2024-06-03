@@ -39,10 +39,11 @@ public abstract partial class Diagnostic
 
     private string GetFileNameInfo()
     {
-        string fileNameInfo = SymbolTableSingleton.SymbolTable.isImport ? $"Import: '{Analyzer.SpecialObjects.GetImportClassName(Diagnostics.file.Name)}'\n" : "";
-        fileNameInfo += $"File: '{(VerboseFileName()? Diagnostics.file.FullName : Diagnostics.file.Name)}'";
+        var file = SymbolTableSingleton.SymbolTable.currentFileInfo._fileInfo;
+        string fileNameInfo = SymbolTableSingleton.SymbolTable.IsImport ? $"Import: '{Analyzer.SpecialObjects.GetImportClassName(file.Name)}'\n" : "";
+        fileNameInfo += $"File: '{(VerboseFileName()? file.FullName : file.Name)}'";
         return fileNameInfo;
     }
     private bool VerboseFileName() =>
-        Diagnostics.debugErrors || SymbolTableSingleton.SymbolTable.isImport;
+        Diagnostics.debugErrors || SymbolTableSingleton.SymbolTable.IsImport;
 }

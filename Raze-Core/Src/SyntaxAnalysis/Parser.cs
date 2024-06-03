@@ -14,6 +14,8 @@ public class Parser
     Token? current;
     int index;
 
+    List<Expr.Import> imports = [];
+
     internal const LiteralTokenType VoidTokenType = (LiteralTokenType)(-1);
     internal enum LiteralTokenType
     {
@@ -44,12 +46,18 @@ public class Parser
         Advance();
     }
 
-    public List<Expr> Parse()
+    public static void Parse(List<Token> tokens)
+    {
+        SymbolTableSingleton.SymbolTable.AddMainImport(tokens);
+    }
+
+    internal List<Expr> ParseImport()
     {
         while (!IsAtEnd())
         {
             expressions.Add(Start());
         }
+        imports.ForEach(SymbolTableSingleton.SymbolTable.AddImport);
         return expressions;
     }
 
@@ -115,7 +123,7 @@ public class Parser
             Expect(Token.TokenType.SEMICOLON, "';' after expression");
 
             var import = new Expr.Import(new Expr.Import.FileInfo(fileName), customPath, new Expr.Import.ImportType(importRef, importAll));
-            SymbolTableSingleton.SymbolTable.AddImport(import);
+            imports.Add(import);
             return import;
         }
         Expr expr = Definition();

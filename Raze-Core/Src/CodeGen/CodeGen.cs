@@ -10,8 +10,6 @@ namespace Raze;
 
 public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 {
-    List<Expr> expressions;
-
     internal Assembly assembly = new();
 
     private protected int conditionalCount;
@@ -29,19 +27,21 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
     internal RegisterAlloc alloc = new();
     AssemblyOps assemblyOps;
 
-    public CodeGen(List<Expr> expressions)
+    public CodeGen()
     {
-        this.expressions = expressions;
         this.assemblyOps = new(this);
     }
 
     public Assembly Generate()
     {
-        SymbolTableSingleton.SymbolTable.RunCodeGenOnImports(this);
-        foreach (Expr expr in expressions)
+        Analyzer.SpecialObjects.ParentExprsToImportTopLevelWrappers();
+        SymbolTableSingleton.SymbolTable.IterateImports(import =>
         {
-            alloc.Free(expr.Accept(this));
-        }
+            foreach (Expr expr in import.expressions)
+            {
+                alloc.Free(expr.Accept(this));
+            }
+        });
         return assembly;
     }
 
