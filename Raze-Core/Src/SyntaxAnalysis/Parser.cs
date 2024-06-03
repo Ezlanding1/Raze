@@ -57,6 +57,12 @@ public class Parser
         {
             expressions.Add(Start());
         }
+
+        var runtimeAutoImports = Expr.Import.GenerateRuntimeAutoImports()
+            .Where(x => x.fileInfo != SymbolTableSingleton.SymbolTable.currentFileInfo);
+        imports.AddRange(runtimeAutoImports);
+        expressions.AddRange(runtimeAutoImports);
+
         imports.ForEach(SymbolTableSingleton.SymbolTable.AddImport);
         return expressions;
     }

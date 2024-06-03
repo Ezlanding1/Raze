@@ -73,11 +73,7 @@ public partial class Analyzer
 
         public void AddImport(Expr.Import import)
         {
-            if (!ImportExists(import))
-            {
-                Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.ImportNotFound, import.fileInfo.FullName));
-                return;
-            }
+            if (!import.fileInfo.Exists) return;
 
             Expr.Class importClass = imports.TryGetValue(import.fileInfo, out var value)?
                 value.importClass : 
@@ -129,23 +125,6 @@ public partial class Analyzer
                 imports[import.fileInfo] = new(importClass, expressions, this.globals);
                 return importClass;
             }
-        }
-
-        private bool ImportExists(Expr.Import import)
-        {
-            if (!import.customPath)
-            {
-                foreach (DirectoryInfo directory in Diagnostics.importDirs)
-                {
-                    var path = Path.Join(directory.FullName, import.fileInfo.Name);
-                    if (File.Exists(path))
-                    {
-                        import.fileInfo = new(path);
-                        return true;
-                    }
-                }
-            }
-            return import.fileInfo.Exists;
         }
 
         private static List<Expr.Definition> NewGlobals() => [TypeCheckUtils.objectType];

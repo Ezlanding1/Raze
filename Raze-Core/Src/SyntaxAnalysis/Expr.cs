@@ -828,6 +828,39 @@ public abstract class Expr
             this.fileInfo = fileInfo;
             this.customPath = customPath;
             this.importType = importType;
+
+            if (!FindImportPath())
+            {
+                Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.ImportNotFound, fileInfo.FullName));
+            }
+        }
+
+        private bool FindImportPath()
+        {
+            if (!customPath)
+            {
+                foreach (DirectoryInfo directory in Diagnostics.importDirs)
+                {
+                    var path = Path.Join(directory.FullName, fileInfo.Name);
+                    if (File.Exists(path))
+                    {
+                        fileInfo = new(path);
+                        return true;
+                    }
+                }
+            }
+            return fileInfo.Exists;
+        }
+
+        public static List<Import> GenerateRuntimeAutoImports()
+        {
+            return [
+                new Import(
+                    new FileInfo("Raze.rz"),
+                    false,
+                    new(new([new(Token.TokenType.IDENTIFIER, "Std")]), true)
+                )
+            ];
         }
 
         public override T Accept<T>(IVisitor<T> visitor)
