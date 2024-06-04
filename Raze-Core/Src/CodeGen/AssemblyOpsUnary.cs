@@ -10,27 +10,27 @@ internal partial class AssemblyOps
 {
     internal class Unary
     {
-        public static AssemblyExpr.Value CreateOperand(AssemblyOps assemblyOps)
+        public static AssemblyExpr.IValue CreateOperand(AssemblyOps assemblyOps)
         {
             Expr expr = assemblyOps.vars[assemblyOps.count++].Item2;
             var operand = expr.Accept(assemblyOps.assembler);
 
             if (assemblyOps.vars[assemblyOps.count - 1].Item1 != (AssemblyExpr.Register.RegisterSize)(-1))
             {
-                if (operand.IsLiteral())
+                if (operand.IsLiteral(out var unresolvedLiteral))
                 {
-                    operand = ((AssemblyExpr.ILiteralBase)operand).CreateLiteral(assemblyOps.vars[assemblyOps.count - 1].Item1);
+                    operand = unresolvedLiteral.CreateLiteral(assemblyOps.vars[assemblyOps.count - 1].Item1);
                 }
                 else
                 {
-                    operand = ((AssemblyExpr.RegisterPointer)operand).Clone();
-                    ((AssemblyExpr.RegisterPointer)operand).size = assemblyOps.vars[assemblyOps.count - 1].Item1;
+                    operand = ((AssemblyExpr.IRegisterPointer)operand).Clone();
+                    ((AssemblyExpr.IRegisterPointer)operand).Size = assemblyOps.vars[assemblyOps.count - 1].Item1;
                 }
             }
             return operand;
         }
 
-        public static void ReturnOp(ref AssemblyExpr.Value operand, ExprUtils.AssignableInstruction.Unary.AssignType assignType, AssemblyOps assemblyOps)
+        public static void ReturnOp(ref AssemblyExpr.IValue operand, ExprUtils.AssignableInstruction.Unary.AssignType assignType, AssemblyOps assemblyOps)
         {
             if (((InlinedCodeGen)assemblyOps.assembler).inlineState.inline)
             {
@@ -39,9 +39,8 @@ internal partial class AssemblyOps
             }
             else
             {
-                if (operand.IsRegister())
+                if (operand.IsRegister(out var op))
                 {
-                    var op = (AssemblyExpr.Register)operand;
                     if (op.Name != AssemblyExpr.Register.RegisterName.RAX)
                         assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, op.Size), operand));
                 }
@@ -51,20 +50,20 @@ internal partial class AssemblyOps
                 }
             }
         }
-        private static AssemblyExpr.Value HandleOperandUnsafe(ExprUtils.AssignableInstruction.Unary instruction, AssemblyOps assemblyOps)
+        private static AssemblyExpr.IValue HandleOperandUnsafe(ExprUtils.AssignableInstruction.Unary instruction, AssemblyOps assemblyOps)
         {
             return instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Unary.AssignType.AssignFirst) ?
                 CreateOperand(assemblyOps).IfLiteralCreateLiteral(InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count - 1].Item2.GetLastSize())) :
                 instruction.instruction.operand.IfLiteralCreateLiteral(AssemblyExpr.Register.RegisterSize._64Bits);
         }
-        private static AssemblyExpr.Value HandleOperand(ExprUtils.AssignableInstruction.Unary instruction, AssemblyOps assemblyOps)
+        private static AssemblyExpr.IValue HandleOperand(ExprUtils.AssignableInstruction.Unary instruction, AssemblyOps assemblyOps)
         {
             return HandleOperandUnsafe(instruction, assemblyOps).NonLiteral(assemblyOps.assembler);
         }
 
         public static void DefaultOp(ExprUtils.AssignableInstruction.Unary instruction, AssemblyOps assemblyOps)
         {
-            AssemblyExpr.Value operand = HandleOperand(instruction, assemblyOps);
+            AssemblyExpr.IValue operand = HandleOperand(instruction, assemblyOps);
 
             if (instruction.returns && assemblyOps.assembler is InlinedCodeGen)
             {
@@ -79,7 +78,7 @@ internal partial class AssemblyOps
 
         public static void DEREF(ExprUtils.AssignableInstruction.Unary instruction, AssemblyOps assemblyOps)
         {
-            AssemblyExpr.Value operand = HandleOperand(instruction, assemblyOps);
+            AssemblyExpr.IValue operand = HandleOperand(instruction, assemblyOps);
 
             if (operand.IsLiteral())
             {
@@ -87,7 +86,7 @@ internal partial class AssemblyOps
                 return;
             }
 
-            AssemblyExpr.Value deref = new AssemblyExpr.Pointer((AssemblyExpr.Register)operand.NonPointer(assemblyOps.assembler), 0, 1);
+            AssemblyExpr.IValue deref = new AssemblyExpr.Pointer((AssemblyExpr.Register)operand.NonPointer(assemblyOps.assembler), 0, 1);
 
             if (instruction.returns && assemblyOps.assembler is InlinedCodeGen)
             {
@@ -102,7 +101,7 @@ internal partial class AssemblyOps
 
         public static void RETURN(ExprUtils.AssignableInstruction.Unary instruction, AssemblyOps assemblyOps)
         {
-            AssemblyExpr.Value operand = HandleOperandUnsafe(instruction, assemblyOps);
+            AssemblyExpr.IValue operand = HandleOperandUnsafe(instruction, assemblyOps);
 
             if (instruction.returns && assemblyOps.assembler is InlinedCodeGen)
             {

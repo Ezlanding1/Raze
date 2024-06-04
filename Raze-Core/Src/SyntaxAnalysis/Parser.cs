@@ -882,7 +882,7 @@ public class Parser
                 if (TypeMatch(Token.TokenType.IDENTIFIER, Token.TokenType.DOLLAR, Token.TokenType.INTEGER, Token.TokenType.FLOATING, Token.TokenType.STRING, Token.TokenType.HEX, Token.TokenType.BINARY))
                 {
                     // Unary
-                    AssemblyExpr.Value? value;
+                    AssemblyExpr.IValue? value;
 
                     if (Previous().type == Token.TokenType.DOLLAR)
                     {

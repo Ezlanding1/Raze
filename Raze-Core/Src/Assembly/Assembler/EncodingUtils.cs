@@ -125,11 +125,11 @@ public partial class Assembler
                 return false;
             }
 
-            private static bool IsRRegister(AssemblyExpr.Operand op)
+            private static bool IsRRegister(AssemblyExpr.IOperand op)
                 => op is AssemblyExpr.Register && (int)((AssemblyExpr.Register)op).Name < 0
                     || op is AssemblyExpr.Pointer && (int)((AssemblyExpr.Pointer)op).register.Name < 0;
 
-            internal static bool SetAddressSizeOverridePrefix(AssemblyExpr.Operand operand)
+            internal static bool SetAddressSizeOverridePrefix(AssemblyExpr.IOperand operand)
             {
                 if (operand is AssemblyExpr.Pointer ptr)
                 {

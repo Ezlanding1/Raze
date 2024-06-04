@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Raze;
 
-public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
+public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 {
     public class Assembly
     {

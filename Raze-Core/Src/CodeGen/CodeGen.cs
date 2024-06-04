@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Raze;
 
-public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
+public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 {
     internal Assembly assembly = new();
 
@@ -45,11 +45,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return assembly;
     }
 
-    public virtual AssemblyExpr.Value? VisitBinaryExpr(Expr.Binary expr) => HandleInvokable(expr);
+    public virtual AssemblyExpr.IValue? VisitBinaryExpr(Expr.Binary expr) => HandleInvokable(expr);
 
-    public virtual AssemblyExpr.Value? VisitCallExpr(Expr.Call expr) => HandleInvokable(expr);
+    public virtual AssemblyExpr.IValue? VisitCallExpr(Expr.Call expr) => HandleInvokable(expr);
 
-    private AssemblyExpr.Value? HandleInvokable(Expr.Invokable invokable)
+    private AssemblyExpr.IValue? HandleInvokable(Expr.Invokable invokable)
     {
         bool instance = !invokable.internalFunction.modifiers["static"];
 
@@ -83,7 +83,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         for (int i = 0; i < invokable.Arguments.Count; i++)
         {
-            AssemblyExpr.Value arg = invokable.Arguments[i].Accept(this)
+            AssemblyExpr.IValue arg = invokable.Arguments[i].Accept(this)
                 .IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)invokable.internalFunction.parameters[i].stack.size);
 
             if (i + Convert.ToUInt16(instance) < InstructionUtils.paramRegister.Length)
@@ -105,10 +105,10 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
                     if (!(arg.IsRegister() && HandleSeteOptimization((AssemblyExpr.Register)arg, paramReg)))
                     {
-                        if (arg.IsRegister() && !alloc.IsNeededOrNeededPreserved(alloc.NameToIdx(((AssemblyExpr.Register)arg).Name)))
+                        if (arg.IsRegister(out var register) && !alloc.IsNeededOrNeededPreserved(alloc.NameToIdx(((AssemblyExpr.Register)arg).Name)))
                         {
-                            alloc.FreeRegister((AssemblyExpr.Register)arg);
-                            ((AssemblyExpr.Register)arg).nameBox.Value = paramReg.Name;
+                            alloc.FreeRegister(register);
+                            register.nameBox.Value = paramReg.Name;
                         }
                         else
                         {
@@ -178,7 +178,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             HandleRefVariableDeref(invokable.internalFunction.refReturn, alloc.NeededAlloc(InstructionUtils.ToRegisterSize(invokable.internalFunction._returnType.type.allocSize), this));
     }
 
-    public AssemblyExpr.Value? VisitClassExpr(Expr.Class expr)
+    public AssemblyExpr.IValue? VisitClassExpr(Expr.Class expr)
     {
         alloc.current = expr;
 
@@ -224,9 +224,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         }
     }
 
-    public AssemblyExpr.Value? VisitDeclareExpr(Expr.Declare expr)
+    public AssemblyExpr.IValue? VisitDeclareExpr(Expr.Declare expr)
     {
-        AssemblyExpr.Value operand = expr.value?.Accept(this);
+        AssemblyExpr.IValue operand = expr.value?.Accept(this);
 
         if (alloc.current is not Expr.Class)
         {
@@ -244,18 +244,18 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             else return null;
         }
 
-        if (operand.IsPointer())
+        if (operand.IsPointer(out var ptr))
         {
-            AssemblyExpr.Register reg = ((AssemblyExpr.Pointer)operand).AsRegister(this);
-            reg.size = _ref ? InstructionUtils.SYS_SIZE : ((AssemblyExpr.Pointer)operand).Size;
+            AssemblyExpr.Register reg = ptr.AsRegister(this);
+            reg.Size = _ref ? InstructionUtils.SYS_SIZE : ptr.Size;
 
             Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref), reg, operand));
             _ref = false;
             operand = reg;
         }
-        else if (operand.IsRegister())
+        else if (operand.IsRegister(out var register))
         {
-            if (SafeGetCmpTypeRaw((AssemblyExpr.Register)operand, out var instruction))
+            if (SafeGetCmpTypeRaw(register, out var instruction))
             {
                 alloc.Free(instruction.operand);
 
@@ -310,7 +310,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return null;
     }
 
-    public AssemblyExpr.Value? VisitFunctionExpr(Expr.Function expr)
+    public AssemblyExpr.IValue? VisitFunctionExpr(Expr.Function expr)
     {
         if (expr.modifiers["inline"] || expr.dead || expr.Abstract)
         {
@@ -345,12 +345,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return null;
     }
 
-    public AssemblyExpr.Value? VisitTypeReferenceExpr(Expr.TypeReference expr)
+    public AssemblyExpr.IValue? VisitTypeReferenceExpr(Expr.TypeReference expr)
     {
         throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Type accepted in assembler"));
     }
 
-    public AssemblyExpr.Value? VisitAmbiguousGetReferenceExpr(Expr.AmbiguousGetReference expr)
+    public AssemblyExpr.IValue? VisitAmbiguousGetReferenceExpr(Expr.AmbiguousGetReference expr)
     {
         if (!expr.instanceCall)
         {
@@ -399,7 +399,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return HandleRefVariableDeref(expr.GetLastData()?._ref == true, new AssemblyExpr.Pointer(register, -expr.datas[^1].ValueAsPointer.offset, expr.datas[^1].size));
     }
 
-    public AssemblyExpr.Value? VisitInstanceGetReferenceExpr(Expr.InstanceGetReference expr)
+    public AssemblyExpr.IValue? VisitInstanceGetReferenceExpr(Expr.InstanceGetReference expr)
     {
         AssemblyExpr.Register register;
 
@@ -409,9 +409,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         {
             return firstGet;
         }
-        if (firstGet.IsPointer())
+        if (firstGet.IsPointer(out var ptr))
         {
-            register = ((AssemblyExpr.Pointer)firstGet).register;
+            register = ptr.register;
         }
         else
         {
@@ -425,19 +425,19 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return new AssemblyExpr.Pointer(register, -((Expr.Get)expr.getters[^1]).data.ValueAsPointer.offset, ((Expr.Get)expr.getters[^1]).data.size);
     }
 
-    public AssemblyExpr.Value? VisitGetExpr(Expr.Get expr)
+    public AssemblyExpr.IValue? VisitGetExpr(Expr.Get expr)
     {
         throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Get accepted in assembler"));
     }
 
-    public AssemblyExpr.Value? VisitLogicalExpr(Expr.Logical expr)
+    public AssemblyExpr.IValue? VisitLogicalExpr(Expr.Logical expr)
     {
         var operand1 = expr.left.Accept(this);
 
-        if (operand1.IsLiteral())
+        if (operand1.IsLiteral(out var unresolvedLiteral))
         {
-            operand1 = ((AssemblyExpr.ILiteralBase)operand1).CreateLiteral(AssemblyExpr.Register.RegisterSize._8Bits);
-            if ((expr.op.type == Token.TokenType.AND) ^ (IsTrueBooleanLiteral((AssemblyExpr.Literal)operand1)))
+            var literal = unresolvedLiteral.CreateLiteral(AssemblyExpr.Register.RegisterSize._8Bits);
+            if ((expr.op.type == Token.TokenType.AND) ^ IsTrueBooleanLiteral(literal))
             {
                 return operand1;
             }
@@ -448,7 +448,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         }
         else if (operand1.IsPointer())
         {
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.CMP, operand1, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 0 })));
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.CMP, operand1, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [0])));
 
             Emit(new AssemblyExpr.Unary((expr.op.type == Token.TokenType.AND) ? AssemblyExpr.Instruction.JE : AssemblyExpr.Instruction.JNE, new AssemblyExpr.LocalProcedureRef(ConditionalLabel)));
         }
@@ -477,12 +477,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         var operand2 = expr.right.Accept(this);
 
-        if (operand2.IsLiteral())
+        if (operand2.IsLiteral(out var unresolvedLiteral2))
         {
-            operand2 = ((AssemblyExpr.ILiteralBase)operand2).CreateLiteral(AssemblyExpr.Register.RegisterSize._8Bits);
+            var literal = unresolvedLiteral2.CreateLiteral(AssemblyExpr.Register.RegisterSize._8Bits);
             assembly.text.RemoveRange(assembly.text.Count-2, 2);
 
-            if ((expr.op.type == Token.TokenType.AND) ^ (IsTrueBooleanLiteral((AssemblyExpr.Literal)operand2)))
+            if ((expr.op.type == Token.TokenType.AND) ^ IsTrueBooleanLiteral(literal))
             {
                 return operand2;
             }
@@ -495,16 +495,15 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         {
             string cLabel = CreateConditionalLabel((expr.op.type == Token.TokenType.AND) ? conditionalCount : conditionalCount + 1);
 
-
             if (operand1.IsPointer())
             {
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.CMP, operand1, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 0 })));
+                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.CMP, operand1, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [0])));
 
                 Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.JE, new AssemblyExpr.LocalProcedureRef(cLabel)));
             }
             else if (SafeGetCmpTypeRaw((AssemblyExpr.Register)operand2, out AssemblyExpr.Unary instruction))
             {
-                alloc.Free((AssemblyExpr.Value)instruction.operand);
+                alloc.Free(instruction.operand);
                 assembly.text.RemoveAt(assembly.text.Count - 1);
 
                 Emit(new AssemblyExpr.Unary(InstructionUtils.ConditionalJumpReversed(instruction.instruction), new AssemblyExpr.LocalProcedureRef(cLabel)));
@@ -543,12 +542,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return alloc.NextRegister(AssemblyExpr.Register.RegisterSize._8Bits);
     }
 
-    public AssemblyExpr.Value? VisitGroupingExpr(Expr.Grouping expr)
+    public AssemblyExpr.IValue? VisitGroupingExpr(Expr.Grouping expr)
     {
         return expr.expression.Accept(this);
     }
 
-    public AssemblyExpr.Value? VisitLiteralExpr(Expr.Literal expr)
+    public AssemblyExpr.IValue? VisitLiteralExpr(Expr.Literal expr)
     {
         switch (expr.literal.type)
         {
@@ -577,9 +576,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         
     }
 
-    public virtual AssemblyExpr.Value? VisitUnaryExpr(Expr.Unary expr) => HandleInvokable(expr);
+    public virtual AssemblyExpr.IValue? VisitUnaryExpr(Expr.Unary expr) => HandleInvokable(expr);
 
-    public AssemblyExpr.Value? VisitIfExpr(Expr.If expr)
+    public AssemblyExpr.IValue? VisitIfExpr(Expr.If expr)
     {
         bool multiBranch = expr._else != null || expr.conditionals.Count > 1;
 
@@ -594,10 +593,10 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
             AssemblyExpr.Instruction cmpType = HandleConditionalCmpType(condition);
 
-            if (condition.IsLiteral())
+            if (condition.IsLiteral(out var unresolvedLiteral))
             {
-                condition = ((AssemblyExpr.ILiteralBase)condition).CreateLiteral(AssemblyExpr.Register.RegisterSize._8Bits);
-                if (IsTrueBooleanLiteral((AssemblyExpr.Literal)condition))
+                var literal = unresolvedLiteral.CreateLiteral(AssemblyExpr.Register.RegisterSize._8Bits);
+                if (IsTrueBooleanLiteral(literal))
                 {
                     expr.conditionals[i].block.Accept(this);
 
@@ -646,7 +645,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return null;
     }
 
-    AssemblyExpr.Value? Expr.IVisitor<AssemblyExpr.Value?>.VisitWhileExpr(Expr.While expr)
+    AssemblyExpr.IValue? Expr.IVisitor<AssemblyExpr.IValue?>.VisitWhileExpr(Expr.While expr)
     {
         int localConditionalCount = conditionalCount;
         conditionalCount+=2;
@@ -667,7 +666,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return null;
     }
 
-    public AssemblyExpr.Value? VisitForExpr(Expr.For expr)
+    public AssemblyExpr.IValue? VisitForExpr(Expr.For expr)
     {
         int localConditionalCount = conditionalCount;
         conditionalCount += 2;
@@ -691,7 +690,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return null;
     }
 
-    public AssemblyExpr.Value? VisitBlockExpr(Expr.Block expr)
+    public AssemblyExpr.IValue? VisitBlockExpr(Expr.Block expr)
     {
         alloc.CreateBlock();
         foreach (Expr blockExpr in expr.block)
@@ -702,7 +701,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return null;
     }
 
-    public virtual AssemblyExpr.Value? VisitReturnExpr(Expr.Return expr)
+    public virtual AssemblyExpr.IValue? VisitReturnExpr(Expr.Return expr)
     {
         if (!expr.IsVoid(alloc.current))
         {
@@ -710,7 +709,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
                 GetMoveInstruction(function.refReturn) :
                 AssemblyExpr.Instruction.MOV;
 
-            AssemblyExpr.Value operand = expr.value.Accept(this)
+            AssemblyExpr.IValue operand = expr.value.Accept(this)
                 .IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)Math.Max((int)AssemblyExpr.Register.RegisterSize._32Bits, ((Expr.Function)alloc.current)._returnType.type.allocSize));
 
             if (((Expr.Function)alloc.current).refReturn)
@@ -720,7 +719,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
             var rax = new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, operand.Size);
 
-            if ((operand.IsRegister() && (((AssemblyExpr.Register)operand).Name != AssemblyExpr.Register.RegisterName.RAX))
+            if ((operand.IsRegister(out var register) && (register.Name != AssemblyExpr.Register.RegisterName.RAX))
                 || operand.IsPointer())
             {
                 if (operand.Size < AssemblyExpr.Register.RegisterSize._32Bits)
@@ -749,22 +748,22 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return null;
     }
 
-    public virtual AssemblyExpr.Value? VisitAssignExpr(Expr.Assign expr)
+    public virtual AssemblyExpr.IValue? VisitAssignExpr(Expr.Assign expr)
     {
-        AssemblyExpr.Value operand2 = expr.value.Accept(this);
-        AssemblyExpr.Value operand1 = expr.member.Accept(this).NonLiteral(this);
+        AssemblyExpr.IValue operand2 = expr.value.Accept(this);
+        AssemblyExpr.IValue operand1 = expr.member.Accept(this).NonLiteral(this);
 
         if (operand2 == null) return null;
 
-        if (operand2.IsPointer())
+        if (operand2.IsPointer(out var op2Ptr))
         {
-            var reg = alloc.NextRegister(((AssemblyExpr.Pointer)operand2).Size);
+            var reg = alloc.NextRegister(op2Ptr.Size);
             Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, reg, operand2));
             operand2 = reg;
         }
-        else if (operand2.IsRegister())
+        else if (operand2.IsRegister(out var register))
         {
-            if (HandleSeteOptimization((AssemblyExpr.Register)operand2, operand1))
+            if (HandleSeteOptimization(register, operand1))
             {
                 return null;
             }
@@ -796,7 +795,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return null;
     }
 
-    public AssemblyExpr.Value? VisitPrimitiveExpr(Expr.Primitive expr)
+    public AssemblyExpr.IValue? VisitPrimitiveExpr(Expr.Primitive expr)
     {
         alloc.current = expr;
         alloc.ListAccept(expr.definitions, this);
@@ -804,7 +803,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return null;
     }
 
-    public AssemblyExpr.Value? VisitKeywordExpr(Expr.Keyword expr)
+    public AssemblyExpr.IValue? VisitKeywordExpr(Expr.Keyword expr)
     {
         return expr.keyword switch
         {
@@ -814,7 +813,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             _ => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"'{expr.keyword}' is not a keyword")),
         };
     }
-    public AssemblyExpr.Value? VisitAssemblyExpr(Expr.Assembly expr)
+    public AssemblyExpr.IValue? VisitAssemblyExpr(Expr.Assembly expr)
     {
         assemblyOps.count = 0;
         assemblyOps.vars = expr.variables;
@@ -826,7 +825,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return null;
     }
 
-    public AssemblyExpr.Value? VisitNewExpr(Expr.New expr)
+    public AssemblyExpr.IValue? VisitNewExpr(Expr.New expr)
     {
         bool hasVTable = expr.internalClass.emitVTable || expr.internalClass.GetVirtualMethods().Count != 0;
         int size = Math.Max(1, expr.internalClass.size);
@@ -869,7 +868,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return expr.call.Accept(this);
     }
 
-    public AssemblyExpr.Value? VisitIsExpr(Expr.Is expr)
+    public AssemblyExpr.IValue? VisitIsExpr(Expr.Is expr)
     {
         if (expr.value != null)
         {
@@ -885,7 +884,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         }
     }
 
-    public AssemblyExpr.Value VisitAsExpr(Expr.As expr)
+    public AssemblyExpr.IValue VisitAsExpr(Expr.As expr)
     {
         if (expr._is.value != null)
         {
@@ -917,7 +916,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         }
     }
     
-    private AssemblyExpr.Value CompareVTables(Expr.Is expr)
+    private AssemblyExpr.IValue CompareVTables(Expr.Is expr)
     {
         var left = expr.left.Accept(this);
         if (left.IsPointer())
@@ -934,12 +933,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         return left;
     }
 
-    public AssemblyExpr.Value? VisitImportExpr(Expr.Import expr)
+    public AssemblyExpr.IValue? VisitImportExpr(Expr.Import expr)
     {
         return null;
     }
 
-    public AssemblyExpr.Value? VisitNoOpExpr(Expr.NoOp expr)
+    public AssemblyExpr.IValue? VisitNoOpExpr(Expr.NoOp expr)
     {
         return new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.TMP, AssemblyExpr.Register.RegisterSize._64Bits);
     }
@@ -965,26 +964,26 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         assembly.data.Add(instruction);
     }
 
-    internal AssemblyExpr.Instruction HandleConditionalCmpType(AssemblyExpr.Value conditional)
+    internal AssemblyExpr.Instruction HandleConditionalCmpType(AssemblyExpr.IValue conditional)
     {
-        if (conditional.IsRegister() && SafeGetCmpTypeRaw((AssemblyExpr.Register)conditional, out var res))
+        if (conditional.IsRegister(out var register) && SafeGetCmpTypeRaw(register, out var res))
         {
             assembly.text.RemoveAt(assembly.text.Count - 1);
             return res.instruction;
         }
         else if (!conditional.IsLiteral())
         {
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.CMP, conditional, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Boolean, new byte[]{ 1 })));
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.CMP, conditional, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Boolean, [1])));
         }
 
         return AssemblyExpr.Instruction.SETE;
     }
 
-    internal bool HandleSeteOptimization(AssemblyExpr.Register register, AssemblyExpr.Value newValue)
+    internal bool HandleSeteOptimization(AssemblyExpr.Register register, AssemblyExpr.IValue newValue)
     {
         if (SafeGetCmpTypeRaw(register, out var instruction))
         {
-            alloc.Free((AssemblyExpr.Value)instruction.operand);
+            alloc.Free(instruction.operand);
 
             instruction.operand = newValue;
 
@@ -1028,9 +1027,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         }
     }
 
-    internal static AssemblyExpr.Binary PartialRegisterOptimize(Expr.Type operand1Type, AssemblyExpr.RegisterPointer operand1, AssemblyExpr.Value operand2)
+    internal static AssemblyExpr.Binary PartialRegisterOptimize(Expr.Type operand1Type, AssemblyExpr.IRegisterPointer operand1, AssemblyExpr.IValue operand2)
     {
-        operand1.size = AssemblyExpr.Register.RegisterSize._32Bits;
+        operand1.Size = AssemblyExpr.Register.RegisterSize._32Bits;
 
         bool signed = Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Integer].Matches(operand1Type);
 
@@ -1121,12 +1120,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
     private static bool IsRefVariable(Expr expr) =>
         !Analyzer.TypeCheckUtils.CannotBeRef(expr) && ((Expr.GetReference)expr).GetLastData()._ref;
 
-    private protected AssemblyExpr.Value? HandleRefVariableDeref(bool _ref, AssemblyExpr.Value register) =>
+    private protected AssemblyExpr.IValue? HandleRefVariableDeref(bool _ref, AssemblyExpr.IValue register) =>
         (register != null) ? HandleRefVariableDeref(_ref, register, register.Size) : null;
 
-    private protected AssemblyExpr.Value HandleRefVariableDeref(bool _ref, AssemblyExpr.Value register, AssemblyExpr.Register.RegisterSize size) =>
+    private protected AssemblyExpr.IValue HandleRefVariableDeref(bool _ref, AssemblyExpr.IValue register, AssemblyExpr.Register.RegisterSize size) =>
         _ref ? new AssemblyExpr.Pointer(register.NonPointerNonLiteral(this).nameBox, 0, size) : register;
 
-    private protected static (AssemblyExpr.Instruction, AssemblyExpr.Value) PreserveRefPtrVariable(Expr expr, AssemblyExpr.Pointer pointer) =>
-        IsRefVariable(expr) ? (AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(pointer.register.nameBox, pointer.size)) : (AssemblyExpr.Instruction.LEA, pointer);
+    private protected static (AssemblyExpr.Instruction, AssemblyExpr.IValue) PreserveRefPtrVariable(Expr expr, AssemblyExpr.Pointer pointer) =>
+        IsRefVariable(expr) ? (AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(pointer.register.nameBox, pointer.Size)) : (AssemblyExpr.Instruction.LEA, pointer);
 }

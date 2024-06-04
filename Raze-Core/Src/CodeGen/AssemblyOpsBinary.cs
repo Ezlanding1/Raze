@@ -13,7 +13,7 @@ internal partial class AssemblyOps
 
     internal static class Binary
     {
-        public static void ReturnOp(ref AssemblyExpr.Value operand, ExprUtils.AssignableInstruction.Binary.AssignType assignType, AssemblyOps assemblyOps, bool first)
+        public static void ReturnOp(ref AssemblyExpr.IValue operand, ExprUtils.AssignableInstruction.Binary.AssignType assignType, AssemblyOps assemblyOps, bool first)
         {
             if (((InlinedCodeGen)assemblyOps.assembler).inlineState.inline)
             {
@@ -23,9 +23,8 @@ internal partial class AssemblyOps
             }
             else
             {
-                if (operand.IsRegister())
+                if (operand.IsRegister(out var op))
                 {
-                    var op = (AssemblyExpr.Register)operand;
                     if (op.Name != AssemblyExpr.Register.RegisterName.RAX)
                         assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, op.Size), operand));
                 }
@@ -36,40 +35,40 @@ internal partial class AssemblyOps
             }
         }
 
-        public static AssemblyExpr.Value HandleOperand1Unsafe(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
+        public static AssemblyExpr.IValue HandleOperand1Unsafe(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
             return instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst) ?
                 Unary.CreateOperand(assemblyOps).IfLiteralCreateLiteral(InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count - 1].Item2.GetLastSize())) :
                 instruction.instruction.operand1.IfLiteralCreateLiteral(AssemblyExpr.Register.RegisterSize._64Bits);
         }
-        public static AssemblyExpr.Value HandleOperand1(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
+        public static AssemblyExpr.IValue HandleOperand1(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
             return HandleOperand1Unsafe(instruction, assemblyOps).NonLiteral(assemblyOps.assembler);
         }
 
-        public static AssemblyExpr.Value HandleOperand2Unsafe(ExprUtils.AssignableInstruction.Binary instruction, AssemblyExpr.Value operand1, AssemblyOps assemblyOps)
+        public static AssemblyExpr.IValue HandleOperand2Unsafe(ExprUtils.AssignableInstruction.Binary instruction, AssemblyExpr.IValue operand1, AssemblyOps assemblyOps)
         {
             return instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond) ?
                 Unary.CreateOperand(assemblyOps).IfLiteralCreateLiteral(InstructionUtils.ToRegisterSize(assemblyOps.vars[assemblyOps.count - 1].Item2.GetLastSize())) :
                 instruction.instruction.operand2.IfLiteralCreateLiteral(operand1.Size);
         }
-        public static AssemblyExpr.Value HandleOperand2(ExprUtils.AssignableInstruction.Binary instruction, ref AssemblyExpr.Value operand1, AssemblyOps assemblyOps)
+        public static AssemblyExpr.IValue HandleOperand2(ExprUtils.AssignableInstruction.Binary instruction, ref AssemblyExpr.IValue operand1, AssemblyOps assemblyOps)
         {
-            AssemblyExpr.Value operand2 = HandleOperand2Unsafe(instruction, operand1, assemblyOps);
+            AssemblyExpr.IValue operand2 = HandleOperand2Unsafe(instruction, operand1, assemblyOps);
 
-            if (operand1.IsPointer() && operand2.IsPointer())
+            if (operand1.IsPointer(out var ptr1) && operand2.IsPointer(out var ptr2))
             {
                 if (operand2.Size < AssemblyExpr.Register.RegisterSize._32Bits && 
                     instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst) &&
                     instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))
                 {
                     Expr.Type op1Type = assemblyOps.vars[assemblyOps.vars.Count - 2].Item2.GetLastType();
-                    AssemblyExpr.Register reg2 = ((AssemblyExpr.Pointer)operand1).AsRegister(assemblyOps.assembler);
+                    AssemblyExpr.Register reg2 = ptr1.AsRegister(assemblyOps.assembler);
                     assemblyOps.assembler.Emit(CodeGen.PartialRegisterOptimize(op1Type, reg2, operand1));
                     operand1 = reg2;
 
                     Expr.Type op2Type = assemblyOps.vars[assemblyOps.vars.Count - 1].Item2.GetLastType();
-                    AssemblyExpr.Register op2Reg = ((AssemblyExpr.Pointer)operand2).AsRegister(assemblyOps.assembler);
+                    AssemblyExpr.Register op2Reg = ptr2.AsRegister(assemblyOps.assembler);
                     assemblyOps.assembler.Emit(CodeGen.PartialRegisterOptimize(op2Type, op2Reg, operand2));
                     operand2 = op2Reg;
                 }
@@ -83,7 +82,7 @@ internal partial class AssemblyOps
             return operand2;
         }
 
-        private static void CheckOperandSizeMismatch(AssemblyExpr.Value operand1, AssemblyExpr.Value operand2)
+        private static void CheckOperandSizeMismatch(AssemblyExpr.IValue operand1, AssemblyExpr.IValue operand2)
         {
             if (operand1.Size != operand2.Size)
             {
@@ -110,7 +109,7 @@ internal partial class AssemblyOps
                 assemblyOps.assembler.alloc.Free(operand2);
         }
 
-        public static void CheckLEA(AssemblyExpr.Value operand1, AssemblyExpr.Value operand2)
+        public static void CheckLEA(AssemblyExpr.IValue operand1, AssemblyExpr.IValue operand2)
         {
             if (!operand1.IsRegister()) { Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.InvalidInstructionOperandType_Arity2, "LEA", "first", operand1.GetType().Name)); }
             if (!operand2.IsPointer()) { Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.InvalidInstructionOperandType_Arity2, "LEA", "second", operand1.GetType().Name)); }
@@ -118,7 +117,7 @@ internal partial class AssemblyOps
         public static void LEA(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
             var operand1 = HandleOperand1(instruction, assemblyOps);
-            AssemblyExpr.Value? operand2 =
+            AssemblyExpr.IValue? operand2 =
                 (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond)) ?
                 assemblyOps.vars[assemblyOps.count++].Item2.Accept(assemblyOps.assembler) :
                 instruction.instruction.operand2;
@@ -141,7 +140,7 @@ internal partial class AssemblyOps
 
         public static void IMUL(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
-            var operand1 = HandleOperand1(instruction, assemblyOps).NonPointer(assemblyOps.assembler);
+            AssemblyExpr.IValue operand1 = HandleOperand1(instruction, assemblyOps).NonPointer(assemblyOps.assembler);
             var operand2 = HandleOperand2(instruction, ref operand1, assemblyOps);
 
             assemblyOps.assembler.Emit(new AssemblyExpr.Binary(instruction.instruction.instruction, operand1, operand2));
@@ -195,7 +194,7 @@ internal partial class AssemblyOps
 
         public static void IDIV_DIV_IMOD_MOD(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
-            if (HandleOperand1Unsafe(instruction, assemblyOps) is not AssemblyExpr.RegisterPointer rp || rp.GetRegister().Name != AssemblyExpr.Register.RegisterName.RAX)
+            if (HandleOperand1Unsafe(instruction, assemblyOps) is not AssemblyExpr.IRegisterPointer rp || rp.GetRegister().Name != AssemblyExpr.Register.RegisterName.RAX)
             {
                 assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler, 0);
             }
@@ -216,7 +215,7 @@ internal partial class AssemblyOps
             assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler, 2);
             var rdx = assemblyOps.assembler.alloc.GetRegister(2, operand1.Size);
 
-            if (!(operand1.IsRegister() && ((AssemblyExpr.Register)operand1).Name == AssemblyExpr.Register.RegisterName.RAX))
+            if (!(operand1.IsRegister(out var register) && register.Name == AssemblyExpr.Register.RegisterName.RAX))
             {
                 assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, operand1));
             }
@@ -278,7 +277,7 @@ internal partial class AssemblyOps
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))
                 assemblyOps.assembler.alloc.Free(operand2);
 
-            AssemblyExpr.Value reg = assemblyOps.assembler.alloc.NextRegister(AssemblyExpr.Register.RegisterSize._8Bits);
+            AssemblyExpr.IValue reg = assemblyOps.assembler.alloc.NextRegister(AssemblyExpr.Register.RegisterSize._8Bits);
 
             switch (instruction.instruction.instruction)
             {

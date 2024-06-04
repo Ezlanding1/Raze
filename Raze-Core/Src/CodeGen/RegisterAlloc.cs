@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Raze;
-public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
+public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 {
     internal partial class RegisterAlloc
     {
@@ -155,7 +155,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
 
         public void ListAccept<T, T2>(List<T> list, Expr.IVisitor<T2> visitor)
             where T : Expr
-            where T2 : AssemblyExpr.Value
+            where T2 : AssemblyExpr.IValue
         {
             foreach (var expr in list)
             {
@@ -177,17 +177,17 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
         }
 
 
-        public void Free(AssemblyExpr.Value? value, bool force = false)
+        public void Free(AssemblyExpr.IValue? value, bool force = false)
         {
             if (value == null) return;
 
-            if (value.IsPointer())
+            if (value.IsPointer(out var ptr))
             {
-                FreePtr((AssemblyExpr.Pointer)value, force);
+                FreePtr(ptr, force);
             }
-            else if (value.IsRegister())
+            else if (value.IsRegister(out var register))
             {
-                FreeRegister((AssemblyExpr.Register)value, force);
+                FreeRegister(register, force);
             }
         }
         public void FreeRegister(AssemblyExpr.Register register, bool force = false) => Free(NameToIdx(register.Name), force);
@@ -216,11 +216,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             registerStates[idx].SetState(RegisterState.RegisterStates.Free);
         }
 
-        public RegisterState? SaveRegisterState(AssemblyExpr.Value? value) 
+        public RegisterState? SaveRegisterState(AssemblyExpr.IValue? value) 
         {
             int idx;
 
-            if (value is not AssemblyExpr.RegisterPointer registerPointer || (idx = NameToIdx(registerPointer.GetRegister().Name)) == -1)
+            if (value is not AssemblyExpr.IRegisterPointer registerPointer || (idx = NameToIdx(registerPointer.GetRegister().Name)) == -1)
             {
                 return null;
             }
@@ -229,12 +229,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.Value?>
             state.SetState(registerStates[idx]);
             return state;
         }
-        public void SetRegisterState(RegisterState? state,  AssemblyExpr.Value? value)
+        public void SetRegisterState(RegisterState? state,  AssemblyExpr.IValue? value)
         {
             if (state == null || value.IsLiteral())
                 return;
 
-            var registerPointer = (AssemblyExpr.RegisterPointer)value;
+            var registerPointer = (AssemblyExpr.IRegisterPointer)value;
             int idx = NameToIdx(registerPointer.GetRegister().Name);
 
             registers[idx] = registerPointer.GetRegister().nameBox;

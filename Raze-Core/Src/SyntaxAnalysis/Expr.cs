@@ -438,7 +438,7 @@ public abstract class Expr
     public class StackData
     {
         internal DataType type { get; set; }
-        internal AssemblyExpr.Value value;
+        internal AssemblyExpr.IValue value;
         internal int size => type.allocSize;
         internal bool _ref;
         internal bool inlinedData;

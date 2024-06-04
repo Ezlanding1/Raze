@@ -52,46 +52,41 @@ public abstract partial class AssemblyExpr
         }
     }
 
-    public abstract class Value : Operand
+    public interface IValue : IOperand
     {
-        // 0 = Register, 1 = Pointer, 2 = Literal
-        public int valueType;
+        public Register.RegisterSize Size { get; }
 
-        public abstract Register.RegisterSize Size { get; }
-
-        public Value(int valueType)
-        {
-            this.valueType = valueType;
-        }
-
-        public bool IsRegister() => valueType == 0;
-        public bool IsPointer() => valueType == 1;
-        public bool IsLiteral() => valueType == 2;
+        public bool IsRegister() => IsRegister(out _); 
+        public bool IsPointer() => IsPointer(out _); 
+        public bool IsLiteral() => IsLiteral(out _);
+        public bool IsRegister(out Register register) { register = this as Register; return register != null; }
+        public bool IsPointer(out Pointer pointer) { pointer = this as Pointer; return pointer != null; }
+        public bool IsLiteral(out ILiteralBase literal) { literal = this as ILiteralBase; return literal != null; }
 
         internal Register NonPointerNonLiteral(CodeGen assembler) =>
             (Register)this.NonPointer(assembler).NonLiteral(assembler);
 
-        public Value NonPointer(CodeGen assembler)
+        public IRegisterLiteral NonPointer(CodeGen assembler)
         {
-            if (IsPointer())
+            if (IsPointer(out var ptr))
             {
-                Register reg = ((Pointer)this).AsRegister(assembler);
+                Register reg = ptr.AsRegister(assembler);
                 assembler.Emit(new Binary(Instruction.MOV, reg, this));
                 return reg;
             }
-            return this;
+            return (IRegisterLiteral)this;
         }
-        internal RegisterPointer NonLiteral(CodeGen assembler)
+        internal IRegisterPointer NonLiteral(CodeGen assembler)
         {
             if (IsLiteral())
             {
                 assembler.Emit(new Binary(Instruction.MOV, assembler.alloc.CurrentRegister(Size), this));
                 return assembler.alloc.NextRegister(Size);
             }
-            return (RegisterPointer)this;
+            return (IRegisterPointer)this;
         }
 
-        internal Value IfLiteralCreateLiteral(Register.RegisterSize size)
+        internal IValue IfLiteralCreateLiteral(Register.RegisterSize size)
         {
             if (IsLiteral())
             {
@@ -101,22 +96,20 @@ public abstract partial class AssemblyExpr
         }
     }
 
-    public abstract class RegisterPointer : Value
+    public interface IRegisterPointer : IValue
     {
-        public Register.RegisterSize size;
-        public override Register.RegisterSize Size { get => size; }
-
-        public RegisterPointer(int valueType) : base(valueType)
-        {
-        }
-        internal abstract Register GetRegister();
+        new public Register.RegisterSize Size { get; set; } 
+        public Register GetRegister();
         // Note: This method should always shallow-clone the returned register
-        internal abstract Register AsRegister(CodeGen assembler);
-        internal abstract RegisterPointer Clone();
-
+        public Register AsRegister(CodeGen assembler);
+        public IRegisterPointer Clone();
     }
 
-    public class Register : RegisterPointer
+    public interface IRegisterLiteral : IValue
+    {
+    }
+
+    public class Register : IValue, IRegisterLiteral, IRegisterPointer
     {
         public enum RegisterSize
         {
@@ -156,64 +149,70 @@ public abstract partial class AssemblyExpr
             set => nameBox.Value = value;
         }
 
-        public Register(RegisterName register, RegisterSize size) : base(0)
+        private RegisterSize _size;
+        public RegisterSize Size { get => _size; set => _size = value; }
+
+        public Register(RegisterName register, RegisterSize size)
         {
             this.nameBox = new(register);
-            this.size = size;
+            this.Size = size;
         }
 
         public Register(RegisterName register, int size) : this(register, InstructionUtils.ToRegisterSize(size))
         {
         }
 
-        public Register(StrongBox<RegisterName> _name, RegisterSize size) : base(0)
+        public Register(StrongBox<RegisterName> _name, RegisterSize size)
         {
             this.nameBox = _name;
-            this.size = size;
+            this.Size = size;
         }
 
-        internal override Register GetRegister() => this;
-        internal override Register AsRegister(CodeGen assembler) => Clone();
-        internal override Register Clone() => new Register(nameBox, Size);
+        public Register GetRegister() => this;
+        public Register AsRegister(CodeGen assembler) => (Register)Clone();
+        public IRegisterPointer Clone() => new Register(nameBox, Size);
 
-        public override T Accept<T>(IUnaryOperandVisitor<T> visitor)
+        public T Accept<T>(IUnaryOperandVisitor<T> visitor)
         {
             return visitor.VisitRegister(this);
         }
 
-        public override Assembler.Encoder.Operand ToAssemblerOperand()
+        public Assembler.Encoder.Operand ToAssemblerOperand()
         {
             return new(Assembler.Encoder.Operand.RegisterOperandType(this), (int)Size);
         }
 
-        public override T Accept<T>(IBinaryOperandVisitor<T> visitor, Operand operand)
+        public T Accept<T>(IBinaryOperandVisitor<T> visitor, IOperand operand)
         {
             return operand.VisitOperandRegister(visitor, this);
         }
-        public override T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg)
+        public T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg)
         {
             return visitor.VisitRegisterRegister(this, reg);
         }
-        public override T VisitOperandMemory<T>(IBinaryOperandVisitor<T> visitor, Pointer ptr)
+        public T VisitOperandMemory<T>(IBinaryOperandVisitor<T> visitor, Pointer ptr)
         {
             return visitor.VisitRegisterMemory(this, ptr);
         }
-        public override T VisitOperandImmediate<T>(IBinaryOperandVisitor<T> visitor, Literal imm)
+        public T VisitOperandImmediate<T>(IBinaryOperandVisitor<T> visitor, Literal imm)
         {
             return visitor.VisitRegisterImmediate(this, imm);
         }
     }
 
-    public class Pointer : RegisterPointer
+    public class Pointer : IValue, IRegisterPointer
     {
         internal Register register;
 
         public int offset;
 
-        internal Pointer(Register register, int offset, Register.RegisterSize size) : base(1)
+        private Register.RegisterSize _size;
+        public Register.RegisterSize Size { get => _size; set => _size = value; }
+
+        internal Pointer(Register register, int offset, Register.RegisterSize _size)
         {
             this.register = register;
-            this.size = size;
+            this._size = _size;
             this.offset = -offset;
         }
         internal Pointer(Register register, int offset, int size) : this(register, offset, InstructionUtils.ToRegisterSize(size))
@@ -235,50 +234,50 @@ public abstract partial class AssemblyExpr
         {
         }
 
-        internal override Register GetRegister() => register;
+        public Register GetRegister() => register;
 
         public bool IsOnStack() => register.Name == Register.RegisterName.RBP;
 
-        internal override Register AsRegister(CodeGen assembler)
+        public Register AsRegister(CodeGen assembler)
         {
             return IsOnStack() ? assembler.alloc.NextRegister(Size) : new Register(register.nameBox, Size);
         }
-        internal override RegisterPointer Clone() => new Pointer(register, -offset, size);
+        public IRegisterPointer Clone() => new Pointer(register, -offset, Size);
 
-        public override T Accept<T>(IUnaryOperandVisitor<T> visitor)
+        public T Accept<T>(IUnaryOperandVisitor<T> visitor)
         {
             return visitor.VisitMemory(this);
         }
 
-        public override Assembler.Encoder.Operand ToAssemblerOperand()
+        public Assembler.Encoder.Operand ToAssemblerOperand()
         {
             Assembler.Encoder.Operand.ThrowTMP(register);
             return new(Assembler.Encoder.Operand.OperandType.M, (int)Size);
         }
 
-        public override T Accept<T>(IBinaryOperandVisitor<T> visitor, Operand operand)
+        public T Accept<T>(IBinaryOperandVisitor<T> visitor, IOperand operand)
         {
             return operand.VisitOperandMemory(visitor, this);
         }
-        public override T VisitOperandImmediate<T>(IBinaryOperandVisitor<T> visitor, Literal imm) => visitor.VisitMemoryImmediate(this, imm);
-        public override T VisitOperandMemory<T>(IBinaryOperandVisitor<T> visitor, Pointer ptr) => visitor.VisitMemoryMemory(this, ptr);
-        public override T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg) => visitor.VisitMemoryRegister(this, reg);
+        public T VisitOperandImmediate<T>(IBinaryOperandVisitor<T> visitor, Literal imm) => visitor.VisitMemoryImmediate(this, imm);
+        public T VisitOperandMemory<T>(IBinaryOperandVisitor<T> visitor, Pointer ptr) => visitor.VisitMemoryMemory(this, ptr);
+        public T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg) => visitor.VisitMemoryRegister(this, reg);
     }
 
-    public interface ILiteralBase
+    public interface ILiteralBase : IValue, IRegisterLiteral
     {
         public Literal CreateLiteral(Register.RegisterSize size);
     }
 
-    public class UnresolvedLiteral : Value, ILiteralBase
+    public class UnresolvedLiteral : ILiteralBase
     {
         internal Literal.LiteralType type;
 
         public string value;
 
-        public override Register.RegisterSize Size { get => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Attempted access of UnresolvedRegister size")); }
+       public Register.RegisterSize Size => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Attempted access of UnresolvedRegister size"));
 
-        internal UnresolvedLiteral(Literal.LiteralType type, string value) : base(2)
+        internal UnresolvedLiteral(Literal.LiteralType type, string value)
         {
             this.type = type;
             this.value = value;
@@ -289,26 +288,26 @@ public abstract partial class AssemblyExpr
             return type >= Literal.LiteralType.RefData ? new LabelLiteral(type, value, size) : new Literal(type, value, size);
         }
 
-        public override T Accept<T>(IBinaryOperandVisitor<T> visitor, Operand operand) =>
+        public T Accept<T>(IBinaryOperandVisitor<T> visitor, IOperand operand) =>
             throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Literal left unresolved"));
 
-        public override T Accept<T>(IUnaryOperandVisitor<T> visitor) =>
+        public T Accept<T>(IUnaryOperandVisitor<T> visitor) =>
             throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Literal left unresolved"));
 
-        public override Assembler.Encoder.Operand ToAssemblerOperand() =>
+        public Assembler.Encoder.Operand ToAssemblerOperand() =>
             throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Literal left unresolved"));
 
-        public override T VisitOperandImmediate<T>(IBinaryOperandVisitor<T> visitor, Literal imm) =>
+        public T VisitOperandImmediate<T>(IBinaryOperandVisitor<T> visitor, Literal imm) =>
             throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Literal left unresolved"));
 
-        public override T VisitOperandMemory<T>(IBinaryOperandVisitor<T> visitor, Pointer ptr) =>
+        public T VisitOperandMemory<T>(IBinaryOperandVisitor<T> visitor, Pointer ptr) =>
             throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Literal left unresolved"));
 
-        public override T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg) =>
+        public T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg) =>
             throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Literal left unresolved"));
     }
 
-    public class Literal : Value, ILiteralBase
+    public class Literal : ILiteralBase
     {
         internal enum LiteralType
         {
@@ -325,18 +324,18 @@ public abstract partial class AssemblyExpr
         }
         internal LiteralType type;
         public byte[] value;
-        public override Register.RegisterSize Size { get => (Register.RegisterSize)value.Length; }
+        public Register.RegisterSize Size => (Register.RegisterSize)value.Length;
 
-        private protected Literal(LiteralType type) : base(2)
+        private protected Literal(LiteralType type)
         {
             this.type = type;
         }
-        internal Literal(LiteralType type, byte[] value) : base(2)
+        internal Literal(LiteralType type, byte[] value)
         {
             this.type = type;
             this.value = value;
         }
-        internal Literal(LiteralType type, string value, Register.RegisterSize size) : base(2)
+        internal Literal(LiteralType type, string value, Register.RegisterSize size)
         {
             this.type = type;
             this.value = ImmediateGenerator.Generate(type, value, size);
@@ -344,32 +343,32 @@ public abstract partial class AssemblyExpr
 
         public Literal CreateLiteral(Register.RegisterSize size) => this;
 
-        public override T Accept<T>(IUnaryOperandVisitor<T> visitor)
+        public T Accept<T>(IUnaryOperandVisitor<T> visitor)
         {
             return visitor.VisitImmediate(this);
         }
 
-        public override Assembler.Encoder.Operand ToAssemblerOperand()
+        public Assembler.Encoder.Operand ToAssemblerOperand()
         {
             return new(Assembler.Encoder.Operand.OperandType.IMM, (Assembler.Encoder.Operand.OperandSize)this.Size);
         }
 
-        public override T Accept<T>(IBinaryOperandVisitor<T> visitor, Operand operand)
+        public T Accept<T>(IBinaryOperandVisitor<T> visitor, IOperand operand)
         {
             return operand.VisitOperandImmediate(visitor, this);
         }
 
-        public override T VisitOperandImmediate<T>(IBinaryOperandVisitor<T> visitor, Literal imm)
+        public T VisitOperandImmediate<T>(IBinaryOperandVisitor<T> visitor, Literal imm)
         {
             Assembler.Encoder.EncodingUtils.ThrowIvalidEncodingType("Immediate", "Immediate");
             return default;
         }
-        public override T VisitOperandMemory<T>(IBinaryOperandVisitor<T> visitor, Pointer ptr)
+        public T VisitOperandMemory<T>(IBinaryOperandVisitor<T> visitor, Pointer ptr)
         {
             Assembler.Encoder.EncodingUtils.ThrowIvalidEncodingType("Immediate", "Memory");
             return default;
         }
-        public override T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg)
+        public T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg)
         {
             Assembler.Encoder.EncodingUtils.ThrowIvalidEncodingType("Immediate", "Register");
             return default;
@@ -490,31 +489,31 @@ public abstract partial class AssemblyExpr
         public T VisitMemoryMemory(Pointer ptr1, Pointer ptr2);
         public T VisitMemoryImmediate(Pointer ptr1, Literal imm2);
     }
-    public abstract class Operand
+    public interface IOperand
     {
-        public abstract T Accept<T>(IBinaryOperandVisitor<T> visitor, Operand operand);
-        public abstract T Accept<T>(IUnaryOperandVisitor<T> visitor);
+        public T Accept<T>(IBinaryOperandVisitor<T> visitor, IOperand operand);
+        public T Accept<T>(IUnaryOperandVisitor<T> visitor);
 
-        public abstract T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg);
-        public abstract T VisitOperandMemory<T>(IBinaryOperandVisitor<T> visitor, Pointer ptr);
-        public abstract T VisitOperandImmediate<T>(IBinaryOperandVisitor<T> visitor, Literal imm);
+        public T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg);
+        public T VisitOperandMemory<T>(IBinaryOperandVisitor<T> visitor, Pointer ptr);
+        public T VisitOperandImmediate<T>(IBinaryOperandVisitor<T> visitor, Literal imm);
 
-        public abstract Assembler.Encoder.Operand ToAssemblerOperand();
+        public Assembler.Encoder.Operand ToAssemblerOperand();
     }
 
     public abstract class OperandInstruction : TextExpr
     {
         public Instruction instruction;
-        public abstract Value[] Operands { get; }
+        public abstract IValue[] Operands { get; }
     }
 
     public class Binary : OperandInstruction
     {
-        public Value operand1, operand2;
+        public IValue operand1, operand2;
 
-        public override Value[] Operands => new Value[] { operand1, operand2 };
+        public override IValue[] Operands => new IValue[] { operand1, operand2 };
 
-        public Binary(Instruction instruction, Value operand1, Value operand2)
+        public Binary(Instruction instruction, IValue operand1, IValue operand2)
         {
             this.instruction = instruction;
             this.operand1 = operand1;
@@ -534,11 +533,11 @@ public abstract partial class AssemblyExpr
 
     public class Unary : OperandInstruction
     {
-        public Value operand;
+        public IValue operand;
 
-        public override Value[] Operands => new Value[] { operand };
+        public override IValue[] Operands => new IValue[] { operand };
 
-        public Unary(Instruction instruction, Value operand)
+        public Unary(Instruction instruction, IValue operand)
         {
             this.instruction = instruction;
             this.operand = operand;
@@ -555,7 +554,7 @@ public abstract partial class AssemblyExpr
 
     public class Nullary : OperandInstruction
     {
-        public override Value[] Operands => new Value[0];
+        public override IValue[] Operands => new IValue[0];
 
         public Nullary(Instruction instruction)
         {

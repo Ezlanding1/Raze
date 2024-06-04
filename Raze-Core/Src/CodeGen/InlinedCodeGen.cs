@@ -15,7 +15,7 @@ public class InlinedCodeGen : CodeGen
         public int inlineLabelIdx = -1;
         public bool secondJump = false;
         public Expr.Function currentInlined = currentInlined;
-        public AssemblyExpr.Value? callee;
+        public AssemblyExpr.IValue? callee;
     }
 
     public InlineStateNoInline inlineState = new(null);
@@ -24,7 +24,7 @@ public class InlinedCodeGen : CodeGen
     {
     }
 
-    public override AssemblyExpr.Value? VisitUnaryExpr(Expr.Unary expr)
+    public override AssemblyExpr.IValue? VisitUnaryExpr(Expr.Unary expr)
     {
         if (expr.internalFunction == null)
         {
@@ -51,7 +51,7 @@ public class InlinedCodeGen : CodeGen
         return ret;
     }
 
-    public override AssemblyExpr.Value? VisitBinaryExpr(Expr.Binary expr)
+    public override AssemblyExpr.IValue? VisitBinaryExpr(Expr.Binary expr)
     {
         if (expr.internalFunction == null)
         {
@@ -78,7 +78,7 @@ public class InlinedCodeGen : CodeGen
         return ret;
     }
 
-    public override AssemblyExpr.Value? VisitCallExpr(Expr.Call expr)
+    public override AssemblyExpr.IValue? VisitCallExpr(Expr.Call expr)
     {
         if (!expr.internalFunction.modifiers["inline"])
         {
@@ -93,7 +93,7 @@ public class InlinedCodeGen : CodeGen
 
         inlineState = new InlineStateInlined(inlineState, expr.internalFunction);
 
-        AssemblyExpr.Value? instanceArg = null;
+        AssemblyExpr.IValue? instanceArg = null;
 
         if (!expr.internalFunction.modifiers["static"])
         {
@@ -116,9 +116,9 @@ public class InlinedCodeGen : CodeGen
                 Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, instanceArg, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RBX, InstructionUtils.SYS_SIZE)));
             }
 
-            if (instanceArg.IsRegister())
+            if (instanceArg.IsRegister(out var register))
             {
-                alloc.Lock((AssemblyExpr.Register)instanceArg);
+                alloc.Lock(register);
             }
         }
 
@@ -134,7 +134,7 @@ public class InlinedCodeGen : CodeGen
         return ret;
     }
 
-    private AssemblyExpr.Value? HandleInvokable(Expr.Invokable invokable)
+    private AssemblyExpr.IValue? HandleInvokable(Expr.Invokable invokable)
     {
         if (invokable.internalFunction.Abstract)
         {
@@ -143,7 +143,7 @@ public class InlinedCodeGen : CodeGen
 
         alloc.CreateBlock();
 
-        AssemblyExpr.Value[] args = invokable.Arguments.Select(x => x.Accept(this)).ToArray();
+        AssemblyExpr.IValue[] args = invokable.Arguments.Select(x => x.Accept(this)).ToArray();
 
         for (int i = 0; i < invokable.Arguments.Count; i++)
         {
@@ -175,14 +175,14 @@ public class InlinedCodeGen : CodeGen
         return HandleRefVariableDeref(invokable.internalFunction.refReturn, ret);
     }
 
-    public override AssemblyExpr.Value? VisitAssignExpr(Expr.Assign expr)
+    public override AssemblyExpr.IValue? VisitAssignExpr(Expr.Assign expr)
     {
         if (!expr.binary || !((Expr.Binary)expr.value).internalFunction.modifiers["inline"])
         {
             return base.VisitAssignExpr(expr);
         }
 
-        AssemblyExpr.Value operand2;
+        AssemblyExpr.IValue operand2;
 
         if (((Expr.Binary)expr.value).internalFunction.parameters[0].modifiers["ref"] == false)
         {
@@ -205,7 +205,7 @@ public class InlinedCodeGen : CodeGen
         return null;
     }
 
-    public override AssemblyExpr.Value? VisitReturnExpr(Expr.Return expr)
+    public override AssemblyExpr.IValue? VisitReturnExpr(Expr.Return expr)
     {
         if (!inlineState.inline)
         {
@@ -219,7 +219,7 @@ public class InlinedCodeGen : CodeGen
                 AssemblyExpr.Instruction.MOV;
 
             var returnSize = InstructionUtils.ToRegisterSize(((InlineStateInlined)inlineState).currentInlined._returnType.type.allocSize);
-            AssemblyExpr.Value operand = expr.value.Accept(this).IfLiteralCreateLiteral(returnSize);
+            AssemblyExpr.IValue operand = expr.value.Accept(this).IfLiteralCreateLiteral(returnSize);
 
             if (((InlineStateInlined)inlineState).currentInlined.refReturn)
             {
@@ -232,9 +232,8 @@ public class InlinedCodeGen : CodeGen
                 ((InlineStateInlined)inlineState).callee = alloc.NextRegister(returnSize);
 
             }
-            if (operand.IsRegister())
+            if (operand.IsRegister(out var op))
             {
-                var op = (AssemblyExpr.Register)operand;
                 if (op.Name != ((AssemblyExpr.Register)((InlineStateInlined)inlineState).callee).Name)
                 {
                     if (!(HandleSeteOptimization((AssemblyExpr.Register)operand, ((InlineStateInlined)inlineState).callee)))
@@ -242,10 +241,6 @@ public class InlinedCodeGen : CodeGen
                         Emit(new AssemblyExpr.Binary(instruction, new AssemblyExpr.Register(((AssemblyExpr.Register)((InlineStateInlined)inlineState).callee).Name, op.Size), operand));
                     }
                 }
-            }
-            else if (operand.IsPointer())
-            {
-                Emit(new AssemblyExpr.Binary(instruction, ((InlineStateInlined)inlineState).callee, operand));
             }
             else
             {
@@ -271,15 +266,15 @@ public class InlinedCodeGen : CodeGen
         return null;
     }
 
-    public AssemblyExpr.Value LockOperand(AssemblyExpr.Value operand)
+    public AssemblyExpr.IValue LockOperand(AssemblyExpr.IValue operand)
     {
-        if (operand.IsRegister())
+        if (operand.IsRegister(out var register))
         {
-            alloc.Lock((AssemblyExpr.Register)operand);
+            alloc.Lock(register);
         }
-        else if (operand.IsPointer())
+        else if (operand.IsPointer(out var ptr))
         {
-            var idx = alloc.NameToIdx(((AssemblyExpr.Pointer)operand).register.Name);
+            var idx = alloc.NameToIdx(ptr.register.Name);
             if (idx != -1)
             {
                 alloc.Lock(idx);
@@ -287,20 +282,20 @@ public class InlinedCodeGen : CodeGen
         }
         return operand;
     }
-    private void UnlockOperand(AssemblyExpr.Value? operand)
+    private void UnlockOperand(AssemblyExpr.IValue? operand)
     {
         if (operand == null)
         {
             return;
         }
 
-        if (operand.IsRegister())
+        if (operand.IsRegister(out var register))
         {
-            alloc.Unlock((AssemblyExpr.Register)operand);
+            alloc.Unlock(register);
         }
-        else if (operand.IsPointer())
+        else if (operand.IsPointer(out var pointer))
         {
-            var idx = alloc.NameToIdx(((AssemblyExpr.Pointer)operand).register.Name);
+            var idx = alloc.NameToIdx(pointer.register.Name);
             if (idx != -1)
             {
                 alloc.Unlock(idx);
@@ -308,11 +303,11 @@ public class InlinedCodeGen : CodeGen
         }
     }
 
-    private AssemblyExpr.Value HandleParameterRegister(Expr.Parameter parameter, AssemblyExpr.Value arg)
+    private AssemblyExpr.IValue HandleParameterRegister(Expr.Parameter parameter, AssemblyExpr.IValue arg)
     {
-        if (arg.IsLiteral() && !parameter.modifiers["inlineRef"])
+        if (arg.IsLiteral(out var literal) && !parameter.modifiers["inlineRef"])
         {
-            return arg.IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)parameter.stack.size).NonLiteral(this);
+            return ((AssemblyExpr.IValue)literal.CreateLiteral((AssemblyExpr.Register.RegisterSize)parameter.stack.size)).NonLiteral(this);
         }
         if (IsRefParameter(parameter))
         {
