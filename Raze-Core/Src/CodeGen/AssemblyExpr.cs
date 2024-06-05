@@ -98,7 +98,7 @@ public abstract partial class AssemblyExpr
 
     public interface IRegisterPointer : IValue
     {
-        new public Register.RegisterSize Size { get; set; } 
+        new public Register.RegisterSize Size { get; set; }
         public Register GetRegister();
         // Note: This method should always shallow-clone the returned register
         public Register AsRegister(CodeGen assembler);
@@ -202,16 +202,16 @@ public abstract partial class AssemblyExpr
 
     public class Pointer : IValue, IRegisterPointer
     {
-        internal Register register;
+        internal IRegisterLiteral value;
 
         public int offset;
 
         private Register.RegisterSize _size;
         public Register.RegisterSize Size { get => _size; set => _size = value; }
 
-        internal Pointer(Register register, int offset, Register.RegisterSize _size)
+        internal Pointer(IRegisterLiteral value, int offset, Register.RegisterSize _size)
         {
-            this.register = register;
+            this.value = value;
             this._size = _size;
             this.offset = -offset;
         }
@@ -234,15 +234,15 @@ public abstract partial class AssemblyExpr
         {
         }
 
-        public Register GetRegister() => register;
+        public Register? GetRegister() => value as Register;
 
-        public bool IsOnStack() => register.Name == Register.RegisterName.RBP;
+        public bool IsOnStack() => GetRegister()?.Name == Register.RegisterName.RBP;
 
         public Register AsRegister(CodeGen assembler)
         {
-            return IsOnStack() ? assembler.alloc.NextRegister(Size) : new Register(register.nameBox, Size);
+            return IsOnStack() ? assembler.alloc.NextRegister(Size) : new Register(((Register)value).nameBox, Size);
         }
-        public IRegisterPointer Clone() => new Pointer(register, -offset, Size);
+        public IRegisterPointer Clone() => new Pointer(value, -offset, Size);
 
         public T Accept<T>(IUnaryOperandVisitor<T> visitor)
         {
@@ -251,8 +251,15 @@ public abstract partial class AssemblyExpr
 
         public Assembler.Encoder.Operand ToAssemblerOperand()
         {
-            Assembler.Encoder.Operand.ThrowTMP(register);
-            return new(Assembler.Encoder.Operand.OperandType.M, (int)Size);
+            if (value.IsRegister(out var reg))
+            {
+                Assembler.Encoder.Operand.ThrowTMP(reg);
+                return new(Assembler.Encoder.Operand.OperandType.M, (int)Size);
+            }
+            else
+            {
+                return new(Assembler.Encoder.Operand.OperandType.MOFFS, (int)Size);
+            }
         }
 
         public T Accept<T>(IBinaryOperandVisitor<T> visitor, IOperand operand)
@@ -358,21 +365,12 @@ public abstract partial class AssemblyExpr
             return operand.VisitOperandImmediate(visitor, this);
         }
 
-        public T VisitOperandImmediate<T>(IBinaryOperandVisitor<T> visitor, Literal imm)
-        {
-            Assembler.Encoder.EncodingUtils.ThrowIvalidEncodingType("Immediate", "Immediate");
-            return default;
-        }
-        public T VisitOperandMemory<T>(IBinaryOperandVisitor<T> visitor, Pointer ptr)
-        {
-            Assembler.Encoder.EncodingUtils.ThrowIvalidEncodingType("Immediate", "Memory");
-            return default;
-        }
-        public T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg)
-        {
-            Assembler.Encoder.EncodingUtils.ThrowIvalidEncodingType("Immediate", "Register");
-            return default;
-        }
+        public T VisitOperandImmediate<T>(IBinaryOperandVisitor<T> visitor, Literal imm) =>
+            throw Assembler.Encoder.EncodingUtils.ThrowIvalidEncodingType("Immediate", "Immediate");
+        public T VisitOperandMemory<T>(IBinaryOperandVisitor<T> visitor, Pointer ptr) =>
+            throw Assembler.Encoder.EncodingUtils.ThrowIvalidEncodingType("Immediate", "Memory");
+        public T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg) =>
+            throw Assembler.Encoder.EncodingUtils.ThrowIvalidEncodingType("Immediate", "Register");
     }
 
     public class LabelLiteral : Literal

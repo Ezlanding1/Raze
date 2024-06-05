@@ -272,9 +272,9 @@ public class InlinedCodeGen : CodeGen
         {
             alloc.Lock(register);
         }
-        else if (operand.IsPointer(out var ptr))
+        else if (operand.IsPointer(out var pointer) && pointer.value.IsRegister(out var ptrReg))
         {
-            var idx = alloc.NameToIdx(ptr.register.Name);
+            var idx = alloc.NameToIdx(ptrReg.Name);
             if (idx != -1)
             {
                 alloc.Lock(idx);
@@ -293,9 +293,9 @@ public class InlinedCodeGen : CodeGen
         {
             alloc.Unlock(register);
         }
-        else if (operand.IsPointer(out var pointer))
+        else if (operand.IsPointer(out var pointer) && pointer.value.IsRegister(out var ptrReg))
         {
-            var idx = alloc.NameToIdx(pointer.register.Name);
+            var idx = alloc.NameToIdx(ptrReg.Name);
             if (idx != -1)
             {
                 alloc.Unlock(idx);

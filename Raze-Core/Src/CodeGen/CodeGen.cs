@@ -409,13 +409,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         {
             return firstGet;
         }
-        if (firstGet.IsPointer(out var ptr))
-        {
-            register = ptr.register;
-        }
         else
         {
-            register = (AssemblyExpr.Register)firstGet;
+            register = (AssemblyExpr.Register)(firstGet.IsPointer(out var ptr)? ptr.value : firstGet);
         }
 
         for (int i = 1; i < expr.getters.Count-1; i++)
@@ -779,8 +775,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                 if (chunks.Item1 != -1)
                 {
                     var ptr = (AssemblyExpr.Pointer)operand1;
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(ptr.register, ptr.offset - 4, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, Encoding.ASCII.GetBytes(chunks.Item1.ToString()))));
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(ptr.register, ptr.offset, InstructionUtils.ToRegisterSize((int)ptr.Size-4)), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, Encoding.ASCII.GetBytes(chunks.Item2.ToString()))));
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(ptr.value, ptr.offset - 4, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, Encoding.ASCII.GetBytes(chunks.Item1.ToString()))));
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(ptr.value, ptr.offset, InstructionUtils.ToRegisterSize((int)ptr.Size-4)), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, Encoding.ASCII.GetBytes(chunks.Item2.ToString()))));
 
                     goto dealloc;
                 }
@@ -1127,5 +1123,5 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         _ref ? new AssemblyExpr.Pointer(register.NonPointerNonLiteral(this).nameBox, 0, size) : register;
 
     private protected static (AssemblyExpr.Instruction, AssemblyExpr.IValue) PreserveRefPtrVariable(Expr expr, AssemblyExpr.Pointer pointer) =>
-        IsRefVariable(expr) ? (AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(pointer.register.nameBox, pointer.Size)) : (AssemblyExpr.Instruction.LEA, pointer);
+        IsRefVariable(expr) ? (AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(((AssemblyExpr.Register)pointer.value).nameBox, pointer.Size)) : (AssemblyExpr.Instruction.LEA, pointer);
 }

@@ -79,16 +79,16 @@ partial class Syntaxes
 
             public string VisitMemory(AssemblyExpr.Pointer instruction)
             {
-                if (instruction.register.Name == AssemblyExpr.Register.RegisterName.TMP)
+                if (instruction.GetRegister()?.Name == AssemblyExpr.Register.RegisterName.TMP)
                 {
                     Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("TMP Register Emitted"));
                 }
 
                 if (instruction.offset == 0)
                 {
-                    return $"{InstructionUtils.wordSize[instruction.Size]} [{instruction.register.Accept(this)}]";
+                    return $"{InstructionUtils.wordSize[instruction.Size]} [{instruction.value.Accept(this)}]";
                 }
-                return $"{InstructionUtils.wordSize[instruction.Size]} [{instruction.register.Accept(this)} {((instruction.offset < 0) ? '-' : '+')} {Math.Abs(instruction.offset)}]";
+                return $"{InstructionUtils.wordSize[instruction.Size]} [{instruction.value.Accept(this)} {((instruction.offset < 0) ? '-' : '+')} {Math.Abs(instruction.offset)}]";
             }
 
             public string VisitRegister(AssemblyExpr.Register instruction)
@@ -118,16 +118,16 @@ partial class Syntaxes
 
             private string PointerToString(AssemblyExpr.Pointer instruction)
             {
-                if (instruction.register.Name == AssemblyExpr.Register.RegisterName.TMP)
+                if (instruction.GetRegister()?.Name == AssemblyExpr.Register.RegisterName.TMP)
                 {
                     Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("TMP Register Cannot Be Emitted"));
                 }
 
                 if (instruction.offset == 0)
                 {
-                    return $"[{instruction.register.Accept(this)}]";
+                    return $"[{instruction.value.Accept(this)}]";
                 }
-                return $"[{instruction.register.Accept(this)} {((instruction.offset < 0) ? '-' : '+')} {Math.Abs(instruction.offset)}]";
+                return $"[{instruction.value.Accept(this)} {((instruction.offset < 0) ? '-' : '+')} {Math.Abs(instruction.offset)}]";
             }
 
             public string VisitImmediate(AssemblyExpr.Literal instruction)

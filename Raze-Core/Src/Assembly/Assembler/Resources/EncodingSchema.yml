@@ -8,6 +8,9 @@
   # R = Register
   # R8U/R8/R16/R32/R64 = Register 8U/8/16/32/64 bit
 
+  # MOFFS = Memory offset given as an immediate value
+  # MOFFS8/MOFFS16/MOFFS32/MOFFS64
+
   # M = Memory
   # M8U/M8/M16/M32/M64 = Memory 8U/8/16/32/64 bit
 
@@ -64,6 +67,12 @@ SUB:
   OpCodeExtension: 5
   OpCode: 129
 MOV:
+- Instruction: MOV EAX, MOFFS32
+  EncodingType: NoModRegRM
+  OpCode: 161
+- Instruction: MOV MOFFS32, EAX
+  EncodingType: NoModRegRM
+  OpCode: 163
 - Instruction: MOV RM64, IMM8
   EncodingType: RexWPrefix
   OpCode: 136

@@ -29,14 +29,14 @@ public partial class Assembler
         internal Encoding GetEncoding(AssemblyExpr.OperandInstruction instruction, Assembler assembler, out bool refResolve)
         {
             Operand[] operands = instruction.Operands.Select(x => x.ToAssemblerOperand()).ToArray();
-
+            
             if (instructionEncodings.TryGetValue(instruction.instruction.ToString(), out var encodings))
             {
-                if (operands[^1].type == Operand.OperandType.IMM && EncodingUtils.IsReferenceLiteralType(((AssemblyExpr.Literal)instruction.Operands[^1]).type))
+                if (EncodingUtils.IsReferenceLiteralOperand(operands[^1], instruction.Operands[^1], out var labelLiteral))
                 {
                     refResolve = true;
                     (Operand.OperandSize absoluteJump, Operand.OperandSize relativeJump) = 
-                        EncodingUtils.HandleUnresolvedRef(instruction, (AssemblyExpr.LabelLiteral)instruction.Operands[^1], assembler);
+                        EncodingUtils.HandleUnresolvedRef(instruction, labelLiteral, operands[^1].size, assembler);
 
                     foreach (Encoding encoding in encodings)
                     {

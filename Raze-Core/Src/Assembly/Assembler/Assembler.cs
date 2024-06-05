@@ -226,28 +226,56 @@ public partial class Assembler :
             encoding.AddRegisterCode(Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1));
         }
 
-        if (ptr2.offset == 0 && Encoder.EncodingUtils.CanHaveZeroByteDisplacement(ptr2.register))
+        if (ptr2.value.IsRegister(out var reg2))
         {
+            if (ptr2.offset == 0 && Encoder.EncodingUtils.CanHaveZeroByteDisplacement(reg2))
+            {
+                return new Instruction {
+                    Instructions = new IInstruction[] {
+                        new ModRegRm(
+                            ModRegRm.Mod.ZeroByteDisplacement,
+                            Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1),
+                            Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg2)
+                        )
+                    }
+                };
+            }
             return new Instruction {
                 Instructions = new IInstruction[] {
                     new ModRegRm(
-                        ModRegRm.Mod.ZeroByteDisplacement,
+                        Encoder.EncodingUtils.GetDispSize(ptr2.offset),
                         Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1),
-                        Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(ptr2.register)
-                    )
+                        Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg2)
+                    ),
+                    Encoder.EncodingUtils.GetDispInstruction(ptr2.offset)
                 }
             };
         }
-        return new Instruction {
-            Instructions = new IInstruction[] {
+        else
+        {
+            var instructions = new Instruction { Instructions = new IInstruction[2] };
+            instructions.Instructions[0] =
                 new ModRegRm(
-                    Encoder.EncodingUtils.GetDispSize(ptr2.offset),
+                    ModRegRm.Mod.ZeroByteDisplacement,
                     Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1),
-                    Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(ptr2.register)
-                ),
-                Encoder.EncodingUtils.GetDispInstruction(ptr2.offset)
+                    5
+                );
+
+            instructions.Instructions[1] = ((AssemblyExpr.Literal)ptr2.value).Accept(this).Instructions[0];
+
+            if (ptr2.offset != 0)
+            {
+                byte[] ptrValueBytes = instructions.ToBytes().ElementAt(0).ToArray();
+                int size = ptrValueBytes.Length;
+                Array.Resize(ref ptrValueBytes, 8);
+
+                byte[] bytes = checked(BitConverter.GetBytes(BitConverter.ToInt64(ptrValueBytes, 0) + ptr2.offset));
+                Array.Resize(ref bytes, size);
+
+                instructions.Instructions[1] = new RawInstruction(bytes);
             }
-        };
+            return instructions;
+        }
     }
 
     public Instruction VisitRegisterImmediate(AssemblyExpr.Register reg1, AssemblyExpr.Literal imm2)
@@ -269,66 +297,100 @@ public partial class Assembler :
 
     public Instruction VisitMemoryRegister(AssemblyExpr.Pointer ptr1, AssemblyExpr.Register reg2)
     {
-        if (ptr1.offset == 0 && Encoder.EncodingUtils.CanHaveZeroByteDisplacement(ptr1.register))
+        if (ptr1.value.IsRegister(out var reg1))
         {
+            if (ptr1.offset == 0 && Encoder.EncodingUtils.CanHaveZeroByteDisplacement(reg1))
+            {
+                return new Instruction
+                {
+                    Instructions = new IInstruction[] {
+                        new ModRegRm(
+                            ModRegRm.Mod.ZeroByteDisplacement,
+                            Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg2),
+                            Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1)
+                        )
+                    }
+                };
+            }
             return new Instruction
             {
                 Instructions = new IInstruction[] {
                     new ModRegRm(
-                        ModRegRm.Mod.ZeroByteDisplacement,
+                        Encoder.EncodingUtils.GetDispSize(ptr1.offset),
                         Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg2),
-                        Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(ptr1.register)
-                    )
+                        Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1)
+                    ),
+                    Encoder.EncodingUtils.GetDispInstruction(ptr1.offset)
                 }
             };
         }
-        return new Instruction
+        else
         {
-            Instructions = new IInstruction[] {
+            var instructions = new Instruction { Instructions = new IInstruction[2] };
+            instructions.Instructions[0] = 
                 new ModRegRm(
-                    Encoder.EncodingUtils.GetDispSize(ptr1.offset),
+                    ModRegRm.Mod.ZeroByteDisplacement,
                     Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg2),
-                    Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(ptr1.register)
-                ),
-                Encoder.EncodingUtils.GetDispInstruction(ptr1.offset)
+                    5
+                );
+
+            instructions.Instructions[1] = ((AssemblyExpr.Literal)ptr1.value).Accept(this).Instructions[0];
+
+            if (ptr1.offset != 0)
+            {
+                byte[] ptrValueBytes = instructions.ToBytes().ElementAt(0).ToArray();
+                int size = ptrValueBytes.Length;
+                Array.Resize(ref ptrValueBytes, 8);
+
+                byte[] bytes = checked(BitConverter.GetBytes(BitConverter.ToInt64(ptrValueBytes, 0) + ptr1.offset));
+                Array.Resize(ref bytes, size);
+
+                instructions.Instructions[1] = new RawInstruction(bytes);
             }
-        };
+            return instructions;
+        }
     }
 
     public Instruction VisitMemoryMemory(AssemblyExpr.Pointer ptr1, AssemblyExpr.Pointer ptr2)
     {
-        Encoder.EncodingUtils.ThrowIvalidEncodingType("Memory", "Memory");
-        return new Instruction();
+        throw Encoder.EncodingUtils.ThrowIvalidEncodingType("Memory", "Memory");
     }
 
     public Instruction VisitMemoryImmediate(AssemblyExpr.Pointer ptr1, AssemblyExpr.Literal imm2)
     {
-        if (ptr1.offset == 0 && Encoder.EncodingUtils.CanHaveZeroByteDisplacement(ptr1.register))
+        if (ptr1.value.IsRegister(out var reg1))
         {
+            if (ptr1.offset == 0 && Encoder.EncodingUtils.CanHaveZeroByteDisplacement(reg1))
+            {
+                return new Instruction
+                {
+                    Instructions = new IInstruction[] {
+                        new ModRegRm(
+                            ModRegRm.Mod.ZeroByteDisplacement,
+                            (ModRegRm.OpCodeExtension)encoding.OpCodeExtension,
+                            Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1)
+                        ),
+                        Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2, this, encoding.encodingType)
+                    }
+                };
+            }
             return new Instruction
             {
                 Instructions = new IInstruction[] {
                     new ModRegRm(
-                        ModRegRm.Mod.ZeroByteDisplacement,
+                        Encoder.EncodingUtils.GetDispSize(ptr1.offset),
                         (ModRegRm.OpCodeExtension)encoding.OpCodeExtension,
-                        Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(ptr1.register)
+                        Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1)
                     ),
+                    Encoder.EncodingUtils.GetDispInstruction(ptr1.offset),
                     Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2, this, encoding.encodingType)
                 }
             };
         }
-        return new Instruction
+        else
         {
-            Instructions = new IInstruction[] {
-                new ModRegRm(
-                    Encoder.EncodingUtils.GetDispSize(ptr1.offset),
-                    (ModRegRm.OpCodeExtension)encoding.OpCodeExtension,
-                    Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(ptr1.register)
-                ),
-                Encoder.EncodingUtils.GetDispInstruction(ptr1.offset),
-                Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2, this, encoding.encodingType)
-            }
-        };
+            throw Encoder.EncodingUtils.ThrowIvalidEncodingType("Memory", "Moffset");
+        }
     }
 
     public Instruction VisitRegister(AssemblyExpr.Register reg)
@@ -352,30 +414,37 @@ public partial class Assembler :
 
     public Instruction VisitMemory(AssemblyExpr.Pointer ptr)
     {
-        if (ptr.offset == 0 && Encoder.EncodingUtils.CanHaveZeroByteDisplacement(ptr.register))
+        if (ptr.value.IsRegister(out var reg))
         {
-            return new Instruction
+            if (ptr.offset == 0 && Encoder.EncodingUtils.CanHaveZeroByteDisplacement(reg))
             {
-                Instructions = new IInstruction[] {
+                return new Instruction
+                {
+                    Instructions = new IInstruction[] {
                     new ModRegRm(
                         ModRegRm.Mod.ZeroByteDisplacement,
                         (ModRegRm.OpCodeExtension)encoding.OpCodeExtension,
-                        Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(ptr.register)
+                        Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg)
                     )
                 }
-            };
-        }
-        return new Instruction
-        {
-            Instructions = new IInstruction[] {
+                };
+            }
+            return new Instruction
+            {
+                Instructions = new IInstruction[] {
                 new ModRegRm(
                     Encoder.EncodingUtils.GetDispSize(ptr.offset),
                     (ModRegRm.OpCodeExtension)encoding.OpCodeExtension,
-                    Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(ptr.register)
+                    Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg)
                 ),
                 Encoder.EncodingUtils.GetDispInstruction(ptr.offset)
             }
-        };
+            };
+        }
+        else
+        {
+            throw Encoder.EncodingUtils.ThrowIvalidEncodingType("Moffset");
+        }
     }
 
     public Instruction VisitImmediate(AssemblyExpr.Literal imm)

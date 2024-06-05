@@ -191,7 +191,13 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             }
         }
         public void FreeRegister(AssemblyExpr.Register register, bool force = false) => Free(NameToIdx(register.Name), force);
-        public void FreePtr(AssemblyExpr.Pointer ptr, bool force = false) => FreeRegister(ptr.register, force);
+        public void FreePtr(AssemblyExpr.Pointer ptr, bool force = false)
+        {
+            if (ptr.value.IsRegister(out var ptrReg))
+            {
+                FreeRegister(ptrReg, force);
+            }
+        }
 
         // Frees a register by allowing it to be alloc-ed elsewhere, and making the other uses pull from a new instance
         private void Free(int idx, bool force = false)

@@ -33,37 +33,21 @@ public partial class Assembler
                         subStrIdx++;
                     }
 
-                    switch (operandsStrings[i].Substring(0, subStrIdx).ToUpper())
+                    operands[i] = operandsStrings[i].Substring(0, subStrIdx).ToUpper() switch
                     {
-                        case "R":
-                            operands[i] = new Operand(Operand.OperandType.R, ToSize(operandsStrings[i], subStrIdx));
-                            break;
-                        case "M":
-                            operands[i] = new Operand(Operand.OperandType.M, ToSize(operandsStrings[i], subStrIdx));
-                            break;
-                        case "RM":
-                            operands[i] = new Operand(Operand.OperandType.R | Operand.OperandType.M, ToSize(operandsStrings[i], subStrIdx));
-                            break;
-                        case "IMM":
-                            operands[i] = new Operand(Operand.OperandType.IMM, ToSize(operandsStrings[i], subStrIdx));
-                            break;
-                        case "AL":
-                            operands[i] = new Operand(Operand.OperandType.A, Operand.OperandSize._8Bits);
-                            break;
-                        case "AX":
-                            operands[i] = new Operand(Operand.OperandType.A, Operand.OperandSize._16Bits);
-                            break;
-                        case "EAX":
-                            operands[i] = new Operand(Operand.OperandType.A, Operand.OperandSize._32Bits);
-                            break;
-                        case "RAX":
-                            operands[i] = new Operand(Operand.OperandType.A, Operand.OperandSize._64Bits);
-                            break;
-                        case "P":
-                            operands[i] = new Operand(Operand.OperandType.P, Operand.OperandSize._8Bits);
-                            break;
-                        default: throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Invalid Encoding Type '{instruction}'"));
+                        "R" => new Operand(Operand.OperandType.R, ToSize(operandsStrings[i], subStrIdx)),
+                        "M" => new Operand(Operand.OperandType.M, ToSize(operandsStrings[i], subStrIdx)),
+                        "RM" => new Operand(Operand.OperandType.R | Operand.OperandType.M, ToSize(operandsStrings[i], subStrIdx)),
+                        "IMM" => new Operand(Operand.OperandType.IMM, ToSize(operandsStrings[i], subStrIdx)),
+                        "AL" => new Operand(Operand.OperandType.A, Operand.OperandSize._8Bits),
+                        "AX" => new Operand(Operand.OperandType.A, Operand.OperandSize._16Bits),
+                        "EAX" => new Operand(Operand.OperandType.A, Operand.OperandSize._32Bits),
+                        "RAX" => new Operand(Operand.OperandType.A, Operand.OperandSize._64Bits),
+                        "P" => new Operand(Operand.OperandType.P, Operand.OperandSize._8Bits),
+                        "MOFFS" => new Operand(Operand.OperandType.MOFFS, ToSize(operandsStrings[i], subStrIdx)),
+                        _ => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Invalid Encoding Type '{instruction}'")),
                     };
+                    ;
 
 
                 }
@@ -71,15 +55,15 @@ public partial class Assembler
 
                 Operand.OperandSize ToSize(string size, int start)
                 {
-                    switch (size.Substring(start, size.Length - start))
+                    return size.Substring(start, size.Length - start) switch
                     {
-                        case "64": return Operand.OperandSize._64Bits;
-                        case "32": return Operand.OperandSize._32Bits;
-                        case "16": return Operand.OperandSize._16Bits;
-                        case "8": return Operand.OperandSize._8Bits;
-                        case "8U": return Operand.OperandSize._8BitsUpper;
-                        default: throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Invalid Encoding Type '{instruction}'"));
-                    }
+                        "64" => Operand.OperandSize._64Bits,
+                        "32" => Operand.OperandSize._32Bits,
+                        "16" => Operand.OperandSize._16Bits,
+                        "8" => Operand.OperandSize._8Bits,
+                        "8U" => Operand.OperandSize._8BitsUpper,
+                        _ => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Invalid Encoding Type '{instruction}'")),
+                    };
                 }
             }
         }

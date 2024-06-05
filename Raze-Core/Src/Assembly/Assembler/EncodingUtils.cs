@@ -55,7 +55,7 @@ public partial class Assembler
                         GenerateImmFromInt(size, assembler.symbolTable.definitions[((AssemblyExpr.LabelLiteral)op2Expr).Name] + (long)Linker.Elf64.Elf64_Shdr.dataVirtualAddress) : 
                         DefaultUnresolvedReference;
                 }
-                else if (!assembler.nonResolvingPass && (op2Expr.type == AssemblyExpr.Literal.LiteralType.RefProcedure || op2Expr.type == AssemblyExpr.Literal.LiteralType.RefLocalProcedure))
+                else if (op2Expr.type == AssemblyExpr.Literal.LiteralType.RefProcedure || op2Expr.type == AssemblyExpr.Literal.LiteralType.RefLocalProcedure)
                 {
                     return assembler.symbolTable.definitions.ContainsKey(((AssemblyExpr.LabelLiteral)op2Expr).Name) ?
                         GenerateImmFromInt(size,
@@ -111,10 +111,10 @@ public partial class Assembler
                 rexPrefix = new();
                 return false;
             }
-            internal static bool SetRexPrefix(AssemblyExpr.Unary binary, Encoding encoding, out Instruction.RexPrefix rexPrefix)
+            internal static bool SetRexPrefix(AssemblyExpr.Unary unary, Encoding encoding, out Instruction.RexPrefix rexPrefix)
             {
                 bool rexw = SetRexW(encoding.encodingType);
-                bool op2R = IsRRegister(binary.operand);
+                bool op2R = IsRRegister(unary.operand);
 
                 if (SetRex(encoding.encodingType) | rexw | op2R)
                 {
@@ -126,18 +126,18 @@ public partial class Assembler
             }
 
             private static bool IsRRegister(AssemblyExpr.IOperand op)
-                => op is AssemblyExpr.Register && (int)((AssemblyExpr.Register)op).Name < 0
-                    || op is AssemblyExpr.Pointer && (int)((AssemblyExpr.Pointer)op).register.Name < 0;
+                => op is AssemblyExpr.Register register && (int)register.Name < 0
+                    || (op is AssemblyExpr.Pointer pointer && pointer.value.IsRegister(out var ptrReg) && (int)ptrReg.Name < 0);
 
             internal static bool SetAddressSizeOverridePrefix(AssemblyExpr.IOperand operand)
             {
-                if (operand is AssemblyExpr.Pointer ptr)
+                if (operand is AssemblyExpr.Pointer ptr && ptr.value.IsRegister())
                 {
-                    if (ptr.register.Size == AssemblyExpr.Register.RegisterSize._32Bits)
+                    if (ptr.value.Size == AssemblyExpr.Register.RegisterSize._32Bits)
                     {
                         return true;
                     }
-                    else if (ptr.register.Size != AssemblyExpr.Register.RegisterSize._64Bits)
+                    else if (ptr.value.Size != AssemblyExpr.Register.RegisterSize._64Bits)
                     {
                         EncodingError();
                     }
@@ -145,12 +145,12 @@ public partial class Assembler
                 return false;
             }
 
-            internal static void ThrowIvalidEncodingType(string t1, string t2)
-            {
+            internal static Exception ThrowIvalidEncodingType(string t1) =>
+                Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Cannot encode instruction with operand '{t1.ToUpper()}'"));
+            internal static Exception ThrowIvalidEncodingType(string t1, string t2) =>
                 Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Cannot encode instruction with operands '{t1.ToUpper()}, {t2.ToUpper()}'"));
-            }
 
-            internal static (Operand.OperandSize, Operand.OperandSize) HandleUnresolvedRef(AssemblyExpr expr, AssemblyExpr.LabelLiteral literal, Assembler assembler)
+            internal static (Operand.OperandSize, Operand.OperandSize) HandleUnresolvedRef(AssemblyExpr expr, AssemblyExpr.LabelLiteral literal, Operand.OperandSize defualtSize, Assembler assembler)
             {
                 if (literal.type == AssemblyExpr.Literal.LiteralType.RefData)
                 {
@@ -217,14 +217,30 @@ public partial class Assembler
                         );
                     }
                 }
-                return (Operand.OperandSize._8Bits, Operand.OperandSize._8Bits);
+                return (defualtSize, defualtSize);
             }
 
             private static Operand.OperandSize SizeOfIntegerUnsigned(ulong value) => (Operand.OperandSize)CodeGen.GetIntegralSizeUnsigned(value);
             private static Operand.OperandSize SizeOfIntegerSigned(long value) => (Operand.OperandSize)CodeGen.GetIntegralSizeSigned(value);
 
-            internal static bool IsReferenceLiteralType(AssemblyExpr.Literal.LiteralType literalType) =>
+            private static bool IsReferenceLiteralType(AssemblyExpr.Literal.LiteralType literalType) =>
                 literalType >= AssemblyExpr.Literal.LiteralType.RefData;
+
+            internal static bool IsReferenceLiteralOperand(Operand operand, AssemblyExpr.IOperand instructionOperand, out AssemblyExpr.LabelLiteral labelLiteral)
+            {
+                if (operand.type == Operand.OperandType.IMM && IsReferenceLiteralType(((AssemblyExpr.Literal)instructionOperand).type))
+                {
+                    labelLiteral = (AssemblyExpr.LabelLiteral)instructionOperand;
+                    return true;
+                }
+                if (operand.type == Operand.OperandType.MOFFS && IsReferenceLiteralType(((AssemblyExpr.Literal)((AssemblyExpr.Pointer)instructionOperand).value).type))
+                {
+                    labelLiteral = (AssemblyExpr.LabelLiteral)((AssemblyExpr.Pointer)instructionOperand).value;
+                    return true;
+                }
+                labelLiteral = null;
+                return false;
+            }
         }
     }
 }

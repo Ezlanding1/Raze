@@ -31,10 +31,11 @@ public partial class Assembler
             internal enum OperandType
             {
                 R = 1 | A | P,
-                M = 2,
+                M = 2 | MOFFS,
                 IMM = 4,
                 A = 8,
-                P = 16
+                P = 16,
+                MOFFS = 32
             }
             internal enum OperandSize
             {

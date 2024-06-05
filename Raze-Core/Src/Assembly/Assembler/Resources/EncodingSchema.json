@@ -63,6 +63,16 @@
   ],
   "MOV": [
     {
+      "Instruction": "MOV EAX, MOFFS32",
+      "EncodingType": "NoModRegRM",
+      "OpCode": 161
+    },
+    {
+      "Instruction": "MOV MOFFS32, EAX",
+      "EncodingType": "NoModRegRM",
+      "OpCode": 163
+    },
+    {
       "Instruction": "MOV RM64, IMM8",
       "EncodingType": "RexWPrefix",
       "OpCode": 136
