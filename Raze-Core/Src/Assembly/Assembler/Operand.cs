@@ -30,35 +30,35 @@ public partial class Assembler
             [Flags]
             internal enum OperandType
             {
-                R = 1 | A | P,
+                R = 1 | A,
                 M = 2 | MOFFS,
                 IMM = 4,
                 A = 8,
-                P = 16,
-                MOFFS = 32
+                MOFFS = 16,
+                XMM = 32
             }
             internal enum OperandSize
             {
+                _128Bits = 16,
                 _64Bits = 8,
                 _32Bits = 4,
                 _16Bits = 2,
-                _8Bits = 1,
-                _8BitsUpper = 0
+                _8Bits = 1
             }
 
-            internal static OperandType RegisterOperandType(AssemblyExpr.Register reg)
+            internal static Operand RegisterOperandType(AssemblyExpr.Register reg)
             {
                 ThrowTMP(reg);
 
-                return reg.Name switch
+                OperandType type = reg.Name switch
                 {
                     AssemblyExpr.Register.RegisterName.RAX => OperandType.A,
-                    AssemblyExpr.Register.RegisterName.RSP => OperandType.P,
-                    AssemblyExpr.Register.RegisterName.RBP => OperandType.P,
-                    AssemblyExpr.Register.RegisterName.RSI => OperandType.P,
-                    AssemblyExpr.Register.RegisterName.RDI => OperandType.P,
+                    _ when reg.Name >= AssemblyExpr.Register.RegisterName.XMM0 && reg.Name <= AssemblyExpr.Register.RegisterName.XMM15 => OperandType.XMM,
                     _ => OperandType.R
                 };
+                OperandSize size = (OperandSize)Math.Max(1, (int)reg.Size);
+
+                return new Operand(type, size);
             }
 
             internal static void ThrowTMP(AssemblyExpr.Register reg)

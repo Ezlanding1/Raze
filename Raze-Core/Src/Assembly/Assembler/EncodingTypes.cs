@@ -13,7 +13,7 @@ public partial class Assembler
         internal partial class Encoding
         {
             [Flags]
-            internal enum EncodingTypes : byte
+            internal enum EncodingTypes
             {
                 None = 0,
                 RexPrefix = 1,
@@ -23,7 +23,10 @@ public partial class Assembler
                 NoModRegRM = 16,
                 SignExtends = 32,
                 AddRegisterToOpCode = 64,
-                RelativeJump = 128
+                RelativeJump = 128,
+                NoUpper8BitEncoding = 256,
+                ScalarFloatingPrefix = 512,
+                DoubleFloatingPrefix = 1024
             }
         }
     }

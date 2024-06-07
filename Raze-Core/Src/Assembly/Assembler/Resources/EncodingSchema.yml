@@ -1,7 +1,4 @@
 # OperandType:
-  # P = Prefixed Register (SIL, DIL, BPL, SPL)
-  # P = Prefixed Register 8 bit
-
   # A = A-Register
   # AL/AX/EAX/RAX = A-Register 8/16/32/64 bit
 
@@ -28,15 +25,19 @@
   # NoModRegRM = Do not emit ModRegRM byte when operand1 is a register (R), and operand2 is an immediate (IMM)
   # SignExtends = Indicates that the immediate (IMM) operand2 will be sign extended. Will only match if MSB is 0
   # RelativeJump = Indicates that the instruction's operand (operand2 when binary) is a REL (IMM) that should be relative, rather than absolute
+  # NoUpper8BitEncoding = Indicates that the instruction cannot encode AH, BH, CH, DH, rather SIL, DIL, BPL, SPL instead
+  # ScalarFloatingPrefix = Emit mandatory prefix for scalar floating-point operations (0xF3)
+  # DoubleFloatingPrefix = Emit mandatory prefix for double floating-point operations (0xF2)
   # Any combination of these flags can be encoded by separating two EncodingTypes with bitwise or '|' or comma ','
 
 ADD:
-- Instruction: ADD R8U, IMM8
-  OpCode: 128
-- Instruction: ADD P, IMM8
-  EncodingType: RexPrefix
+- Instruction: ADD RM8, IMM8
+  EncodingType: RexPrefix | NoUpper8BitEncoding
   OpCode: 128
 - Instruction: ADD RM8, R8
+  OpCode: 0
+- Instruction: ADD RM8, R8
+  EncodingType: RexPrefix | NoUpper8BitEncoding
   OpCode: 0
 - Instruction: ADD RM64, R64
   EncodingType: RexWPrefix
@@ -149,4 +150,7 @@ RET:
 LEAVE:
 - Instruction: LEAVE
   OpCode: 201
-
+ADDSS:
+- Instruction: ADDSS XMM, XMM
+  EncodingType": ExpansionPrefix | ScalarFloatingPrefix
+  OpCode: 88

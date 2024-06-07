@@ -1,16 +1,17 @@
 {
   "ADD": [
     {
-      "Instruction": "ADD R8U, IMM8",
-      "OpCode": 128
-    },
-    {
-      "Instruction": "ADD P, IMM8",
-      "EncodingType": "RexPrefix",
+      "Instruction": "ADD RM8, IMM8",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
       "OpCode": 128
     },
     {
       "Instruction": "ADD RM8, R8",
+      "OpCode": 0
+    },
+    {
+      "Instruction": "ADD RM8, R8",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
       "OpCode": 0
     },
     {
@@ -202,6 +203,13 @@
     {
       "Instruction": "LEAVE",
       "OpCode": 201
+    }
+  ],
+  "ADDSS": [
+    {
+      "Instruction": "ADDSS XMM, XMM",
+      "EncodingType": "ExpansionPrefix | ScalarFloatingPrefix",
+      "OpCode": 88
     }
   ]
 }

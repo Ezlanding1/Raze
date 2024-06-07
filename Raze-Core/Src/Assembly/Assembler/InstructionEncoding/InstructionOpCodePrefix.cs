@@ -96,5 +96,31 @@ public partial class Assembler
 
             public byte[] GetBytes() => new byte[] { this._data };
         }
+
+        // Scalar Precision Floating-Point Operation Prefix (1 byte). Optional
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        internal struct ScalarFloatingOperationPrefix : IInstruction
+        {
+            byte _data = 0xF3;
+
+            public ScalarFloatingOperationPrefix()
+            {
+            }
+
+            public byte[] GetBytes() => new byte[] { this._data };
+        }
+
+        // Double Precision Floating-Point Operation Prefix (1 byte). Optional
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        internal struct DoubleFloatingOperationPrefix : IInstruction
+        {
+            byte _data = 0xF2;
+
+            public DoubleFloatingOperationPrefix()
+            {
+            }
+
+            public byte[] GetBytes() => new byte[] { this._data };
+        }
     }
 }

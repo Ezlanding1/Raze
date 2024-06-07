@@ -215,7 +215,7 @@ partial class Syntaxes
                 { (AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits), "RAX" }, // 64-Bits 
                 { (AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._32Bits), "EAX" }, // Lower 32-Bits
                 { (AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._16Bits), "AX" }, // Lower 16-Bits
-                { (AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._8BitsUpper), "AH" }, // Upper 16-Bits
+                { (AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._8BitsUpper), "AH" }, // Upper 8-Bits
                 { (AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._8Bits), "AL" }, // Lower 8-Bits
 
                 { (AssemblyExpr.Register.RegisterName.RCX, AssemblyExpr.Register.RegisterSize._64Bits), "RCX" },
@@ -295,6 +295,23 @@ partial class Syntaxes
                 { (AssemblyExpr.Register.RegisterName.R15, AssemblyExpr.Register.RegisterSize._32Bits), "R15D" },
                 { (AssemblyExpr.Register.RegisterName.R15, AssemblyExpr.Register.RegisterSize._16Bits), "R15W" },
                 { (AssemblyExpr.Register.RegisterName.R15, AssemblyExpr.Register.RegisterSize._8Bits), "R15B" },
+
+                { (AssemblyExpr.Register.RegisterName.XMM0, AssemblyExpr.Register.RegisterSize._128Bits), "XMM0" },
+                { (AssemblyExpr.Register.RegisterName.XMM1, AssemblyExpr.Register.RegisterSize._128Bits), "XMM1" },
+                { (AssemblyExpr.Register.RegisterName.XMM2, AssemblyExpr.Register.RegisterSize._128Bits), "XMM2" },
+                { (AssemblyExpr.Register.RegisterName.XMM3, AssemblyExpr.Register.RegisterSize._128Bits), "XMM3" },
+                { (AssemblyExpr.Register.RegisterName.XMM4, AssemblyExpr.Register.RegisterSize._128Bits), "XMM4" },
+                { (AssemblyExpr.Register.RegisterName.XMM5, AssemblyExpr.Register.RegisterSize._128Bits), "XMM5" },
+                { (AssemblyExpr.Register.RegisterName.XMM6, AssemblyExpr.Register.RegisterSize._128Bits), "XMM6" },
+                { (AssemblyExpr.Register.RegisterName.XMM7, AssemblyExpr.Register.RegisterSize._128Bits), "XMM7" },
+                { (AssemblyExpr.Register.RegisterName.XMM8, AssemblyExpr.Register.RegisterSize._128Bits), "XMM8" },
+                { (AssemblyExpr.Register.RegisterName.XMM9, AssemblyExpr.Register.RegisterSize._128Bits), "XMM9" },
+                { (AssemblyExpr.Register.RegisterName.XMM10, AssemblyExpr.Register.RegisterSize._128Bits), "XMM10" },
+                { (AssemblyExpr.Register.RegisterName.XMM11, AssemblyExpr.Register.RegisterSize._128Bits), "XMM11" },
+                { (AssemblyExpr.Register.RegisterName.XMM12, AssemblyExpr.Register.RegisterSize._128Bits), "XMM12" },
+                { (AssemblyExpr.Register.RegisterName.XMM13, AssemblyExpr.Register.RegisterSize._128Bits), "XMM13" },
+                { (AssemblyExpr.Register.RegisterName.XMM14, AssemblyExpr.Register.RegisterSize._128Bits), "XMM14" },
+                { (AssemblyExpr.Register.RegisterName.XMM15, AssemblyExpr.Register.RegisterSize._128Bits), "XMM15" },
             };
         }
 

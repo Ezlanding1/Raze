@@ -65,6 +65,7 @@ public abstract partial class AssemblyExpr
         CDQ,
         CQO,
         CMOVNZ,
+        ADDSS,
 
         // Custom Instructions
         IMOD,

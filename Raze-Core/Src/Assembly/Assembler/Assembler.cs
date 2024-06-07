@@ -15,8 +15,8 @@ public partial class Assembler :
     internal List<byte> text = new List<byte>();
     internal List<byte> data = new List<byte>();
 
-    internal int textLocation { get => text.Count; }
-    internal int dataLocation { get => data.Count; }
+    internal int TextLocation => text.Count;
+    internal int DataLocation => data.Count;
 
     internal Linker.SymbolTable symbolTable = new Linker.SymbolTable();
 
@@ -67,6 +67,14 @@ public partial class Assembler :
         {
             instructions.Add(new AddressSizeOverridePrefix());
         }
+        if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.ScalarFloatingPrefix))
+        {
+            instructions.Add(new ScalarFloatingOperationPrefix());
+        }
+        if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.DoubleFloatingPrefix))
+        {
+            instructions.Add(new DoubleFloatingOperationPrefix());
+        }
         if (Encoder.EncodingUtils.SetSizePrefix(encoding.encodingType))
         {
             instructions.Add(new InstructionOpCodeSizePrefix());
@@ -110,7 +118,7 @@ public partial class Assembler :
         if (!string.IsNullOrEmpty(instruction.name))
         {
             instruction.name = "data." + instruction.name;
-            symbolTable.definitions[instruction.name] = dataLocation;
+            symbolTable.definitions[instruction.name] = DataLocation;
         }
         IInstruction[] data = [new RawInstruction(instruction.literal.value.SelectMany(x => x).ToArray())];
         return new Instruction(data);
@@ -124,7 +132,7 @@ public partial class Assembler :
     public Instruction VisitLocalProcedure(AssemblyExpr.LocalProcedure instruction)
     {
         instruction.name = enclosingLbl + '.' + instruction.name;
-        symbolTable.definitions[instruction.name] = textLocation;
+        symbolTable.definitions[instruction.name] = TextLocation;
         symbolTable.unresolvedReferences.Add(new Linker.DefinitionInfo(instruction.name));
         return new Instruction();
     }
@@ -133,7 +141,7 @@ public partial class Assembler :
     {
         instruction.name = "text." + instruction.name;
         enclosingLbl = instruction.name;
-        symbolTable.definitions[instruction.name] = textLocation;
+        symbolTable.definitions[instruction.name] = TextLocation;
         symbolTable.unresolvedReferences.Add(new Linker.DefinitionInfo(instruction.name));
         return new Instruction();
     }
@@ -208,12 +216,17 @@ public partial class Assembler :
             encoding.AddRegisterCode(Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1));
         }
 
+        if (Encoder.EncodingUtils.SwapOperands(encoding))
+        {
+            (reg1, reg2) = (reg2, reg1);
+        }
+
         return new Instruction {
             Instructions = new IInstruction[] { 
                 new ModRegRm(
                     ModRegRm.Mod.RegisterAdressingMode,
-                    Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg2),
-                    Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1)
+                    Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1),
+                    Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg2)
                 ) 
             }
         };

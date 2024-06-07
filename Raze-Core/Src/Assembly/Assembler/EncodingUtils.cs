@@ -14,9 +14,9 @@ public partial class Assembler
         {
             private static readonly IInstruction DefaultUnresolvedReference = new Instruction.RawInstruction(new byte[] { 0 });
                 
-            internal static Instruction EncodingError()
+            internal static Exception EncodingError()
             {
-                throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Invalid/Unsupported Instruction"));
+                return Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Invalid/Unsupported Instruction"));
             }
 
             internal static Instruction.ModRegRm.RegisterCode ExprRegisterToModRegRmRegister(AssemblyExpr.Register register) => (register.Name, register.Size) switch
@@ -25,10 +25,14 @@ public partial class Assembler
                 (AssemblyExpr.Register.RegisterName.RBX, AssemblyExpr.Register.RegisterSize._8BitsUpper) => Instruction.ModRegRm.RegisterCode.BH,
                 (AssemblyExpr.Register.RegisterName.RCX, AssemblyExpr.Register.RegisterSize._8BitsUpper) => Instruction.ModRegRm.RegisterCode.CH,
                 (AssemblyExpr.Register.RegisterName.RDX, AssemblyExpr.Register.RegisterSize._8BitsUpper) => Instruction.ModRegRm.RegisterCode.DH,
-                _ => (Instruction.ModRegRm.RegisterCode)ToRegCode((int)register.Name)
+                (_, AssemblyExpr.Register.RegisterSize._8BitsUpper) => throw EncodingError(),
+                _ => (Instruction.ModRegRm.RegisterCode)ToRegCode(register.Name)
             };
 
-            private static int ToRegCode(int register) => (register < 0) ? -register - 1 : register;
+            private static int ToRegCode(AssemblyExpr.Register.RegisterName register)
+            {
+                return (int)register % 8;
+            }
 
             internal static bool SetRex(Encoding.EncodingTypes encodingType) => encodingType.HasFlag(Encoding.EncodingTypes.RexPrefix);
 
@@ -103,9 +107,14 @@ public partial class Assembler
                 bool op1R = IsRRegister(binary.operand1);
                 bool op2R = IsRRegister(binary.operand2);
 
+                if (SwapOperands(encoding))
+                {
+                    (op1R, op2R) = (op2R, op1R);
+                }
+
                 if (SetRex(encoding.encodingType) | rexw | op1R | op2R)
                 {
-                    rexPrefix = new Instruction.RexPrefix(rexw, op2R, false, op1R);
+                    rexPrefix = new Instruction.RexPrefix(rexw, op1R, false, op2R);
                     return true;
                 }
                 rexPrefix = new();
@@ -125,9 +134,23 @@ public partial class Assembler
                 return false;
             }
 
-            private static bool IsRRegister(AssemblyExpr.IOperand op)
-                => op is AssemblyExpr.Register register && (int)register.Name < 0
-                    || (op is AssemblyExpr.Pointer pointer && pointer.value.IsRegister(out var ptrReg) && (int)ptrReg.Name < 0);
+            internal static bool IsRRegister(AssemblyExpr.IOperand op)
+            {
+                if (op is AssemblyExpr.Register register)
+                {
+                    return ((int)register.Name / 8 % 2) == 1;
+                }
+                else if (op is AssemblyExpr.Pointer pointer && pointer.value.IsRegister(out var ptrReg))
+                {
+                    return ((int)ptrReg.Name / 8 % 2) == 1;
+                }
+                return false;
+            }
+
+            internal static bool SwapOperands(Encoding encoding)
+            {
+                return encoding.operands[0].type.HasFlag(Operand.OperandType.M);
+            }
 
             internal static bool SetAddressSizeOverridePrefix(AssemblyExpr.IOperand operand)
             {
@@ -161,7 +184,7 @@ public partial class Assembler
                             literal.Name = "data." + literal.Name;
                             literal.scoped = true;
                         }
-                        assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.textLocation, -1));
+                        assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.TextLocation, -1));
                     }
                     else
                     {
@@ -178,7 +201,7 @@ public partial class Assembler
                             literal.Name = "text." + literal.Name;
                             literal.scoped = true;
                         }
-                        assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.textLocation, -1));
+                        assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.TextLocation, -1));
                     }
                     else
                     {
@@ -202,7 +225,7 @@ public partial class Assembler
                             literal.Name = assembler.enclosingLbl + '.' + literal.Name;
                             literal.scoped = true;
                         }
-                        assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.textLocation, -1));
+                        assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.TextLocation, -1));
                     }
                     else
                     {

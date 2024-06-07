@@ -49,7 +49,7 @@ public partial class Assembler
                 return true;
             }
 
-            public bool SpecialMatch(AssemblyExpr assemblyExpr, params Operand[] operands)
+            public bool SpecialMatch(AssemblyExpr.OperandInstruction assemblyExpr, params Operand[] operands)
             {
                 if (encodingType.HasFlag(EncodingTypes.SignExtends) && operands.Length == 2 && operands[1].type == Operand.OperandType.IMM
                     && ((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).type < AssemblyExpr.Literal.LiteralType.RefData)
@@ -57,16 +57,35 @@ public partial class Assembler
                     switch (this.operands[1].size)
                     {
                         case Operand.OperandSize._8Bits:
-                        case Operand.OperandSize._8BitsUpper:
-                            return ((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value[0] <= sbyte.MaxValue;
+                            if (((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value[0] > sbyte.MaxValue) return false;
+                            break;
                         case Operand.OperandSize._16Bits:
-                            return BitConverter.ToInt16(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value) <= short.MaxValue;
+                            if (BitConverter.ToInt16(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value) > short.MaxValue) return false;
+                            break;
                         case Operand.OperandSize._32Bits:
-                            return BitConverter.ToInt32(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value) <= int.MaxValue;
+                            if (BitConverter.ToInt32(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value) > int.MaxValue) return false;
+                            break;
                         default:
-                            return BitConverter.ToInt64(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value) <= long.MaxValue;
+                            if (BitConverter.ToInt64(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value) > long.MaxValue) return false;
+                            break;
                     }
                 }
+
+                if (encodingType.HasFlag(EncodingTypes.NoUpper8BitEncoding))
+                {
+                    if (assemblyExpr.Operands.Any(x => x.Size == AssemblyExpr.Register.RegisterSize._8BitsUpper))
+                    {
+                        return false;
+                    }
+                }
+                else if (assemblyExpr.Operands.Any(x => x.IsRegister(out var register) && (
+                    (x.Size == AssemblyExpr.Register.RegisterSize._8Bits && register.Name >= AssemblyExpr.Register.RegisterName.RSP && register.Name <= AssemblyExpr.Register.RegisterName.RDI) ||
+                    (EncodingUtils.IsRRegister(register))
+                    )))
+                {
+                    return false;
+                }
+
                 return true;
             }
 

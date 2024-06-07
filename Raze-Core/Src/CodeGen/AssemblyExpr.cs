@@ -113,6 +113,7 @@ public abstract partial class AssemblyExpr
     {
         public enum RegisterSize
         {
+            _128Bits = 16,
             _64Bits = 8,
             _32Bits = 4,
             _16Bits = 2,
@@ -120,26 +121,45 @@ public abstract partial class AssemblyExpr
             _8Bits = 1
         }
 
-        // Register Encoding => if RRegister: -RegCode-1 else: RegCode. TMP = -9
-        public enum RegisterName : sbyte
+        public enum RegisterName
         {
-            TMP = -9,
+            TMP = -1,
+
+            // General Purpose Registers
             RAX = 0b000,
             RCX = 0b001,
             RDX = 0b010,
             RBX = 0b011,
-            RSI = 0b110,
-            RDI = 0b111,
             RSP = 0b100,
             RBP = 0b101,
-            R8 = -0b000 - 1,
-            R9 = -0b001 - 1,
-            R10 = -0b010 - 1,
-            R11 = -0b011 - 1,
-            R12 = -0b100 - 1,
-            R13 = -0b101 - 1,
-            R14 = -0b110 - 1,
-            R15 = -0b111 - 1
+            RSI = 0b110,
+            RDI = 0b111,
+            R8 = 0b000 + 8, // x64
+            R9 = 0b001 + 8,
+            R10 = 0b010 + 8,
+            R11 = 0b011 + 8,
+            R12 = 0b100 + 8,
+            R13 = 0b101 + 8,
+            R14 = 0b110 + 8,
+            R15 = 0b111 + 8,
+
+            // SEE Registers
+            XMM0 = 0b000 + 16,
+            XMM1 = 0b001 + 16,
+            XMM2 = 0b010 + 16,
+            XMM3 = 0b011 + 16,
+            XMM4 = 0b100 + 16,
+            XMM5 = 0b101 + 16,
+            XMM6 = 0b110 + 16,
+            XMM7 = 0b111 + 16,
+            XMM8 = 0b000 + 24, // x64
+            XMM9 = 0b001 + 24,
+            XMM10 = 0b010 + 24,
+            XMM11 = 0b011 + 24,
+            XMM12 = 0b100 + 24,
+            XMM13 = 0b101 + 24,
+            XMM14 = 0b110 + 24,
+            XMM15 = 0b111 + 24,
         }
 
         public StrongBox<RegisterName> nameBox;
@@ -179,7 +199,7 @@ public abstract partial class AssemblyExpr
 
         public Assembler.Encoder.Operand ToAssemblerOperand()
         {
-            return new(Assembler.Encoder.Operand.RegisterOperandType(this), (int)Size);
+            return Assembler.Encoder.Operand.RegisterOperandType(this);
         }
 
         public T Accept<T>(IBinaryOperandVisitor<T> visitor, IOperand operand)

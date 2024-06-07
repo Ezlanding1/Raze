@@ -18,7 +18,7 @@ public partial class Assembler
 
                 if (operandsStrings.Length < 2)
                 {
-                    return new Operand[0];
+                    return Array.Empty<Operand>();
                 }
 
                 operandsStrings = operandsStrings[1].Split(", ");
@@ -33,35 +33,40 @@ public partial class Assembler
                         subStrIdx++;
                     }
 
-                    operands[i] = operandsStrings[i].Substring(0, subStrIdx).ToUpper() switch
+                    operands[i] = operandsStrings[i][..subStrIdx].ToUpper() switch
                     {
                         "R" => new Operand(Operand.OperandType.R, ToSize(operandsStrings[i], subStrIdx)),
                         "M" => new Operand(Operand.OperandType.M, ToSize(operandsStrings[i], subStrIdx)),
                         "RM" => new Operand(Operand.OperandType.R | Operand.OperandType.M, ToSize(operandsStrings[i], subStrIdx)),
                         "IMM" => new Operand(Operand.OperandType.IMM, ToSize(operandsStrings[i], subStrIdx)),
-                        "AL" => new Operand(Operand.OperandType.A, Operand.OperandSize._8Bits),
-                        "AX" => new Operand(Operand.OperandType.A, Operand.OperandSize._16Bits),
-                        "EAX" => new Operand(Operand.OperandType.A, Operand.OperandSize._32Bits),
-                        "RAX" => new Operand(Operand.OperandType.A, Operand.OperandSize._64Bits),
-                        "P" => new Operand(Operand.OperandType.P, Operand.OperandSize._8Bits),
+                        "AL" => new Operand(Operand.OperandType.A, ConstantSize(operandsStrings[i], subStrIdx, Operand.OperandSize._8Bits)),
+                        "AX" => new Operand(Operand.OperandType.A, ConstantSize(operandsStrings[i], subStrIdx, Operand.OperandSize._16Bits)),
+                        "EAX" => new Operand(Operand.OperandType.A, ConstantSize(operandsStrings[i], subStrIdx, Operand.OperandSize._32Bits)),
+                        "RAX" => new Operand(Operand.OperandType.A, ConstantSize(operandsStrings[i], subStrIdx, Operand.OperandSize._64Bits)),
                         "MOFFS" => new Operand(Operand.OperandType.MOFFS, ToSize(operandsStrings[i], subStrIdx)),
+                        "XMM" => new Operand(Operand.OperandType.XMM, ConstantSize(operandsStrings[i], subStrIdx, Operand.OperandSize._128Bits)),
                         _ => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Invalid Encoding Type '{instruction}'")),
                     };
-                    ;
-
-
                 }
                 return operands;
 
-                Operand.OperandSize ToSize(string size, int start)
+                Operand.OperandSize ConstantSize(string sizeStr, int start, Operand.OperandSize size)
                 {
-                    return size.Substring(start, size.Length - start) switch
+                    if (sizeStr.Length > start)
+                    {
+                        throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Invalid Encoding Type '{instruction}'"));
+                    }
+                    return size;
+                }
+
+                Operand.OperandSize ToSize(string sizeStr, int start)
+                {
+                    return sizeStr[start..] switch
                     {
                         "64" => Operand.OperandSize._64Bits,
                         "32" => Operand.OperandSize._32Bits,
                         "16" => Operand.OperandSize._16Bits,
                         "8" => Operand.OperandSize._8Bits,
-                        "8U" => Operand.OperandSize._8BitsUpper,
                         _ => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Invalid Encoding Type '{instruction}'")),
                     };
                 }
