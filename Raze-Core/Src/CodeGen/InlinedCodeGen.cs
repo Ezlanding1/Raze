@@ -93,40 +93,48 @@ public class InlinedCodeGen : CodeGen
 
         inlineState = new InlineStateInlined(inlineState, expr.internalFunction);
 
-        AssemblyExpr.IValue? instanceArg = null;
+        AssemblyExpr.IValue? enclosingThisStackDataValue = null;
+        bool lastThisIsLocked = false;
 
         if (!expr.internalFunction.modifiers["static"])
         {
+            enclosingThisStackDataValue = Expr.DataType._this.value;
+            Expr.DataType._this.inlinedData = true;
+
             if (!expr.constructor)
             {
                 if (expr.callee != null)
                 {
-                    instanceArg = expr.callee.Accept(this);
+                    Expr.DataType._this.value = expr.callee.Accept(this);
                 }
                 else
                 {
                     var enclosing = SymbolTableSingleton.SymbolTable.NearestEnclosingClass(expr.internalFunction);
                     var size = enclosing.allocSize;
-                    instanceArg = new AssemblyExpr.Pointer(8, size);
+                    Expr.DataType._this.value = new AssemblyExpr.Pointer(8, size);
                 }
             }
             else
             {
-                instanceArg = alloc.CurrentRegister(InstructionUtils.SYS_SIZE);
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, instanceArg, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RBX, InstructionUtils.SYS_SIZE)));
+                Expr.DataType._this.value = alloc.GetRegister(alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RBX), InstructionUtils.SYS_SIZE);
             }
 
-            if (instanceArg.IsRegister(out var register))
+
+            if (Expr.DataType._this.value.IsRegister(out var register))
             {
+                lastThisIsLocked = !alloc.IsLocked(alloc.NameToIdx(register.Name));
                 alloc.Lock(register);
             }
+
         }
 
         var ret = HandleInvokable(expr);
 
-        if (instanceArg != null)
+        if (enclosingThisStackDataValue != null)
         {
-            alloc.Free(instanceArg, true);
+            Expr.DataType._this.inlinedData = false;
+            alloc.Free(Expr.DataType._this.value, lastThisIsLocked);
+            Expr.DataType._this.value = enclosingThisStackDataValue;
         }
 
         inlineState = inlineState.lastState;

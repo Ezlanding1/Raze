@@ -205,7 +205,8 @@ public partial class Analyzer
                             if (key.lexeme == "this")
                             {
                                 isClassScoped = false;
-                                return x._this;
+                                Expr.DataType._this.type = x;
+                                return Expr.DataType._this;
                             }
                         }
                         break;
@@ -214,7 +215,8 @@ public partial class Analyzer
                             if (key.lexeme == "this")
                             {
                                 isClassScoped = false;
-                                return x._this;
+                                Expr.DataType._this.type = x;
+                                return Expr.DataType._this;
                             }
                         }
                         break;

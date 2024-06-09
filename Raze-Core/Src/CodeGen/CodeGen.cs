@@ -361,7 +361,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         if (expr.classScoped)
         {
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, (register = alloc.NextRegister(InstructionUtils.SYS_SIZE)), new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, (int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE)));
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, (register = alloc.NextRegister(InstructionUtils.SYS_SIZE)), Expr.DataType._this.value));
         }
 
         var stack = expr.datas[0];

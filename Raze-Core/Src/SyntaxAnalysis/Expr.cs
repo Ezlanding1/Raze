@@ -467,6 +467,18 @@ public abstract class Expr
         }
     }
 
+    public class ThisStackData : StackData
+    {
+        public ThisStackData()
+        {
+            value = new AssemblyExpr.Pointer(8, AssemblyExpr.Register.RegisterSize._64Bits);
+        }
+        public ThisStackData(AssemblyExpr.IValue value)
+        {
+            this.value = value;
+        }
+    }
+
     public class Keyword : Expr
     {
         public string keyword;
@@ -646,15 +658,13 @@ public abstract class Expr
 
         public List<Definition> definitions;
 
-        public StackData _this = new();
+        public static ThisStackData _this = new();
 
         public abstract int allocSize { get; }
 
         public DataType(Token name, List<Definition> definitions) : base(name)
         {
             this.definitions = definitions;
-            this._this.type = this;
-            this._this.value = new AssemblyExpr.Pointer(8, AssemblyExpr.Register.RegisterSize._64Bits);
         }
 
         public DataType(Token name, List<Definition> definitions, int size) : this(name, definitions)
