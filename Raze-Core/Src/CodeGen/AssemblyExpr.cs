@@ -63,25 +63,45 @@ public abstract partial class AssemblyExpr
         public bool IsPointer(out Pointer pointer) { pointer = this as Pointer; return pointer != null; }
         public bool IsLiteral(out ILiteralBase literal) { literal = this as ILiteralBase; return literal != null; }
 
-        internal Register NonPointerNonLiteral(CodeGen assembler) =>
-            (Register)this.NonPointer(assembler).NonLiteral(assembler);
+        internal Register NonPointerNonLiteral(CodeGen assembler, Expr.Type? type) =>
+            (Register)this.NonPointer(assembler, type).NonLiteral(assembler, type);
 
-        public IRegisterLiteral NonPointer(CodeGen assembler)
+        public IRegisterLiteral NonPointer(CodeGen codeGen, Expr.Type? type)
         {
             if (IsPointer(out var ptr))
             {
-                Register reg = ptr.AsRegister(assembler);
-                assembler.Emit(new Binary(Instruction.MOV, reg, this));
+                Register reg;
+                if (CodeGen.IsFloatingType(type))
+                {
+                    codeGen.alloc.Free(ptr);
+                    reg = codeGen.alloc.NextSseRegister();
+                    codeGen.Emit(new Binary(Instruction.MOVSS, reg, this));
+                }
+                else
+                {
+                    reg = ptr.AsRegister(codeGen);
+                    codeGen.Emit(new Binary(Instruction.MOV, reg, this));
+                }
                 return reg;
             }
             return (IRegisterLiteral)this;
         }
-        internal IRegisterPointer NonLiteral(CodeGen assembler)
+        internal IRegisterPointer NonLiteral(CodeGen codeGen, Expr.Type? type)
         {
             if (IsLiteral())
             {
-                assembler.Emit(new Binary(Instruction.MOV, assembler.alloc.CurrentRegister(Size), this));
-                return assembler.alloc.NextRegister(Size);
+                Register reg;
+                if (CodeGen.IsFloatingType(type))
+                {
+                    reg = codeGen.alloc.NextSseRegister();
+                    codeGen.Emit(new Binary(Instruction.MOVSS, reg, ((Literal)this).PutFloatLiteralOnDataSection(codeGen)));
+                }
+                else
+                {
+                    reg = codeGen.alloc.NextRegister(Size);
+                    codeGen.Emit(new Binary(Instruction.MOV, reg, this));
+                }
+                return reg;
             }
             return (IRegisterPointer)this;
         }
@@ -187,6 +207,8 @@ public abstract partial class AssemblyExpr
             this.nameBox = _name;
             this.Size = size;
         }
+
+        internal static bool IsSseRegister(RegisterName name) => name >= RegisterName.XMM0 && name <= RegisterName.XMM15;
 
         public Register GetRegister() => this;
         public Register AsRegister(CodeGen assembler) => (Register)Clone();
@@ -369,6 +391,21 @@ public abstract partial class AssemblyExpr
         }
 
         public Literal CreateLiteral(Register.RegisterSize size) => this;
+
+        public IValue PutFloatLiteralOnDataSection(CodeGen codeGen)
+        {
+            codeGen.EmitData(new Data(
+                codeGen.DataLabel,
+                this
+            ));
+            var ptr = new Pointer(
+                new DataRef(codeGen.CreateDatalLabel(codeGen.dataCount++)),
+                0,
+                this.Size
+            );
+            return ptr;
+        }
+
 
         public T Accept<T>(IUnaryOperandVisitor<T> visitor)
         {

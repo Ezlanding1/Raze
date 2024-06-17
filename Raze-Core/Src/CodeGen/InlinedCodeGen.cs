@@ -180,7 +180,7 @@ public class InlinedCodeGen : CodeGen
         HandleInlinedReturnOptimization();
 
         alloc.RemoveBlock();
-        return HandleRefVariableDeref(invokable.internalFunction.refReturn, ret);
+        return HandleRefVariableDeref(invokable.internalFunction.refReturn, ret, invokable.internalFunction._returnType.type);
     }
 
     public override AssemblyExpr.IValue? VisitAssignExpr(Expr.Assign expr)
@@ -205,7 +205,7 @@ public class InlinedCodeGen : CodeGen
 
         if (((Expr.Binary)expr.value).internalFunction.parameters[0].stack.value != operand2)
         {
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, ((Expr.Binary)expr.value).internalFunction.parameters[0].stack.value, operand2));
+            Emit(new AssemblyExpr.Binary(GetMoveInstruction(type: expr.member.GetLastType()), ((Expr.Binary)expr.value).internalFunction.parameters[0].stack.value, operand2));
         }
 
         alloc.Free(operand2);
@@ -222,10 +222,10 @@ public class InlinedCodeGen : CodeGen
 
         if (!expr.IsVoid(((InlineStateInlined)inlineState).currentInlined))
         {
-            AssemblyExpr.Instruction instruction = alloc.current is Expr.Function function ?
-                GetMoveInstruction(function.refReturn) :
-                AssemblyExpr.Instruction.MOV;
+            var function = ((InlineStateInlined)inlineState).currentInlined;
 
+            AssemblyExpr.Instruction instruction = GetMoveInstruction(function.refReturn, function._returnType.type);
+                
             var returnSize = InstructionUtils.ToRegisterSize(((InlineStateInlined)inlineState).currentInlined._returnType.type.allocSize);
             AssemblyExpr.IValue operand = expr.value.Accept(this).IfLiteralCreateLiteral(returnSize);
 
@@ -234,19 +234,21 @@ public class InlinedCodeGen : CodeGen
                 (instruction, operand) = PreserveRefPtrVariable(expr.value, (AssemblyExpr.Pointer)operand);
             }
 
-            if (((InlineStateInlined)inlineState).callee == null)
+            ref var callee = ref ((InlineStateInlined)inlineState).callee;
+
+            if (callee == null)
             {
                 alloc.Free(operand);
-                ((InlineStateInlined)inlineState).callee = alloc.NextRegister(returnSize);
-
+                ((InlineStateInlined)inlineState).callee = alloc.NextRegister(returnSize, function._returnType.type);
             }
+
             if (operand.IsRegister(out var op))
             {
-                if (op.Name != ((AssemblyExpr.Register)((InlineStateInlined)inlineState).callee).Name)
+                if (!callee.IsRegister(out var reg) || op.Name != reg.Name)
                 {
-                    if (!(HandleSeteOptimization((AssemblyExpr.Register)operand, ((InlineStateInlined)inlineState).callee)))
+                    if (!HandleSeteOptimization(op, callee))
                     {
-                        Emit(new AssemblyExpr.Binary(instruction, new AssemblyExpr.Register(((AssemblyExpr.Register)((InlineStateInlined)inlineState).callee).Name, op.Size), operand));
+                        Emit(new AssemblyExpr.Binary(instruction, callee, operand));
                     }
                 }
             }
@@ -315,13 +317,13 @@ public class InlinedCodeGen : CodeGen
     {
         if (arg.IsLiteral(out var literal) && !parameter.modifiers["inlineRef"])
         {
-            return ((AssemblyExpr.IValue)literal.CreateLiteral((AssemblyExpr.Register.RegisterSize)parameter.stack.size)).NonLiteral(this);
+            return ((AssemblyExpr.IValue)literal.CreateLiteral((AssemblyExpr.Register.RegisterSize)parameter.stack.size)).NonLiteral(this, parameter.stack.type);
         }
         if (IsRefParameter(parameter))
         {
             return arg;
         }
-        return arg.NonPointer(this);
+        return arg.NonPointer(this, parameter.stack.type);
     }
     private bool IsRefParameter(Expr.Parameter parameter)
     {

@@ -4,42 +4,45 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
 
 namespace Raze;
 public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 {
     internal partial class RegisterAlloc
     {
-        private int RegisterIdx
+        private int GetRegisterIdx(int start, int end)
         {
-            get
+            for (int i = start; i < end; i++)
             {
-                for (int i = 0; i < registerStates.Length; i++)
-                {
-                    if (registerStates[i].HasState(RegisterState.RegisterStates.Free)) { return i; }
-                }
-                throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Requesting stack memory using the RegisterAlloc class is not implemented in this version of the compiler"));
+                if (registerStates[i].HasState(RegisterState.RegisterStates.Free)) 
+                    return i;
             }
+            throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Requesting stack memory using the RegisterAlloc class is not implemented in this version of the compiler"));
         }
+        private int RegisterIdx => GetRegisterIdx(0, InstructionUtils.SseRegisterOffset);
+        private int PreservedRegisterIdx => GetRegisterIdx(InstructionUtils.NonSseScratchRegisterCount, InstructionUtils.SseRegisterOffset);
+        private int SseRegisterIdx => GetRegisterIdx(InstructionUtils.SseRegisterOffset, InstructionUtils.storageRegisters.Length);
 
-        RegisterState[] registerStates = InstructionUtils.storageRegisters.Select(x => new RegisterState()).ToArray();
-        (AssemblyExpr.Register.RegisterSize neededSize, int idx)[] preservedRegisterInfo = 
-            InstructionUtils.storageRegisters.Where(x => x.IsScratchRegister).Select(x => ((AssemblyExpr.Register.RegisterSize)0, 0)).ToArray();
+        readonly RegisterState[] registerStates = InstructionUtils.storageRegisters.Select(x => new RegisterState()).ToArray();
 
-        StrongBox<AssemblyExpr.Register.RegisterName>?[] registers = new StrongBox<AssemblyExpr.Register.RegisterName>[InstructionUtils.storageRegisters.Length];
+        readonly (AssemblyExpr.Register.RegisterSize neededSize, int idx)[] reservedRegisterInfo =
+           InstructionUtils.storageRegisters.Select(x => ((AssemblyExpr.Register.RegisterSize)0, 0)).ToArray();
+
+        readonly StrongBox<AssemblyExpr.Register.RegisterName>?[] registers = new StrongBox<AssemblyExpr.Register.RegisterName>[InstructionUtils.storageRegisters.Length];
 
         public FunctionPushPreserved fncPushPreserved;
 
         public AssemblyExpr.Register GetRegister(int idx, AssemblyExpr.Register.RegisterSize size)
         {
-            if (registers[idx] == null)
-            {
-                registers[idx] = new(InstructionUtils.storageRegisters[idx].Name);
-            }
+            registers[idx] ??= new(InstructionUtils.storageRegisters[idx].Name);
             registerStates[idx].SetState(RegisterState.RegisterStates.Used);
 
-            return new AssemblyExpr.Register(registers[idx], size);
+            return new AssemblyExpr.Register(registers[idx], AssemblyExpr.Register.IsSseRegister(registers[idx].Value) ? AssemblyExpr.Register.RegisterSize._128Bits : size);
         }
+
+        public AssemblyExpr.Register NextRegister(AssemblyExpr.Register.RegisterSize size, Expr.Type? type) => 
+            IsFloatingType(type) ? NextSseRegister() : NextRegister(size);
 
         public AssemblyExpr.Register NextRegister(AssemblyExpr.Register.RegisterSize size)
         {
@@ -48,6 +51,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                 fncPushPreserved.IncludeRegister(RegisterIdx);
             }
             return GetRegister(RegisterIdx, size);
+        }
+
+        public AssemblyExpr.Register NextSseRegister()
+        {
+            return GetRegister(SseRegisterIdx, AssemblyExpr.Register.RegisterSize._128Bits);
         }
 
         // Makes all subsequent register requests for register[idx] pull from a new instance (while not modifying used[idx])
@@ -65,15 +73,14 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         private int NextPreservedRegisterIdx()
         {
-            int idx = InstructionUtils.ScratchRegisterCount;
-            while (!registerStates[idx].HasState(RegisterState.RegisterStates.Free)) { idx++; }
+            int idx = PreservedRegisterIdx;
             fncPushPreserved.IncludeRegister(idx);
             return idx;
         }
 
         public void SaveScratchRegistersBeforeCall(CodeGen codeGen, int arity)
         {
-            for (int i = 0; i < InstructionUtils.ScratchRegisterCount; i++)
+            for (int i = 0; i < InstructionUtils.NonSseScratchRegisterCount; i++)
             {
                 if (registerStates[i].HasState(RegisterState.RegisterStates.Free) || 
                     InstructionUtils.paramRegister[..Math.Min(arity, InstructionUtils.paramRegister.Length)].Contains(InstructionUtils.storageRegisters[i].Name))
@@ -105,10 +112,15 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                 return;
             }
 
+            if (i >= InstructionUtils.SseRegisterOffset)
+            {
+                throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Requesting stack memory using the RegisterAlloc class is not implemented in this version of the compiler"));
+            }
+
             registers[newIdx] = registers[i];
             if (registerStates[i].HasState(RegisterState.RegisterStates.Needed))
             {
-                assembler.assembly.text.Insert(preservedRegisterInfo[i].idx, new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, GetRegister(newIdx, preservedRegisterInfo[i].neededSize), new AssemblyExpr.Register(InstructionUtils.storageRegisters[i].Name, preservedRegisterInfo[i].neededSize)));
+                assembler.assembly.text.Insert(reservedRegisterInfo[i].idx, new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, GetRegister(newIdx, reservedRegisterInfo[i].neededSize), new AssemblyExpr.Register(InstructionUtils.storageRegisters[i].Name, reservedRegisterInfo[i].neededSize)));
                 registerStates[i].RemoveState(RegisterState.RegisterStates.Needed);
             }
             registers[newIdx].Value = InstructionUtils.storageRegisters[newIdx].Name;
@@ -117,9 +129,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             Free(i, true);
         }
 
-        public AssemblyExpr.Register AllocParam(int i, AssemblyExpr.Register.RegisterSize size, AssemblyExpr.Register[] localParams, CodeGen codeGen)
+        public AssemblyExpr.Register AllocParam(int i, AssemblyExpr.Register.RegisterSize size, AssemblyExpr.Register[] localParams, Expr.Type? type, CodeGen codeGen)
         {
-            int idx = NameToIdx(InstructionUtils.paramRegister[i]);
+            int idx = NameToIdx(IsFloatingType(type) ? InstructionUtils.storageRegisters[i + InstructionUtils.SseRegisterOffset].Name : InstructionUtils.paramRegister[i]);
             if (!registerStates[idx].HasState(RegisterState.RegisterStates.Free))
             {
                 int newIdx = NextPreservedRegisterIdx();
@@ -131,7 +143,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         public AssemblyExpr.Register NeededAlloc(AssemblyExpr.Register.RegisterSize size, CodeGen codeGen, int i = 0)
         {
-            (preservedRegisterInfo[i].neededSize, preservedRegisterInfo[i].idx) = (size, codeGen.assembly.text.Count);
+            (reservedRegisterInfo[i].neededSize, reservedRegisterInfo[i].idx) = (size, codeGen.assembly.text.Count);
             registerStates[i].SetState(RegisterState.RegisterStates.Needed);
             return GetRegister(i, size);
         }
@@ -168,10 +180,14 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         public void FreeParameter(int i, AssemblyExpr.Register localParam, CodeGen assembler)
         {
-            Free(NameToIdx(InstructionUtils.paramRegister[i]));
-            if (localParam.Name != InstructionUtils.paramRegister[i])
+            var regName = AssemblyExpr.Register.IsSseRegister(localParam.Name) ? 
+                InstructionUtils.storageRegisters[i + InstructionUtils.SseRegisterOffset].Name : 
+                InstructionUtils.paramRegister[i];
+
+            Free(NameToIdx(regName));
+            if (localParam.Name != regName)
             {
-                assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(InstructionUtils.paramRegister[i], localParam.Size), localParam));
+                assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(regName, localParam.Size), localParam));
                 Free(NameToIdx(localParam.Name));
             }
         }

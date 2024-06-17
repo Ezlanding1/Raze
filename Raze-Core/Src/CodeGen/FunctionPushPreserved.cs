@@ -12,6 +12,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
     internal class FunctionPushPreserved
     {
         public bool leaf = true;
+        
         bool[] registers = new bool[InstructionUtils.storageRegisters.Length - InstructionUtils.ScratchRegisterCount];
         public int size;
         int count;
@@ -22,7 +23,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             this.count = count;
         }
 
-        public void IncludeRegister(int idx) => registers[idx - InstructionUtils.ScratchRegisterCount] = true;
+        public void IncludeRegister(int idx) => registers[idx - InstructionUtils.NonSseScratchRegisterCount] = true;
 
         public void GenerateHeader(ISection.Text assemblyExprs)
         {
@@ -44,7 +45,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             {
                 if (registers[i])
                     assemblyExprs.Insert(count++,
-                        new AssemblyExpr.Unary(AssemblyExpr.Instruction.PUSH, new AssemblyExpr.Register(InstructionUtils.storageRegisters[i + InstructionUtils.ScratchRegisterCount].Name, AssemblyExpr.Register.RegisterSize._64Bits)));
+                        new AssemblyExpr.Unary(AssemblyExpr.Instruction.PUSH, new AssemblyExpr.Register(InstructionUtils.storageRegisters[i + InstructionUtils.NonSseScratchRegisterCount].Name, AssemblyExpr.Register.RegisterSize._64Bits)));
             }
         }
 
@@ -53,7 +54,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             for (int i = registers.Length - 1; i >= 0; i--)
             {
                 if (registers[i])
-                    assemblyExprs.Insert(location++, new AssemblyExpr.Unary(AssemblyExpr.Instruction.POP, new AssemblyExpr.Register(InstructionUtils.storageRegisters[i + InstructionUtils.ScratchRegisterCount].Name, AssemblyExpr.Register.RegisterSize._64Bits)));
+                    assemblyExprs.Insert(location++, new AssemblyExpr.Unary(AssemblyExpr.Instruction.POP, new AssemblyExpr.Register(InstructionUtils.storageRegisters[i + InstructionUtils.NonSseScratchRegisterCount].Name, AssemblyExpr.Register.RegisterSize._64Bits)));
             }
 
             assemblyExprs.Insert(location++,

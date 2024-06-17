@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Raze.Tools;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,7 +15,6 @@ internal abstract partial class ExprUtils
         public abstract (int, int) GetAssigningVars();
         public abstract bool HasReturn();
 
-
         public class Binary(AssemblyExpr.Binary instruction, Binary.AssignType assignType, bool returns) : AssignableInstruction
         {
             [Flags]
@@ -27,6 +27,39 @@ internal abstract partial class ExprUtils
             public AssignType assignType = assignType;
             public bool returns = returns;
             public AssemblyExpr.Binary instruction = instruction;
+
+            internal static Expr.Type GetTypeNoVars(AssemblyExpr.IValue operand)
+            {
+                return (operand.IsRegister(out var reg) && AssemblyExpr.Register.IsSseRegister(reg.Name)) ?
+                    Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Floating] :
+                    Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Integer];
+            }
+
+            public Expr.Type GetOp1TypeUnInc(AssemblyOps assemblyOps)
+            {
+                return assignType.HasFlag(AssignType.AssignFirst) ?
+                    assemblyOps.vars[assemblyOps.count - 1].Item2.GetLastType() :
+                    GetTypeNoVars(instruction.operand1);
+            }
+            public Expr.Type GetOp1Type(AssemblyOps assemblyOps)
+            {
+                if (assignType.HasFlag(AssignType.AssignFirst))
+                {
+                    return assignType.HasFlag(AssignType.AssignSecond) ?
+                        assemblyOps.vars[assemblyOps.count - 2].Item2.GetLastType() :
+                        assemblyOps.vars[assemblyOps.count - 1].Item2.GetLastType();
+                }
+                else
+                {
+                    return GetTypeNoVars(instruction.operand1);
+                }
+            }
+            public Expr.Type GetOp2Type(AssemblyOps assemblyOps)
+            {
+                return assignType.HasFlag(AssignType.AssignSecond) ?
+                    assemblyOps.vars[assemblyOps.count - 1].Item2.GetLastType() :
+                    GetTypeNoVars(instruction.operand1);
+            }
 
             public override void Assign(AssemblyOps assemblyOps)
             {
@@ -69,6 +102,9 @@ internal abstract partial class ExprUtils
                     case AssemblyExpr.Instruction.ULE_CMP:
                         AssemblyOps.Binary.CMP(this, assemblyOps);
                         return;
+                    case AssemblyExpr.Instruction.ADDSS:
+                        AssemblyOps.Binary.DefaultFloatingOp(this, assemblyOps);
+                        return;
                     default:
                         Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.UnsupportedInstruction, instruction.instruction));
                         return;
@@ -89,6 +125,8 @@ internal abstract partial class ExprUtils
                     AssemblyExpr.Instruction.XOR or 
                     AssemblyExpr.Instruction.LEA or
                     AssemblyExpr.Instruction.SAL or
+                    AssemblyExpr.Instruction.ADDSS or
+                    AssemblyExpr.Instruction.MOVSS or
                     AssemblyExpr.Instruction.SAR => (variablesUsed, (int)AssignType.AssignFirst),                                                                                                                                                                                                                                                                                                                                       //case "MOD":
                     _ => (variablesUsed, (int)AssignType.AssignNone),
                 };
@@ -110,6 +148,13 @@ internal abstract partial class ExprUtils
 
             public AssemblyExpr.Unary instruction = instruction;
 
+            public Expr.Type GetOpType(AssemblyOps assemblyOps)
+            {
+                return assignType.HasFlag(AssignType.AssignFirst) ?
+                    assemblyOps.vars[assemblyOps.count - 1].Item2.GetLastType() :
+                    Binary.GetTypeNoVars(instruction.operand);
+            }
+
             public override void Assign(AssemblyOps assemblyOps)
             {
                 switch (instruction.instruction)
@@ -123,6 +168,9 @@ internal abstract partial class ExprUtils
                         return;
                     case AssemblyExpr.Instruction.RETURN:
                         AssemblyOps.Unary.RETURN(this, assemblyOps);
+                        break;
+                    case AssemblyExpr.Instruction.CVTTSS2SI:
+                        AssemblyOps.Unary.CVTTSS2SI(this, assemblyOps);
                         break;
                     default:
                         Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.UnsupportedInstruction, instruction.instruction));

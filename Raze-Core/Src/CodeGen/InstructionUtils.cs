@@ -60,9 +60,30 @@ public class InstructionUtils
         (AssemblyExpr.Register.RegisterName.R12, false),
         (AssemblyExpr.Register.RegisterName.R13, false),
         (AssemblyExpr.Register.RegisterName.R14, false),
-        (AssemblyExpr.Register.RegisterName.R15, false)
+        (AssemblyExpr.Register.RegisterName.R15, false),
+
+
+        (AssemblyExpr.Register.RegisterName.XMM0, true),
+        (AssemblyExpr.Register.RegisterName.XMM1, true),
+        (AssemblyExpr.Register.RegisterName.XMM2, true),
+        (AssemblyExpr.Register.RegisterName.XMM3, true),
+        (AssemblyExpr.Register.RegisterName.XMM4, true),
+        (AssemblyExpr.Register.RegisterName.XMM5, true),
+        (AssemblyExpr.Register.RegisterName.XMM6, true),
+        (AssemblyExpr.Register.RegisterName.XMM7, true),
+        (AssemblyExpr.Register.RegisterName.XMM8, true),
+        (AssemblyExpr.Register.RegisterName.XMM9, true),
+        (AssemblyExpr.Register.RegisterName.XMM10, true),
+        (AssemblyExpr.Register.RegisterName.XMM11, true),
+        (AssemblyExpr.Register.RegisterName.XMM12, true),
+        (AssemblyExpr.Register.RegisterName.XMM13, true),
+        (AssemblyExpr.Register.RegisterName.XMM14, true),
+        (AssemblyExpr.Register.RegisterName.XMM15, true),
     };
     internal readonly static int ScratchRegisterCount = storageRegisters.Where(x => x.IsScratchRegister).Count();
+    internal readonly static int NonSseScratchRegisterCount = storageRegisters.Where(x => x.Name < AssemblyExpr.Register.RegisterName.XMM0 && x.IsScratchRegister).Count();
+    internal readonly static int SseRegisterOffset = storageRegisters.ToList().FindIndex(x => x.Name >= AssemblyExpr.Register.RegisterName.XMM0);
+
 
     internal readonly static Dictionary<string, (AssemblyExpr.Register.RegisterName, AssemblyExpr.Register.RegisterSize)> Registers = new()
     {

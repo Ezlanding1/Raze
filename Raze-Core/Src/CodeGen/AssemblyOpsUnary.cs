@@ -58,7 +58,7 @@ internal partial class AssemblyOps
         }
         private static AssemblyExpr.IValue HandleOperand(ExprUtils.AssignableInstruction.Unary instruction, AssemblyOps assemblyOps)
         {
-            return HandleOperandUnsafe(instruction, assemblyOps).NonLiteral(assemblyOps.assembler);
+            return HandleOperandUnsafe(instruction, assemblyOps).NonLiteral(assemblyOps.assembler, instruction.GetOpType(assemblyOps));
         }
 
         public static void DefaultOp(ExprUtils.AssignableInstruction.Unary instruction, AssemblyOps assemblyOps)
@@ -86,7 +86,7 @@ internal partial class AssemblyOps
                 return;
             }
 
-            AssemblyExpr.IValue deref = new AssemblyExpr.Pointer((AssemblyExpr.Register)operand.NonPointer(assemblyOps.assembler), 0, 1);
+            AssemblyExpr.IValue deref = new AssemblyExpr.Pointer((AssemblyExpr.Register)operand.NonPointer(assemblyOps.assembler, instruction.GetOpType(assemblyOps)), 0, 1);
 
             if (instruction.returns && assemblyOps.assembler is InlinedCodeGen)
             {
@@ -106,6 +106,22 @@ internal partial class AssemblyOps
             if (instruction.returns && assemblyOps.assembler is InlinedCodeGen)
             {
                 ReturnOp(ref operand, instruction.assignType, assemblyOps);
+            }
+
+            if (instruction.assignType == ExprUtils.AssignableInstruction.Unary.AssignType.AssignFirst)
+                assemblyOps.assembler.alloc.Free(operand);
+        }
+        
+        public static void CVTTSS2SI(ExprUtils.AssignableInstruction.Unary instruction, AssemblyOps assemblyOps)
+        {
+            AssemblyExpr.IValue operand = HandleOperand(instruction, assemblyOps);
+            AssemblyExpr.IValue returnReg = assemblyOps.assembler.alloc.NextRegister(InstructionUtils.ToRegisterSize((instruction.GetOpType(assemblyOps) as Expr.DataType)?.size ?? 8));
+
+            assemblyOps.assembler.Emit(new AssemblyExpr.Binary(instruction.instruction.instruction, returnReg, operand));
+
+            if (instruction.returns && assemblyOps.assembler is InlinedCodeGen)
+            {
+                ReturnOp(ref returnReg, instruction.assignType, assemblyOps);
             }
 
             if (instruction.assignType == ExprUtils.AssignableInstruction.Unary.AssignType.AssignFirst)

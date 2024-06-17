@@ -13,24 +13,28 @@ internal partial class AssemblyOps
 
     internal static class Binary
     {
-        public static void ReturnOp(ref AssemblyExpr.IValue operand, ExprUtils.AssignableInstruction.Binary.AssignType assignType, AssemblyOps assemblyOps, bool first)
+        public static void ReturnOp(ref AssemblyExpr.IValue operand, AssemblyOps assemblyOps, Expr.Type? type)
         {
             if (((InlinedCodeGen)assemblyOps.assembler).inlineState.inline)
             {
-                var nonLiteral = operand.NonLiteral(assemblyOps.assembler);
+                var nonLiteral = operand.NonLiteral(assemblyOps.assembler, type);
                 ((InlinedCodeGen.InlineStateInlined)((InlinedCodeGen)assemblyOps.assembler).inlineState).callee = nonLiteral;
                 ((InlinedCodeGen)assemblyOps.assembler).LockOperand(nonLiteral);
             }
             else
             {
+                (var instruction, var _returnRegister) = CodeGen.IsFloatingType(type) ?
+                    (AssemblyExpr.Instruction.MOVSS, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.XMM0, AssemblyExpr.Register.RegisterSize._128Bits)) :
+                    (AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, operand.Size));
+
                 if (operand.IsRegister(out var op))
                 {
-                    if (op.Name != AssemblyExpr.Register.RegisterName.RAX)
-                        assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, op.Size), operand));
+                    if (op.Name != _returnRegister.Name)
+                        assemblyOps.assembler.Emit(new AssemblyExpr.Binary(instruction, _returnRegister, operand));
                 }
                 else
                 {
-                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, operand.Size), operand));
+                    assemblyOps.assembler.Emit(new AssemblyExpr.Binary(instruction, _returnRegister, operand));
                 }
             }
         }
@@ -43,7 +47,7 @@ internal partial class AssemblyOps
         }
         public static AssemblyExpr.IValue HandleOperand1(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
-            return HandleOperand1Unsafe(instruction, assemblyOps).NonLiteral(assemblyOps.assembler);
+            return HandleOperand1Unsafe(instruction, assemblyOps).NonLiteral(assemblyOps.assembler, instruction.GetOp1TypeUnInc(assemblyOps));
         }
 
         public static AssemblyExpr.IValue HandleOperand2Unsafe(ExprUtils.AssignableInstruction.Binary instruction, AssemblyExpr.IValue operand1, AssemblyOps assemblyOps)
@@ -62,19 +66,17 @@ internal partial class AssemblyOps
                     instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst) &&
                     instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))
                 {
-                    Expr.Type op1Type = assemblyOps.vars[assemblyOps.vars.Count - 2].Item2.GetLastType();
                     AssemblyExpr.Register reg2 = ptr1.AsRegister(assemblyOps.assembler);
-                    assemblyOps.assembler.Emit(CodeGen.PartialRegisterOptimize(op1Type, reg2, operand1));
+                    assemblyOps.assembler.Emit(CodeGen.PartialRegisterOptimize(instruction.GetOp1Type(assemblyOps), reg2, operand1));
                     operand1 = reg2;
 
-                    Expr.Type op2Type = assemblyOps.vars[assemblyOps.vars.Count - 1].Item2.GetLastType();
                     AssemblyExpr.Register op2Reg = ptr2.AsRegister(assemblyOps.assembler);
-                    assemblyOps.assembler.Emit(CodeGen.PartialRegisterOptimize(op2Type, op2Reg, operand2));
+                    assemblyOps.assembler.Emit(CodeGen.PartialRegisterOptimize(instruction.GetOp2Type(assemblyOps), op2Reg, operand2));
                     operand2 = op2Reg;
                 }
                 else
                 {
-                    operand2 = operand2.NonPointer(assemblyOps.assembler);
+                    operand2 = operand2.NonPointer(assemblyOps.assembler, instruction.GetOp2Type(assemblyOps));
                 }
             }
 
@@ -99,7 +101,7 @@ internal partial class AssemblyOps
 
             if (instruction.returns && assemblyOps.assembler is InlinedCodeGen)
             {
-                ReturnOp(ref operand1, instruction.assignType, assemblyOps, true);
+                ReturnOp(ref operand1, assemblyOps, null);
             }
 
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst))
@@ -128,7 +130,7 @@ internal partial class AssemblyOps
 
             if (instruction.returns && assemblyOps.assembler is InlinedCodeGen)
             {
-                ReturnOp(ref operand1, instruction.assignType, assemblyOps, true);
+                ReturnOp(ref operand1, assemblyOps, null);
             }
 
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst))
@@ -140,14 +142,14 @@ internal partial class AssemblyOps
 
         public static void IMUL(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
-            AssemblyExpr.IValue operand1 = HandleOperand1(instruction, assemblyOps).NonPointer(assemblyOps.assembler);
+            AssemblyExpr.IValue operand1 = HandleOperand1(instruction, assemblyOps).NonPointer(assemblyOps.assembler, null);
             var operand2 = HandleOperand2(instruction, ref operand1, assemblyOps);
 
             assemblyOps.assembler.Emit(new AssemblyExpr.Binary(instruction.instruction.instruction, operand1, operand2));
 
             if (instruction.returns && assemblyOps.assembler is InlinedCodeGen)
             {
-                ReturnOp(ref operand1, instruction.assignType, assemblyOps, true);
+                ReturnOp(ref operand1, assemblyOps, null);
             }
 
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst))
@@ -160,7 +162,7 @@ internal partial class AssemblyOps
         public static void SAL_SAR(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
         {
             var operand1 = HandleOperand1(instruction, assemblyOps);
-            var operand2 = HandleOperand2Unsafe(instruction, operand1, assemblyOps).NonLiteral(assemblyOps.assembler);
+            var operand2 = HandleOperand2Unsafe(instruction, operand1, assemblyOps).NonLiteral(assemblyOps.assembler, null);
 
             if (!operand2.IsLiteral())
             {
@@ -182,7 +184,7 @@ internal partial class AssemblyOps
 
             if (instruction.returns && assemblyOps.assembler is InlinedCodeGen)
             {
-                ReturnOp(ref operand1, instruction.assignType, assemblyOps, true);
+                ReturnOp(ref operand1, assemblyOps, null);
             }
 
             if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst))
@@ -200,8 +202,8 @@ internal partial class AssemblyOps
             }
             assemblyOps.count--;
 
-            var operand1 = HandleOperand1(instruction, assemblyOps).NonPointer(assemblyOps.assembler);
-            var operand2 = HandleOperand2Unsafe(instruction, operand1, assemblyOps).NonLiteral(assemblyOps.assembler);
+            var operand1 = HandleOperand1(instruction, assemblyOps).NonPointer(assemblyOps.assembler, null);
+            var operand2 = HandleOperand2Unsafe(instruction, operand1, assemblyOps).NonLiteral(assemblyOps.assembler, null);
 
             var emitOp = instruction.instruction.instruction switch
             {
@@ -316,8 +318,35 @@ internal partial class AssemblyOps
 
             if (instruction.returns && assemblyOps.assembler is InlinedCodeGen)
             {
-                ReturnOp(ref reg, instruction.assignType, assemblyOps, true);
+                ReturnOp(ref reg, assemblyOps, null);
             }
+        }
+
+
+        public static void DefaultFloatingOp(ExprUtils.AssignableInstruction.Binary instruction, AssemblyOps assemblyOps)
+        {
+            AssemblyExpr.IValue operand1 = HandleOperand1(instruction, assemblyOps)
+                .NonPointerNonLiteral(assemblyOps.assembler, instruction.GetOp1TypeUnInc(assemblyOps));
+
+            var operand2 = HandleOperand2Unsafe(instruction, operand1, assemblyOps);
+
+            if (operand2.IsLiteral(out var literal))
+            {
+                operand2 = ((AssemblyExpr.Literal)literal).PutFloatLiteralOnDataSection(assemblyOps.assembler);
+            }
+
+            assemblyOps.assembler.Emit(new AssemblyExpr.Binary(instruction.instruction.instruction, operand1, operand2));
+
+            if (instruction.returns && assemblyOps.assembler is InlinedCodeGen)
+            {
+                ReturnOp(ref operand1, assemblyOps, instruction.GetOp1Type(assemblyOps));
+            }
+
+            if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst))
+                assemblyOps.assembler.alloc.Free(operand1);
+
+            if (instruction.assignType.HasFlag(ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond))
+                assemblyOps.assembler.alloc.Free(operand2);
         }
     }
 }

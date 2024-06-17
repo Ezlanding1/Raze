@@ -51,11 +51,21 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                 {
                     if (paramExpr.modifiers["ref"])
                     {
-                        codeGen.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(-paramExpr.stack.ValueAsPointer.offset, 8), new AssemblyExpr.Register(InstructionUtils.paramRegister[instanceCount], 8)));
+                        codeGen.Emit(new AssemblyExpr.Binary(
+                            AssemblyExpr.Instruction.MOV,
+                            new AssemblyExpr.Pointer(-paramExpr.stack.ValueAsPointer.offset, 8),
+                            new AssemblyExpr.Register(InstructionUtils.paramRegister[instanceCount], 8)
+                        ));
                     }
                     else
                     {
-                        codeGen.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(-paramExpr.stack.ValueAsPointer.offset, paramExpr.stack.size), new AssemblyExpr.Register(InstructionUtils.paramRegister[instanceCount], paramExpr.stack.size)));
+                        codeGen.Emit(new AssemblyExpr.Binary(
+                            GetMoveInstruction(type: paramExpr.stack.type),
+                            new AssemblyExpr.Pointer(-paramExpr.stack.ValueAsPointer.offset, paramExpr.stack.size),
+                            IsFloatingType(paramExpr.stack.type) ? 
+                                new AssemblyExpr.Register(InstructionUtils.storageRegisters[instanceCount + InstructionUtils.SseRegisterOffset].Name, 16) :
+                                new AssemblyExpr.Register(InstructionUtils.paramRegister[instanceCount], paramExpr.stack.size)
+                        ));
                     }
                 }
             }
