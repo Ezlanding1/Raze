@@ -77,7 +77,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             {
 
                 localParams[0] =
-                    alloc.ReserveScratchRegister(this, alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RDI), AssemblyExpr.Register.RegisterSize._64Bits);
+                    alloc.ReserveScratchRegister(this, AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits);
             }
         }
 
@@ -105,7 +105,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
                     if (!(arg.IsRegister() && HandleSeteOptimization((AssemblyExpr.Register)arg, paramReg)))
                     {
-                        if (arg.IsRegister(out var register) && !alloc.IsNeededOrNeededPreserved(alloc.NameToIdx(((AssemblyExpr.Register)arg).Name)))
+                        if (arg.IsRegister(out var register) && !alloc.IsNeededOrNeededPreserved(((AssemblyExpr.Register)arg).Name))
                         {
                             alloc.FreeRegister(register);
                             register.nameBox.Value = paramReg.Name;
@@ -178,15 +178,15 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         }
 
         return invokable.internalFunction.constructor ?
-            alloc.ReAllocConstructorReturnRegister(alloc.NameToIdx(localParams[0].Name)) :
+            alloc.ReAllocConstructorReturnRegister(localParams[0].Name) :
             HandleRefVariableDeref(
                 invokable.internalFunction.refReturn, 
                 alloc.NeededAlloc(
                     InstructionUtils.ToRegisterSize(invokable.internalFunction._returnType.type.allocSize), 
                     this, 
                     IsFloatingType(invokable.internalFunction._returnType.type) ? 
-                        alloc.NameToIdx(AssemblyExpr.Register.RegisterName.XMM0) : 
-                        alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RAX)
+                        AssemblyExpr.Register.RegisterName.XMM0 : 
+                        AssemblyExpr.Register.RegisterName.RAX
                 ), 
                 invokable.internalFunction._returnType.type
             );
@@ -856,9 +856,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         // either dealloc on exit (handled by OS), require manual delete, or implement GC
         alloc.ReserveRegister(this, 0);
-        var rax = alloc.GetRegister(alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RAX), AssemblyExpr.Register.RegisterSize._64Bits);
-        alloc.ReserveRegister(this, alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RDI));
-        var rdi = alloc.GetRegister(alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RDI), AssemblyExpr.Register.RegisterSize._64Bits);
+        var rax = alloc.GetRegister(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits);
+        alloc.ReserveRegister(this, AssemblyExpr.Register.RegisterName.RDI);
+        var rdi = alloc.GetRegister(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits);
 
         // Move the following into a runtime procedure, and pass in the expr.internalClass.size as a parameter
         // {
@@ -871,8 +871,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA,  rdi, ptr));
         Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [12])));
 
-        alloc.NullReg(alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RDI));
-        alloc.NeededAlloc(AssemblyExpr.Register.RegisterSize._64Bits, this, alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RDI));
+        alloc.NullReg(AssemblyExpr.Register.RegisterName.RDI);
+        alloc.NeededAlloc(AssemblyExpr.Register.RegisterSize._64Bits, this, AssemblyExpr.Register.RegisterName.RDI);
 
         Emit(new AssemblyExpr.Nullary(AssemblyExpr.Instruction.SYSCALL));
 

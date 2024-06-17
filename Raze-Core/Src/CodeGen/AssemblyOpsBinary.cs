@@ -166,7 +166,7 @@ internal partial class AssemblyOps
 
             if (!operand2.IsLiteral())
             {
-                assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler, assemblyOps.assembler.alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RCX));
+                assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler, AssemblyExpr.Register.RegisterName.RCX);
                 var cl = new AssemblyExpr.Register(InstructionUtils.paramRegister[3], AssemblyExpr.Register.RegisterSize._8Bits);
 
                 if (operand2.Size != AssemblyExpr.Register.RegisterSize._8Bits)
@@ -198,7 +198,7 @@ internal partial class AssemblyOps
         {
             if (HandleOperand1Unsafe(instruction, assemblyOps) is not AssemblyExpr.IRegisterPointer rp || rp.GetRegister().Name != AssemblyExpr.Register.RegisterName.RAX)
             {
-                assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler, 0);
+                assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler, AssemblyExpr.Register.RegisterName.RAX);
             }
             assemblyOps.count--;
 
@@ -213,9 +213,9 @@ internal partial class AssemblyOps
                 _ => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Impossible instruction in IDIV_DIV_IMOD_MOD")),
             };
 
-            var rax = assemblyOps.assembler.alloc.GetRegister(0, operand1.Size);
-            assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler, 2);
-            var rdx = assemblyOps.assembler.alloc.GetRegister(2, operand1.Size);
+            var rax = assemblyOps.assembler.alloc.GetRegister(AssemblyExpr.Register.RegisterName.RAX, operand1.Size);
+            assemblyOps.assembler.alloc.ReserveRegister(assemblyOps.assembler, AssemblyExpr.Register.RegisterName.RDX);
+            var rdx = assemblyOps.assembler.alloc.GetRegister(AssemblyExpr.Register.RegisterName.RDX, operand1.Size);
 
             if (!(operand1.IsRegister(out var register) && register.Name == AssemblyExpr.Register.RegisterName.RAX))
             {
@@ -229,8 +229,8 @@ internal partial class AssemblyOps
 
             assemblyOps.assembler.Emit(new AssemblyExpr.Unary(emitOp, operand2));
 
-            assemblyOps.assembler.alloc.NullReg(0);
-            assemblyOps.assembler.alloc.NullReg(2);
+            assemblyOps.assembler.alloc.NullReg(AssemblyExpr.Register.RegisterName.RAX);
+            assemblyOps.assembler.alloc.NullReg(AssemblyExpr.Register.RegisterName.RDX);
 
             if (instruction.returns && assemblyOps.assembler is InlinedCodeGen inlinedAssembler)
             {
@@ -243,7 +243,7 @@ internal partial class AssemblyOps
                         ((InlinedCodeGen.InlineStateInlined)inlinedAssembler.inlineState).callee = ret;
                         inlinedAssembler.LockOperand(ret);
                     }
-                    assemblyOps.assembler.alloc.NeededAlloc(operand1.Size, assemblyOps.assembler);
+                    assemblyOps.assembler.alloc.NeededAlloc(operand1.Size, assemblyOps.assembler, AssemblyExpr.Register.RegisterName.RAX);
                 }
                 else
                 {
@@ -251,11 +251,11 @@ internal partial class AssemblyOps
 
                     if (inlinedAssembler.inlineState.inline)
                     {
-                        var ret = assemblyOps.assembler.alloc.GetRegister(2, rdx.Size);
+                        var ret = assemblyOps.assembler.alloc.GetRegister(AssemblyExpr.Register.RegisterName.RDX, rdx.Size);
                         ((InlinedCodeGen.InlineStateInlined)inlinedAssembler.inlineState).callee = ret;
                         inlinedAssembler.LockOperand(ret);
                     }
-                    assemblyOps.assembler.alloc.NeededAlloc(operand1.Size, assemblyOps.assembler, 2);
+                    assemblyOps.assembler.alloc.NeededAlloc(operand1.Size, assemblyOps.assembler, AssemblyExpr.Register.RegisterName.RDX);
                 }
             }
 

@@ -116,13 +116,13 @@ public class InlinedCodeGen : CodeGen
             }
             else
             {
-                Expr.DataType._this.value = alloc.GetRegister(alloc.NameToIdx(AssemblyExpr.Register.RegisterName.RBX), InstructionUtils.SYS_SIZE);
+                Expr.DataType._this.value = alloc.GetRegister(AssemblyExpr.Register.RegisterName.RBX, InstructionUtils.SYS_SIZE);
             }
 
 
             if (Expr.DataType._this.value.IsRegister(out var register))
             {
-                lastThisIsLocked = !alloc.IsLocked(alloc.NameToIdx(register.Name));
+                lastThisIsLocked = !alloc.IsLocked(register.Name);
                 alloc.Lock(register);
             }
 
@@ -284,10 +284,9 @@ public class InlinedCodeGen : CodeGen
         }
         else if (operand.IsPointer(out var pointer) && pointer.value.IsRegister(out var ptrReg))
         {
-            var idx = alloc.NameToIdx(ptrReg.Name);
-            if (idx != -1)
+            if (!pointer.IsOnStack())
             {
-                alloc.Lock(idx);
+                alloc.Lock(ptrReg);
             }
         }
         return operand;
@@ -305,10 +304,9 @@ public class InlinedCodeGen : CodeGen
         }
         else if (operand.IsPointer(out var pointer) && pointer.value.IsRegister(out var ptrReg))
         {
-            var idx = alloc.NameToIdx(ptrReg.Name);
-            if (idx != -1)
+            if (!pointer.IsOnStack())
             {
-                alloc.Unlock(idx);
+                alloc.Unlock(ptrReg);
             }
         }
     }
