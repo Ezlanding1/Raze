@@ -133,11 +133,16 @@ public partial class Analyzer
         {
             for (int i = 0; i < invokable.internalFunction.Arity && invokable.internalFunction.parameters[i].modifiers["ref"]; i++)
             {
-                ValidateRefVariable(invokable.Arguments[i], invokable.internalFunction.parameters[i].stack.type, true);
+                ValidateRefVariable(invokable.Arguments[i], invokable.internalFunction.parameters[i].stack.type, true, invokable is Expr.Call);
             }
         }
-        public static void ValidateRefVariable(Expr expr, Expr.Type type, bool assign)
+        public static void ValidateRefVariable(Expr expr, Expr.Type type, bool assign, bool call)
         {
+            if (!call && expr is Expr.GetReference getRef)
+            {
+                getRef._ref = true;
+            }
+
             if (CannotBeRef(expr, out _))
             {
                 Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
