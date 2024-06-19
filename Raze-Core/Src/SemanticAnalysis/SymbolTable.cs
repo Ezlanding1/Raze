@@ -263,6 +263,9 @@ public partial class Analyzer
         public bool IsLocallyScoped(string key) =>
             locals.FindLastIndex(x => key == x.Item1.lexeme) != -1;
 
+        public bool VariableIsParameter(Expr.Function function, Expr.StackData key, out Expr.Parameter parameter) =>
+            (parameter = function.parameters.FirstOrDefault(x => x.stack == key)) != null;
+
         // 'GetDefinition' Methods:
 
         private Expr.Definition? _GetDefinition(Token key)
@@ -569,13 +572,13 @@ public partial class Analyzer
         public class ReturnFrameData : FrameData
         {
             public bool initializedOnAnyBranch;
-            public List<Expr.Type?> returnTypes = new();
+            public List<(bool _ref, Expr.Type? type)> returnDatas = [];
 
-            public void Initialized(Expr.Type? returnType)
+            public void Initialized(bool _ref, Expr.Type? returnType)
             {
                 initialized = true;
                 initializedOnAnyBranch = true;
-                returnTypes.Add(returnType);
+                returnDatas.Add((_ref, returnType));
             }
         }
 

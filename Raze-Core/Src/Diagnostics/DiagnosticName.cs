@@ -87,8 +87,11 @@ public abstract partial class Diagnostic
         InvalidOverrideModifier,
         ClassDoesNotOverrideAbstractFunction,
         TypeMismatch_OverridenMethod,
-        DanglingPointerReturned,
+        DanglingPointerCreated_Assigned,
+        DanglingPointerCreated_Returned,
         InvalidFunctionModifier_Ref,
+        InvalidRefModifier,
+        InvalidRefModifier_Location,
 
         // BackendError
         InvalidLiteralSize,

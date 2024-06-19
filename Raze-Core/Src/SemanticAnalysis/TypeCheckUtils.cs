@@ -36,19 +36,31 @@ public partial class Analyzer
             { "null", new SpecialObjects.Null() },
         };
 
-        public static void MustMatchType(Expr.Type type1, Expr.Type type2, bool _return=false)
+        public static void MustMatchType(Expr.Type type1, Expr.Type type2, bool _ref1, Expr expr2, bool declare, bool _return) =>
+            MustMatchType(type1, type2, _ref1, IsVariableWithRefModifier(expr2), declare, _return);
+
+        public static void MustMatchType(Expr.Type type1, Expr.Type type2, bool _ref1, bool _ref2, bool declare, bool _return)
         {
-            if (!type2.Matches(type1))
+            if (!type2.Matches(type1) || IsInvalidRef(declare, _ref1, _ref2))
             {
                 Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
                     _return? Diagnostic.DiagnosticName.TypeMismatch_Return : Diagnostic.DiagnosticName.TypeMismatch,
-                    type2,
-                    type1
+                    (_ref2 ? "ref " : "") + type2.ToString(),
+                    (_ref1 ? "ref " : "") + type1.ToString()
                 ));
             }
         }
 
-        public static bool CannotBeRef(Expr expr) => expr is not Expr.GetReference || (expr is Expr.GetReference getRef && getRef.IsMethodCall());
+        private static bool IsInvalidRef(bool declare, bool _ref1, bool _ref2) => declare ? _ref1 ^ _ref2 : (!_ref1 && _ref2);
+
+        public static bool IsVariableWithRefModifier(Expr expr) =>
+            expr is Expr.GetReference getRef && getRef._ref;
+
+        public static bool IsRefVariable(Expr expr) =>
+            !CannotBeRef(expr, out var getRef) && getRef.GetLastData()?._ref == true;
+
+        public static bool CannotBeRef(Expr expr, out Expr.GetReference getRef) =>
+            (getRef = expr as Expr.GetReference) == null || getRef.IsMethodCall();
 
         public static void RunConditionals(Expr.IVisitor<Expr.Type> visitor, string conditionalName, List<Expr.Conditional> conditionals)
         {
@@ -74,23 +86,23 @@ public partial class Analyzer
         {
             SymbolTable symbolTable = SymbolTableSingleton.SymbolTable;
 
-            foreach (var returnType in symbolTable.returnFrameData.returnTypes)
+            foreach (var (_ref, type) in symbolTable.returnFrameData.returnDatas)
             {
-                if (returnType != null)
+                if (type != null)
                 {
-                    MustMatchType(expr._returnType.type, returnType, true);
+                    MustMatchType(expr._returnType.type, type, expr.refReturn, _ref, true, true);
                 }
             }
             if (!symbolTable.returnFrameData.initialized && !Primitives.IsVoidType(expr._returnType.type))
             {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
-                        symbolTable.returnFrameData.initializedOnAnyBranch?
-                            Diagnostic.DiagnosticName.NoReturn_FromAllPaths : 
-                            Diagnostic.DiagnosticName.NoReturn
-                    ));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
+                    symbolTable.returnFrameData.initializedOnAnyBranch?
+                        Diagnostic.DiagnosticName.NoReturn_FromAllPaths : 
+                        Diagnostic.DiagnosticName.NoReturn
+                ));
             }
             symbolTable.returnFrameData.initialized = false;
-            symbolTable.returnFrameData.returnTypes.Clear();
+            symbolTable.returnFrameData.returnDatas.Clear();
         }
 
         public static void ValidateCall(Expr.Call expr, Expr.Function callee)
@@ -121,12 +133,12 @@ public partial class Analyzer
         {
             for (int i = 0; i < invokable.internalFunction.Arity && invokable.internalFunction.parameters[i].modifiers["ref"]; i++)
             {
-                ValidateRefVariable(invokable.Arguments[i], true);
+                ValidateRefVariable(invokable.Arguments[i], invokable.internalFunction.parameters[i].stack.type, true);
             }
         }
-        public static void ValidateRefVariable(Expr expr, bool assign)
+        public static void ValidateRefVariable(Expr expr, Expr.Type type, bool assign)
         {
-            if (CannotBeRef(expr))
+            if (CannotBeRef(expr, out _))
             {
                 Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
                         assign? 
@@ -134,6 +146,17 @@ public partial class Analyzer
                         Diagnostic.DiagnosticName.InvalidFunctionModifier_Ref
                     )
                 );
+            }
+
+            bool _ref2 = IsVariableWithRefModifier(expr);
+
+            if (IsInvalidRef(true, true, _ref2))
+            {
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
+                    Diagnostic.DiagnosticName.TypeMismatch,
+                    type.ToString(),
+                    "ref " + type.ToString()
+                ));
             }
         }
     }

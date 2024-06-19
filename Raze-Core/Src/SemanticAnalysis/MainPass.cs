@@ -230,7 +230,7 @@ public partial class Analyzer
 
             if (assignType != null)
             {
-                TypeCheckUtils.MustMatchType(expr.stack.type, assignType);
+                TypeCheckUtils.MustMatchType(expr.stack.type, assignType, expr.stack._ref, expr.value, true, false);
             }
             symbolTable.AddVariable(name, expr.stack, assignType != null);
 
@@ -307,6 +307,9 @@ public partial class Analyzer
 
         public override Expr.Type VisitAssignExpr(Expr.Assign expr)
         {
+            string memberName = expr.member.GetLastName().lexeme;
+            string? valueName = (expr.value as Expr.GetReference)?.GetLastName().lexeme;
+
             Expr.Type assignType = expr.value.Accept(this);
 
             if (!expr.binary)
@@ -315,7 +318,17 @@ public partial class Analyzer
                 expr.member.Accept(this);
                 assigns = false;
             }
-            TypeCheckUtils.MustMatchType(expr.member.GetLastType(), assignType);
+            TypeCheckUtils.MustMatchType(expr.member.GetLastType(), assignType, TypeCheckUtils.IsRefVariable(expr.member), expr.value, false, false);
+
+            if (symbolTable.Current is Expr.Function function && 
+                    TypeCheckUtils.IsVariableWithRefModifier(expr.value) && 
+                    (!symbolTable.IsLocallyScoped(memberName) || symbolTable.VariableIsParameter(function, expr.member.GetLastData(), out _)))
+            {
+                if (valueName != null && symbolTable.IsLocallyScoped(valueName) && !symbolTable.VariableIsParameter(function, ((Expr.GetReference)expr.value).GetLastData(), out _))
+                {
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DanglingPointerCreated_Assigned, memberName));
+                }
+            }
 
             return TypeCheckUtils._voidType;
         }
@@ -328,7 +341,7 @@ public partial class Analyzer
             }
             if (expr.block.Any(x => x.HasReturn()))
             {
-                symbolTable.returnFrameData.Initialized(null);
+                symbolTable.returnFrameData.Initialized(false, null);
             }
 
             return TypeCheckUtils._voidType;
@@ -419,6 +432,12 @@ public partial class Analyzer
                 {
                     symbolTable.SetContext((Expr.Definition)getter.Accept(this));
                 }
+
+                if (expr._ref && expr.IsMethodCall() && !((Expr.Invokable)expr.getters[^1]).internalFunction.refReturn)
+                {
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidRefModifier, "method"));
+                }
+
                 return symbolTable.Current;
             }
         }
@@ -433,8 +452,8 @@ public partial class Analyzer
                 expr.right.Accept(this)
             };
 
-            TypeCheckUtils.MustMatchType(argumentTypes[0], TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Boolean]);
-            TypeCheckUtils.MustMatchType(argumentTypes[1], TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Boolean]);
+            TypeCheckUtils.MustMatchType(argumentTypes[0], TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Boolean], false, expr.left, false, false);
+            TypeCheckUtils.MustMatchType(argumentTypes[1], TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Boolean], false, expr.right, false, false);
 
             return TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Boolean];
         }
@@ -478,16 +497,23 @@ public partial class Analyzer
 
         public override Expr.Type VisitReturnExpr(Expr.Return expr)
         {
+            string? name = (expr.value as Expr.GetReference)?.GetLastName().lexeme;
+            Expr.Type type = expr.value.Accept(this);
+
             if (symbolTable.Current is Expr.Function function && function.refReturn)
             {
-                TypeCheckUtils.ValidateRefVariable(expr.value, false);
-                if (expr.value is Expr.GetReference getRef && symbolTable.IsLocallyScoped(getRef.GetLastName().lexeme))
+                if (name != null && symbolTable.IsLocallyScoped(name))
                 {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DanglingPointerReturned, getRef.GetLastName().lexeme));
+                    Expr.GetReference getRef = (Expr.GetReference)expr.value;
+                    if (!getRef.GetLastData()._ref || !symbolTable.VariableIsParameter(function, getRef.GetLastData(), out _))
+                    {
+                        Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DanglingPointerCreated_Returned, name));
+                    }
                 }
             }
+            
 
-            symbolTable.returnFrameData.Initialized(expr.value.Accept(this));
+            symbolTable.returnFrameData.Initialized(TypeCheckUtils.IsVariableWithRefModifier(expr.value), type);
             return TypeCheckUtils._voidType;
         }
 

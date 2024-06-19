@@ -609,7 +609,7 @@ public class Parser
                 return new Expr.Grouping(logical);
             }
 
-            if (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this"))
+            if (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this", "ref"))
             {
                 var variable = GetReference();
 
@@ -637,7 +637,7 @@ public class Parser
                 }
                 else if (!variable.IsMethodCall() && (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this")))
                 {
-                    expr = Declare(variable);
+                    expr = (Expr)Declare(variable) ?? new Expr.InvalidExpr();
                 }
                 else
                 {
@@ -669,9 +669,9 @@ public class Parser
 
     private Expr.Declare? FullDeclare()
     {
-        if (TypeMatch(Token.TokenType.IDENTIFIER))
+        if (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("ref"))
         {
-            Expr.Declare declare;
+            Expr.Declare? declare;
 
             var variable = GetReference();
 
@@ -681,20 +681,27 @@ public class Parser
             }
             else
             {
-                Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidClassDefinition));
+                Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidClassDefinition, Previous().lexeme));
                 return null;
             }
             Expect(Token.TokenType.SEMICOLON, "';' after expression");
+
+            if (declare != null && declare.stack._ref)
+            {
+                Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidRefModifier_Location, "class definition"));
+            }
+
             return declare;
         }
         return null;
     }
 
-    private Expr.Declare Declare(Expr.GetReference variable)
+    private Expr.Declare? Declare(Expr.GetReference variable)
     {
-        if (variable is not Expr.AmbiguousGetReference)
+        if (variable is not Expr.AmbiguousGetReference getRef)
         {
             Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidDeclareStatement));
+            return null;
         }
 
         var name = Previous();
@@ -707,17 +714,20 @@ public class Parser
         if (TypeMatch(Token.TokenType.SEMICOLON))
         {
             MovePrevious();
-            return new Expr.Declare(((Expr.AmbiguousGetReference)variable).typeName, name, ReservedValueMatch("ref"), null);
+            return new Expr.Declare(getRef.typeName, name, getRef._ref, null);
         }
         Expect(Token.TokenType.EQUALS, "'=' when declaring variable");
 
-        return new Expr.Declare(((Expr.AmbiguousGetReference)variable).typeName, name, ReservedValueMatch("ref"), NoSemicolon());
+        return new Expr.Declare(getRef.typeName, name, getRef._ref, NoSemicolon());
     }
 
     private Expr.GetReference GetReference()
     {
+        bool _ref = Previous().lexeme == "ref";
+        if (_ref) Advance();
+
         List<Expr.Getter> getters = new();
-        Expr.AmbiguousGetReference callee = new(GetTypeReference());
+        Expr.AmbiguousGetReference callee = new(GetTypeReference(), _ref);
 
         if (TypeMatch(Token.TokenType.LPAREN))
         {
@@ -741,7 +751,7 @@ public class Parser
                 Expect(Token.TokenType.IDENTIFIER, "variable name after '.'");
                 if (TypeMatch(Token.TokenType.LPAREN))
                 {
-                    var call = new Expr.Call(Previous(2), GetArgs(), new Expr.InstanceGetReference(getters));
+                    var call = new Expr.Call(Previous(2), GetArgs(), new Expr.InstanceGetReference(getters, _ref));
                     getters = [call];
                 }
                 else
@@ -751,19 +761,19 @@ public class Parser
             }
             else if (TypeMatch(Token.TokenType.LBRACKET))
             {
-                var call = new Expr.Binary(new Expr.InstanceGetReference(getters), Previous(), Logical());
+                var call = new Expr.Binary(new Expr.InstanceGetReference(getters, _ref), Previous(), Logical());
                 getters = [call];
                 Expect(Token.TokenType.RBRACKET, "']' after indexer");
             }
             else break;
         }
 
-        return new Expr.InstanceGetReference(getters);
+        return new Expr.InstanceGetReference(getters, _ref);
     }
 
     private Expr.Call? GetNewGetter()
     {
-        Expr.AmbiguousGetReference callee = new(GetTypeReference());
+        Expr.AmbiguousGetReference callee = new(GetTypeReference(), false);
         callee.instanceCall = false;
 
         if (TypeMatch(Token.TokenType.LPAREN))

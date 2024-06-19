@@ -779,6 +779,14 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         if (operand2 == null) return null;
 
+        if (Analyzer.TypeCheckUtils.IsVariableWithRefModifier(expr.value))
+        {
+            operand1 = (AssemblyExpr.Pointer)((AssemblyExpr.Binary)assembly.text[^1]).operand2;
+            assembly.text.RemoveAt(assembly.text.Count - 1);
+
+            operand2 = PreserveRefPtrVariable(true, operand2);
+        }
+
         if (operand2.IsPointer(out var op2Ptr))
         {
             var reg = alloc.NextRegister(op2Ptr.Size);
@@ -1144,9 +1152,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
     private protected static AssemblyExpr.Instruction GetMoveInstruction(bool isRef=false, Expr.Type? type=null) =>
         isRef ? AssemblyExpr.Instruction.LEA : IsFloatingType(type) ? AssemblyExpr.Instruction.MOVSS : AssemblyExpr.Instruction.MOV;
 
-    private static bool IsRefVariable(Expr expr) =>
-        !Analyzer.TypeCheckUtils.CannotBeRef(expr) && ((Expr.GetReference)expr).GetLastData()._ref;
-
     private protected AssemblyExpr.IValue? HandleRefVariableDeref(bool _ref, AssemblyExpr.IValue register, Expr.Type type) =>
         (register != null) ? HandleRefVariableDeref(_ref, register, register.Size, type) : null;
 
@@ -1154,5 +1159,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         _ref ? new AssemblyExpr.Pointer(register.NonPointerNonLiteral(this, null).nameBox, 0, size) : register;
 
     private protected static (AssemblyExpr.Instruction, AssemblyExpr.IValue) PreserveRefPtrVariable(Expr expr, AssemblyExpr.Pointer pointer) =>
-        IsRefVariable(expr) ? (AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(((AssemblyExpr.Register)pointer.value).nameBox, pointer.Size)) : (AssemblyExpr.Instruction.LEA, pointer);
+      Analyzer.TypeCheckUtils.IsRefVariable(expr) ? (AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(((AssemblyExpr.Register)pointer.value).nameBox, InstructionUtils.SYS_SIZE)) : (AssemblyExpr.Instruction.LEA, pointer);
+
+    private protected static AssemblyExpr.IValue PreserveRefPtrVariable(bool _ref, AssemblyExpr.IValue pointer) =>
+        _ref ? new AssemblyExpr.Register(((AssemblyExpr.Register)((AssemblyExpr.Pointer)pointer).value).nameBox, InstructionUtils.SYS_SIZE) : pointer;
 }

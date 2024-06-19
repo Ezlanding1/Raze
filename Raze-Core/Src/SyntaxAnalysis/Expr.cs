@@ -228,8 +228,9 @@ public abstract class Expr
         }
     }
 
-    public abstract class GetReference : Expr
+    public abstract class GetReference(bool _ref) : Expr
     {
+        public bool _ref = _ref;
         public abstract StackData? GetLastData();
         public abstract Token GetLastName();
         public abstract DataType GetLastType();
@@ -250,15 +251,15 @@ public abstract class Expr
             set { datas = value ? new StackData[typeName.Count] : null; ambiguousCall = false; }
         }
 
-        internal AmbiguousGetReference(ExprUtils.QueueList<Token> typeName)
+        internal AmbiguousGetReference(ExprUtils.QueueList<Token> typeName, bool _ref) : base(_ref)
         {
             this.typeName = typeName;
         }
-        internal AmbiguousGetReference(ExprUtils.QueueList<Token> typeName, bool instanceCall) : this(typeName)
+        internal AmbiguousGetReference(ExprUtils.QueueList<Token> typeName, bool instanceCall, bool _ref) : this(typeName, _ref)
         {
             this.instanceCall = instanceCall;
         }
-        public AmbiguousGetReference(Token name, bool instanceCall)
+        public AmbiguousGetReference(Token name, bool instanceCall) : base(false)
         {
             this.typeName = new();
             this.typeName.Enqueue(name);
@@ -291,9 +292,7 @@ public abstract class Expr
     {
         public List<Getter> getters;
 
-        private protected InstanceGetReference() { }
-
-        public InstanceGetReference(List<Getter> getters)
+        public InstanceGetReference(List<Getter> getters, bool _ref) : base(_ref)
         {
             this.getters = getters;
         }
@@ -525,6 +524,17 @@ public abstract class Expr
             this.name = name;
             this.modifiers = modifiers;
         }
+
+        public override string ToString()
+        {
+            string result = modifiers["ref"]? "ref " : "";
+
+            result += (typeName.Count == 0) ?
+                stack.type :
+                string.Join(".", typeName.ToList().ConvertAll(x => x.lexeme));
+
+            return result;
+        }
     }
 
     public abstract class Named : Expr
@@ -617,33 +627,10 @@ public abstract class Expr
             return (enclosing != null ?
                         enclosing.ToString() + "." :
                         "")
-                        + name.lexeme + "(" + getParameters() + ")";
-            string getParameters()
-            {
-                if (parameters.Count == 0)
-                {
-                    return "";
-                }
+                        + name.lexeme + "(" + GetParameters() + ")";
 
-                string res = "";
-
-                foreach (Parameter parameter in parameters.SkipLast(1))
-                {
-                    if (parameter.typeName.Count == 0)
-                    {
-                        res += (parameter.stack.type + ", ");
-                    }
-                    else
-                    {
-                        res += (string.Join(".", parameter.typeName.ToList().ConvertAll(x => x.lexeme)) + ", ");
-                    }
-                }
-                res += (parameters[^1].typeName.Count == 0) ?
-                    parameters[^1].stack.type :
-                    (string.Join(".", parameters[^1].typeName.ToList().ConvertAll(x => x.lexeme)));
-
-                return res;
-            }
+            string GetParameters() =>
+                string.Join(", ", parameters);
         }
 
         public override T Accept<T>(IVisitor<T> visitor)
