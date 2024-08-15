@@ -44,6 +44,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             return new AssemblyExpr.Register(registers[idx], AssemblyExpr.Register.IsSseRegister(registers[idx].Value) ? AssemblyExpr.Register.RegisterSize._128Bits : size);
         }
 
+        // Returns and allocates next register
         public AssemblyExpr.Register NextRegister(AssemblyExpr.Register.RegisterSize size, Expr.Type? type) => 
             IsFloatingType(type) ? NextSseRegister() : NextRegister(size);
 
@@ -65,13 +66,17 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         public void NullReg() => registers[RegisterIdx] = null;
         public void NullReg(AssemblyExpr.Register.RegisterName name) => registers[NameToIdx(name)] = null;
 
+        // Returns next register without allocation
+        public AssemblyExpr.Register CurrentRegister(AssemblyExpr.Register.RegisterSize size, Expr.Type? type) =>
+            IsFloatingType(type) ? CurrentSseRegister() : CurrentRegister(size);
+
         public AssemblyExpr.Register CurrentRegister(AssemblyExpr.Register.RegisterSize size)
         {
-            if (registerStates[RegisterIdx].HasState(RegisterState.RegisterStates.Free))
-            {
-                registers[RegisterIdx] = new(InstructionUtils.storageRegisters[RegisterIdx].Name);
-            }
-            return new AssemblyExpr.Register(registers[RegisterIdx], size);
+            return new AssemblyExpr.Register(InstructionUtils.storageRegisters[RegisterIdx].Name, size);
+        }
+        public AssemblyExpr.Register CurrentSseRegister()
+        {
+            return new AssemblyExpr.Register(InstructionUtils.storageRegisters[SseRegisterIdx].Name, AssemblyExpr.Register.RegisterSize._128Bits);
         }
 
         private int NextPreservedRegisterIdx()
