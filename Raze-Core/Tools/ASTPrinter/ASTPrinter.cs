@@ -259,9 +259,9 @@ public class ASTPrinter : Expr.IVisitor<object?>
         return null;
     }
 
-    public object? VisitAssemblyExpr(Expr.Assembly expr)
+    public object? VisitInlineAssemblyExpr(Expr.InlineAssembly expr)
     {
-        foreach (var instruction in expr.block)
+        foreach (var instruction in expr.instructions)
         {
             PrintAST(instruction.ToString());
         }

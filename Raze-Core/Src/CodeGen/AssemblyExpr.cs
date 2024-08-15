@@ -324,7 +324,7 @@ public abstract partial class AssemblyExpr
 
         public string value;
 
-       public Register.RegisterSize Size => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Attempted access of UnresolvedRegister size"));
+        public Register.RegisterSize Size => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Attempted access of UnresolvedRegister size"));
 
         internal UnresolvedLiteral(Literal.LiteralType type, string value)
         {

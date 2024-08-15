@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Raze;
 
-public abstract class Expr
+public abstract partial class Expr
 {
     public abstract T Accept<T>(IVisitor<T> visitor);
 
@@ -36,7 +36,7 @@ public abstract class Expr
         public T VisitTypeReferenceExpr(TypeReference expr);
         public T VisitLogicalExpr(Logical epxr);
         public T VisitBlockExpr(Block expr);
-        public T VisitAssemblyExpr(Assembly expr);
+        public T VisitInlineAssemblyExpr(InlineAssembly expr);
         public T VisitFunctionExpr(Function expr);
         public T VisitClassExpr(Class expr);
         public T VisitReturnExpr(Return expr);
@@ -417,20 +417,18 @@ public abstract class Expr
         }
     }
 
-    public partial class Assembly : Expr
+    public partial class InlineAssembly : Expr
     {
-        internal List<ExprUtils.AssignableInstruction> block;
-        public List<(AssemblyExpr.Register.RegisterSize, GetReference)> variables;
+        public List<InlineAssemblyExpr> instructions;
 
-        internal Assembly(List<ExprUtils.AssignableInstruction> block, List<(AssemblyExpr.Register.RegisterSize, GetReference)> variables)
+        public InlineAssembly(List<InlineAssemblyExpr> instructions)
         {
-            this.block = block;
-            this.variables = variables;
+            this.instructions = instructions;
         }
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
-            return visitor.VisitAssemblyExpr(this);
+            return visitor.VisitInlineAssemblyExpr(this);
         }
     }
 

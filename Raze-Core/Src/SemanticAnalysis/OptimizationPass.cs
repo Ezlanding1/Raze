@@ -134,29 +134,16 @@ public partial class Analyzer
             return null;
         }
 
-        public override object VisitAssemblyExpr(Expr.Assembly expr)
+        public override object VisitInlineAssemblyExpr(Expr.InlineAssembly expr)
         {
-            int varIdx = 0;
-
-            foreach (ExprUtils.AssignableInstruction instruction in expr.block)
+            foreach (var instruction in expr.instructions.OfType<Expr.InlineAssembly.Instruction>())
             {
-                var assigningVars = instruction.GetAssigningVars();
+                var assigningVars = instruction.GetAssignedVars();
 
-                if (assigningVars.Item1 == 0) 
-                    continue;
-
-                switch (assigningVars.Item2) 
+                foreach (var stack in assigningVars.Select(x => x.variable.GetLastData()))
                 {
-                    case 1 or 2:
-                        SetInlineRef(expr.variables[varIdx + (assigningVars.Item2 - 1)].Item2.GetLastData());
-                        break;
-                    case 3:
-                        SetInlineRef(expr.variables[varIdx].Item2.GetLastData());
-                        SetInlineRef(expr.variables[varIdx+1].Item2.GetLastData());
-                        break;
-
+                    SetInlineRef(stack);
                 }
-                varIdx += assigningVars.Item1;
             }
             return null;
         }

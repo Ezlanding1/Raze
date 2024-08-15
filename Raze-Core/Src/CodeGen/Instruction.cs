@@ -69,22 +69,11 @@ public abstract partial class AssemblyExpr
         ADDSS,
         CVTTSS2SI,
         MOVD,
-        MOVQ,
+        MOVQ, 
+        CBW,
+        CWDE,
+        CDQE
 
         // Custom Instructions
-        IMOD,
-        MOD,
-        E_CMP,
-        NE_CMP,
-        G_CMP,
-        GE_CMP,
-        L_CMP,
-        LE_CMP,
-        UG_CMP,
-        UGE_CMP,
-        UL_CMP,
-        ULE_CMP,
-        DEREF,
-        RETURN
     }
 }

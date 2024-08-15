@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Raze;
 
-public class Parser
+public partial class Parser
 {
     List<Token> tokens;
     List<Expr> expressions;
@@ -350,8 +350,7 @@ public class Parser
     {
         if (ReservedValueMatch("asm"))
         {
-            var instructions = GetAsmInstructions();
-            return new Expr.Assembly(instructions.Item1, instructions.Item2);
+            return new AssemblyParser(this).ParseInlineAssemblyBlock();
         }
         return topLevel ? InvalidTopLevelCode() : Conditional();
     }
@@ -866,161 +865,6 @@ public class Parser
         return bodyExprs;
     }
 
-    private (List<ExprUtils.AssignableInstruction>, List<(AssemblyExpr.Register.RegisterSize, Expr.GetReference)>) GetAsmInstructions()
-    {
-        List<ExprUtils.AssignableInstruction> instructions = new();
-        List<(AssemblyExpr.Register.RegisterSize, Expr.GetReference)> variables = new();
-
-        Expect(Token.TokenType.LBRACE, "'{' before Assembly Block body");
-
-        bool returned = false;
-
-        while (!TypeMatch(Token.TokenType.RBRACE))
-        {
-            bool localReturn = false;
-            if (ReservedValueMatch("return"))
-            {
-                if (returned) { Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssemblyBlockReturn)); }
-                returned = true;
-                localReturn = true;
-            }
-            if (TypeMatch(Token.TokenType.IDENTIFIER))
-            {
-                var op = Previous();
-
-
-                if (TypeMatch(Token.TokenType.IDENTIFIER, Token.TokenType.DOLLAR, Token.TokenType.INTEGER, Token.TokenType.FLOATING, Token.TokenType.STRING, Token.TokenType.HEX, Token.TokenType.BINARY))
-                {
-                    // Unary
-                    AssemblyExpr.IValue? value;
-
-                    if (Previous().type == Token.TokenType.DOLLAR)
-                    {
-
-                        if (!(TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this")))
-                        {
-                            Expected("IDENTIFIER, 'this'", "after escape '$'");
-                        }
-
-                        Token variableName = Previous();
-
-                        AssemblyExpr.Register.RegisterSize op1Truncate = (AssemblyExpr.Register.RegisterSize)(-1);
-                        if (TypeMatch(Token.TokenType.MODULO) && TypeMatch(Token.TokenType.INTEGER))
-                        {
-                            if (new List<string> { "64", "32", "16", "8" }.Contains(Previous().lexeme))
-                            {
-                                op1Truncate = (AssemblyExpr.Register.RegisterSize)(int.Parse(Previous().lexeme) / 8);
-                            }
-                            else
-                            {
-
-                                Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidTruncationSize, Previous().lexeme));
-                            }
-                        }
-                        value = null;
-                        variables.Add((op1Truncate, new Expr.AmbiguousGetReference(variableName, true)));
-                    }
-                    else if (Previous().type == Token.TokenType.IDENTIFIER)
-                    {
-                        var identifier = Previous();
-                        if (InstructionUtils.Registers.TryGetValue(identifier.lexeme, out var reg))
-                        {
-                            value = new AssemblyExpr.Register(reg.Item1, reg.Item2);
-                        }
-                        else
-                        {
-                            Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssemblyRegister, identifier));
-                            value = new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.TMP, AssemblyExpr.Register.RegisterSize._8Bits);
-                        }
-                    }
-                    else
-                    {
-                        value = new AssemblyExpr.UnresolvedLiteral((AssemblyExpr.Literal.LiteralType)Previous().type, Previous().lexeme);
-                    }
-
-                    if (TypeMatch(Token.TokenType.COMMA))
-                    {
-                        // Binary
-
-                        if (TypeMatch(Token.TokenType.IDENTIFIER))
-                        {
-                            var identifier = Previous();
-                            if (InstructionUtils.Registers.TryGetValue(identifier.lexeme, out var reg))
-                            {
-                                instructions.Add(new ExprUtils.AssignableInstruction.Binary(new AssemblyExpr.Binary(ConvertToInstruction(op.lexeme), value, new AssemblyExpr.Register(reg.Item1, reg.Item2)), (value == null) ? ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst : ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
-                            }
-                            else
-                            {
-                                Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssemblyRegister, identifier.lexeme));
-                                instructions.Add(new ExprUtils.AssignableInstruction.Binary(new AssemblyExpr.Binary(ConvertToInstruction(op.lexeme), value, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.TMP, AssemblyExpr.Register.RegisterSize._8Bits)), ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
-                            }
-                        }
-                        else if (TypeMatch(Token.TokenType.INTEGER, Token.TokenType.FLOATING, Token.TokenType.STRING, Token.TokenType.REF_STRING, Token.TokenType.HEX, Token.TokenType.BINARY))
-                        {
-                            instructions.Add(new ExprUtils.AssignableInstruction.Binary(new AssemblyExpr.Binary(ConvertToInstruction(op.lexeme), value, new AssemblyExpr.UnresolvedLiteral((AssemblyExpr.Literal.LiteralType)Previous().type, Previous().lexeme)), (value == null) ? ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst : ExprUtils.AssignableInstruction.Binary.AssignType.AssignNone, localReturn));
-                        }
-                        else if (TypeMatch(Token.TokenType.DOLLAR))
-                        {
-                            if (!(TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this")))
-                            {
-                                Expected("IDENTIFIER, 'this'", "after escape '$'");
-                            }
-
-                            Token variableName = Previous();
-
-                            AssemblyExpr.Register.RegisterSize op2Truncate = (AssemblyExpr.Register.RegisterSize)(-1);
-                            if (TypeMatch(Token.TokenType.MODULO) && TypeMatch(Token.TokenType.INTEGER))
-                            {
-                                if (new List<string> { "64", "32", "16", "8" }.Contains(Previous().lexeme))
-                                {
-                                    op2Truncate = (AssemblyExpr.Register.RegisterSize)(int.Parse(Previous().lexeme) / 8);
-                                }
-                                else
-                                {
-                                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidTruncationSize, Previous().lexeme));
-                                }
-                            }
-
-                            variables.Add((op2Truncate, new Expr.AmbiguousGetReference(variableName, true)));
-                            instructions.Add(new ExprUtils.AssignableInstruction.Binary(new AssemblyExpr.Binary(ConvertToInstruction(op.lexeme), value, null), (value == null) ? (ExprUtils.AssignableInstruction.Binary.AssignType.AssignFirst | ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond) : ExprUtils.AssignableInstruction.Binary.AssignType.AssignSecond, localReturn));
-                        }
-                        else
-                        {
-                            Expected("IDENTIFIER, INTEGER, FLOAT, STRING, HEX, BINARY", "operand after comma ','");
-                        }
-                    }
-                    else
-                    {
-                        instructions.Add(new ExprUtils.AssignableInstruction.Unary(new AssemblyExpr.Unary(ConvertToInstruction(op.lexeme), value), (value == null) ? ExprUtils.AssignableInstruction.Unary.AssignType.AssignFirst : ExprUtils.AssignableInstruction.Unary.AssignType.AssignNone, localReturn));
-                    }
-                }
-                else
-                {
-                    if (localReturn) { Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssemblyBlockReturnArity)); }
-                    // Zero
-                    instructions.Add(new ExprUtils.AssignableInstruction.Nullary(new AssemblyExpr.Nullary(ConvertToInstruction(op.lexeme))));
-                }
-                Expect(Token.TokenType.SEMICOLON, "';' after Assembly statement");
-            }
-            else
-            {
-                Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssignStatement, Previous().lexeme));
-                Advance();
-            }
-
-            if (IsAtEnd())
-            {
-                Expect(Token.TokenType.RBRACE, "'}' after Assembly Block");
-                break;
-            }
-            if (TypeMatch(Token.TokenType.RBRACE))
-            {
-                break;
-            }
-        }
-        return (instructions, variables);
-    }
-
     private void PanicUntilSynchronized(Token.TokenType expectedToken, string errorMessage) => PanicUntil(SynchronizationTokens, expectedToken, errorMessage);
     private void PanicUntil(Token.TokenType[] types, Token.TokenType expectedToken, string errorMessage)
     {
@@ -1033,15 +877,6 @@ public class Parser
         }
         Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.TokenExpected, expectedToken, errorMessage, panicInvalidTokens));
         MovePrevious();
-    }
-    private AssemblyExpr.Instruction ConvertToInstruction(string strInstruction)
-    {
-        if (Enum.TryParse(strInstruction, out AssemblyExpr.Instruction instruction))
-        {
-            return instruction;
-        }
-        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnsupportedInstruction, strInstruction));
-        return 0;
     }
 
     private bool TypeMatch(params Token.TokenType[] types)

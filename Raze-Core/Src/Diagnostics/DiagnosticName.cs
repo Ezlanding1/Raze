@@ -44,7 +44,10 @@ public abstract partial class Diagnostic
         InvalidAssemblyRegister,
         TokenExpected,
         ImportNotFound,
-        
+        InlineAssemblyInvalidRegisterOption,
+        InlineAssemblyInvalidPtrOffset,
+        InlineAssemblyInvalidFreeOperand,
+
         // AnalyzerError
         TypeMismatch,
         TypeMismatch_Return,

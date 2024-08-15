@@ -25,12 +25,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         Enumerable.Repeat<byte>(0, (int)InstructionUtils.SYS_SIZE).ToArray()
     );
     internal RegisterAlloc alloc = new();
-    AssemblyOps assemblyOps;
-
-    public CodeGen()
-    {
-        this.assemblyOps = new(this);
-    }
 
     public Assembly Generate()
     {
@@ -845,14 +839,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             _ => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"'{expr.keyword}' is not a keyword")),
         };
     }
-    public AssemblyExpr.IValue? VisitAssemblyExpr(Expr.Assembly expr)
+    public AssemblyExpr.IValue? VisitInlineAssemblyExpr(Expr.InlineAssembly expr)
     {
-        assemblyOps.count = 0;
-        assemblyOps.vars = expr.variables;
-
-        foreach (var instruction in expr.block)
+        foreach (var inlineAsmExpr in expr.instructions)
         {
-            instruction.Assign(assemblyOps);
+            inlineAsmExpr.Accept(this);
         }
         return null;
     }

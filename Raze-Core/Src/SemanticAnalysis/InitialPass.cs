@@ -20,7 +20,7 @@ public partial class Analyzer
         internal override void Run()
         {
             symbolTable.CheckGlobals();
-
+            
             foreach (Expr expr in expressions)
             {
                 expr.Accept(this);
@@ -199,7 +199,7 @@ public partial class Analyzer
             return null;
         }
 
-        public override object? VisitAssemblyExpr(Expr.Assembly expr)
+        public override object? VisitInlineAssemblyExpr(Expr.InlineAssembly expr)
         {
             if (symbolTable.CurrentIsTop())
             {
@@ -215,7 +215,7 @@ public partial class Analyzer
                 Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UnsafeCodeInSafeFunction));
             }
 
-            return base.VisitAssemblyExpr(expr);
+            return base.VisitInlineAssemblyExpr(expr);
         }
 
         public override object? VisitAmbiguousGetReferenceExpr(Expr.AmbiguousGetReference expr)

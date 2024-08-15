@@ -128,7 +128,7 @@ public partial class Analyzer
             return default;
         }
 
-        public virtual T VisitAssemblyExpr(Expr.Assembly expr) => default;
+        public virtual T VisitInlineAssemblyExpr(Expr.InlineAssembly expr) => default;
 
         public virtual T VisitNewExpr(Expr.New expr)
         {

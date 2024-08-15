@@ -333,17 +333,20 @@ public partial class Analyzer
             return TypeCheckUtils._voidType;
         }
 
-        public override Expr.Type VisitAssemblyExpr(Expr.Assembly expr)
+        public override Expr.Type VisitInlineAssemblyExpr(Expr.InlineAssembly expr)
         {
-            foreach (var variable in expr.variables)
+            foreach (var instruction in expr.instructions)
             {
-                variable.Item2.Accept(this);
-            }
-            if (expr.block.Any(x => x.HasReturn()))
-            {
-                symbolTable.returnFrameData.Initialized(false, null);
-            }
+                if (instruction is Expr.InlineAssembly.Return || instruction is Expr.InlineAssembly.Instruction { _return: true }) 
+                {
+                    symbolTable.returnFrameData.Initialized(false, null);
+                }
 
+                instruction.GetOperands()
+                    .Select(x => x.GetVariable())
+                    .ToList()
+                    .ForEach(x => x?.variable.Accept(this));
+            }
             return TypeCheckUtils._voidType;
         }
 

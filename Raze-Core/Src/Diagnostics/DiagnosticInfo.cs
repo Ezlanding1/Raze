@@ -44,6 +44,9 @@ public abstract partial class Diagnostic
         { DiagnosticName.InvalidAssemblyRegister, ("Invalid assembly register '{0}'", Severity.Error) },
         { DiagnosticName.TokenExpected, ("Expected token {0}. Expected {1}. Got: '{2}'", Severity.Error) },
         { DiagnosticName.ImportNotFound, ("Import with file path '{0}' not found", Severity.Error) },
+        { DiagnosticName.InlineAssemblyInvalidRegisterOption, ("A register allocation may only have the register options: 'r', 'x', and the size options: '8', '16', '32', '64'. Got: '{0}'", Severity.Error) },
+        { DiagnosticName.InlineAssemblyInvalidPtrOffset, ("The offset of an inline assembly pointer must be a valid signed 32-bit integer. Got: '{0}'", Severity.Error) },
+        { DiagnosticName.InlineAssemblyInvalidFreeOperand, ("The operand of the inline assembly 'free' expression must be a valid allocated resource. Got: '{0}'", Severity.Error) },
         
         // AnalyzerError
         { DiagnosticName.TypeMismatch, ("You cannot assign type '{0}' to type '{1}'", Severity.Error) },
