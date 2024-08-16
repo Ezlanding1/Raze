@@ -106,10 +106,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                         }
                         else
                         {
-                            if (arg.IsLiteral(out var literal) && IsFloatingType(invokable.internalFunction.parameters[i].stack.type))
-                            {
-                                arg = ((AssemblyExpr.Literal)literal).PutFloatLiteralOnDataSection(this);
-                            }
                             Emit(new AssemblyExpr.Binary(GetMoveInstruction(type: invokable.internalFunction.parameters[i].stack.type), paramReg, arg));
                         }
                     }
@@ -234,7 +230,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
     public AssemblyExpr.IValue? VisitDeclareExpr(Expr.Declare expr)
     {
-        AssemblyExpr.IValue operand = expr.value?.Accept(this);
+        AssemblyExpr.IValue? operand = expr.value?.Accept(this)
+            ?.IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)expr.stack.size, true);
 
         if (alloc.current is not Expr.Class)
         {
@@ -291,10 +288,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         }
         else
         {
-            operand = ((AssemblyExpr.ILiteralBase)operand).CreateLiteral((AssemblyExpr.Register.RegisterSize)expr.stack.size);
-            AssemblyExpr.Literal literal = (AssemblyExpr.Literal)operand;
-
-            var chunks = ChunkString(literal);
+            var chunks = ChunkString((AssemblyExpr.Literal)operand);
             if (chunks.Item1 != -1)
             {
                 if (expr.classScoped)
@@ -449,7 +443,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         if (operand1.IsLiteral(out var unresolvedLiteral))
         {
-            var literal = unresolvedLiteral.CreateLiteral(AssemblyExpr.Register.RegisterSize._8Bits);
+            var literal = unresolvedLiteral.CreateRawLiteral(AssemblyExpr.Register.RegisterSize._8Bits);
             if ((expr.op.type == Token.TokenType.AND) ^ IsTrueBooleanLiteral(literal))
             {
                 return operand1;
@@ -492,7 +486,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         if (operand2.IsLiteral(out var unresolvedLiteral2))
         {
-            var literal = unresolvedLiteral2.CreateLiteral(AssemblyExpr.Register.RegisterSize._8Bits);
+            var literal = unresolvedLiteral2.CreateRawLiteral(AssemblyExpr.Register.RegisterSize._8Bits);
             assembly.text.RemoveRange(assembly.text.Count-2, 2);
 
             if ((expr.op.type == Token.TokenType.AND) ^ IsTrueBooleanLiteral(literal))
@@ -575,10 +569,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                 );
                 dataCount++;
                 return new AssemblyExpr.UnresolvedLiteral(AssemblyExpr.Literal.LiteralType.RefData, name);
+            case Parser.LiteralTokenType.Floating:
+                return new AssemblyExpr.UnresolvedDataLiteral(AssemblyExpr.Literal.LiteralType.Floating, expr.literal.lexeme, this);
             case Parser.LiteralTokenType.String:
             case Parser.LiteralTokenType.Integer:
             case Parser.LiteralTokenType.UnsignedInteger:
-            case Parser.LiteralTokenType.Floating:
             case Parser.LiteralTokenType.Binary:
             case Parser.LiteralTokenType.Hex:
             case Parser.LiteralTokenType.Boolean:
@@ -608,7 +603,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
             if (condition.IsLiteral(out var unresolvedLiteral))
             {
-                var literal = unresolvedLiteral.CreateLiteral(AssemblyExpr.Register.RegisterSize._8Bits);
+                var literal = unresolvedLiteral.CreateRawLiteral(AssemblyExpr.Register.RegisterSize._8Bits);
                 if (IsTrueBooleanLiteral(literal))
                 {
                     expr.conditionals[i].block.Accept(this);
@@ -768,7 +763,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
     public virtual AssemblyExpr.IValue? VisitAssignExpr(Expr.Assign expr)
     {
-        AssemblyExpr.IValue operand2 = expr.value.Accept(this);
+        AssemblyExpr.IValue? operand2 = expr.value.Accept(this)
+            ?.IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)expr.member.GetLastSize(), true);
         AssemblyExpr.IValue operand1 = expr.member.Accept(this).NonLiteral(this, expr.member.GetLastType());
 
         if (operand2 == null) return null;
@@ -783,7 +779,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         if (operand2.IsPointer(out var op2Ptr))
         {
-            var reg = alloc.NextRegister(op2Ptr.Size);
+            var reg = alloc.NextRegister(op2Ptr.Size, expr.member.GetLastType());
             Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, reg, operand2));
             operand2 = reg;
         }
@@ -796,12 +792,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         }
         else
         {
-            operand2 = ((AssemblyExpr.ILiteralBase)operand2).CreateLiteral((AssemblyExpr.Register.RegisterSize)expr.member.GetLastSize());
-            AssemblyExpr.Literal literal = (AssemblyExpr.Literal)operand2;
-
             if (operand1.IsPointer())
             {
-                var chunks = ChunkString(literal);
+                var chunks = ChunkString((AssemblyExpr.Literal)operand2);
                 if (chunks.Item1 != -1)
                 {
                     var ptr = (AssemblyExpr.Pointer)operand1;

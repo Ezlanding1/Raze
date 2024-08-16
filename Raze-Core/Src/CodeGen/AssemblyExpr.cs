@@ -94,7 +94,7 @@ public abstract partial class AssemblyExpr
                 if (CodeGen.IsFloatingType(type))
                 {
                     reg = codeGen.alloc.NextSseRegister();
-                    codeGen.Emit(new Binary(Instruction.MOVSS, reg, ((Literal)this).PutFloatLiteralOnDataSection(codeGen)));
+                    codeGen.Emit(new Binary(Instruction.MOVSS, reg, this));
                 }
                 else
                 {
@@ -106,10 +106,14 @@ public abstract partial class AssemblyExpr
             return (IRegisterPointer)this;
         }
 
-        internal IValue IfLiteralCreateLiteral(Register.RegisterSize size)
+        internal IValue IfLiteralCreateLiteral(Register.RegisterSize size, bool raw=false)
         {
             if (IsLiteral())
             {
+                if (raw)
+                {
+                    return ((ILiteralBase)this).CreateRawLiteral(size);
+                }
                 return ((ILiteralBase)this).CreateLiteral(size);
             }
             return this;
@@ -278,7 +282,7 @@ public abstract partial class AssemblyExpr
 
         public Register? GetRegister() => value as Register;
 
-        public bool IsOnStack() => GetRegister()?.Name == Register.RegisterName.RBP;
+        public bool IsOnStack() => GetRegister() == null || ((Register)value).Name == Register.RegisterName.RBP;
 
         public Register AsRegister(CodeGen assembler)
         {
@@ -315,7 +319,8 @@ public abstract partial class AssemblyExpr
 
     public interface ILiteralBase : IValue, IRegisterLiteral
     {
-        public Literal CreateLiteral(Register.RegisterSize size);
+        public IValue CreateLiteral(Register.RegisterSize size);
+        public Literal CreateRawLiteral(Register.RegisterSize size);
     }
 
     public class UnresolvedLiteral : ILiteralBase
@@ -332,7 +337,8 @@ public abstract partial class AssemblyExpr
             this.value = value;
         }
 
-        public Literal CreateLiteral(Register.RegisterSize size)
+        public virtual IValue CreateLiteral(Register.RegisterSize size) => CreateRawLiteral(size);
+        public virtual Literal CreateRawLiteral(Register.RegisterSize size)
         {
             return type >= Literal.LiteralType.RefData ? new LabelLiteral(type, value, size) : new Literal(type, value, size);
         }
@@ -354,6 +360,35 @@ public abstract partial class AssemblyExpr
 
         public T VisitOperandRegister<T>(IBinaryOperandVisitor<T> visitor, Register reg) =>
             throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Literal left unresolved"));
+    }
+
+    public class UnresolvedDataLiteral : UnresolvedLiteral
+    {
+        CodeGen codeGen;
+
+        internal UnresolvedDataLiteral(Literal.LiteralType type, string value, CodeGen codeGen) : base(type, value)
+        {
+            this.codeGen = codeGen;
+        }
+
+        public override IValue CreateLiteral(Register.RegisterSize size)
+        {
+            string name = codeGen.DataLabel;
+            codeGen.EmitData(
+                new Data(
+                    name,
+                    type,
+                    [ImmediateGenerator.Generate(type, value, size)]
+                )
+            );
+            codeGen.dataCount++;
+            return new Pointer(new DataRef(name), 0, size);
+        }
+
+        public override Literal CreateRawLiteral(Register.RegisterSize size)
+        {
+            return new Literal(type, ImmediateGenerator.Generate(type, value, size));
+        }
     }
 
     public class Literal : ILiteralBase
@@ -390,22 +425,8 @@ public abstract partial class AssemblyExpr
             this.value = ImmediateGenerator.Generate(type, value, size);
         }
 
-        public Literal CreateLiteral(Register.RegisterSize size) => this;
-
-        public IValue PutFloatLiteralOnDataSection(CodeGen codeGen)
-        {
-            codeGen.EmitData(new Data(
-                codeGen.DataLabel,
-                this
-            ));
-            var ptr = new Pointer(
-                new DataRef(codeGen.CreateDatalLabel(codeGen.dataCount++)),
-                0,
-                this.Size
-            );
-            return ptr;
-        }
-
+        public IValue CreateLiteral(Register.RegisterSize size) => CreateRawLiteral(size);
+        public Literal CreateRawLiteral(Register.RegisterSize size) => this;
 
         public T Accept<T>(IUnaryOperandVisitor<T> visitor)
         {

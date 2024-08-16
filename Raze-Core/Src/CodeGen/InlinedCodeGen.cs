@@ -315,7 +315,7 @@ public class InlinedCodeGen : CodeGen
     {
         if (arg.IsLiteral(out var literal) && !parameter.modifiers["inlineRef"])
         {
-            return ((AssemblyExpr.IValue)literal.CreateLiteral((AssemblyExpr.Register.RegisterSize)parameter.stack.size)).NonLiteral(this, parameter.stack.type);
+            return (literal.CreateLiteral((AssemblyExpr.Register.RegisterSize)parameter.stack.size)).NonLiteral(this, parameter.stack.type);
         }
         if (IsRefParameter(parameter))
         {

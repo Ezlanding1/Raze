@@ -28,11 +28,6 @@ public abstract partial class CodeGen
                 AssemblyExpr.IValue op1 = binary.operand1.ToOperand(codeGen, AssemblyExpr.Register.RegisterSize._32Bits).NonPointerNonLiteral(codeGen, binary.operand1.Type());
                 var op2 = binary.operand2.ToOperand(codeGen, op1.Size);
 
-                if (op2.IsLiteral(out var literal))
-                {
-                    op2 = ((AssemblyExpr.Literal)literal).PutFloatLiteralOnDataSection(codeGen);
-                }
-
                 codeGen.Emit(new AssemblyExpr.Binary(binary.instruction, op1, op2));
 
                 ReturnOperand(codeGen, binary, binary.operand1, op1);
