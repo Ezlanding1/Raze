@@ -11,6 +11,8 @@ public partial class Analyzer
 {
     internal static class TypeCheckUtils
     {
+        // Primitive Types:
+
         public readonly static Expr.Class objectType = new SpecialObjects.Object();
         public readonly static Expr.Class anyType = new SpecialObjects.Any(new(Token.TokenType.IDENTIFIER, "any"));
         public readonly static Expr.Class _voidType = new Expr.Class(new(Token.TokenType.RESERVED, "void"), new(), new(), new(null));
@@ -35,6 +37,29 @@ public partial class Analyzer
             { "false", literalTypes[Parser.LiteralTokenType.Boolean] },
             { "null", new SpecialObjects.Null() },
         };
+
+
+        // Runtime Library Types:
+
+
+
+        public class RuntimeLibrarySingleton(string import, string name)
+        {
+            public Expr.Class Value => _value ??= GetRuntimeTypeFromEnvironment(import, name);
+            private Expr.Class? _value = null;
+        }
+
+        private static Expr.Class GetRuntimeTypeFromEnvironment(string import, string name)
+        {
+            using (new SaveContext())
+            {
+                SymbolTableSingleton.SymbolTable.SetContext(SymbolTableSingleton.SymbolTable.GetRuntimeImport(SymbolTable.runtimeImports[import].fileInfo).importClass);
+                InitialPass.HandleTypeNameReference([new(Token.TokenType.IDENTIFIER, name)]);
+                return (SymbolTableSingleton.SymbolTable.Current as Expr.Class) 
+                    ?? throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Environment type not found: '{name}'"));
+            }
+        }
+
 
         public static void MustMatchType(Expr.Type type1, Expr.Type type2, bool _ref1, Expr expr2, bool declare, bool _return) =>
             MustMatchType(type1, type2, _ref1, IsVariableWithRefModifier(expr2), declare, _return);
