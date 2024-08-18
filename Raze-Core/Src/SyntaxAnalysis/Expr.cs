@@ -818,13 +818,13 @@ public abstract partial class Expr
         internal bool customPath;
         internal ImportType importType;
 
-        internal Import(FileInfo fileInfo, bool customPath, ImportType importType)
+        internal Import(FileInfo fileInfo, bool customPath, ImportType importType, bool validate=true)
         {
             this.fileInfo = fileInfo;
             this.customPath = customPath;
             this.importType = importType;
 
-            if (!FindImportPath())
+            if (!FindImportPath() && validate)
             {
                 Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.ImportNotFound, fileInfo.FullName));
             }
@@ -847,15 +847,13 @@ public abstract partial class Expr
             return fileInfo.Exists;
         }
 
-        public static List<Import> GenerateRuntimeAutoImports()
+        public static List<Import> GenerateAutoImports()
         {
-            return [
-                new Import(
-                    new FileInfo("Raze.rz"),
-                    false,
-                    new(new([new(Token.TokenType.IDENTIFIER, "Std")]), true)
-                )
-            ];
+            var runtimeImports = Analyzer.SymbolTable.runtimeImports;
+            var stdImports = Analyzer.SymbolTable.standardLibraryImports;
+
+            var autoImports = runtimeImports.Values.Concat(stdImports).ToList();
+            return autoImports;
         }
 
         public override T Accept<T>(IVisitor<T> visitor)

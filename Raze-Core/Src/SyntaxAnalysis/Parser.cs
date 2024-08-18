@@ -51,20 +51,19 @@ public partial class Parser
         SymbolTableSingleton.SymbolTable.AddMainImport(tokens);
     }
 
-    internal List<Expr> ParseImport()
+    internal (List<Expr> exprs, List<Expr.Import> imports) ParseImport()
     {
         while (!IsAtEnd())
         {
             expressions.Add(Start());
         }
 
-        var runtimeAutoImports = Expr.Import.GenerateRuntimeAutoImports()
+        var runtimeAutoImports = Expr.Import.GenerateAutoImports()
             .Where(x => x.fileInfo != SymbolTableSingleton.SymbolTable.currentFileInfo);
         imports.AddRange(runtimeAutoImports);
         expressions.AddRange(runtimeAutoImports);
 
-        imports.ForEach(SymbolTableSingleton.SymbolTable.AddImport);
-        return expressions;
+        return (expressions, imports);
     }
 
     private Expr Start() => Import();

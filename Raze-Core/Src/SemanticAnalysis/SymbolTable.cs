@@ -62,13 +62,15 @@ public partial class Analyzer
             var import = new Expr.Import(new(Diagnostics.mainFile), true, new(new(null), false));
 
             var importClass = SpecialObjects.GenerateImportToplevelWrapper(import);
-            imports[import.fileInfo] = new(importClass, null, NewGlobals());
+            this.imports[import.fileInfo] = new(importClass, null, NewGlobals());
             
             Parser parser = new Parser(tokens);
-            List<Expr> expressions = parser.ParseImport();
+            (List<Expr> expressions, List<Expr.Import> imports) = parser.ParseImport();
 
             SpecialObjects.AddExprsToImportToplevelWrapper(importClass, expressions);
-            imports[import.fileInfo] = new(importClass, expressions, this.globals);
+            this.imports[import.fileInfo] = new(importClass, expressions, this.globals);
+            
+            imports.ForEach(SymbolTableSingleton.SymbolTable.AddImport);
         }
 
         public void AddImport(Expr.Import import)
@@ -84,15 +86,7 @@ public partial class Analyzer
 
         private void AddImportGlobalWrapper(Expr.Import import, Expr.Class importClass)
         {
-            using (new SaveContext())
-            {
-                SetContext(importClass);
-                if (import.importType.typeRef.typeName != null)
-                {
-                    InitialPass.HandleTypeNameReference(import.importType.typeRef.typeName);
-                }
-                import.importType.typeRef.type = (Expr.DataType)Current;
-            }
+            import.importType.typeRef.type ??= ImportTypeRefType(import, importClass);
 
             if (import.importType.importAll)
             {
@@ -104,6 +98,19 @@ public partial class Analyzer
             else
             {
                 AddGlobal(import.importType.typeRef.type);
+            }
+        }
+
+        private Expr.DataType ImportTypeRefType(Expr.Import import, Expr.Class importClass)
+        {
+            using (new SaveContext())
+            {
+                SetContext(importClass);
+                if (import.importType.typeRef.typeName != null)
+                {
+                    InitialPass.HandleTypeNameReference(import.importType.typeRef.typeName);
+                }
+                return (Expr.DataType)Current;
             }
         }
 
@@ -119,12 +126,46 @@ public partial class Analyzer
                 var tokens = lexer.Tokenize();
 
                 Parser parser = new Parser(tokens);
-                List<Expr> expressions = parser.ParseImport();
+                (List<Expr> expressions, List<Expr.Import> imports) = parser.ParseImport();
 
                 SpecialObjects.AddExprsToImportToplevelWrapper(importClass, expressions);
-                imports[import.fileInfo] = new(importClass, expressions, this.globals);
+                this.imports[import.fileInfo] = new(importClass, expressions, this.globals);
+
+                imports.ForEach(SymbolTableSingleton.SymbolTable.AddImport);
+
                 return importClass;
             }
+        }
+
+        // Runtime Library Imports
+
+        public readonly static Dictionary<string, Expr.Import> runtimeImports = new()
+        {
+            {
+                "Raze.Std",
+                new Expr.Import(
+                    new Expr.Import.FileInfo("Raze.rz"),
+                    false,
+                    new (new ([new(Token.TokenType.IDENTIFIER, "Std")]), true)
+                )
+            }
+        };
+
+        // Standard Library Imports
+
+        public readonly static List<Expr.Import> standardLibraryImports = new()
+        {
+            new Expr.Import(
+                new Expr.Import.FileInfo("IO.rz"),
+                false,
+                new (new(null), true), 
+                validate: false
+            )
+        };
+
+        public ImportData GetRuntimeImport(Expr.Import.FileInfo fileInfo)
+        {
+            return imports[fileInfo];
         }
 
         private static List<Expr.Definition> NewGlobals() => [TypeCheckUtils.objectType];
