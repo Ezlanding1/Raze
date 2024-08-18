@@ -299,7 +299,8 @@ public abstract partial class Expr
 
                 if (currentFunction._returnType.type is Primitive primitive)
                 {
-                    if (primitive.size != (int)op.Size)
+                    int primitiveSize = currentFunction.refReturn ? 8 : primitive.size;
+                    if (primitiveSize != (int)op.Size)
                     {
                         Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.InlineAssemblySizeMismatchReturn_Primitive, op.Size, primitive.name.lexeme));
                     }
