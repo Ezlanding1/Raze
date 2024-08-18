@@ -102,6 +102,8 @@ public abstract partial class Diagnostic
         UnsupportedInstruction,
         InvalidInstructionOperandType_Arity1,
         InvalidInstructionOperandType_Arity2,
-        InstructionOperandsSizeMismatch
+        InstructionOperandsSizeMismatch,
+        InlineAssemblySizeMismatchReturn_NonPrimitive,
+        InlineAssemblySizeMismatchReturn_Primitive
     };
 }

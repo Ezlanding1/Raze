@@ -101,5 +101,7 @@ public abstract partial class Diagnostic
         { DiagnosticName.InvalidInstructionOperandType_Arity1, ("'{0}' Instruction's operand must be a {2}. Got {3}\"", Severity.Error) },
         { DiagnosticName.InvalidInstructionOperandType_Arity2, ("'{0}' Instruction's {1} operand must be a {2}. Got {3}\"", Severity.Error) },
         { DiagnosticName.InstructionOperandsSizeMismatch, ("Instruction operand sizes don't match", Severity.Error) },
+        { DiagnosticName.InlineAssemblySizeMismatchReturn_NonPrimitive, ("Only primitive types may be the return type of a value returned from an inline assembly expression", Severity.Error) },
+        { DiagnosticName.InlineAssemblySizeMismatchReturn_Primitive, ("You cannot return an inline assembly value with size '{0}' from type '{1}'", Severity.Error) },
     };
 }

@@ -268,14 +268,20 @@ public abstract partial class Expr
 
             public static void ReturnOperand(CodeGen codeGen, Operand operand, AssemblyExpr.IValue op)
             {
-                if (((InlinedCodeGen)codeGen).inlineState.inline)
+                Function currentFunction;
+
+                if (codeGen is InlinedCodeGen inlinedCodeGen && inlinedCodeGen.inlineState.inline)
                 {
+                    currentFunction = ((InlinedCodeGen.InlineStateInlined)inlinedCodeGen.inlineState).currentInlined;
+
                     var nonLiteral = op.NonLiteral(codeGen, operand.Type());
-                    ((InlinedCodeGen.InlineStateInlined)((InlinedCodeGen)codeGen).inlineState).callee = nonLiteral;
-                    ((InlinedCodeGen)codeGen).LockOperand(nonLiteral);
+                    ((InlinedCodeGen.InlineStateInlined)inlinedCodeGen.inlineState).callee = nonLiteral;
+                    inlinedCodeGen.LockOperand(nonLiteral);
                 }
                 else
                 {
+                    currentFunction = (Function)codeGen.alloc.current;
+
                     (var instruction, var _returnRegister) = CodeGen.IsFloatingType(operand.Type()) ?
                         (AssemblyExpr.Instruction.MOVSS, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.XMM0, AssemblyExpr.Register.RegisterSize._128Bits)) :
                         (AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, op.Size));
@@ -289,6 +295,18 @@ public abstract partial class Expr
                     {
                         codeGen.Emit(new AssemblyExpr.Binary(instruction, _returnRegister, op));
                     }
+                }
+
+                if (currentFunction._returnType.type is Primitive primitive)
+                {
+                    if (primitive.size != (int)op.Size)
+                    {
+                        Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.InlineAssemblySizeMismatchReturn_Primitive, op.Size, primitive.name.lexeme));
+                    }
+                }
+                else
+                {
+                    Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.InlineAssemblySizeMismatchReturn_NonPrimitive));
                 }
             }
 
