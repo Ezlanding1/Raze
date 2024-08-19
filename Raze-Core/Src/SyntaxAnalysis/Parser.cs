@@ -593,7 +593,7 @@ public partial class Parser
     {
         if (!IsAtEnd())
         {
-            Expr expr;
+            Expr.Getter? getter = null;
 
             if (TypeMatch(Array.ConvertAll<LiteralTokenType, Token.TokenType>(Enum.GetValues<LiteralTokenType>(), new(x => (Token.TokenType)x))))
             {
@@ -604,12 +604,29 @@ public partial class Parser
             {
                 Expr logical = Logical();
                 Expect(Token.TokenType.RPAREN, "')' after expression.");
-                return new Expr.Grouping(logical);
+                getter = new Expr.Grouping(logical);
+            }
+            else if (ReservedValueMatch("new"))
+            {
+                Expect(Token.TokenType.IDENTIFIER, "identifier after new expression");
+                var newCallExpr = GetNewGetter();
+                if (newCallExpr == null)
+                {
+                    return new Expr.InvalidExpr();
+                }
+                getter = new Expr.New(newCallExpr);
+            }
+            else if (ReservedValueMatch("heapalloc"))
+            {
+                Expect(Token.TokenType.LPAREN, "before heapalloc size expression");
+                var heapAlloc = new Expr.HeapAlloc(Logical());
+                Expect(Token.TokenType.RPAREN, "after heapalloc size expression");
+                getter = heapAlloc;
             }
 
-            if (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this", "ref"))
+            if ((getter != null && current.type == Token.TokenType.DOT) || (getter == null && (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this", "ref"))))
             {
-                var variable = GetReference();
+                var variable = GetReference(getter);
 
                 if (TypeMatch(Token.TokenType.EQUALS))
                 {
@@ -617,7 +634,7 @@ public partial class Parser
                     {
                         Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssignStatement, "method"));
                     }
-                    expr = new Expr.Assign(variable, NoSemicolon());
+                    return new Expr.Assign(variable, NoSemicolon());
                 }
                 else if (TypeMatch([Token.TokenType.PLUS, Token.TokenType.MINUS, Token.TokenType.MULTIPLY, Token.TokenType.DIVIDE, Token.TokenType.MODULO], [Token.TokenType.EQUALS]))
                 {
@@ -626,46 +643,32 @@ public partial class Parser
                         Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssignStatement, "method"));
                     }
                     var op = tokens[index - 2];
-                    expr = new Expr.Assign(variable, new Expr.Binary(variable, op, NoSemicolon()));
+                    return new Expr.Assign(variable, new Expr.Binary(variable, op, NoSemicolon()));
                 }
                 else if (TypeMatch(Token.TokenType.LBRACKET))
                 {
-                    expr = new Expr.Binary(variable, Previous(), NoSemicolon());
+                    var binary = new Expr.Binary(variable, Previous(), NoSemicolon());
                     Expect(Token.TokenType.RBRACKET, "']' after indexer");
+                    return binary;
                 }
                 else if (!variable.IsMethodCall() && (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this")))
                 {
-                    expr = (Expr)Declare(variable) ?? new Expr.InvalidExpr();
+                    return (Expr)Declare(variable) ?? new Expr.InvalidExpr();
                 }
                 else
                 {
-                    expr = variable;
+                    return variable;
                 }
-                return expr;
+            }
+
+            if (getter != null)
+            {
+                return getter;
             }
 
             if (ReservedValueMatch("null", "true", "false"))
             {
                 return new Expr.Keyword(Previous().lexeme);
-            }
-
-            if (ReservedValueMatch("new"))
-            {
-                Expect(Token.TokenType.IDENTIFIER, "identifier after new expression");
-                var newCallExpr = GetNewGetter();
-                if (newCallExpr == null)
-                {
-                    return new Expr.InvalidExpr();
-                }
-                return new Expr.New(newCallExpr);
-            }
-
-            if (ReservedValueMatch("heapalloc"))
-            {
-                Expect(Token.TokenType.LPAREN, "before heapalloc size expression");
-                var heapAlloc = new Expr.HeapAlloc(Logical());
-                Expect(Token.TokenType.RPAREN, "after heapalloc size expression");
-                return heapAlloc;
             }
         }
         End();
@@ -679,7 +682,7 @@ public partial class Parser
         {
             Expr.Declare? declare;
 
-            var variable = GetReference();
+            var variable = GetReference(null);
 
             if (TypeMatch(Token.TokenType.IDENTIFIER))
             {
@@ -727,27 +730,35 @@ public partial class Parser
         return new Expr.Declare(getRef.typeName, name, getRef._ref, NoSemicolon());
     }
 
-    private Expr.GetReference GetReference()
+    private Expr.GetReference GetReference(Expr.Getter? expr)
     {
         bool _ref = Previous().lexeme == "ref";
         if (_ref) Advance();
 
         List<Expr.Getter> getters = new();
-        Expr.AmbiguousGetReference callee = new(GetTypeReference(), _ref);
 
-        if (TypeMatch(Token.TokenType.LPAREN))
+        if (expr == null)
         {
-            getters.Add(new Expr.Call(callee.typeName.StackPop(), GetArgs(), (callee.typeName.Count == 0) ? null : callee));
-        }
-        else if (callee.typeName.Count != 0 && TypeMatch(Token.TokenType.LBRACKET))
-        {
-            getters.Add(new Expr.Binary(callee, Previous(), Logical()));
-            Expect(Token.TokenType.RBRACKET, "']' after indexer");
+            Expr.AmbiguousGetReference callee = new(GetTypeReference(), _ref);
+
+            if (TypeMatch(Token.TokenType.LPAREN))
+            {
+                getters.Add(new Expr.Call(callee.typeName.StackPop(), GetArgs(), (callee.typeName.Count == 0) ? null : callee));
+            }
+            else if (callee.typeName.Count != 0 && TypeMatch(Token.TokenType.LBRACKET))
+            {
+                getters.Add(new Expr.Binary(callee, Previous(), Logical()));
+                Expect(Token.TokenType.RBRACKET, "']' after indexer");
+            }
+            else
+            {
+                callee.instanceCall = true;
+                return callee;
+            }
         }
         else
         {
-            callee.instanceCall = true;
-            return callee;
+            getters.Add(expr);
         }
 
         while (true)

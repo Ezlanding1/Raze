@@ -90,14 +90,17 @@ public abstract partial class Expr
         public override IList<Expr> Arguments => [operand];
     }
 
-    public class Grouping : Expr
+    public class Grouping : Getter
     {
         public Expr expression;
 
-        public Grouping(Expr expression)
+        public Grouping(Expr expression) : base(null!)
         {
             this.expression = expression;
         }
+
+        public override DataType Type => null!;
+        public override bool IsMethodCall => true;
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
@@ -291,6 +294,8 @@ public abstract partial class Expr
 
     public class InstanceGetReference : GetReference
     {
+        // getters[0].name may be null if getters.Count > 1
+        // getters[0].type may be null if getters.Count > 1
         public List<Getter> getters;
 
         public InstanceGetReference(List<Getter> getters, bool _ref) : base(_ref)
@@ -492,15 +497,18 @@ public abstract partial class Expr
         }
     }
 
-    public class New : Expr
+    public class New : Getter
     {
         public Call call;
         public Class internalClass;
 
-        public New(Call call)
+        public New(Call call) : base(null!)
         {
             this.call = call;
         }
+
+        public override DataType Type => internalClass;
+        public override bool IsMethodCall => true;
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
@@ -895,7 +903,7 @@ public abstract partial class Expr
         }
     }
 
-    public class HeapAlloc(Expr size) : Expr
+    public class HeapAlloc(Expr size) : Getter(null!)
     {
         public Expr size = size;
 
@@ -903,6 +911,9 @@ public abstract partial class Expr
         {
             return visitor.VisitHeapAllocExpr(this);
         }
+
+        public override DataType Type => (DataType)Analyzer.TypeCheckUtils.heapallocType.Value;
+        public override bool IsMethodCall => true;
     }
 
     public abstract class NoOp : Expr
