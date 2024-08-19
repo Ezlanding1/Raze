@@ -47,6 +47,7 @@ public abstract partial class Expr
         public T VisitIsExpr(Is expr);
         public T VisitAsExpr(As expr);
         public T VisitImportExpr(Import expr);
+        public T VisitHeapAllocExpr(HeapAlloc expr);
         public T VisitNoOpExpr(NoOp expr);
     }
 
@@ -891,6 +892,16 @@ public abstract partial class Expr
 
             public static bool operator ==(FileInfo left, FileInfo right) => left.Equals(right);
             public static bool operator !=(FileInfo left, FileInfo right) => !(left == right);
+        }
+    }
+
+    public class HeapAlloc(Expr size) : Expr
+    {
+        public Expr size = size;
+
+        public override T Accept<T>(IVisitor<T> visitor)
+        {
+            return visitor.VisitHeapAllocExpr(this);
         }
     }
 

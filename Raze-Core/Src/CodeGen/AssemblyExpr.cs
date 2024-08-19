@@ -261,6 +261,9 @@ public abstract partial class AssemblyExpr
             this._size = _size;
             this.offset = -offset;
         }
+        public Pointer(IRegisterLiteral register, int offset, int size) : this(register, offset, InstructionUtils.ToRegisterSize(size))
+        {
+        }
         internal Pointer(Register register, int offset, int size) : this(register, offset, InstructionUtils.ToRegisterSize(size))
         {
         }

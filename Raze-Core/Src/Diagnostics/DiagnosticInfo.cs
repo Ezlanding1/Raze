@@ -93,6 +93,7 @@ public abstract partial class Diagnostic
         { DiagnosticName.InvalidFunctionModifier_Ref, ("Cannot assign when non-variable is returned as 'ref'", Severity.Error) },
         { DiagnosticName.InvalidRefModifier, ("Non-variable values ({0}s) may mot be marked 'ref'", Severity.Error) },
         { DiagnosticName.InvalidRefModifier_Location, ("Variables marked 'ref' may not be used in a {0}", Severity.Error) },
+        { DiagnosticName.RequiredRuntimeTypeNotFound, ("Required runtime type '{0}' from '{1}' not found", Severity.Error) },
         
         // BackendError
         { DiagnosticName.InvalidLiteralSize, ("{0} literal '{1}' exceeds size of assigned data type '{2}'", Severity.Error) },

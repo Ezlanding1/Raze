@@ -846,30 +846,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         bool hasVTable = expr.internalClass.emitVTable || expr.internalClass.GetVirtualMethods().Count != 0;
         int size = Math.Max(1, expr.internalClass.size);
 
-        // either dealloc on exit (handled by OS), require manual delete, or implement GC
-        alloc.ReserveRegister(this, 0);
-        var rax = alloc.GetRegister(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits);
-        alloc.ReserveRegister(this, AssemblyExpr.Register.RegisterName.RDI);
-        var rdi = alloc.GetRegister(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits);
-
-        // Move the following into a runtime procedure, and pass in the expr.internalClass.size as a parameter
-        // {
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [12])));
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rdi, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [0])));
-        Emit(new AssemblyExpr.Nullary(AssemblyExpr.Instruction.SYSCALL));
-
-        var ptr = new AssemblyExpr.Pointer(rax, -size, 8);
-
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA,  rdi, ptr));
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [12])));
-
-        alloc.NullReg(AssemblyExpr.Register.RegisterName.RDI);
-        alloc.NeededAlloc(AssemblyExpr.Register.RegisterSize._64Bits, this, AssemblyExpr.Register.RegisterName.RDI);
-
-        Emit(new AssemblyExpr.Nullary(AssemblyExpr.Instruction.SYSCALL));
-
-        //Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, rbx));
-        // }
+        new Expr.HeapAlloc(new Expr.Literal(new(Parser.LiteralTokenType.Integer, size.ToString()))).Accept(this);
 
         if (hasVTable)
         {
@@ -880,7 +857,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             ));
         }
 
-        alloc.FreeRegister(rax);
         return expr.call.Accept(this);
     }
 
@@ -930,6 +906,62 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             alloc.Free(register2);
             return register;
         }
+    }
+
+    public AssemblyExpr.IValue VisitHeapAllocExpr(Expr.HeapAlloc expr)
+    {
+        var size = expr.size.Accept(this)
+            .NonPointer(this, null)
+            .IfLiteralCreateLiteral(AssemblyExpr.Register.RegisterSize._64Bits);
+
+        // either dealloc on exit (handled by OS), require manual delete, or implement GC
+        alloc.ReserveRegister(this, 0);
+        var rax = alloc.GetRegister(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits);
+        alloc.ReserveRegister(this, AssemblyExpr.Register.RegisterName.RDI);
+        var rdi = alloc.GetRegister(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits);
+
+        // Move the following into a runtime procedure, and pass in the expr.internalClass.size as a parameter
+        // {
+        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [12])));
+        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rdi, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [0])));
+        Emit(new AssemblyExpr.Nullary(AssemblyExpr.Instruction.SYSCALL));
+
+        AssemblyExpr.Pointer ptr;
+
+        if (size.IsLiteral())
+        {
+            ptr = new AssemblyExpr.Pointer(rax, -BitConverter.ToInt32(((AssemblyExpr.Literal)size).value), 8);
+        }
+        else
+        {
+            if (size.Size < AssemblyExpr.Register.RegisterSize._32Bits)
+            {
+                alloc.Free(size);
+                var newReg = alloc.NextRegister(InstructionUtils.SYS_SIZE);
+                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOVZX, newReg, size));
+                size = newReg;
+            }
+            ((AssemblyExpr.IRegisterPointer)size).Size = AssemblyExpr.Register.RegisterSize._64Bits;
+
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.ADD, rax, size));
+            ptr = new AssemblyExpr.Pointer(rax, 0, 8);
+        }
+
+        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, rdi, ptr));
+        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [12])));
+
+        alloc.NullReg(AssemblyExpr.Register.RegisterName.RDI);
+        alloc.NeededAlloc(AssemblyExpr.Register.RegisterSize._64Bits, this, AssemblyExpr.Register.RegisterName.RDI);
+
+        Emit(new AssemblyExpr.Nullary(AssemblyExpr.Instruction.SYSCALL));
+
+        //Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, rbx));
+        // }
+
+
+        alloc.Free(size);
+        alloc.FreeRegister(rax);
+        return rdi;
     }
     
     private AssemblyExpr.IValue CompareVTables(Expr.Is expr)
@@ -1049,10 +1081,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
     internal static AssemblyExpr.Binary PartialRegisterOptimize(Expr.Type operand1Type, AssemblyExpr.IRegisterPointer operand1, AssemblyExpr.IValue operand2)
     {
         operand1.Size = AssemblyExpr.Register.RegisterSize._32Bits;
-
-        bool signed = Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Integer].Matches(operand1Type);
-
-        return new AssemblyExpr.Binary(signed ? AssemblyExpr.Instruction.MOVSX : AssemblyExpr.Instruction.MOVZX, operand1, operand2);
+        return new AssemblyExpr.Binary(GetMoveWithExtendInstruction(operand1Type), operand1, operand2);
     }
 
     internal static AssemblyExpr.Register.RegisterSize GetIntegralSizeSigned(long value)
@@ -1147,4 +1176,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
     private protected static AssemblyExpr.IValue PreserveRefPtrVariable(bool _ref, AssemblyExpr.IValue pointer) =>
         _ref ? new AssemblyExpr.Register(((AssemblyExpr.Register)((AssemblyExpr.Pointer)pointer).value).nameBox, InstructionUtils.SYS_SIZE) : pointer;
+
+    private static AssemblyExpr.Instruction GetMoveWithExtendInstruction(Expr.Type type) =>
+        Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Integer].Matches(type) ? AssemblyExpr.Instruction.MOVSX : AssemblyExpr.Instruction.MOVZX;
 }

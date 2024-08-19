@@ -77,7 +77,7 @@ internal class TokenList
         { Token.TokenType.DOLLAR, "[$]" },
         { Token.TokenType.COMMENT, /*lang=regex*/"(?m)[#].*$" },
     };
-
+    
     public static readonly HashSet<string> Reserved = new HashSet<string>()
     {
         "if",
@@ -99,7 +99,8 @@ internal class TokenList
         "import",
         "from",
         "extends",
-        "trait"
+        "trait",
+        "heapalloc"
     };
 
     /*

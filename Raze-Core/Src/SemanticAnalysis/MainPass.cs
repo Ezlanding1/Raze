@@ -528,6 +528,13 @@ public partial class Analyzer
         public override Expr.Type VisitImportExpr(Expr.Import expr) =>
             TypeCheckUtils._voidType;
 
+
+        public override Expr.Type VisitHeapAllocExpr(Expr.HeapAlloc expr)
+        {
+            TypeCheckUtils.MustMatchType(expr.size.Accept(this), TypeCheckUtils.literalTypes[Parser.LiteralTokenType.UnsignedInteger], false, false, false, false);
+            return TypeCheckUtils.heapallocType.Value;
+        }
+
         public override Expr.Type VisitNoOpExpr(Expr.NoOp expr)
         {
             return TypeCheckUtils.anyType;

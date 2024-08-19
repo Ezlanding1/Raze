@@ -41,13 +41,14 @@ public partial class Analyzer
 
         // Runtime Library Types:
 
+        public static RuntimeLibrarySingleton heapallocType = new("Raze.Std", "HeapData");
 
 
         public class RuntimeLibrarySingleton(string import, ExprUtils.QueueList<Token> name)
         {
             public RuntimeLibrarySingleton(string import, string name) : this(import, new ExprUtils.QueueList<Token>() { new(Token.TokenType.IDENTIFIER, name) })
             { 
-        }
+            }
 
             public Expr.Definition Value => _value ??= GetRuntimeTypeFromEnvironment(import, name);
             private Expr.Definition? _value = null;
@@ -67,7 +68,7 @@ public partial class Analyzer
                 Expr.Definition result = SymbolTableSingleton.SymbolTable.Current!;
 
                 if (SymbolTableSingleton.SymbolTable.Current is SpecialObjects.Any)
-            {
+                {
                     Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.RequiredRuntimeTypeNotFound, name, import));
                 }
 

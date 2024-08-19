@@ -659,6 +659,14 @@ public partial class Parser
                 }
                 return new Expr.New(newCallExpr);
             }
+
+            if (ReservedValueMatch("heapalloc"))
+            {
+                Expect(Token.TokenType.LPAREN, "before heapalloc size expression");
+                var heapAlloc = new Expr.HeapAlloc(Logical());
+                Expect(Token.TokenType.RPAREN, "after heapalloc size expression");
+                return heapAlloc;
+            }
         }
         End();
         Advance();

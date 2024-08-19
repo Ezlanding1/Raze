@@ -173,6 +173,8 @@ public partial class Analyzer
 
         public virtual T VisitImportExpr(Expr.Import expr) => default;
 
+        public virtual T VisitHeapAllocExpr(Expr.HeapAlloc expr) => default;
+
         public virtual T VisitNoOpExpr(Expr.NoOp expr) => default;
     }
 }

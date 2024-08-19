@@ -294,6 +294,13 @@ public class ASTPrinter : Expr.IVisitor<object?>
         return null;
     }
 
+    public object? VisitHeapAllocExpr(Expr.HeapAlloc expr)
+    {
+        PrintAST("heapalloc");
+        PrintAST(expr.size);
+        return null;
+    }
+
     public object? VisitNoOpExpr(Expr.NoOp expr)
     {
         PrintAST("Invalid Expr");
