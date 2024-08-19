@@ -43,20 +43,35 @@ public partial class Analyzer
 
 
 
-        public class RuntimeLibrarySingleton(string import, string name)
+        public class RuntimeLibrarySingleton(string import, ExprUtils.QueueList<Token> name)
         {
-            public Expr.Class Value => _value ??= GetRuntimeTypeFromEnvironment(import, name);
-            private Expr.Class? _value = null;
+            public RuntimeLibrarySingleton(string import, string name) : this(import, new ExprUtils.QueueList<Token>() { new(Token.TokenType.IDENTIFIER, name) })
+            { 
         }
 
-        private static Expr.Class GetRuntimeTypeFromEnvironment(string import, string name)
+            public Expr.Definition Value => _value ??= GetRuntimeTypeFromEnvironment(import, name);
+            private Expr.Definition? _value = null;
+        }
+
+        private static Expr.Definition GetRuntimeTypeFromEnvironment(string import, ExprUtils.QueueList<Token> name)
         {
-            using (new SaveContext())
+            using (new SaveContext()) using (new SaveImportData(SymbolTableSingleton.SymbolTable.currentFileInfo))
             {
-                SymbolTableSingleton.SymbolTable.SetContext(SymbolTableSingleton.SymbolTable.GetRuntimeImport(SymbolTable.runtimeImports[import].fileInfo).importClass);
-                InitialPass.HandleTypeNameReference([new(Token.TokenType.IDENTIFIER, name)]);
-                return (SymbolTableSingleton.SymbolTable.Current as Expr.Class) 
-                    ?? throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Environment type not found: '{name}'"));
+                var fileInfo = SymbolTable.runtimeImports[import].fileInfo;
+
+                SymbolTableSingleton.SymbolTable.currentFileInfo = fileInfo;
+
+                SymbolTableSingleton.SymbolTable.SetContext(SymbolTableSingleton.SymbolTable.GetRuntimeImport(fileInfo).importClass);
+                InitialPass.HandleTypeNameReference(name);
+
+                Expr.Definition result = SymbolTableSingleton.SymbolTable.Current!;
+
+                if (SymbolTableSingleton.SymbolTable.Current is SpecialObjects.Any)
+            {
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.RequiredRuntimeTypeNotFound, name, import));
+                }
+
+                return result;
             }
         }
 
