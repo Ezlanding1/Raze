@@ -926,11 +926,10 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rdi, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [0])));
         Emit(new AssemblyExpr.Nullary(AssemblyExpr.Instruction.SYSCALL));
 
-        AssemblyExpr.Pointer ptr;
-
         if (size.IsLiteral())
         {
-            ptr = new AssemblyExpr.Pointer(rax, -BitConverter.ToInt32(((AssemblyExpr.Literal)size).value), 8);
+            var ptr = new AssemblyExpr.Pointer(rax, -BitConverter.ToInt32(((AssemblyExpr.Literal)size).value), 8);
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, rdi, ptr));
         }
         else
         {
@@ -944,10 +943,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             ((AssemblyExpr.IRegisterPointer)size).Size = AssemblyExpr.Register.RegisterSize._64Bits;
 
             Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.ADD, rax, size));
-            ptr = new AssemblyExpr.Pointer(rax, 0, 8);
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rdi, rax));
         }
 
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, rdi, ptr));
         Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [12])));
 
         alloc.NullReg(AssemblyExpr.Register.RegisterName.RDI);
