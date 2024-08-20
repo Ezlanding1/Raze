@@ -806,7 +806,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             }
         }
 
-        Emit(new AssemblyExpr.Binary(GetMoveInstruction(type: (operand2.IsLiteral() || expr.member.GetLastData()._ref) ? null : expr.member.GetLastType()), operand1, operand2));
+        Emit(new AssemblyExpr.Binary(GetMoveInstruction(type: (operand2.IsLiteral() || expr.member.GetLastData()?._ref == true) ? null : expr.member.GetLastType()), operand1, operand2));
 
         dealloc:
         alloc.Free(operand1);
