@@ -133,7 +133,9 @@ public class InlinedCodeGen : CodeGen
         if (enclosingThisStackDataValue != null)
         {
             Expr.DataType._this.inlinedData = false;
-            alloc.Free(Expr.DataType._this.value, lastThisIsLocked);
+            bool retIsThis = !(ret?.IsLiteral() != false) && !Expr.DataType._this.value.IsLiteral() && ((AssemblyExpr.IRegisterPointer)Expr.DataType._this.value).GetRegister().Name == ((AssemblyExpr.IRegisterPointer)ret).GetRegister().Name;
+            if (!retIsThis)
+                alloc.Free(Expr.DataType._this.value, lastThisIsLocked);
             Expr.DataType._this.value = enclosingThisStackDataValue;
         }
 
@@ -180,7 +182,7 @@ public class InlinedCodeGen : CodeGen
         HandleInlinedReturnOptimization();
 
         alloc.RemoveBlock();
-        return HandleRefVariableDeref(invokable.internalFunction.refReturn, ret, invokable.internalFunction._returnType.type);
+        return HandleRefVariableDeref(invokable.internalFunction.refReturn, ret, (AssemblyExpr.Register.RegisterSize)invokable.internalFunction._returnType.type.size, invokable.internalFunction._returnType.type);
     }
 
     public override AssemblyExpr.IValue? VisitAssignExpr(Expr.Assign expr)
