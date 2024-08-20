@@ -50,12 +50,6 @@ public partial class Analyzer
 
         public override object? VisitPrimitiveExpr(Expr.Primitive expr)
         {
-            symbolTable.SetContext(expr);
-
-            base.VisitPrimitiveExpr(expr);
-
-            symbolTable.UpContext();
-
             return null;
         }
 
@@ -127,6 +121,7 @@ public partial class Analyzer
 
         public override object? VisitAssignExpr(Expr.Assign expr)
         {
+            expr.member.Accept(this);
             base.VisitAssignExpr(expr);
 
             SetInlineRef(expr.member.GetLastData());
