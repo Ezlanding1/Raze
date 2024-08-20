@@ -637,13 +637,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(localConditionalCount)));
         }
 
-        if (expr._else != null)
-        {
-            foreach (Expr blockExpr in expr._else.block)
-            {
-                blockExpr.Accept(this);
-            }
-        }
+        expr._else?.Accept(this);
 
         if (multiBranch)
         {
@@ -668,9 +662,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         // Condition Label
         Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(localConditionalCount + 1)));
 
-        Emit(new AssemblyExpr.Unary(InstructionUtils.ConditionalJump(HandleConditionalCmpType(expr.conditional.condition.Accept(this))),
+        var condition = expr.conditional.condition.Accept(this);
+        Emit(new AssemblyExpr.Unary(InstructionUtils.ConditionalJump(HandleConditionalCmpType(condition)),
             new AssemblyExpr.LocalProcedureRef(CreateConditionalLabel(localConditionalCount))));
 
+        alloc.Free(condition);
         return null;
     }
 
@@ -681,7 +677,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         int localConditionalCount = conditionalCount;
         conditionalCount += 2;
 
-        expr.initExpr.Accept(this);
+        alloc.Free(expr.initExpr.Accept(this));
 
         Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.JMP, new AssemblyExpr.LocalProcedureRef(CreateConditionalLabel(localConditionalCount + 1))));
 
@@ -694,9 +690,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         // Condition Label
         Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(localConditionalCount + 1)));
 
-        Emit(new AssemblyExpr.Unary(InstructionUtils.ConditionalJump(HandleConditionalCmpType(expr.conditional.condition.Accept(this))),
+        var condition = expr.conditional.condition.Accept(this);
+        Emit(new AssemblyExpr.Unary(InstructionUtils.ConditionalJump(HandleConditionalCmpType(condition)),
             new AssemblyExpr.LocalProcedureRef(CreateConditionalLabel(localConditionalCount))));
 
+        alloc.Free(condition);
         alloc.RemoveBlock();
         return null;
     }

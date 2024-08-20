@@ -189,6 +189,19 @@ public partial class Analyzer
             return null;
         }
 
+        public override object? VisitIfExpr(Expr.If expr)
+        {
+            foreach (var conditional in expr.conditionals)
+            {
+                conditional.condition.Accept(this);
+                conditional.block.Accept(this);
+            }
+
+            expr._else?.Accept(this);
+
+            return default;
+        }
+
         public override object? VisitNewExpr(Expr.New expr)
         {
             expr.call.callee ??= new Expr.AmbiguousGetReference(new ExprUtils.QueueList<Token>(), false);
