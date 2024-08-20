@@ -912,7 +912,7 @@ public abstract partial class Expr
             return visitor.VisitHeapAllocExpr(this);
         }
 
-        public override DataType Type => (DataType)Analyzer.TypeCheckUtils.heapallocType.Value;
+        public override DataType Type => Analyzer.TypeCheckUtils.heapallocType.Value;
         public override bool IsMethodCall => true;
     }
 

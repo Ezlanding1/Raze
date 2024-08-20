@@ -41,40 +41,8 @@ public partial class Analyzer
 
         // Runtime Library Types:
 
-        public static RuntimeLibrarySingleton heapallocType = new("Raze.Std", "HeapData");
+        public static RuntimeLibrarySingletonDataType heapallocType = new("Raze.Std", "HeapData");
 
-
-        public class RuntimeLibrarySingleton(string import, ExprUtils.QueueList<Token> name)
-        {
-            public RuntimeLibrarySingleton(string import, string name) : this(import, new ExprUtils.QueueList<Token>() { new(Token.TokenType.IDENTIFIER, name) })
-            { 
-            }
-
-            public Expr.Definition Value => _value ??= GetRuntimeTypeFromEnvironment(import, name);
-            private Expr.Definition? _value = null;
-        }
-
-        private static Expr.Definition GetRuntimeTypeFromEnvironment(string import, ExprUtils.QueueList<Token> name)
-        {
-            using (new SaveContext()) using (new SaveImportData(SymbolTableSingleton.SymbolTable.currentFileInfo))
-            {
-                var fileInfo = SymbolTable.runtimeImports[import].fileInfo;
-
-                SymbolTableSingleton.SymbolTable.currentFileInfo = fileInfo;
-
-                SymbolTableSingleton.SymbolTable.SetContext(SymbolTableSingleton.SymbolTable.GetRuntimeImport(fileInfo).importClass);
-                InitialPass.HandleTypeNameReference(name);
-
-                Expr.Definition result = SymbolTableSingleton.SymbolTable.Current!;
-
-                if (SymbolTableSingleton.SymbolTable.Current is SpecialObjects.Any)
-                {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.RequiredRuntimeTypeNotFound, name, import));
-                }
-
-                return result;
-            }
-        }
 
 
         public static void MustMatchType(Expr.Type type1, Expr.Type type2, bool _ref1, Expr expr2, bool declare, bool _return) =>
