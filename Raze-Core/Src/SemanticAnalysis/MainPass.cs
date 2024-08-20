@@ -474,6 +474,8 @@ public partial class Analyzer
 
         public override Expr.Type VisitForExpr(Expr.For expr)
         {
+            symbolTable.CreateBlock();
+
             var result = expr.initExpr.Accept(this);
             if (CanBeReturned(result))
             {
@@ -490,6 +492,8 @@ public partial class Analyzer
 
             TypeCheckUtils.RunConditionals(this, "for", [expr.conditional]);
 
+
+            symbolTable.RemoveBlock();
             return TypeCheckUtils._voidType;
         }
 

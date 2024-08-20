@@ -676,6 +676,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
     public AssemblyExpr.IValue? VisitForExpr(Expr.For expr)
     {
+        alloc.CreateBlock();
+
         int localConditionalCount = conditionalCount;
         conditionalCount += 2;
 
@@ -695,6 +697,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         Emit(new AssemblyExpr.Unary(InstructionUtils.ConditionalJump(HandleConditionalCmpType(expr.conditional.condition.Accept(this))),
             new AssemblyExpr.LocalProcedureRef(CreateConditionalLabel(localConditionalCount))));
 
+        alloc.RemoveBlock();
         return null;
     }
 
