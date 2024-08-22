@@ -433,7 +433,7 @@ public partial class Analyzer
             {
                 foreach (Expr.Getter getter in expr.getters)
                 {
-                    symbolTable.SetContext((Expr.Definition)getter.Accept(this));
+                    symbolTable.SetContext(TypeCheckUtils.ToDataTypeOrDefault(getter.Accept(this)));
                 }
 
                 if (expr._ref && expr.IsMethodCall() && !((Expr.Invokable)expr.getters[^1]).internalFunction.refReturn)

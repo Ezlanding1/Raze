@@ -43,6 +43,19 @@ public partial class Analyzer
 
         public static RuntimeLibrarySingletonDataType heapallocType = new("Raze.Std", "HeapData");
 
+        public static RuntimeLibrarySingletonDataType defaultIntegralLiteralType = new("Raze.Std", ["Std", "int64"]);
+
+        public static Dictionary<Parser.LiteralTokenType, RuntimeLibrarySingletonDataType> defualtLiteralTypes = new()
+        {
+            { Parser.LiteralTokenType.Integer, defaultIntegralLiteralType },
+            { Parser.LiteralTokenType.UnsignedInteger, new("Raze.Std", ["Std", "uint64"]) },
+            { Parser.LiteralTokenType.Floating, new("Raze.Std", ["Std", "float64"]) },
+            { Parser.LiteralTokenType.String, new("Raze.Std", ["Std", "char"]) },
+            { Parser.LiteralTokenType.Binary, defaultIntegralLiteralType },
+            { Parser.LiteralTokenType.Hex, defaultIntegralLiteralType },
+            { Parser.LiteralTokenType.Boolean, new("Raze.Std", ["Std", "bool"]) },
+            { Parser.LiteralTokenType.RefString, new("Raze.Std", ["Std", "string"]) },
+        };
 
 
         public static void MustMatchType(Expr.Type type1, Expr.Type type2, bool _ref1, Expr expr2, bool declare, bool _return) =>
@@ -172,6 +185,18 @@ public partial class Analyzer
                     "ref " + type.ToString()
                 ));
             }
+        }
+
+        public static Expr.DataType ToDataTypeOrDefault(Expr.Type type)
+        {
+            if (type is Expr.DataType dataType)
+                return dataType;
+
+            if (defualtLiteralTypes.TryGetValue((Parser.LiteralTokenType)type.name.type, out var defaultType))
+            {
+                return defaultType.Value;
+            }
+            throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Default literal type of literalTokenType '{type.name.type}' is not defined"));
         }
     }
 }

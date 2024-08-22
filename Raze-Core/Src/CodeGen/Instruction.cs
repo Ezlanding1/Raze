@@ -72,7 +72,11 @@ public abstract partial class AssemblyExpr
         MOVQ, 
         CBW,
         CWDE,
-        CDQE
+        CDQE,
+        CVTSS2SD,
+        ADDSD,
+        CVTSD2SI,
+        CVTSD2SS
 
         // Custom Instructions
     }
