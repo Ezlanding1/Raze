@@ -93,6 +93,7 @@ internal class TokenList
         "new",
         "asm",
         "is",
+        "as",
         "primitive",
         "this",
         "ref",
