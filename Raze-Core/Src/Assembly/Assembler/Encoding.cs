@@ -55,7 +55,15 @@ public partial class Assembler
 
             public bool SpecialMatch(AssemblyExpr.OperandInstruction assemblyExpr, params Operand[] operands)
             {
-                if (encodingType.HasFlag(EncodingTypes.SignExtends) && operands.Length == 2 && operands[1].type == Operand.OperandType.IMM
+                for (int i = 0; i < operands.Length; i++)
+                {
+                    if (Operand.OperandType.IMM.HasFlag(operands[i].type) && operands[i].size != this.operands[i].size && ((AssemblyExpr.Literal)assemblyExpr.Operands[i]).type < AssemblyExpr.Literal.LiteralType.RefData)
+                    {
+                        if (!AssemblyExpr.ImmediateGenerator.ResizeImmediate((AssemblyExpr.Literal)assemblyExpr.Operands[i], this.operands[i].size))
+                            return false;
+                    }
+                }
+
                     && ((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).type < AssemblyExpr.Literal.LiteralType.RefData)
                 {
                     switch (this.operands[1].size)

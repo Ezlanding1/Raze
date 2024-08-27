@@ -17,10 +17,9 @@ public partial class Assembler
         {
             byte[] _data;
 
-            public Immediate(byte[] _data, Encoder.Operand.OperandSize size)
+            public Immediate(byte[] _data)
             {
                 this._data = _data;
-                Array.Resize(ref this._data, (int)size);
             }
 
             public byte[] GetBytes() => this._data;
