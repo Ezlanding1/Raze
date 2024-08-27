@@ -67,14 +67,6 @@ public partial class Assembler :
         {
             instructions.Add(new AddressSizeOverridePrefix());
         }
-        if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.ScalarFloatingPrefix))
-        {
-            instructions.Add(new ScalarFloatingOperationPrefix());
-        }
-        if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.DoubleFloatingPrefix))
-        {
-            instructions.Add(new DoubleFloatingOperationPrefix());
-        }
         if (Encoder.EncodingUtils.SetSizePrefix(encoding.encodingType))
         {
             instructions.Add(new InstructionOpCodeSizePrefix());
@@ -83,14 +75,10 @@ public partial class Assembler :
         {
             instructions.Add(rexPrefix);
         }
-        if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.ExpansionPrefix))
-        {
-            instructions.Add(new InstructionOpCodeExpansionPrefix());
-        }
 
         IEnumerable<IInstruction> operandInstructions = instruction.operand2.Accept(this, instruction.operand1).Instructions;
 
-        instructions.Add(new InstructionOpCode(encoding.OpCode));
+        instructions.Add(new InstructionOpCode(encoding.opCode));
 
         // Assumes ModRegRm byte is always first byte emitted
         if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.NoModRegRM))
@@ -169,14 +157,10 @@ public partial class Assembler :
         {
             instructions.Add(rexPrefix);
         }
-        if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.ExpansionPrefix))
-        {
-            instructions.Add(new InstructionOpCodeExpansionPrefix());
-        }
 
         IEnumerable<IInstruction> operandInstructions = instruction.operand.Accept(this).Instructions;
 
-        instructions.Add(new InstructionOpCode(encoding.OpCode));
+        instructions.Add(new InstructionOpCode(encoding.opCode));
 
         // Assumes ModRegRm byte is always first byte emitted
         if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.NoModRegRM))
@@ -200,11 +184,7 @@ public partial class Assembler :
 
         List<IInstruction> instructions = new();
 
-        if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.ExpansionPrefix))
-        {
-            instructions.Add(new InstructionOpCodeExpansionPrefix());
-        }
-        instructions.Add(new InstructionOpCode(encoding.OpCode));
+        instructions.Add(new InstructionOpCode(encoding.opCode));
 
         return new Instruction(instructions.ToArray());
     }

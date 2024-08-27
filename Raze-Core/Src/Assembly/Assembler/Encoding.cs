@@ -31,7 +31,11 @@ public partial class Assembler
             internal EncodingTypes encodingType = EncodingTypes.None;
 
             public byte OpCodeExtension { get; set; }
-            public byte OpCode { get; set; }
+            public string OpCode
+            {
+                set => opCode = value.Split().Select(x => (byte)Convert.ToInt16(x, 16)).ToArray();
+            }
+            internal byte[] opCode;
 
             public bool Matches(params Operand[] operands)
             {
@@ -91,7 +95,7 @@ public partial class Assembler
 
             internal void AddRegisterCode(Instruction.ModRegRm.RegisterCode registerCode)
             {
-                OpCode = (byte)((OpCode & 0xF8) | (byte)registerCode);
+                opCode[^1] = (byte)((opCode[^1] & 0xF8) | (byte)registerCode);
             }
         }
     }
