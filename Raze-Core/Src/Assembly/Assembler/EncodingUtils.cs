@@ -40,16 +40,13 @@ public partial class Assembler
 
             internal static bool SetSizePrefix(Encoding.EncodingTypes encodingType) => encodingType.HasFlag(Encoding.EncodingTypes.SizePrefix);
 
-            internal static bool CanHaveZeroByteDisplacement(AssemblyExpr.Register register) => register.Name switch
-            {
-                AssemblyExpr.Register.RegisterName.RAX or
-                AssemblyExpr.Register.RegisterName.RBX or
-                AssemblyExpr.Register.RegisterName.RCX or
-                AssemblyExpr.Register.RegisterName.RDX or
-                AssemblyExpr.Register.RegisterName.RDI or
-                AssemblyExpr.Register.RegisterName.RSI => true,
-                _ => false
-            };
+            internal static bool BaseAddressingModeMustHaveDisplacement(AssemblyExpr.Register register) =>
+                register.Name == AssemblyExpr.Register.RegisterName.RBP ||
+                register.Name == AssemblyExpr.Register.RegisterName.R13;
+
+            internal static bool BaseAddressingModeMustHaveSIB(AssemblyExpr.Register register) =>
+                register.Name == AssemblyExpr.Register.RegisterName.RSP ||
+                register.Name == AssemblyExpr.Register.RegisterName.R12;
 
             internal static IInstruction GetImmInstruction(Operand.OperandSize size, AssemblyExpr.Literal op2Expr, Assembler assembler, Encoding.EncodingTypes encodingTypes)
             {

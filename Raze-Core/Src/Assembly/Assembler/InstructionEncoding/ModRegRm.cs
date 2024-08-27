@@ -91,6 +91,13 @@ public partial class Assembler
                 this.RM = (byte)RM;
             }
 
+            public ModRegRm(Mod MOD, byte REG, RegisterCode RM)
+            {
+                this.MOD = (byte)MOD;
+                this.REG = REG;
+                this.RM = (byte)RM;
+            }
+
             public byte[] GetBytes() => new byte[] { this._data };
         }
     }
