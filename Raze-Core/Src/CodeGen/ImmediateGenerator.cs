@@ -10,11 +10,11 @@ namespace Raze;
 
 public partial class AssemblyExpr
 {
-    internal class ImmediateGenerator
+    internal partial class ImmediateGenerator
     {
         public static byte[] Generate(Literal.LiteralType literalType, string str, Register.RegisterSize size)
         {
-            return literalType switch
+            return MinimizeImmediate(literalType, literalType switch
             {
                 Literal.LiteralType.Integer => ParseInteger(str, size),
                 Literal.LiteralType.UnsignedInteger => ParseUnsignedInteger(str, size, literalType),
@@ -25,7 +25,7 @@ public partial class AssemblyExpr
                 Literal.LiteralType.RefData or
                 Literal.LiteralType.RefProcedure or
                 Literal.LiteralType.RefLocalProcedure => ParseLabelReference(str, size)
-            };
+            });
         }
 
         private static byte[] ParseInteger(string str, Register.RegisterSize size)
