@@ -82,10 +82,11 @@ public partial class Assembler
                         return false;
                     }
                 }
-                else if (assemblyExpr.Operands.Any(x => x.IsRegister(out var register) && (
-                    (x.Size == AssemblyExpr.Register.RegisterSize._8Bits && register.Name >= AssemblyExpr.Register.RegisterName.RSP && register.Name <= AssemblyExpr.Register.RegisterName.RDI) ||
-                    (EncodingUtils.IsRRegister(register))
-                    )))
+                else if (assemblyExpr.Operands.Any(x => x.IsRegister(out var register) &&
+                    x.Size == AssemblyExpr.Register.RegisterSize._8Bits && 
+                        ((register.Name >= AssemblyExpr.Register.RegisterName.RSP && register.Name <= AssemblyExpr.Register.RegisterName.RDI) ||
+                        EncodingUtils.IsRRegister(register))
+                    ))
                 {
                     return false;
                 }
