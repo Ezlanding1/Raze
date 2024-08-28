@@ -124,7 +124,7 @@ public partial class Assembler
 
                 if (SetRex(encoding.encodingType) | rexw | op2R)
                 {
-                    rexPrefix = new Instruction.RexPrefix(rexw, op2R, false, false);
+                    rexPrefix = new Instruction.RexPrefix(rexw, false, false, op2R);
                     return true;
                 }
                 rexPrefix = new();
