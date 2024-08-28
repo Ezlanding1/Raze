@@ -12,8 +12,9 @@ public partial class Assembler
     {
         internal static partial class EncodingUtils
         {
-            private static readonly IInstruction DefaultUnresolvedReference = new Instruction.RawInstruction(new byte[] { 0 });
-                
+            private static readonly IInstruction DefaultUnresolvedReference = new Instruction.RawInstruction([0]);
+            private static readonly Operand.OperandSize DefaultUnresolvedReferenceSize = Operand.OperandSize._8Bits;
+
             internal static Exception EncodingError()
             {
                 return Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Invalid/Unsupported Instruction"));
@@ -69,7 +70,7 @@ public partial class Assembler
                         ) : 
                         DefaultUnresolvedReference;
                 }
-                return new Instruction.Immediate(op2Expr.value, size);
+                return new Instruction.Immediate(op2Expr.value);
             }
 
             private static long CalculateJumpLocation(bool relativeJump, int symbolLocation, int location, int size)
@@ -81,7 +82,13 @@ public partial class Assembler
                 return (long)((ulong)symbolLocation + Linker.Elf64.Elf64_Shdr.textVirtualAddress);
             }
 
-            private static IInstruction GenerateImmFromInt(Operand.OperandSize size, long value) => new Instruction.Immediate(BitConverter.GetBytes(value), size);
+            private static IInstruction GenerateImmFromInt(Operand.OperandSize size, long value)
+            {
+                byte[] bytes = BitConverter.GetBytes(value);
+                Array.Resize(ref bytes, (int)size);
+
+                return new Instruction.Immediate(bytes);
+            }
 
             internal static bool Disp8Bit(int disp)
                 => disp <= sbyte.MaxValue && disp >= sbyte.MinValue;
@@ -170,7 +177,7 @@ public partial class Assembler
             internal static Exception ThrowIvalidEncodingType(string t1, string t2) =>
                 Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Cannot encode instruction with operands '{t1.ToUpper()}, {t2.ToUpper()}'"));
 
-            internal static (Operand.OperandSize, Operand.OperandSize) HandleUnresolvedRef(AssemblyExpr expr, AssemblyExpr.LabelLiteral literal, Operand.OperandSize defualtSize, Assembler assembler)
+            internal static (Operand.OperandSize, Operand.OperandSize) HandleUnresolvedRef(AssemblyExpr expr, AssemblyExpr.LabelLiteral literal, Assembler assembler)
             {
                 if (literal.type == AssemblyExpr.Literal.LiteralType.RefData)
                 {
@@ -182,6 +189,7 @@ public partial class Assembler
                             literal.scoped = true;
                         }
                         assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.TextLocation, -1));
+                        assembler.symbolTable.sTableUnresRefIdx = assembler.symbolTable.unresolvedReferences.Count - 1;
                     }
                     else
                     {
@@ -199,6 +207,7 @@ public partial class Assembler
                             literal.scoped = true;
                         }
                         assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.TextLocation, -1));
+                        assembler.symbolTable.sTableUnresRefIdx = assembler.symbolTable.unresolvedReferences.Count - 1;
                     }
                     else
                     {
@@ -223,6 +232,7 @@ public partial class Assembler
                             literal.scoped = true;
                         }
                         assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.TextLocation, -1));
+                        assembler.symbolTable.sTableUnresRefIdx = assembler.symbolTable.unresolvedReferences.Count - 1;
                     }
                     else
                     {
@@ -237,7 +247,7 @@ public partial class Assembler
                         );
                     }
                 }
-                return (defualtSize, defualtSize);
+                return (DefaultUnresolvedReferenceSize, DefaultUnresolvedReferenceSize);
             }
 
             private static Operand.OperandSize SizeOfIntegerUnsigned(ulong value) => (Operand.OperandSize)CodeGen.GetIntegralSizeUnsigned(value);

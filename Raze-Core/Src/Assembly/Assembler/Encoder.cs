@@ -35,8 +35,8 @@ public partial class Assembler
                 if (EncodingUtils.IsReferenceLiteralOperand(operands[^1], instruction.Operands[^1], out var labelLiteral))
                 {
                     refResolve = true;
-                    (Operand.OperandSize absoluteJump, Operand.OperandSize relativeJump) = 
-                        EncodingUtils.HandleUnresolvedRef(instruction, labelLiteral, operands[^1].size, assembler);
+                    (Operand.OperandSize absoluteJump, Operand.OperandSize relativeJump) =
+                        EncodingUtils.HandleUnresolvedRef(instruction, labelLiteral, assembler);
 
                     foreach (Encoding encoding in encodings)
                     {
