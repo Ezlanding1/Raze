@@ -64,22 +64,33 @@ public partial class Assembler
                     }
                 }
 
+                if (operands.Length == 2 && Operand.OperandType.IMM.HasFlag(operands[1].type)
                     && ((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).type < AssemblyExpr.Literal.LiteralType.RefData)
                 {
-                    switch (this.operands[1].size)
+                    if (encodingType.HasFlag(EncodingTypes.SignExtends))
                     {
-                        case Operand.OperandSize._8Bits:
-                            if (((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value[0] > sbyte.MaxValue) return false;
-                            break;
-                        case Operand.OperandSize._16Bits:
-                            if (BitConverter.ToInt16(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value) > short.MaxValue) return false;
-                            break;
-                        case Operand.OperandSize._32Bits:
-                            if (BitConverter.ToInt32(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value) > int.MaxValue) return false;
-                            break;
-                        default:
-                            if (BitConverter.ToInt64(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value) > long.MaxValue) return false;
-                            break;
+                        switch (this.operands[1].size)
+                        {
+                            case Operand.OperandSize._8Bits:
+                                if (((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value[0] > sbyte.MaxValue) return false;
+                                break;
+                            case Operand.OperandSize._16Bits:
+                                if (BitConverter.ToInt16(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value) > short.MaxValue) return false;
+                                break;
+                            case Operand.OperandSize._32Bits:
+                                if (BitConverter.ToInt32(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value) > int.MaxValue) return false;
+                                break;
+                            default:
+                                if (BitConverter.ToInt64(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value) > long.MaxValue) return false;
+                                break;
+                        }
+                    }
+                    if (this.operands[1].type == Operand.OperandType.One)
+                    {
+                        if (!AssemblyExpr.ImmediateGenerator.IsOne((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2))
+                        {
+                            return false;
+                        }
                     }
                 }
 

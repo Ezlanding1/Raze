@@ -24,18 +24,46 @@ public partial class Assembler
             {
             }
 
-            internal bool Matches(Operand operand) => operand.type.HasFlag(this.type) && (type == OperandType.IMM ? (int)operand.size >= (int)this.size : operand.size == this.size);
-            internal bool Matches(OperandType operandType) => operandType.HasFlag(this.type);
+            // When an OperandType with a static size is combined with an OperandType with a variable size (e.g. XMMRM), the static-sized operand must be defined here
+            internal static readonly Dictionary<OperandType, OperandSize> constantSizeOperandTypeRM = new()
+            {
+                { OperandType.XMM, OperandSize._128Bits },
+                { OperandType.MMX, OperandSize._64Bits }
+            };
+
+            internal bool Matches(Operand operand)
+            {
+                bool sizeMatches =
+                    OperandType.IMM.HasFlag(operand.type) ?
+                        (int)operand.size >= (int)this.size :
+                    constantSizeOperandTypeRM.TryGetValue(this.type, out OperandSize value) ?
+                        operand.size == value :
+                        operand.size == this.size;
+
+                return operand.type.HasFlag(this.type) && sizeMatches;
+            }
 
             [Flags]
             internal enum OperandType
             {
-                R = 1 | A,
-                M = 2 | MOFFS,
-                IMM = 4,
-                A = 8,
-                MOFFS = 16,
-                XMM = 32
+                R = RNA | A,                // General Purpose Register
+                RNA = 1 | C | D,            // GRP Non-Accumulator Register
+                A = 2,                      // Accumulator Register (AL/AX/EAX/RAX)
+                C = 4,                      // Count Register (CL/CX/ECX/RCX)
+                D = 8,                      // Data Register (DL/DX/EDX/RDX)
+                M = 16 | MOFFS,             // Memory
+                MOFFS = 32,                 // Memory Offset
+                IMM = 64 | One,             // Immediate
+                One = 128,                  // Immediate Operand '1'
+                XMM = 256,                  // SSE Register
+                MMX = 512,                  // MMX Register
+                CR = 1024,                  // Control Register
+                DR = 2048,                  // Debug Register
+                TR = 4096,                  // Test Register
+                SEG = 8192 | CS | FS | GS,  // Segment Register
+                CS = 16384,                 // Code Segment Register
+                FS = 32768,                 // FS Segment Register
+                GS = 65536,                 // GS Segment Register
             }
             internal enum OperandSize
             {
@@ -53,6 +81,7 @@ public partial class Assembler
                 OperandType type = reg.Name switch
                 {
                     AssemblyExpr.Register.RegisterName.RAX => OperandType.A,
+                    AssemblyExpr.Register.RegisterName.RCX => OperandType.C,
                     _ when reg.Name >= AssemblyExpr.Register.RegisterName.XMM0 && reg.Name <= AssemblyExpr.Register.RegisterName.XMM15 => OperandType.XMM,
                     _ => OperandType.R
                 };

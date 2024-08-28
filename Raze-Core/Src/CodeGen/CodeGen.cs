@@ -288,22 +288,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         }
         else
         {
-            var chunks = ChunkString((AssemblyExpr.Literal)operand);
-            if (chunks.Item1 != -1)
-            {
-                if (expr.classScoped)
-                {
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.CurrentRegister(InstructionUtils.SYS_SIZE), new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, (int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE)));
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), -expr.stack.ValueAsPointer.offset, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes(chunks.Item1))));
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), -expr.stack.ValueAsPointer.offset, InstructionUtils.ToRegisterSize(expr.stack.size - 4)), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes(chunks.Item2))));
-                }
-                else
-                {
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(-expr.stack.ValueAsPointer.offset -4, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes(chunks.Item1))));
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(-expr.stack.ValueAsPointer.offset, InstructionUtils.ToRegisterSize(expr.stack.size-4)), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes(chunks.Item2))));
-                }
-                goto dealloc;
-            }
+            operand = MoveImmediate64ToMemory((AssemblyExpr.Literal)operand);
         }
 
         if (expr.classScoped)
@@ -316,7 +301,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref, (operand.IsLiteral() || expr.stack._ref) ? null : expr.stack.type), new AssemblyExpr.Pointer(-expr.stack.ValueAsPointer.offset, expr.stack._ref ? InstructionUtils.SYS_SIZE : InstructionUtils.ToRegisterSize(expr.stack.size)), operand));
         }
 
-        dealloc:
         alloc.Free(operand);
         return null;
     }
@@ -795,21 +779,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         {
             if (operand1.IsPointer())
             {
-                var chunks = ChunkString((AssemblyExpr.Literal)operand2);
-                if (chunks.Item1 != -1)
-                {
-                    var ptr = (AssemblyExpr.Pointer)operand1;
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(ptr.value, ptr.offset - 4, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, Encoding.ASCII.GetBytes(chunks.Item1.ToString()))));
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(ptr.value, ptr.offset, InstructionUtils.ToRegisterSize((int)ptr.Size-4)), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, Encoding.ASCII.GetBytes(chunks.Item2.ToString()))));
-
-                    goto dealloc;
-                }
+                operand2 = MoveImmediate64ToMemory((AssemblyExpr.Literal)operand2);
             }
         }
 
         Emit(new AssemblyExpr.Binary(GetMoveInstruction(type: (operand2.IsLiteral() || expr.member.GetLastData()?._ref == true) ? null : expr.member.GetLastType()), operand1, operand2));
 
-        dealloc:
         alloc.Free(operand1);
         alloc.Free(operand2);
         return null;
@@ -1118,30 +1093,16 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
     private bool IsTrueBooleanLiteral(AssemblyExpr.Literal literal) => literal.value.Length == 1 && literal.value[0] == 1;
 
-    // MOV M64, IMM64 is not encodable, so the 64-bit value must be chunked into two IMM32s
-    private (int, int) ChunkString(AssemblyExpr.Literal literal)
+    // MOV M64, IMM64 is not encodable, so the 64-bit value must be moved into an intermediate R64 first
+    private AssemblyExpr.IValue MoveImmediate64ToMemory(AssemblyExpr.Literal literal)
     {
-        int size = literal.value.Length;
-        if (literal.type != AssemblyExpr.Literal.LiteralType.String || size <= 32)
+        if (literal.Size != AssemblyExpr.Register.RegisterSize._64Bits)
         {
-            return (-1, -1);
+            return literal;
         }
-
-        int h1 = literal.value[3];
-        for (int i = 2; i >= 0; i--)
-        {
-            h1 <<= 8;
-            h1 += literal.value[i];
-        }
-
-        int h2 = literal.value[^1];
-        for (int i = size-1; i >= 4; i--)
-        {
-            h2 <<= 8;
-            h2 += literal.value[i];
-        }
-
-        return (h2, h1);
+        var reg = alloc.NextRegister(literal.Size);
+        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, reg, literal));
+        return reg;
     }
 
     private AssemblyExpr.Literal GetDefaultValueOfType(Expr.Type type)

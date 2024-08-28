@@ -18,15 +18,12 @@ public partial class Assembler
                 None = 0,
                 RexPrefix = 1,
                 RexWPrefix = 2,
-                ExpansionPrefix = 4,
-                SizePrefix = 8,
-                NoModRegRM = 16,
-                SignExtends = 32,
-                AddRegisterToOpCode = 64,
-                RelativeJump = 128,
-                NoUpper8BitEncoding = 256,
-                ScalarFloatingPrefix = 512,
-                DoubleFloatingPrefix = 1024
+                SizePrefix = 4,
+                NoModRegRM = 8,
+                SignExtends = 16,
+                AddRegisterToOpCode = 32,
+                RelativeJump = 64,
+                NoUpper8BitEncoding = 128
             }
         }
     }

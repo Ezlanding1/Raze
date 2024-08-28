@@ -65,11 +65,11 @@ public partial class Assembler :
         if (Encoder.EncodingUtils.SetAddressSizeOverridePrefix(instruction.operand1) || 
             Encoder.EncodingUtils.SetAddressSizeOverridePrefix(instruction.operand2))
         {
-            instructions.Add(new AddressSizeOverridePrefix());
+            instructions.Add(new Prefix(Encoder.Encoding.Prefix.AddressSizeOverridePrefix));
         }
         if (Encoder.EncodingUtils.SetSizePrefix(encoding.encodingType))
         {
-            instructions.Add(new InstructionOpCodeSizePrefix());
+            instructions.Add(new Prefix(Encoder.Encoding.Prefix.OperandSizeOverridePrefix));
         }
         if (Encoder.EncodingUtils.SetRexPrefix(instruction, encoding, out RexPrefix rexPrefix))
         {
@@ -147,11 +147,11 @@ public partial class Assembler :
 
         if (Encoder.EncodingUtils.SetAddressSizeOverridePrefix(instruction.operand))
         {
-            instructions.Add(new AddressSizeOverridePrefix());
+            instructions.Add(new Prefix(Encoder.Encoding.Prefix.AddressSizeOverridePrefix));
         }
         if (Encoder.EncodingUtils.SetSizePrefix(encoding.encodingType))
         {
-            instructions.Add(new InstructionOpCodeSizePrefix());
+            instructions.Add(new Prefix(Encoder.Encoding.Prefix.OperandSizeOverridePrefix));
         }
         if (Encoder.EncodingUtils.SetRexPrefix(instruction, encoding, out RexPrefix rexPrefix))
         {

@@ -438,7 +438,10 @@ public abstract partial class AssemblyExpr
 
         public Assembler.Encoder.Operand ToAssemblerOperand()
         {
-            return new(Assembler.Encoder.Operand.OperandType.IMM, (Assembler.Encoder.Operand.OperandSize)this.Size);
+            return new(
+                ImmediateGenerator.IsOne(this)? Assembler.Encoder.Operand.OperandType.One : Assembler.Encoder.Operand.OperandType.IMM,
+                (Assembler.Encoder.Operand.OperandSize)this.Size
+            );
         }
 
         public T Accept<T>(IBinaryOperandVisitor<T> visitor, IOperand operand)

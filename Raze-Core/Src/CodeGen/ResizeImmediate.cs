@@ -59,6 +59,16 @@ public partial class AssemblyExpr
             return value;
         }
 
+        public static bool IsOne(Literal literal)
+        {
+            return literal.type switch
+            {
+                Literal.LiteralType.UnsignedInteger or
+                Literal.LiteralType.Integer => (literal.value[0] == 1 && literal.value[1..].All(x => x == 0)),
+                _ => false
+            };
+        }
+
         public static bool ResizeImmediate(Literal literal, Assembler.Encoder.Operand.OperandSize size)
         {
             if ((int)literal.Size > (int)size || size == Assembler.Encoder.Operand.OperandSize._128Bits)

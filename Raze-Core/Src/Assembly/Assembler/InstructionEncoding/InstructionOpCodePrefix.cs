@@ -58,69 +58,19 @@ public partial class Assembler
             public byte[] GetBytes() => new byte[] { this._data };
         }
 
-        // Instruction Opcode Expansion Prefix (1 byte). Optional
+        // Prefix (1 byte). Optional
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        internal struct InstructionOpCodeExpansionPrefix : IInstruction
+        internal struct Prefix : IInstruction
         {
-            byte _data = 0x0F;
+            byte _data;
 
-            public InstructionOpCodeExpansionPrefix()
+            public Prefix(Encoder.Encoding.Prefix prefix)
             {
+                _data = (byte)prefix;
             }
 
             public byte[] GetBytes() => new byte[] { this._data };
         }
 
-        // Instruction Opcode Size Prefix (1 byte). Optional
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        internal struct InstructionOpCodeSizePrefix : IInstruction
-        {
-            byte _data = 0x66;
-
-            public InstructionOpCodeSizePrefix() 
-            {
-            }
-
-            public byte[] GetBytes() => new byte[] { this._data };
-        }
-
-        // Address Size Override Prefix (1 byte). Optional
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        internal struct AddressSizeOverridePrefix : IInstruction
-        {
-            byte _data = 0x67;
-
-            public AddressSizeOverridePrefix()
-            {
-            }
-
-            public byte[] GetBytes() => new byte[] { this._data };
-        }
-
-        // Scalar Precision Floating-Point Operation Prefix (1 byte). Optional
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        internal struct ScalarFloatingOperationPrefix : IInstruction
-        {
-            byte _data = 0xF3;
-
-            public ScalarFloatingOperationPrefix()
-            {
-            }
-
-            public byte[] GetBytes() => new byte[] { this._data };
-        }
-
-        // Double Precision Floating-Point Operation Prefix (1 byte). Optional
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        internal struct DoubleFloatingOperationPrefix : IInstruction
-        {
-            byte _data = 0xF2;
-
-            public DoubleFloatingOperationPrefix()
-            {
-            }
-
-            public byte[] GetBytes() => new byte[] { this._data };
-        }
     }
 }
