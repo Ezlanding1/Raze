@@ -10,7 +10,7 @@ public partial class AssemblyExpr
 {
     internal partial class ImmediateGenerator
     {
-        private static byte[] MinimizeImmediate(Literal.LiteralType literalType, byte[] value)
+        public static byte[] MinimizeImmediate(Literal.LiteralType literalType, byte[] value)
         {
             switch (literalType)
             {
@@ -21,21 +21,23 @@ public partial class AssemblyExpr
                         if (isNegative)
                         {
                             dCount = value.Reverse().TakeWhile(x => x == 255).Count();
-                            if (value[8 - dCount - 1] < 128)
+                            if (value[Math.Max(value.Length - dCount - 1, 0)] < 128)
                                 dCount--;
                         }
                         else
                         {
                             dCount = value.Reverse().TakeWhile(x => x == 0).Count();
-                            if (value[8 - dCount - 1] >= 128)
+                            if (value[Math.Max(value.Length - dCount - 1, 0)] >= 128)
                                 dCount--;
                         }
 
-                        if (dCount >= 7)
+                        int sCount = value.Length - dCount;
+
+                        if (sCount <= 1)
                             Array.Resize(ref value, 1);
-                        else if (dCount >= 6)
+                        else if (sCount <= 2)
                             Array.Resize(ref value, 2);
-                        else if (dCount >= 4)
+                        else if (sCount <= 4)
                             Array.Resize(ref value, 4);
 
                         break;

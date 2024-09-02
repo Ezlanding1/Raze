@@ -14,7 +14,7 @@ public partial class AssemblyExpr
     {
         public static byte[] Generate(Literal.LiteralType literalType, string str, Register.RegisterSize size)
         {
-            return MinimizeImmediate(literalType, literalType switch
+            return literalType switch
             {
                 Literal.LiteralType.Integer => ParseInteger(str, size),
                 Literal.LiteralType.UnsignedInteger => ParseUnsignedInteger(str, size, literalType),
@@ -25,7 +25,7 @@ public partial class AssemblyExpr
                 Literal.LiteralType.RefData or
                 Literal.LiteralType.RefProcedure or
                 Literal.LiteralType.RefLocalProcedure => ParseLabelReference(str, size)
-            });
+            };
         }
 
         private static byte[] ParseInteger(string str, Register.RegisterSize size)

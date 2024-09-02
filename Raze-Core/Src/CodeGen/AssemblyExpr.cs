@@ -436,8 +436,9 @@ public abstract partial class AssemblyExpr
             return visitor.VisitImmediate(this);
         }
 
-        public Assembler.Encoder.Operand ToAssemblerOperand()
+        public virtual Assembler.Encoder.Operand ToAssemblerOperand()
         {
+            value = ImmediateGenerator.MinimizeImmediate(type, value);
             return new(
                 ImmediateGenerator.IsOne(this)? Assembler.Encoder.Operand.OperandType.One : Assembler.Encoder.Operand.OperandType.IMM,
                 (Assembler.Encoder.Operand.OperandSize)this.Size
@@ -477,6 +478,14 @@ public abstract partial class AssemblyExpr
         internal LabelLiteral(LiteralType type, string name, Register.RegisterSize dataTypeSize) : base(type)
         {
             this.value = ImmediateGenerator.Generate(type, name, dataTypeSize);
+        }
+
+        public override Assembler.Encoder.Operand ToAssemblerOperand()
+        {
+            return new(
+                ImmediateGenerator.IsOne(this) ? Assembler.Encoder.Operand.OperandType.One : Assembler.Encoder.Operand.OperandType.IMM,
+                (Assembler.Encoder.Operand.OperandSize)this.Size
+            );
         }
     }
 
