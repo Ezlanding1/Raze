@@ -234,7 +234,7 @@ public abstract partial class Expr
         
         internal class UnnamedAlloc(NamedRegister register, Parser.LiteralTokenType type, AssemblyExpr.Register.RegisterSize size) : Alloc(register)
         {
-            Parser.LiteralTokenType type;
+            Parser.LiteralTokenType type = type;
             AssemblyExpr.Register.RegisterSize size = size;
 
             public override void Accept(CodeGen codeGen)
