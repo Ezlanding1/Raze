@@ -111,7 +111,7 @@ public partial class Assembler
                 bool op1R = IsRRegister(binary.operand1);
                 bool op2R = IsRRegister(binary.operand2);
 
-                if (SwapOperands(encoding))
+                if (SwapOperands(encoding) || encoding.operands[1].type.HasFlag(Operand.OperandType.IMM))
                 {
                     (op1R, op2R) = (op2R, op1R);
                 }
