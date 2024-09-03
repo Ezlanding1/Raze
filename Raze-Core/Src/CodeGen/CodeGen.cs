@@ -754,18 +754,30 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         if (operand2 == null) return null;
 
-        if (Analyzer.TypeCheckUtils.IsVariableWithRefModifier(expr.value))
+        var instruction = AssemblyExpr.Instruction.MOV;
+
+        bool valueIsRefVariable = Analyzer.TypeCheckUtils.IsRefVariable(expr.value);
+        bool valueHasRefModifier = Analyzer.TypeCheckUtils.IsVariableWithRefModifier(expr.value);
+
+        if (valueIsRefVariable && valueHasRefModifier)
         {
             operand1 = (AssemblyExpr.Pointer)((AssemblyExpr.Binary)assembly.text[^1]).operand2;
             assembly.text.RemoveAt(assembly.text.Count - 1);
-
             operand2 = PreserveRefPtrVariable(true, operand2);
+        }
+        else if (valueHasRefModifier)
+        {
+            operand1 = (AssemblyExpr.Pointer)((AssemblyExpr.Binary)assembly.text[^1]).operand2;
+            assembly.text.RemoveAt(assembly.text.Count - 1);
+            (instruction, operand2) = PreserveRefPtrVariable(expr, (AssemblyExpr.Pointer)operand2);
         }
 
         if (operand2.IsPointer(out var op2Ptr))
         {
             var reg = alloc.NextRegister(op2Ptr.Size, expr.member.GetLastType());
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, reg, operand2));
+            reg.Size = valueHasRefModifier ? InstructionUtils.SYS_SIZE : op2Ptr.Size;
+            Emit(new AssemblyExpr.Binary(instruction, reg, operand2));
+            instruction = AssemblyExpr.Instruction.MOV;
             operand2 = reg;
         }
         else if (operand2.IsRegister(out var register))
@@ -783,7 +795,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             }
         }
 
-        Emit(new AssemblyExpr.Binary(GetMoveInstruction(type: (operand2.IsLiteral() || expr.member.GetLastData()?._ref == true) ? null : expr.member.GetLastType()), operand1, operand2));
+        Emit(new AssemblyExpr.Binary(instruction, operand1, operand2));
 
         alloc.Free(operand1);
         alloc.Free(operand2);
