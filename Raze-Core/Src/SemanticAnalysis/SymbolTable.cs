@@ -246,18 +246,18 @@ public partial class Analyzer
                             if (key.lexeme == "this")
                             {
                                 isClassScoped = false;
-                                Expr.DataType._this.type = x;
-                                return Expr.DataType._this;
+                                Expr.DataType.This(8).type = x;
+                                return Expr.DataType.This(8);
                             }
                         }
                         break;
-                    case Expr.Primitive:
+                    case Expr.Primitive primitive:
                         {
                             if (key.lexeme == "this")
                             {
                                 isClassScoped = false;
-                                Expr.DataType._this.type = x;
-                                return Expr.DataType._this;
+                                Expr.DataType.This(primitive.size).type = x;
+                                return Expr.DataType.This(primitive.size);
                             }
                         }
                         break;

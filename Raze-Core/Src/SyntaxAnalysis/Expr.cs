@@ -472,13 +472,9 @@ public abstract partial class Expr
 
     public class ThisStackData : StackData
     {
-        public ThisStackData()
+        public ThisStackData(int size)
         {
-            value = new AssemblyExpr.Pointer(8, AssemblyExpr.Register.RegisterSize._64Bits);
-        }
-        public ThisStackData(AssemblyExpr.IValue value)
-        {
-            this.value = value;
+            value = new AssemblyExpr.Pointer(size, (AssemblyExpr.Register.RegisterSize)size);
         }
     }
 
@@ -652,7 +648,14 @@ public abstract partial class Expr
 
         public List<Definition> definitions;
 
-        public static ThisStackData _this = new();
+        private static Dictionary<int, ThisStackData> _thisTable = new()
+        {
+            { 1, new(1) },
+            { 2, new(2) },
+            { 4, new(4) },
+            { 8, new(8) }
+        };
+        public static ThisStackData This(int size) => _thisTable[size];
 
         public abstract int allocSize { get; }
 

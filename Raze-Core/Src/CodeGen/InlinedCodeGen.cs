@@ -93,34 +93,35 @@ public class InlinedCodeGen : CodeGen
 
         inlineState = new InlineStateInlined(inlineState, expr.internalFunction);
 
-        AssemblyExpr.IValue? enclosingThisStackDataValue = null;
+        (AssemblyExpr.IValue? enclosingThisStackDataValue, int thisSize) = (null, -1);
         bool lastThisIsLocked = false;
 
         if (!expr.internalFunction.modifiers["static"])
         {
-            enclosingThisStackDataValue = Expr.DataType._this.value;
-            Expr.DataType._this.inlinedData = true;
+            thisSize = SymbolTableSingleton.SymbolTable.NearestEnclosingClass(expr.internalFunction)!.allocSize;
+            enclosingThisStackDataValue = Expr.DataType.This(thisSize).value;
+            Expr.DataType.This(thisSize).inlinedData = true;
 
             if (!expr.constructor)
             {
                 if (expr.callee != null)
                 {
-                    Expr.DataType._this.value = expr.callee.Accept(this);
+                    Expr.DataType.This(thisSize).value = expr.callee.Accept(this);
                 }
                 else
                 {
                     var enclosing = SymbolTableSingleton.SymbolTable.NearestEnclosingClass(expr.internalFunction);
                     var size = enclosing.allocSize;
-                    Expr.DataType._this.value = new AssemblyExpr.Pointer(8, size);
+                    Expr.DataType.This(thisSize).value = new AssemblyExpr.Pointer(8, size);
                 }
             }
             else
             {
-                Expr.DataType._this.value = alloc.GetRegister(AssemblyExpr.Register.RegisterName.RBX, InstructionUtils.SYS_SIZE);
+                Expr.DataType.This(thisSize).value = alloc.GetRegister(AssemblyExpr.Register.RegisterName.RBX, InstructionUtils.SYS_SIZE);
             }
 
 
-            if (Expr.DataType._this.value.IsRegister(out var register))
+            if (Expr.DataType.This(thisSize).value.IsRegister(out var register))
             {
                 lastThisIsLocked = !alloc.IsLocked(register.Name);
                 alloc.Lock(register);
@@ -132,11 +133,11 @@ public class InlinedCodeGen : CodeGen
 
         if (enclosingThisStackDataValue != null)
         {
-            Expr.DataType._this.inlinedData = false;
-            bool retIsThis = !(ret?.IsLiteral() != false) && !Expr.DataType._this.value.IsLiteral() && ((AssemblyExpr.IRegisterPointer)Expr.DataType._this.value).GetRegister().Name == ((AssemblyExpr.IRegisterPointer)ret).GetRegister().Name;
+            Expr.DataType.This(thisSize).inlinedData = false;
+            bool retIsThis = !(ret?.IsLiteral() != false) && !Expr.DataType.This(thisSize).value.IsLiteral() && ((AssemblyExpr.IRegisterPointer)Expr.DataType.This(thisSize).value).GetRegister().Name == ((AssemblyExpr.IRegisterPointer)ret).GetRegister().Name;
             if (!retIsThis)
-                alloc.Free(Expr.DataType._this.value, lastThisIsLocked);
-            Expr.DataType._this.value = enclosingThisStackDataValue;
+                alloc.Free(Expr.DataType.This(thisSize).value, lastThisIsLocked);
+            Expr.DataType.This(thisSize).value = enclosingThisStackDataValue;
         }
 
         inlineState = inlineState.lastState;

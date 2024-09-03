@@ -35,8 +35,10 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
             if (instance)
             {
-                codeGen.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(8, 8), new AssemblyExpr.Register(InstructionUtils.paramRegister[0], 8)));
-                function.size += (int)InstructionUtils.SYS_SIZE;
+                var enclosing = SymbolTableSingleton.SymbolTable.NearestEnclosingClass(function);
+                int size = enclosing!.allocSize;
+                codeGen.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Pointer(size, size), new AssemblyExpr.Register(InstructionUtils.paramRegister[0], size)));
+                function.size += size;
             }
 
             for (int i = 0; i < function.Arity; i++)
