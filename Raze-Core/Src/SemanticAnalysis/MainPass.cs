@@ -318,7 +318,15 @@ public partial class Analyzer
                 expr.member.Accept(this);
                 assigns = false;
             }
-            TypeCheckUtils.MustMatchType(expr.member.GetLastType(), assignType, TypeCheckUtils.IsRefVariable(expr.member), expr.value, false, false);
+
+            bool initialized = true;
+            if (expr.member.GetLastData() != null && symbolTable.frameData.TryGetValue(expr.member.GetLastData(), out var fd))
+            {
+                initialized = fd.initialized;
+                fd.initialized = true;
+            }
+
+            TypeCheckUtils.MustMatchType(expr.member.GetLastType(), assignType, TypeCheckUtils.IsRefVariable(expr.member), expr.value, !initialized, false);
 
             if (symbolTable.Current is Expr.Function function && 
                     TypeCheckUtils.IsVariableWithRefModifier(expr.value) && 

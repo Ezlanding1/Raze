@@ -284,10 +284,6 @@ public partial class Analyzer
                 {
                     Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.VariableUsedBeforeInitialization, key.lexeme));
                 }
-                else if (assigns) 
-                {
-                    frameData[variable].initialized = true;
-                }
             }
 
             return variable;
