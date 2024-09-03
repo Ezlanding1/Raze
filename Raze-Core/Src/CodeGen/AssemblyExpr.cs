@@ -123,7 +123,7 @@ public abstract partial class AssemblyExpr
     public interface IRegisterPointer : IValue
     {
         new public Register.RegisterSize Size { get; set; }
-        public Register GetRegister();
+        public Register? GetRegister();
         // Note: This method should always shallow-clone the returned register
         public Register AsRegister(CodeGen assembler);
         public IRegisterPointer Clone();

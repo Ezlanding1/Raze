@@ -253,7 +253,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         {
             int idx;
 
-            if (value is not AssemblyExpr.IRegisterPointer registerPointer || (idx = NameToIdx(registerPointer.GetRegister().Name)) == -1)
+            if (value is not AssemblyExpr.IRegisterPointer registerPointer || (idx = NameToIdx(registerPointer.GetRegister()?.Name ?? (AssemblyExpr.Register.RegisterName)(-1))) == -1)
             {
                 return null;
             }
@@ -268,7 +268,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                 return;
 
             var registerPointer = (AssemblyExpr.IRegisterPointer)value;
-            int idx = NameToIdx(registerPointer.GetRegister().Name);
+            int idx = NameToIdx(registerPointer.GetRegister()!.Name);
 
             registers[idx] = registerPointer.GetRegister().nameBox;
             registerStates[idx] = (RegisterState)state;
