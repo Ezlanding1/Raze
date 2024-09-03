@@ -106,7 +106,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                         }
                         else
                         {
-                            Emit(new AssemblyExpr.Binary(GetMoveInstruction(type: invokable.internalFunction.parameters[i].stack.type), paramReg, arg));
+                            Emit(new AssemblyExpr.Binary(GetMoveInstruction(false, invokable.internalFunction.parameters[i].stack.type), paramReg, arg));
                         }
                     }
                 }
@@ -174,7 +174,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                 alloc.NeededAlloc(
                     InstructionUtils.ToRegisterSize(invokable.internalFunction._returnType.type.allocSize), 
                     this, 
-                    IsFloatingType(invokable.internalFunction._returnType.type) ? 
+                    IsFloatingType(invokable.internalFunction.refReturn ? null : invokable.internalFunction._returnType.type) ? 
                         AssemblyExpr.Register.RegisterName.XMM0 : 
                         AssemblyExpr.Register.RegisterName.RAX
                 ), 
@@ -239,12 +239,13 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         }
 
         var _ref = expr.stack._ref;
+        var type = expr.stack.type;
 
         if (operand == null)
         {
             if (alloc.current is Expr.Class)
             {
-                operand = GetDefaultValueOfType(expr.stack.type);
+                operand = GetDefaultValueOfType(type);
             }
             else return null;
         }
@@ -254,15 +255,15 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             AssemblyExpr.Register reg = ptr.AsRegister(this);
             reg.Size = _ref ? InstructionUtils.SYS_SIZE : ptr.Size;
 
-            if (!_ref && IsFloatingType(expr.stack.type))
+            if (!_ref && IsFloatingType(type))
             {
                 alloc.Free(reg);
                 reg = alloc.NextSseRegister();
-                Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref, expr.stack.type), reg, operand));
+                Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref, type), reg, operand));
             }
             else
             {
-                Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref), reg, operand));
+                Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref, null), reg, operand));
             }
             _ref = false;
             operand = reg;
@@ -276,7 +277,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                 if (expr.classScoped)
                 {
                     var stackPtr = (AssemblyExpr.Pointer)expr.stack.value;
-                    Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref), alloc.CurrentRegister(InstructionUtils.SYS_SIZE), new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, (int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE)));
+                    Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref, null), alloc.CurrentRegister(InstructionUtils.SYS_SIZE), new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, (int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE)));
                     instruction.operand = new AssemblyExpr.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), -stackPtr.offset, expr.stack._ref ? InstructionUtils.SYS_SIZE : InstructionUtils.ToRegisterSize(expr.stack.size));
                 }
                 else
@@ -288,17 +289,18 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         }
         else
         {
+            type = null;
             operand = MoveImmediate64ToMemory((AssemblyExpr.Literal)operand);
         }
 
         if (expr.classScoped)
         {
-            Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref), alloc.CurrentRegister(InstructionUtils.SYS_SIZE), new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, (int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE)));
-            Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref, operand.IsLiteral() ? null : expr.stack.type), new AssemblyExpr.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), -expr.stack.ValueAsPointer.offset, expr.stack._ref ? InstructionUtils.SYS_SIZE : InstructionUtils.ToRegisterSize(expr.stack.size)), operand));
+            Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref, null), alloc.CurrentRegister(InstructionUtils.SYS_SIZE), new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, (int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE)));
+            Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref, type), new AssemblyExpr.Pointer(alloc.CurrentRegister(InstructionUtils.SYS_SIZE), -expr.stack.ValueAsPointer.offset, expr.stack._ref ? InstructionUtils.SYS_SIZE : InstructionUtils.ToRegisterSize(expr.stack.size)), operand));
         }
         else
         {
-            Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref, (operand.IsLiteral() || expr.stack._ref) ? null : expr.stack.type), new AssemblyExpr.Pointer(-expr.stack.ValueAsPointer.offset, expr.stack._ref ? InstructionUtils.SYS_SIZE : InstructionUtils.ToRegisterSize(expr.stack.size)), operand));
+            Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref, expr.stack._ref? null : type), new AssemblyExpr.Pointer(-expr.stack.ValueAsPointer.offset, expr.stack._ref ? InstructionUtils.SYS_SIZE : InstructionUtils.ToRegisterSize(expr.stack.size)), operand));
         }
 
         alloc.Free(operand);
@@ -704,12 +706,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             AssemblyExpr.IValue operand = expr.value.Accept(this)
                 .IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)Math.Max((int)AssemblyExpr.Register.RegisterSize._32Bits, function._returnType.type.allocSize));
 
-            if (((Expr.Function)alloc.current).refReturn)
+            if (function.refReturn)
             {
                 (instruction, operand) = PreserveRefPtrVariable(expr.value, (AssemblyExpr.Pointer)operand);
             }
 
-            var _returnRegister = IsFloatingType(function._returnType.type) ? 
+            var _returnRegister = IsFloatingType(function.refReturn ? null : function._returnType.type) ? 
                 new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.XMM0, AssemblyExpr.Register.RegisterSize._128Bits) :
                 new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, operand.Size);
 
@@ -752,9 +754,17 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             ?.IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)expr.member.GetLastSize(), true);
         AssemblyExpr.IValue operand1 = expr.member.Accept(this).NonLiteral(this, expr.member.GetLastType());
 
-        if (operand2 == null) return null;
+        Assign(expr, operand1, operand2);
 
-        var instruction = AssemblyExpr.Instruction.MOV;
+        return null;
+    }
+
+    private protected void Assign(Expr.Assign expr, AssemblyExpr.IValue operand1, AssemblyExpr.IValue? operand2)
+    {
+        if (operand2 == null) return;
+
+        var _ref = false;
+        var type = expr.member.GetLastType();
 
         bool valueIsRefVariable = Analyzer.TypeCheckUtils.IsRefVariable(expr.value);
         bool valueHasRefModifier = Analyzer.TypeCheckUtils.IsVariableWithRefModifier(expr.value);
@@ -769,38 +779,51 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         {
             operand1 = (AssemblyExpr.Pointer)((AssemblyExpr.Binary)assembly.text[^1]).operand2;
             assembly.text.RemoveAt(assembly.text.Count - 1);
-            (instruction, operand2) = PreserveRefPtrVariable(expr, (AssemblyExpr.Pointer)operand2);
+            (var instruction, operand2) = PreserveRefPtrVariable(expr, (AssemblyExpr.Pointer)operand2);
+            _ref = instruction == AssemblyExpr.Instruction.LEA;
         }
 
         if (operand2.IsPointer(out var op2Ptr))
         {
-            var reg = alloc.NextRegister(op2Ptr.Size, expr.member.GetLastType());
-            reg.Size = valueHasRefModifier ? InstructionUtils.SYS_SIZE : op2Ptr.Size;
-            Emit(new AssemblyExpr.Binary(instruction, reg, operand2));
-            instruction = AssemblyExpr.Instruction.MOV;
+            AssemblyExpr.Register reg = op2Ptr.AsRegister(this);
+            reg.Size = _ref ? InstructionUtils.SYS_SIZE : op2Ptr.Size;
+
+            if (!_ref && IsFloatingType(type))
+            {
+                alloc.Free(reg);
+                reg = alloc.NextSseRegister();
+                Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref, type), reg, operand2));
+            }
+            else
+            {
+                type = null;
+                Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref, null), reg, operand2));
+            }
+            _ref = false;
             operand2 = reg;
         }
         else if (operand2.IsRegister(out var register))
         {
             if (HandleSeteOptimization(register, operand1))
             {
-                return null;
+                return;
             }
         }
         else
         {
+            type = null;
             if (operand1.IsPointer())
             {
                 operand2 = MoveImmediate64ToMemory((AssemblyExpr.Literal)operand2);
             }
         }
 
-        Emit(new AssemblyExpr.Binary(instruction, operand1, operand2));
+        Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref, type), operand1, operand2));
 
         alloc.Free(operand1);
         alloc.Free(operand2);
-        return null;
     }
+
 
     public AssemblyExpr.IValue? VisitPrimitiveExpr(Expr.Primitive expr)
     {
@@ -1106,7 +1129,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
     private bool IsTrueBooleanLiteral(AssemblyExpr.Literal literal) => literal.value.Length == 1 && literal.value[0] == 1;
 
     // MOV M64, IMM64 is not encodable, so the 64-bit value must be moved into an intermediate R64 first
-    private AssemblyExpr.IValue MoveImmediate64ToMemory(AssemblyExpr.Literal literal)
+    private protected AssemblyExpr.IValue MoveImmediate64ToMemory(AssemblyExpr.Literal literal)
     {
         if (literal.Size != AssemblyExpr.Register.RegisterSize._64Bits)
         {
@@ -1134,8 +1157,37 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.UnsignedInteger, [0]);
     }
 
-    private protected static AssemblyExpr.Instruction GetMoveInstruction(bool isRef=false, Expr.Type? type=null) =>
-        isRef ? AssemblyExpr.Instruction.LEA : IsFloatingType(type) ? AssemblyExpr.Instruction.MOVSS : AssemblyExpr.Instruction.MOV;
+    public static AssemblyExpr.Instruction GetMoveInstruction(bool isRef, Expr.DataType? type)
+    {
+        if (isRef)
+        {
+            return AssemblyExpr.Instruction.LEA;
+        }
+
+        if (IsFloatingType(type))
+        {
+            return type!.allocSize switch
+            {
+                4 => AssemblyExpr.Instruction.MOVSS,
+                8 => AssemblyExpr.Instruction.MOVSD,
+                _ => Fail(type.allocSize, "floating")
+            };
+        }
+        else
+        {
+            return type?.allocSize switch
+            {
+                1 or 2 or 4 or 8 or null => AssemblyExpr.Instruction.MOV,
+                _ => Fail(type.allocSize, "integer")
+            };
+        }
+
+        static AssemblyExpr.Instruction Fail(int size, string type)
+        {
+            Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.UnsupportedInstruction, $"{size}-bit {type} MOV instruction"));
+            return AssemblyExpr.Instruction.MOVSS;
+        }
+    }
 
     private protected AssemblyExpr.IValue? HandleRefVariableDeref(bool _ref, AssemblyExpr.IValue register, Expr.Type type) =>
         (register != null) ? HandleRefVariableDeref(_ref, register, register.Size, type) : null;

@@ -46,6 +46,7 @@ public abstract partial class Expr
                         CodeGen.InlineAssemblyOps.Binary.SAL_SAR(codeGen, this);
                         return;
                     case AssemblyExpr.Instruction.ADDSS:
+                    case AssemblyExpr.Instruction.ADDSD:
                         CodeGen.InlineAssemblyOps.Binary.DefaultFloatingInstruction(codeGen, this);
                         return;
                     default:
@@ -191,22 +192,18 @@ public abstract partial class Expr
             public override Variable? GetVariable() => this;
         }
 
-        public class Literal(AssemblyExpr.UnresolvedLiteral literal) : Operand
+        public class Literal(Expr.Literal literal) : Operand
         {
-            AssemblyExpr.UnresolvedLiteral literal = literal;
+            Expr.Literal literal = literal;
 
             public override AssemblyExpr.IValue ToOperand(CodeGen codeGen, AssemblyExpr.Register.RegisterSize defaultSize)
             {
-                return literal.CreateLiteral(defaultSize);
+                return ((AssemblyExpr.ILiteralBase)literal.Accept(codeGen)!).CreateLiteral(defaultSize);
             }
 
             public override Type Type()
             {
-                return literal.type switch
-                { 
-                    AssemblyExpr.Literal.LiteralType.Floating => Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Floating],
-                    _ => Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Integer]
-                };
+                return Analyzer.TypeCheckUtils.literalTypes[literal.literal.type];
             }
 
             public override Variable? GetVariable() => null;
@@ -274,7 +271,7 @@ public abstract partial class Expr
                 {
                     currentFunction = ((InlinedCodeGen.InlineStateInlined)inlinedCodeGen.inlineState).currentInlined;
 
-                    var nonLiteral = op.NonLiteral(codeGen, operand.Type());
+                    var nonLiteral = op.NonLiteral(codeGen, currentFunction._returnType.type);
                     ((InlinedCodeGen.InlineStateInlined)inlinedCodeGen.inlineState).callee = nonLiteral;
                     inlinedCodeGen.LockOperand(nonLiteral);
                 }
@@ -282,9 +279,10 @@ public abstract partial class Expr
                 {
                     currentFunction = (Function)codeGen.alloc.current;
 
-                    (var instruction, var _returnRegister) = CodeGen.IsFloatingType(operand.Type()) ?
-                        (AssemblyExpr.Instruction.MOVSS, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.XMM0, AssemblyExpr.Register.RegisterSize._128Bits)) :
-                        (AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, op.Size));
+                    var instruction = CodeGen.GetMoveInstruction(false, currentFunction._returnType.type);
+                    var _returnRegister = CodeGen.IsFloatingType(operand.Type()) ?
+                        new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.XMM0, AssemblyExpr.Register.RegisterSize._128Bits) :
+                        new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, op.Size);
 
                     if (op.IsRegister(out var reg))
                     {
@@ -302,7 +300,8 @@ public abstract partial class Expr
                     int primitiveSize = currentFunction.refReturn ? 8 : primitive.size;
                     if (primitiveSize != (int)op.Size)
                     {
-                        Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.InlineAssemblySizeMismatchReturn_Primitive, op.Size, primitive.name.lexeme));
+                        if (!(Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Floating].Matches(primitive) && op.Size == AssemblyExpr.Register.RegisterSize._128Bits && (primitiveSize == 4 || primitiveSize == 8)))
+                            Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.InlineAssemblySizeMismatchReturn_Primitive, op.Size, primitive.name.lexeme));
                     }
                 }
                 else

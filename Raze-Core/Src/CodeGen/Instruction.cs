@@ -67,6 +67,7 @@ public abstract partial class AssemblyExpr
         CMOVNZ,
         MOVSS,
         ADDSS,
+        CVTSS2SI,
         CVTTSS2SI,
         MOVD,
         MOVQ, 
@@ -74,8 +75,10 @@ public abstract partial class AssemblyExpr
         CWDE,
         CDQE,
         CVTSS2SD,
+        MOVSD,
         ADDSD,
         CVTSD2SI,
+        CVTTSD2SI,
         CVTSD2SS
 
         // Custom Instructions

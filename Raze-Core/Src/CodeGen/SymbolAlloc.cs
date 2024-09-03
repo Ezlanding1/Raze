@@ -60,7 +60,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                     else
                     {
                         codeGen.Emit(new AssemblyExpr.Binary(
-                            GetMoveInstruction(type: paramExpr.stack.type),
+                            GetMoveInstruction(false, paramExpr.stack.type),
                             new AssemblyExpr.Pointer(-paramExpr.stack.ValueAsPointer.offset, paramExpr.stack.size),
                             IsFloatingType(paramExpr.stack.type) ? 
                                 new AssemblyExpr.Register(InstructionUtils.storageRegisters[instanceCount + InstructionUtils.SseRegisterOffset].Name, 16) :

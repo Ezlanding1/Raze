@@ -192,7 +192,7 @@ public class InlinedCodeGen : CodeGen
             return base.VisitAssignExpr(expr);
         }
 
-        AssemblyExpr.IValue operand2;
+        AssemblyExpr.IValue? operand2;
 
         if (((Expr.Binary)expr.value).internalFunction.parameters[0].modifiers["ref"] == false)
         {
@@ -205,9 +205,11 @@ public class InlinedCodeGen : CodeGen
             operand2 = expr.value.Accept(this);
         }
 
-        if (((Expr.Binary)expr.value).internalFunction.parameters[0].stack.value != operand2)
+        var operand1 = ((Expr.Binary)expr.value).internalFunction.parameters[0].stack.value;
+
+        if (operand1 != operand2)
         {
-            Emit(new AssemblyExpr.Binary(GetMoveInstruction(type: expr.member.GetLastType()), ((Expr.Binary)expr.value).internalFunction.parameters[0].stack.value, operand2));
+            Assign(expr, operand1, operand2);
         }
 
         alloc.Free(operand2);

@@ -75,7 +75,7 @@ public abstract partial class AssemblyExpr
                 {
                     codeGen.alloc.Free(ptr);
                     reg = codeGen.alloc.NextSseRegister();
-                    codeGen.Emit(new Binary(Instruction.MOVSS, reg, this));
+                    codeGen.Emit(new Binary(CodeGen.GetMoveInstruction(false, type as Expr.DataType), reg, this));
                 }
                 else
                 {

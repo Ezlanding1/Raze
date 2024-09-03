@@ -183,9 +183,9 @@ public partial class Parser
                     _ => ParseRegister()
                 };
             }
-            else if (parser.TypeMatch(Token.TokenType.INTEGER, Token.TokenType.FLOATING, Token.TokenType.STRING, Token.TokenType.HEX, Token.TokenType.BINARY))
+            else if (parser.TypeMatch(Token.TokenType.INTEGER, Token.TokenType.REF_STRING, Token.TokenType.FLOATING, Token.TokenType.STRING, Token.TokenType.HEX, Token.TokenType.BINARY))
             {
-                return new Expr.InlineAssembly.Literal(new((AssemblyExpr.Literal.LiteralType)parser.Previous().type, parser.Previous().lexeme));
+                return new Expr.InlineAssembly.Literal(new(new((LiteralTokenType)parser.Previous().type, parser.Previous().lexeme)));
             }
             else
             {
