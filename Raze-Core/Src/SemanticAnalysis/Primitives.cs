@@ -244,7 +244,7 @@ public partial class Analyzer
         }
         public static Diagnostic.AnalyzerDiagnostic InvalidOperation(Token op, string type)
         {
-            return new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOperatorCall_Arity1, type, $"'{SymbolToPrimitiveName(op)}'('{op.lexeme}')");
+            return new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOperatorCall_Arity1, type, SymbolToPrimitiveName(op));
         }
 
         public static bool IsVoidType(Expr.Type type)

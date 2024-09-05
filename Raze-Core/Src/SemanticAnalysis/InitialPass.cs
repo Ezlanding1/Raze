@@ -65,10 +65,16 @@ public partial class Analyzer
                 expr.modifiers["static"] = true;
                 switch (expr.name.lexeme)
                 {
-                    // Binary
-
-                    case "Add":
+                    // Binary or Unary
                     case "Subtract":
+                        if (expr.Arity != 1 && expr.Arity != 2)
+                        {
+                            Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOperatorArity, expr.name.lexeme, "1 or 2"));
+                        }
+                        break;
+
+                    // Binary
+                    case "Add":
                     case "Multiply":
                     case "Divide":
                     case "Modulo":
@@ -89,8 +95,8 @@ public partial class Analyzer
                             Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOperatorArity, expr.name.lexeme, 2));
                         }
                         break;
-                    // Unary
 
+                    // Unary
                     case "Increment":
                     case "Decrement":
                     case "Not":

@@ -98,6 +98,7 @@ public abstract partial class Expr
                 return (instruction switch
                 {
                     AssemblyExpr.Instruction.INC or
+                    AssemblyExpr.Instruction.NEG or
                     AssemblyExpr.Instruction.DEC => [operand.GetVariable()],                                                                                                                                                                                                                                                                             //case "MOD":
                     _ => new List<Variable?>() { }
                 }).OfType<Variable>().ToList();
