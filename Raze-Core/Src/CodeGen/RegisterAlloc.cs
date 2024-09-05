@@ -104,6 +104,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         public AssemblyExpr.Register ReserveScratchRegister(CodeGen codeGen, AssemblyExpr.Register.RegisterName name, AssemblyExpr.Register.RegisterSize size)
         {
+            if (registerStates[NameToIdx(name)].HasState(RegisterState.RegisterStates.Free))
+            {
+                return GetRegister(NameToIdx(name), size);
+            }
+
             int i = NameToIdx(name);
             int idx = NextPreservedRegisterIdx();
             _ReserveRegister(codeGen, i, idx);

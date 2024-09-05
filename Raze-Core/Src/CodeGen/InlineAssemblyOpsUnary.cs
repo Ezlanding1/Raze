@@ -21,6 +21,14 @@ public abstract partial class CodeGen
                 ReturnOperand(codeGen, unary, unary.operand, op);
                 DeallocVariables(codeGen, (unary.operand, op));
             }
+
+            public static void SYSCALL(CodeGen codeGen, Expr.InlineAssembly.UnaryInstruction unary)
+            {
+                codeGen.alloc.FreeRegister(codeGen.alloc.ReserveScratchRegister(codeGen, AssemblyExpr.Register.RegisterName.RCX, AssemblyExpr.Register.RegisterSize._64Bits));
+                codeGen.alloc.FreeRegister(codeGen.alloc.ReserveScratchRegister(codeGen, AssemblyExpr.Register.RegisterName.R11, AssemblyExpr.Register.RegisterSize._64Bits));
+
+                DefaultInstruction(codeGen, unary);
+            }
         }
     }
 }

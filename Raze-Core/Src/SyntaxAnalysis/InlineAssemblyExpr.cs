@@ -87,6 +87,9 @@ public abstract partial class Expr
             {
                 switch (instruction)
                 {
+                    case AssemblyExpr.Instruction.SYSCALL:
+                        CodeGen.InlineAssemblyOps.Unary.SYSCALL(codeGen, this);
+                        return;
                     default:
                         CodeGen.InlineAssemblyOps.Unary.DefaultInstruction(codeGen, this);
                         return;
