@@ -471,7 +471,7 @@ public partial class Analyzer
 
         public override Expr.Type VisitGroupingExpr(Expr.Grouping expr)
         {
-            return expr.expression.Accept(this);
+            return expr.type = expr.expression.Accept(this);
         }
 
         public override Expr.Type VisitWhileExpr(Expr.While expr)

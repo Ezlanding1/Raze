@@ -93,13 +93,14 @@ public abstract partial class Expr
     public class Grouping : Getter
     {
         public Expr expression;
+        public Type type;
 
         public Grouping(Expr expression) : base(null!)
         {
             this.expression = expression;
         }
 
-        public override DataType Type => null!;
+        public override DataType Type => Analyzer.TypeCheckUtils.ToDataTypeOrDefault(type);
         public override bool IsMethodCall => true;
 
         public override T Accept<T>(IVisitor<T> visitor)
@@ -295,7 +296,6 @@ public abstract partial class Expr
     public class InstanceGetReference : GetReference
     {
         // getters[0].name may be null if getters.Count > 1
-        // getters[0].type may be null if getters.Count > 1
         public List<Getter> getters;
 
         public InstanceGetReference(List<Getter> getters, bool _ref) : base(_ref)
@@ -306,7 +306,7 @@ public abstract partial class Expr
         public override StackData? GetLastData() => (getters[^1] as Get)?.data;
         public override Token GetLastName() => getters[^1].name;
         public override DataType GetLastType() => getters[^1].Type;
-        public override int GetLastSize() => (getters[^1] is Get get) ? get.data.size : ((Invokable)getters[^1]).internalFunction._returnType.type.allocSize;
+        public override int GetLastSize() => getters[^1].Type.allocSize;
         public override bool IsMethodCall() => getters[^1].IsMethodCall;
         public override bool HandleThis()
         {
