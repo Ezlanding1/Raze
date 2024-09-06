@@ -29,6 +29,7 @@ public partial class Analyzer
         Pass<object?> optimizationPass = new OptimizationPass(SymbolTableSingleton.SymbolTable.GetMainImportData().expressions);
         optimizationPass.Run();
 
+        SymbolTableSingleton.SymbolTable.currentFileInfo = new(Diagnostics.mainFile);
         CheckMain(SymbolTableSingleton.SymbolTable.main);
     }
 
