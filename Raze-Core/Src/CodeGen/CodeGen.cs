@@ -404,7 +404,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         
         if (expr.getters.Count == 1)
         {
-            return firstGet;
+            return firstGet?.IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)expr.getters[0].Type.allocSize);
         }
         else
         {

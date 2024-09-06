@@ -593,14 +593,13 @@ public partial class Parser
     {
         if (!IsAtEnd())
         {
-            Expr.Getter? getter = null;
+            Expr? getter = null;
 
             if (TypeMatch(Array.ConvertAll<LiteralTokenType, Token.TokenType>(Enum.GetValues<LiteralTokenType>(), new(x => (Token.TokenType)x))))
             {
-                return new Expr.Literal(new LiteralToken((LiteralTokenType)Previous().type, Previous().lexeme));
+                getter = new Expr.Literal(new LiteralToken((LiteralTokenType)Previous().type, Previous().lexeme));
             }
-
-            if (TypeMatch(Token.TokenType.LPAREN))
+            else if (TypeMatch(Token.TokenType.LPAREN))
             {
                 Expr logical = Logical();
                 Expect(Token.TokenType.RPAREN, "')' after expression.");
@@ -626,7 +625,7 @@ public partial class Parser
 
             if ((getter != null && current.type == Token.TokenType.DOT) || (getter == null && (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this", "ref"))))
             {
-                var variable = GetReference(getter);
+                var variable = GetReference((getter is Expr.Getter || getter == null) ? (Expr.Getter)getter : new Expr.Grouping(getter));
 
                 if (TypeMatch(Token.TokenType.EQUALS))
                 {
