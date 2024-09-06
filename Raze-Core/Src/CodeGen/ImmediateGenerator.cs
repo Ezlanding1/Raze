@@ -21,6 +21,7 @@ public partial class AssemblyExpr
                 Literal.LiteralType.Floating => ParseFloating(str, size),
                 Literal.LiteralType.Binary => ParseUnsignedInteger(str, size, literalType),
                 Literal.LiteralType.Hex => ParseUnsignedInteger(str, size, literalType),
+                Literal.LiteralType.Boolean => ParseUnsignedInteger(str, size, Literal.LiteralType.UnsignedInteger),
                 Literal.LiteralType.String => ParseString(str, size),
                 Literal.LiteralType.RefData or
                 Literal.LiteralType.RefProcedure or

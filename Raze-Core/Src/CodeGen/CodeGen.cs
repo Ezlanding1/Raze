@@ -838,8 +838,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         return expr.keyword switch
         {
             "null" => NullLiteral,
-            "true" => new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [1]),
-            "false" => new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [0]),
+            "true" => new AssemblyExpr.UnresolvedLiteral(AssemblyExpr.Literal.LiteralType.Boolean, "1"),
+            "false" => new AssemblyExpr.UnresolvedLiteral(AssemblyExpr.Literal.LiteralType.Boolean, "0"),
             _ => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"'{expr.keyword}' is not a keyword")),
         };
     }
