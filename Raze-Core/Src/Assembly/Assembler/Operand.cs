@@ -37,7 +37,7 @@ public partial class Assembler
                     OperandType.IMM.HasFlag(operand.type) ?
                         (int)operand.size >= (int)this.size :
                     constantSizeOperandTypeRM.TryGetValue(this.type, out OperandSize value) ?
-                        operand.size == value :
+                        value == this.size :
                         operand.size == this.size;
 
                 return operand.type.HasFlag(this.type) && sizeMatches;
