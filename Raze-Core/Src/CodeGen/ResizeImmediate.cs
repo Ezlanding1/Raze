@@ -81,16 +81,7 @@ public partial class AssemblyExpr
             switch (literal.type)
             {
                 case Literal.LiteralType.Integer:
-                    var prevSize = (int)literal.Size;
-                    bool isNegative = literal.value[^1] >= 128;
-                    Array.Resize(ref literal.value, (int)size);
-                    if (isNegative)
-                    {
-                        for (int i = prevSize; i < literal.value.Length; i++)
-                        {
-                            literal.value[i] = 0xFF;
-                        }
-                    }
+                    ResizeSignedInteger(ref literal.value, (int)size);
                     return true;
                 case Literal.LiteralType.UnsignedInteger:
                 case Literal.LiteralType.Binary:
@@ -101,5 +92,18 @@ public partial class AssemblyExpr
             return false;
         }
 
+        public static void ResizeSignedInteger(ref byte[] value, int newSize)
+        {
+            var prevSize = value.Length;
+            bool isNegative = value[^1] >= 128;
+            Array.Resize(ref value, newSize);
+            if (isNegative)
+            {
+                for (int i = prevSize; i < value.Length; i++)
+                {
+                    value[i] = 0xFF;
+                }
+            }
+        }
     }
 }

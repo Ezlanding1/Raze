@@ -460,7 +460,7 @@ public abstract partial class Expr
 
         public AssemblyExpr.Pointer CreateValueAsPointer(AssemblyExpr.Register.RegisterName name, int offset)
         {
-            value = new AssemblyExpr.Pointer(name, -offset, size);
+            value = new AssemblyExpr.Pointer(name, -offset, (AssemblyExpr.Register.RegisterSize)size);
             return ValueAsPointer;
         }
         public AssemblyExpr.Register CreateValueAsRegister(AssemblyExpr.Register.RegisterName name)
@@ -474,7 +474,7 @@ public abstract partial class Expr
     {
         public ThisStackData(int size)
         {
-            value = new AssemblyExpr.Pointer(size, (AssemblyExpr.Register.RegisterSize)size);
+            value = new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, -size, (AssemblyExpr.Register.RegisterSize)size);
         }
     }
 

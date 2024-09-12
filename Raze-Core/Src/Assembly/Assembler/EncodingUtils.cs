@@ -90,19 +90,21 @@ public partial class Assembler
                 return new Instruction.Immediate(bytes);
             }
 
-            internal static bool Disp8Bit(int disp)
-                => disp <= sbyte.MaxValue && disp >= sbyte.MinValue;
+            internal static Instruction.ModRegRm.Mod GetDispSize(byte[] disp)
+                => disp.Length == 1 ? Instruction.ModRegRm.Mod.OneByteDisplacement : Instruction.ModRegRm.Mod.FourByteDisplacement;
 
-            internal static Instruction.ModRegRm.Mod GetDispSize(int disp)
-                => Disp8Bit(disp) ? Instruction.ModRegRm.Mod.OneByteDisplacement : Instruction.ModRegRm.Mod.FourByteDisplacement;
-
-            internal static IInstruction GetDispInstruction(int disp)
+            internal static IInstruction GetDispInstruction(byte[] disp)
             {
-                if (Disp8Bit(disp))
+                if (disp.Length == 1)
                 {
-                    return new Instruction.Displacement8((sbyte)disp);
+                    return new Instruction.Displacement8(unchecked((sbyte)disp[0]));
                 }
-                return new Instruction.Displacement32(disp);
+                else if (disp.Length <= 4)
+                {
+                    AssemblyExpr.ImmediateGenerator.ResizeSignedInteger(ref disp, 4);
+                    return new Instruction.Displacement32(BitConverter.ToInt32(disp));
+                }
+                throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Invalid displacement length: " + disp.Length));
             }
 
             internal static bool SetRexPrefix(AssemblyExpr.Binary binary, Encoding encoding, out Instruction.RexPrefix rexPrefix)
@@ -144,9 +146,9 @@ public partial class Assembler
                 {
                     return ((int)register.Name / 8 % 2) == 1;
                 }
-                else if (op is AssemblyExpr.Pointer pointer && pointer.value.IsRegister(out var ptrReg))
+                else if (op is AssemblyExpr.Pointer pointer && pointer.value != null)
                 {
-                    return ((int)ptrReg.Name / 8 % 2) == 1;
+                    return ((int)pointer.value.Name / 8 % 2) == 1;
                 }
                 return false;
             }
@@ -158,7 +160,7 @@ public partial class Assembler
 
             internal static bool SetAddressSizeOverridePrefix(AssemblyExpr.IOperand operand)
             {
-                if (operand is AssemblyExpr.Pointer ptr && ptr.value.IsRegister())
+                if (operand is AssemblyExpr.Pointer ptr && ptr.value != null)
                 {
                     if (ptr.value.Size == AssemblyExpr.Register.RegisterSize._32Bits)
                     {
@@ -263,9 +265,9 @@ public partial class Assembler
                     labelLiteral = (AssemblyExpr.LabelLiteral)instructionOperand;
                     return true;
                 }
-                if (operand.type == Operand.OperandType.MOFFS && IsReferenceLiteralType(((AssemblyExpr.Literal)((AssemblyExpr.Pointer)instructionOperand).value).type))
+                if (operand.type == Operand.OperandType.MOFFS && IsReferenceLiteralType(((AssemblyExpr.Pointer)instructionOperand).offset.type))
                 {
-                    labelLiteral = (AssemblyExpr.LabelLiteral)((AssemblyExpr.Pointer)instructionOperand).value;
+                    labelLiteral = (AssemblyExpr.LabelLiteral)((AssemblyExpr.Pointer)instructionOperand).offset;
                     return true;
                 }
                 labelLiteral = null;

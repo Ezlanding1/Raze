@@ -220,36 +220,9 @@ public partial class Assembler :
         }
 
         return new(
-            Encoder.EncodingUtils.EncodeMemoryOperand(ptr2, (byte)Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1), DisplacementCallback)
+            Encoder.EncodingUtils.EncodeMemoryOperand(ptr2, (byte)Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1), this)
             .ToArray()
         );
-
-        IInstruction[] DisplacementCallback()
-        {
-            var instructions = new Instruction { Instructions = new IInstruction[2] };
-            instructions.Instructions[0] =
-                new ModRegRm(
-                    ModRegRm.Mod.ZeroByteDisplacement,
-                    Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1),
-                    5
-                );
-
-            instructions.Instructions[1] = ((AssemblyExpr.Literal)ptr2.value).Accept(this).Instructions[0];
-
-            if (ptr2.offset != 0)
-            {
-                byte[] ptrValueBytes = instructions.ToBytes().ElementAt(0).ToArray();
-                int size = ptrValueBytes.Length;
-                Array.Resize(ref ptrValueBytes, 8);
-
-                byte[] bytes = checked(BitConverter.GetBytes(BitConverter.ToInt64(ptrValueBytes, 0) + ptr2.offset));
-                Array.Resize(ref bytes, size);
-
-                instructions.Instructions[1] = new Instruction.RawInstruction(bytes);
-            }
-            return instructions.Instructions;
-        }
-
     }
 
     public Instruction VisitRegisterImmediate(AssemblyExpr.Register reg1, AssemblyExpr.Literal imm2)
@@ -281,7 +254,7 @@ public partial class Assembler :
 
     public Instruction VisitMemoryImmediate(AssemblyExpr.Pointer ptr1, AssemblyExpr.Literal imm2)
     {
-        var iinstructions = Encoder.EncodingUtils.EncodeMemoryOperand(ptr1, encoding.OpCodeExtension, () => throw Encoder.EncodingUtils.ThrowIvalidEncodingType("Memory", "Moffset"));
+        var iinstructions = Encoder.EncodingUtils.EncodeMemoryOperand(ptr1, encoding.OpCodeExtension, this).ToList();
         iinstructions.Add(Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2, this, encoding.encodingType));
 
         return new Instruction(iinstructions.ToArray());
@@ -309,7 +282,7 @@ public partial class Assembler :
     public Instruction VisitMemory(AssemblyExpr.Pointer ptr)
     {
         return new Instruction(
-            Encoder.EncodingUtils.EncodeMemoryOperand(ptr, encoding.OpCodeExtension, () => throw Encoder.EncodingUtils.ThrowIvalidEncodingType("Moffset"))
+            Encoder.EncodingUtils.EncodeMemoryOperand(ptr, encoding.OpCodeExtension, this)
             .ToArray()
         );
     }

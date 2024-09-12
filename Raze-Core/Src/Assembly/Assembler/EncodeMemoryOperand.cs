@@ -13,30 +13,32 @@ public partial class Assembler
         internal static partial class EncodingUtils
         {
             // Supports: [Base], [Base + Displacement], [Displacement]
-            public static IList<IInstruction> EncodeMemoryOperand(AssemblyExpr.Pointer ptr1, byte operand2, Func<IInstruction[]> displacementCallback)
+            public static IList<IInstruction> EncodeMemoryOperand(AssemblyExpr.Pointer ptr1, byte operand2, Assembler assembler)
             {
-                if (ptr1.value.IsRegister(out var reg1))
+                byte[] offset = ptr1.offset.Accept(assembler).Instructions[0].GetBytes();
+
+                if (ptr1.value != null)
                 {
-                    if (ptr1.offset == 0) // [Base]
+                    if (offset.All(x => x == 0)) // [Base]
                     {
-                        if (BaseAddressingModeMustHaveDisplacement(reg1))
+                        if (BaseAddressingModeMustHaveDisplacement(ptr1.value))
                         {
                             return [
                                 new Instruction.ModRegRm(
                                     Instruction.ModRegRm.Mod.OneByteDisplacement,
                                     operand2,
-                                    ExprRegisterToModRegRmRegister(reg1)
+                                    ExprRegisterToModRegRmRegister(ptr1.value)
                                 ),
-                                GetDispInstruction(ptr1.offset)
+                                GetDispInstruction(offset)
                             ];
                         }
-                        else if (BaseAddressingModeMustHaveSIB(reg1))
+                        else if (BaseAddressingModeMustHaveSIB(ptr1.value))
                         {
                             return [
                                 new Instruction.ModRegRm(
                                     Instruction.ModRegRm.Mod.SibNoDisplacement,
                                     operand2,
-                                    ExprRegisterToModRegRmRegister(reg1)
+                                    ExprRegisterToModRegRmRegister(ptr1.value)
                                 ),
                                 new Instruction.SIB(Instruction.SIB.Scale.TimesOne, Instruction.SIB.Index.Illegal, Instruction.SIB.Base.ESP)
                             ];
@@ -45,22 +47,30 @@ public partial class Assembler
                             new Instruction.ModRegRm(
                                 Instruction.ModRegRm.Mod.ZeroByteDisplacement,
                                 operand2,
-                                ExprRegisterToModRegRmRegister(reg1)
+                                ExprRegisterToModRegRmRegister(ptr1.value)
                             )
                         ];
                     }
                     return [ // [Base + Displacement]
                         new Instruction.ModRegRm(
-                            GetDispSize(ptr1.offset),
+                            GetDispSize(offset),
                             operand2,
-                            ExprRegisterToModRegRmRegister(reg1)
+                            ExprRegisterToModRegRmRegister(ptr1.value)
                         ),
-                        GetDispInstruction(ptr1.offset)
+                        GetDispInstruction(offset)
                     ];
                 }
                 else // [Displacement]
                 {
-                    return displacementCallback();
+                    return new IInstruction[]
+                    {
+                        new Instruction.ModRegRm(
+                            Instruction.ModRegRm.Mod.ZeroByteDisplacement,
+                            (Instruction.ModRegRm.RegisterCode)operand2,
+                            5
+                        ),
+                        new Instruction.Immediate(offset)
+                    };
                 }
             }
         }

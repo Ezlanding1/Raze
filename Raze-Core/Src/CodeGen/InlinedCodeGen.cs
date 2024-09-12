@@ -112,7 +112,7 @@ public class InlinedCodeGen : CodeGen
                 {
                     var enclosing = SymbolTableSingleton.SymbolTable.NearestEnclosingClass(expr.internalFunction);
                     var size = enclosing.allocSize;
-                    Expr.DataType.This(thisSize).value = new AssemblyExpr.Pointer(8, size);
+                    Expr.DataType.This(thisSize).value = new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, -8, (AssemblyExpr.Register.RegisterSize)size);
                 }
             }
             else
@@ -287,12 +287,9 @@ public class InlinedCodeGen : CodeGen
         {
             alloc.Lock(register);
         }
-        else if (operand.IsPointer(out var pointer) && pointer.value.IsRegister(out var ptrReg))
+        else if (operand.IsPointer(out var pointer) && pointer.value != null && !pointer.IsOnStack())
         {
-            if (!pointer.IsOnStack())
-            {
-                alloc.Lock(ptrReg);
-            }
+            alloc.Lock(pointer.value);
         }
         return operand;
     }
@@ -307,12 +304,9 @@ public class InlinedCodeGen : CodeGen
         {
             alloc.Unlock(register);
         }
-        else if (operand.IsPointer(out var pointer) && pointer.value.IsRegister(out var ptrReg))
+        else if (operand.IsPointer(out var pointer) && pointer.value != null && !pointer.IsOnStack())
         {
-            if (!pointer.IsOnStack())
-            {
-                alloc.Unlock(ptrReg);
-            }
+            alloc.Unlock(pointer.value);
         }
     }
 

@@ -174,7 +174,7 @@ public abstract partial class Expr
 
             public override AssemblyExpr.IValue ToOperand(CodeGen codeGen, AssemblyExpr.Register.RegisterSize defaultSize)
             {
-                return new AssemblyExpr.Pointer(value.ToOperand(codeGen, AssemblyExpr.Register.RegisterSize._64Bits).NonPointer(codeGen, value.Type()), offset, size ?? defaultSize);
+                return new AssemblyExpr.Pointer(value.ToOperand(codeGen, AssemblyExpr.Register.RegisterSize._64Bits).NonPointerNonLiteral(codeGen, value.Type()), offset, size ?? defaultSize);
             }
 
             public override Type Type() =>

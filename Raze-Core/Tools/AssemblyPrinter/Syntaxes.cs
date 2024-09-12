@@ -79,16 +79,7 @@ partial class Syntaxes
 
             public string VisitMemory(AssemblyExpr.Pointer instruction)
             {
-                if (instruction.GetRegister()?.Name == AssemblyExpr.Register.RegisterName.TMP)
-                {
-                    Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("TMP Register Emitted"));
-                }
-
-                if (instruction.offset == 0)
-                {
-                    return $"{InstructionUtils.wordSize[instruction.Size]} [{instruction.value.Accept(this)}]";
-                }
-                return $"{InstructionUtils.wordSize[instruction.Size]} [{instruction.value.Accept(this)} {((instruction.offset < 0) ? '-' : '+')} {Math.Abs(instruction.offset)}]";
+                return $"{InstructionUtils.wordSize[instruction.Size]} " + PointerToString(instruction);
             }
 
             public string VisitRegister(AssemblyExpr.Register instruction)
@@ -123,11 +114,21 @@ partial class Syntaxes
                     Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("TMP Register Cannot Be Emitted"));
                 }
 
-                if (instruction.offset == 0)
+                if (instruction.offset.value.All(x => x == 0))
                 {
-                    return $"[{instruction.value.Accept(this)}]";
+                    return $"[{instruction.value?.Accept(this)}]";
                 }
-                return $"[{instruction.value.Accept(this)} {((instruction.offset < 0) ? '-' : '+')} {Math.Abs(instruction.offset)}]";
+                return $"[{instruction.value?.Accept(this)}{ImmediateToStringWithSign(instruction.offset)}]";
+            }
+
+            private string ImmediateToStringWithSign(AssemblyExpr.Literal instruction)
+            {
+                var value = instruction.Accept(this);
+                if (instruction.type == AssemblyExpr.Literal.LiteralType.Integer && value.StartsWith('-'))
+                {
+                    return " - " + value[1..];
+                }
+                return " + " + value;
             }
 
             public string VisitImmediate(AssemblyExpr.Literal instruction)
@@ -205,9 +206,8 @@ partial class Syntaxes
 
             private static string IntegralImmediateToString(byte[] bytes, int _base)
             {
-                byte[] number = bytes.ToArray();
-                Array.Resize(ref number, 8);
-                return Convert.ToString(BitConverter.ToInt64(number), _base);
+                AssemblyExpr.ImmediateGenerator.ResizeSignedInteger(ref bytes, 8);
+                return Convert.ToString(BitConverter.ToInt64(bytes), _base);
             }
 
             private static Dictionary<(AssemblyExpr.Register.RegisterName, AssemblyExpr.Register.RegisterSize?), string> RegisterToString = new()

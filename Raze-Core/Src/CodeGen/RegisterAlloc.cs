@@ -225,9 +225,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         public void FreeRegister(AssemblyExpr.Register register, bool force = false) => Free(NameToIdx(register.Name), force);
         public void FreePtr(AssemblyExpr.Pointer ptr, bool force = false)
         {
-            if (ptr.value.IsRegister(out var ptrReg))
+            if (ptr.value != null)
             {
-                FreeRegister(ptrReg, force);
+                FreeRegister(ptr.value, force);
             }
         }
 

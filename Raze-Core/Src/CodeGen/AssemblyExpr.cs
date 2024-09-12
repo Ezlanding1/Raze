@@ -248,50 +248,45 @@ public abstract partial class AssemblyExpr
 
     public class Pointer : IValue, IRegisterPointer
     {
-        internal IRegisterLiteral value;
-
-        public int offset;
+        internal Register? value;
+        internal Literal offset;
 
         private Register.RegisterSize _size;
         public Register.RegisterSize Size { get => _size; set => _size = value; }
 
-        internal Pointer(IRegisterLiteral value, int offset, Register.RegisterSize _size)
+        // Only LiteralTypes that resolve to signed integers are supported (Integer, RefData, RefProcedure, RefLocalProcedure)
+        internal Pointer(Register? value, Literal offset, Register.RegisterSize _size)
         {
             this.value = value;
             this._size = _size;
-            this.offset = -offset;
+            this.offset = offset;
         }
-        public Pointer(IRegisterLiteral register, int offset, int size) : this(register, offset, InstructionUtils.ToRegisterSize(size))
+        internal Pointer(Register value, int offset, Register.RegisterSize _size) 
+            : this(value, new Literal(Literal.LiteralType.Integer, ImmediateGenerator.MinimizeImmediate(Literal.LiteralType.Integer, BitConverter.GetBytes(offset))), _size)
         {
         }
-        internal Pointer(Register register, int offset, int size) : this(register, offset, InstructionUtils.ToRegisterSize(size))
+        internal Pointer(Register value, Literal offset, int size) : this(value, offset, (Register.RegisterSize)size)
         {
         }
         internal Pointer(StrongBox<Register.RegisterName> register, int offset, Register.RegisterSize size) : this(new Register(register, Register.RegisterSize._64Bits), offset, size)
         {
         }
+        internal Pointer(Register.RegisterName register, Literal offset, Register.RegisterSize size) : this(new Register(register, Register.RegisterSize._64Bits), offset, size)
+        {
+        }
         internal Pointer(Register.RegisterName register, int offset, Register.RegisterSize size) : this(new Register(register, Register.RegisterSize._64Bits), offset, size)
         {
         }
-        internal Pointer(Register.RegisterName register, int offset, int size) : this(new Register(register, Register.RegisterSize._64Bits), offset, size)
-        {
-        }
-        internal Pointer(int offset, Register.RegisterSize size) : this(Register.RegisterName.RBP, offset, size)
-        {
-        }
-        public Pointer(int offset, int size) : this(Register.RegisterName.RBP, offset, size)
-        {
-        }
 
-        public Register? GetRegister() => value as Register;
+        public Register? GetRegister() => value;
 
-        public bool IsOnStack() => GetRegister() == null || ((Register)value).Name == Register.RegisterName.RBP;
+        public bool IsOnStack() => value.Name == Register.RegisterName.RBP;
 
         public Register AsRegister(CodeGen assembler)
         {
-            return IsOnStack() ? assembler.alloc.NextRegister(Size) : new Register(((Register)value).nameBox, Size);
+            return (value == null || IsOnStack()) ? assembler.alloc.NextRegister(Size) : new Register(value!.nameBox, Size);
         }
-        public IRegisterPointer Clone() => new Pointer(value, -offset, Size);
+        public IRegisterPointer Clone() => new Pointer(value, offset, Size);
 
         public T Accept<T>(IUnaryOperandVisitor<T> visitor)
         {
@@ -300,9 +295,9 @@ public abstract partial class AssemblyExpr
 
         public Assembler.Encoder.Operand ToAssemblerOperand()
         {
-            if (value.IsRegister(out var reg))
+            if (value != null)
             {
-                Assembler.Encoder.Operand.ThrowTMP(reg);
+                Assembler.Encoder.Operand.ThrowTMP(value);
                 return new(Assembler.Encoder.Operand.OperandType.M, (int)Size);
             }
             else
@@ -385,7 +380,7 @@ public abstract partial class AssemblyExpr
                 )
             );
             codeGen.dataCount++;
-            return new Pointer(new DataRef(name), 0, size);
+            return new Pointer(null, new DataRef(name), size);
         }
 
         public override Literal CreateRawLiteral(Register.RegisterSize size)
