@@ -32,9 +32,8 @@ public partial class Assembler
             
             if (instructionEncodings.TryGetValue(instruction.instruction.ToString(), out var encodings))
             {
-                if (EncodingUtils.IsReferenceLiteralOperand(operands[^1], instruction.Operands[^1], out var labelLiteral))
+                if (EncodingUtils.IsReferenceLiteralOperand(operands[^1], instruction, assembler, out var labelLiteral, out refResolve))
                 {
-                    refResolve = true;
                     (Operand.OperandSize absoluteJump, Operand.OperandSize relativeJump) =
                         EncodingUtils.HandleUnresolvedRef(instruction, labelLiteral, assembler);
 
@@ -50,7 +49,6 @@ public partial class Assembler
                 }
                 else
                 {
-                    refResolve = false;
                     foreach (Encoding encoding in encodings)
                     {
                         if (encoding.Matches(operands) && encoding.SpecialMatch(instruction, operands))

@@ -298,12 +298,8 @@ public abstract partial class AssemblyExpr
             if (value != null)
             {
                 Assembler.Encoder.Operand.ThrowTMP(value);
-                return new(Assembler.Encoder.Operand.OperandType.M, (int)Size);
             }
-            else
-            {
-                return new(Assembler.Encoder.Operand.OperandType.MOFFS, (int)Size);
-            }
+            return new(Assembler.Encoder.Operand.OperandType.M, (int)Size);
         }
 
         public T Accept<T>(IBinaryOperandVisitor<T> visitor, IOperand operand)

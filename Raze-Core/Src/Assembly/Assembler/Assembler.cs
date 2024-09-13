@@ -220,7 +220,7 @@ public partial class Assembler :
         }
 
         return new(
-            Encoder.EncodingUtils.EncodeMemoryOperand(ptr2, (byte)Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1), this)
+            Encoder.EncodingUtils.EncodeMemoryOperand(ptr2, (byte)Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg1), this, 1)
             .ToArray()
         );
     }
@@ -244,7 +244,14 @@ public partial class Assembler :
 
     public Instruction VisitMemoryRegister(AssemblyExpr.Pointer ptr1, AssemblyExpr.Register reg2)
     {
-        return VisitRegisterMemory(reg2, ptr1);
+        if (encoding.encodingType.HasFlag(Encoder.Encoding.EncodingTypes.AddRegisterToOpCode))
+        {
+            encoding.AddRegisterCode(Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg2));
+        }
+
+        return new(
+            Encoder.EncodingUtils.EncodeMemoryOperand(ptr1, (byte)Encoder.EncodingUtils.ExprRegisterToModRegRmRegister(reg2), this, 0).ToArray()
+        );
     }
 
     public Instruction VisitMemoryMemory(AssemblyExpr.Pointer ptr1, AssemblyExpr.Pointer ptr2)
@@ -254,7 +261,7 @@ public partial class Assembler :
 
     public Instruction VisitMemoryImmediate(AssemblyExpr.Pointer ptr1, AssemblyExpr.Literal imm2)
     {
-        var iinstructions = Encoder.EncodingUtils.EncodeMemoryOperand(ptr1, encoding.OpCodeExtension, this).ToList();
+        var iinstructions = Encoder.EncodingUtils.EncodeMemoryOperand(ptr1, encoding.OpCodeExtension, this, 0).ToList();
         iinstructions.Add(Encoder.EncodingUtils.GetImmInstruction(encoding.operands[1].size, imm2, this, encoding.encodingType));
 
         return new Instruction(iinstructions.ToArray());
@@ -282,7 +289,7 @@ public partial class Assembler :
     public Instruction VisitMemory(AssemblyExpr.Pointer ptr)
     {
         return new Instruction(
-            Encoder.EncodingUtils.EncodeMemoryOperand(ptr, encoding.OpCodeExtension, this)
+            Encoder.EncodingUtils.EncodeMemoryOperand(ptr, encoding.OpCodeExtension, this, 0)
             .ToArray()
         );
     }

@@ -204,8 +204,9 @@ partial class Syntaxes
                 return unescapedString.ToString();
             }
 
-            private static string IntegralImmediateToString(byte[] bytes, int _base)
+            private static string IntegralImmediateToString(byte[] value, int _base)
             {
+                var bytes = value.ToArray();
                 AssemblyExpr.ImmediateGenerator.ResizeSignedInteger(ref bytes, 8);
                 return Convert.ToString(BitConverter.ToInt64(bytes), _base);
             }

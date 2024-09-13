@@ -54,13 +54,13 @@ public partial class Assembler
                 if (op2Expr.type == AssemblyExpr.Literal.LiteralType.RefData)
                 {
                     return assembler.symbolTable.definitions.ContainsKey(((AssemblyExpr.LabelLiteral)op2Expr).Name) ? 
-                        GenerateImmFromInt(size, assembler.symbolTable.definitions[((AssemblyExpr.LabelLiteral)op2Expr).Name] + (long)Linker.Elf64.Elf64_Shdr.dataVirtualAddress) : 
+                        GenerateImmFromSignedInt(size, assembler.symbolTable.definitions[((AssemblyExpr.LabelLiteral)op2Expr).Name] + (long)Linker.Elf64.Elf64_Shdr.dataVirtualAddress) : 
                         DefaultUnresolvedReference;
                 }
                 else if (op2Expr.type == AssemblyExpr.Literal.LiteralType.RefProcedure || op2Expr.type == AssemblyExpr.Literal.LiteralType.RefLocalProcedure)
                 {
                     return assembler.symbolTable.definitions.ContainsKey(((AssemblyExpr.LabelLiteral)op2Expr).Name) ?
-                        GenerateImmFromInt(size,
+                        GenerateImmFromSignedInt(size,
                             CalculateJumpLocation(
                                 encodingTypes.HasFlag(Encoding.EncodingTypes.RelativeJump),
                                 assembler.symbolTable.definitions[((AssemblyExpr.LabelLiteral)op2Expr).Name],
@@ -82,10 +82,10 @@ public partial class Assembler
                 return (long)((ulong)symbolLocation + Linker.Elf64.Elf64_Shdr.textVirtualAddress);
             }
 
-            private static IInstruction GenerateImmFromInt(Operand.OperandSize size, long value)
+            private static IInstruction GenerateImmFromSignedInt(Operand.OperandSize size, long value)
             {
                 byte[] bytes = BitConverter.GetBytes(value);
-                Array.Resize(ref bytes, (int)size);
+                AssemblyExpr.ImmediateGenerator.ResizeSignedInteger(ref bytes, (int)size);
 
                 return new Instruction.Immediate(bytes);
             }
@@ -95,6 +95,8 @@ public partial class Assembler
 
             internal static IInstruction GetDispInstruction(byte[] disp)
             {
+                disp = AssemblyExpr.ImmediateGenerator.MinimizeImmediate(AssemblyExpr.Literal.LiteralType.Integer, disp);
+
                 if (disp.Length == 1)
                 {
                     return new Instruction.Displacement8(unchecked((sbyte)disp[0]));
@@ -179,7 +181,7 @@ public partial class Assembler
             internal static Exception ThrowIvalidEncodingType(string t1, string t2) =>
                 Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Cannot encode instruction with operands '{t1.ToUpper()}, {t2.ToUpper()}'"));
 
-            internal static (Operand.OperandSize, Operand.OperandSize) HandleUnresolvedRef(AssemblyExpr expr, AssemblyExpr.LabelLiteral literal, Assembler assembler)
+            internal static (Operand.OperandSize, Operand.OperandSize) HandleUnresolvedRef(AssemblyExpr expr, AssemblyExpr.LabelLiteral literal, Assembler assembler, bool noCalcRetSize=false)
             {
                 if (literal.type == AssemblyExpr.Literal.LiteralType.RefData)
                 {
@@ -195,6 +197,8 @@ public partial class Assembler
                     }
                     else
                     {
+                        if (noCalcRetSize) return (DefaultUnresolvedReferenceSize, DefaultUnresolvedReferenceSize);
+
                         var operandSize = SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + Linker.Elf64.Elf64_Shdr.dataVirtualAddress);
                         return (operandSize, operandSize);
                     }
@@ -213,6 +217,8 @@ public partial class Assembler
                     }
                     else
                     {
+                        if (noCalcRetSize) return (DefaultUnresolvedReferenceSize, DefaultUnresolvedReferenceSize);
+
                         return (
                             SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + Linker.Elf64.Elf64_Shdr.textVirtualAddress),
                             SizeOfIntegerSigned(CalculateJumpLocation(
@@ -238,6 +244,8 @@ public partial class Assembler
                     }
                     else
                     {
+                        if (noCalcRetSize) return (DefaultUnresolvedReferenceSize, DefaultUnresolvedReferenceSize);
+
                         return (
                             SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + Linker.Elf64.Elf64_Shdr.textVirtualAddress),
                             SizeOfIntegerSigned(CalculateJumpLocation(
@@ -258,20 +266,51 @@ public partial class Assembler
             private static bool IsReferenceLiteralType(AssemblyExpr.Literal.LiteralType literalType) =>
                 literalType >= AssemblyExpr.Literal.LiteralType.RefData;
 
-            internal static bool IsReferenceLiteralOperand(Operand operand, AssemblyExpr.IOperand instructionOperand, out AssemblyExpr.LabelLiteral labelLiteral)
+            internal static bool IsReferenceLiteralOperand(Operand operand, AssemblyExpr.OperandInstruction operandInstruction, Assembler assembler, out AssemblyExpr.LabelLiteral labelLiteral, out bool refResolve)
             {
+                var instructionOperand = operandInstruction.Operands[^1];
+
                 if (operand.type == Operand.OperandType.IMM && IsReferenceLiteralType(((AssemblyExpr.Literal)instructionOperand).type))
                 {
                     labelLiteral = (AssemblyExpr.LabelLiteral)instructionOperand;
-                    return true;
+                    return refResolve = true;
                 }
-                if (operand.type == Operand.OperandType.MOFFS && IsReferenceLiteralType(((AssemblyExpr.Pointer)instructionOperand).offset.type))
+                if (operand.type.HasFlag(Operand.OperandType.M))
                 {
-                    labelLiteral = (AssemblyExpr.LabelLiteral)((AssemblyExpr.Pointer)instructionOperand).offset;
-                    return true;
+                    AssemblyExpr.Pointer ptr = (AssemblyExpr.Pointer)instructionOperand;
+
+                    if (IsReferenceLiteralType(ptr.offset.type))
+                    {
+                        labelLiteral = (AssemblyExpr.LabelLiteral)ptr.offset;
+                        HandleUnresolvedRef(operandInstruction, labelLiteral, assembler, true);
+                        refResolve = true;
+                        return false;
+                    }
+                    else if (ptr.value == null)
+                    {
+                        // Rip-relative encoding (add to symbolTable)
+
+                        if (assembler.nonResolvingPass)
+                        {
+                            assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(operandInstruction, assembler.TextLocation, -1));
+                        }
+                        labelLiteral = null;
+                        refResolve = true;
+                        return false;
+                    }
                 }
                 labelLiteral = null;
-                return false;
+                return refResolve = false;
+            }
+
+            internal static void ShrinkSignedDisplacement(ref byte[] disp, int newSize)
+            {
+                disp = AssemblyExpr.ImmediateGenerator.MinimizeImmediate(AssemblyExpr.Literal.LiteralType.Integer, disp);
+                if (disp.Length > newSize)
+                {
+                    throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Invalid displacement length: " + disp.Length));
+                }
+                AssemblyExpr.ImmediateGenerator.ResizeSignedInteger(ref disp, newSize);
             }
         }
     }

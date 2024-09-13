@@ -12,10 +12,10 @@ public partial class Assembler
     {
         internal static partial class EncodingUtils
         {
-            // Supports: [Base], [Base + Displacement], [Displacement]
-            public static IList<IInstruction> EncodeMemoryOperand(AssemblyExpr.Pointer ptr1, byte operand2, Assembler assembler)
+            // Supports: [Base], [Base + Displacement], [Rip + Displacement], [Displacement]
+            public static IList<IInstruction> EncodeMemoryOperand(AssemblyExpr.Pointer ptr1, byte operand2, Assembler assembler, int ptrIdx)
             {
-                byte[] offset = ptr1.offset.Accept(assembler).Instructions[0].GetBytes();
+                byte[] offset = GetImmInstruction(assembler.encoding.operands[ptrIdx].size, ptr1.offset, assembler, assembler.encoding.encodingType).GetBytes();
 
                 if (ptr1.value != null)
                 {
@@ -60,16 +60,37 @@ public partial class Assembler
                         GetDispInstruction(offset)
                     ];
                 }
-                else // [Displacement]
+                else if (assembler.encoding.operands[ptrIdx].type != Operand.OperandType.MOFFS) // [Rip + Displacement]
                 {
-                    return new IInstruction[]
-                    {
+                    var instructions = new Instruction { Instructions = new IInstruction[2] };
+                    instructions.Instructions[0] =
                         new Instruction.ModRegRm(
                             Instruction.ModRegRm.Mod.ZeroByteDisplacement,
                             (Instruction.ModRegRm.RegisterCode)operand2,
                             5
-                        ),
-                        new Instruction.Immediate(offset)
+                        );
+
+                    ShrinkSignedDisplacement(ref offset, 4);
+
+                    int location = 0;
+                    if (!assembler.nonResolvingPass)
+                    {
+                        var refInfo = (Linker.ReferenceInfo)assembler.symbolTable.unresolvedReferences[assembler.symbolTable.sTableUnresRefIdx];
+                        location = refInfo.location + refInfo.size;
+                    }
+                    offset = BitConverter.GetBytes(checked(BitConverter.ToInt32(offset) - location - (int)Linker.Elf64.Elf64_Shdr.textVirtualAddress));
+
+                    instructions.Instructions[1] = new Instruction.Immediate(offset);
+
+                    return instructions.Instructions;
+                }
+                else // [Displacement]
+                {
+                    ShrinkSignedDisplacement(ref offset, 8);
+
+                    return new IInstruction[]
+                    {
+                         new Instruction.Immediate(offset)
                     };
                 }
             }
