@@ -32,7 +32,12 @@ public partial class Linker
             do
             {
                 stablePass = true;
-                int sizeOffset = 0;
+                
+                (List<byte> section, int sizeOffset)[] sectionsInfo = 
+                [
+                    (assembler.data, 0),
+                    (assembler.text, 0)
+                ];
 
                 for (int i = 0; i < assembler.symbolTable.unresolvedReferences.Count; i++)
                 {
@@ -41,21 +46,23 @@ public partial class Linker
                         ReferenceInfo reference = (ReferenceInfo)assembler.symbolTable.unresolvedReferences[i];
                         assembler.symbolTable.sTableUnresRefIdx = i;
 
-                        reference.location += sizeOffset;
+                        reference.location += sectionsInfo[Convert.ToInt32(reference.textSection)].sizeOffset;
 
                         int oldSize = reference.size;
-                        int localSizeOffset = ResolveLabelCalculateNewSize(assembler.text, reference, reference.instruction.Accept(assembler)) - oldSize;
+
+                        int localSizeOffset = ResolveLabelCalculateNewSize(sectionsInfo[Convert.ToInt32(reference.textSection)].section, reference, reference.instruction.Accept(assembler)) - oldSize;
 
                         if (localSizeOffset != 0)
                         {
                             stablePass = false;
                         }
-                        sizeOffset += localSizeOffset;
+
+                        sectionsInfo[Convert.ToInt32(reference.textSection)].sizeOffset += localSizeOffset;
                     }
                     else
                     {
                         DefinitionInfo defintion = (DefinitionInfo)assembler.symbolTable.unresolvedReferences[i];
-                        assembler.symbolTable.definitions[defintion.refName] += sizeOffset;
+                        assembler.symbolTable.definitions[defintion.refName] += sectionsInfo[Convert.ToInt32(defintion.textSection)].sizeOffset;
                     }
                 }
 

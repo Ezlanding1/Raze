@@ -30,10 +30,13 @@ public partial class Linker
     internal class DefinitionInfo : RefOrDefSymbolTableInfo
     {
         public string refName;
+        public bool textSection;
 
-        public DefinitionInfo(string refName) : base(false)
+        public DefinitionInfo(string refName, bool textSection) : base(false)
         {
             this.refName = refName;
+            this.textSection = textSection;
+
         }
     }
 
@@ -42,12 +45,14 @@ public partial class Linker
         public AssemblyExpr instruction;
         public int location;
         public int size;
+        public bool textSection;
 
-        public ReferenceInfo(AssemblyExpr instruction, int location, int size) : base(true)
+        public ReferenceInfo(AssemblyExpr instruction, int location, int size, bool textSection) : base(true)
         {
             this.instruction = instruction;
             this.location = location;
             this.size = size;
+            this.textSection = textSection;
         }
     }
 }

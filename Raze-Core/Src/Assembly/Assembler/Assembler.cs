@@ -103,13 +103,42 @@ public partial class Assembler :
 
     public Instruction VisitData(AssemblyExpr.Data instruction)
     {
-        if (!string.IsNullOrEmpty(instruction.name))
+        if (!string.IsNullOrEmpty(instruction.name) && nonResolvingPass)
         {
             instruction.name = "data." + instruction.name;
             symbolTable.definitions[instruction.name] = DataLocation;
+            symbolTable.unresolvedReferences.Add(new Linker.DefinitionInfo(instruction.name, false));
         }
-        IInstruction[] data = [new RawInstruction(instruction.literal.value.SelectMany(x => x).ToArray())];
-        return new Instruction(data);
+
+        List<IInstruction> data = [];
+
+        foreach (var bytes in instruction.literal.value)
+        {
+            if (Encoder.EncodingUtils.IsReferenceLiteralType(instruction.literal.type))
+            {
+                var literal = new AssemblyExpr.LabelLiteral(instruction.literal.type, bytes); 
+
+                literal.Name = literal.type switch
+                {
+                    AssemblyExpr.Literal.LiteralType.RefData => "data.",
+                    AssemblyExpr.Literal.LiteralType.RefProcedure => "text.",
+                    AssemblyExpr.Literal.LiteralType.RefLocalProcedure => enclosingLbl + '.' + literal.Name
+                } + literal.Name;
+
+
+                data.Add(Encoder.EncodingUtils.GetImmInstruction(Encoder.Operand.OperandSize._64Bits, literal, this, Encoder.Encoding.EncodingTypes.None));
+
+                if (nonResolvingPass)
+                {
+                    symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(instruction, DataLocation, data[^1].GetBytes().Length, false));
+                }
+            }
+            else
+            {
+                data.Add(Encoder.EncodingUtils.GetImmInstruction((Encoder.Operand.OperandSize)bytes.Length, new AssemblyExpr.Literal(instruction.literal.type, bytes), this, Encoder.Encoding.EncodingTypes.None));
+            }
+        }
+        return new Instruction(data.ToArray());
     }
 
     public Instruction VisitGlobal(AssemblyExpr.Global instruction)
@@ -121,7 +150,7 @@ public partial class Assembler :
     {
         instruction.name = enclosingLbl + '.' + instruction.name;
         symbolTable.definitions[instruction.name] = TextLocation;
-        symbolTable.unresolvedReferences.Add(new Linker.DefinitionInfo(instruction.name));
+        symbolTable.unresolvedReferences.Add(new Linker.DefinitionInfo(instruction.name, true));
         return new Instruction();
     }
 
@@ -130,7 +159,7 @@ public partial class Assembler :
         instruction.name = "text." + instruction.name;
         enclosingLbl = instruction.name;
         symbolTable.definitions[instruction.name] = TextLocation;
-        symbolTable.unresolvedReferences.Add(new Linker.DefinitionInfo(instruction.name));
+        symbolTable.unresolvedReferences.Add(new Linker.DefinitionInfo(instruction.name, true));
         return new Instruction();
     }
 

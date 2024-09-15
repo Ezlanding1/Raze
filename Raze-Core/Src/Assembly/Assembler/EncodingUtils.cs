@@ -192,7 +192,7 @@ public partial class Assembler
                             literal.Name = "data." + literal.Name;
                             literal.scoped = true;
                         }
-                        assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.TextLocation, -1));
+                        assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.TextLocation, -1, true));
                         assembler.symbolTable.sTableUnresRefIdx = assembler.symbolTable.unresolvedReferences.Count - 1;
                     }
                     else
@@ -212,7 +212,7 @@ public partial class Assembler
                             literal.Name = "text." + literal.Name;
                             literal.scoped = true;
                         }
-                        assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.TextLocation, -1));
+                        assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.TextLocation, -1, true));
                         assembler.symbolTable.sTableUnresRefIdx = assembler.symbolTable.unresolvedReferences.Count - 1;
                     }
                     else
@@ -239,7 +239,7 @@ public partial class Assembler
                             literal.Name = assembler.enclosingLbl + '.' + literal.Name;
                             literal.scoped = true;
                         }
-                        assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.TextLocation, -1));
+                        assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(expr, assembler.TextLocation, -1, true));
                         assembler.symbolTable.sTableUnresRefIdx = assembler.symbolTable.unresolvedReferences.Count - 1;
                     }
                     else
@@ -263,7 +263,7 @@ public partial class Assembler
             private static Operand.OperandSize SizeOfIntegerUnsigned(ulong value) => (Operand.OperandSize)CodeGen.GetIntegralSizeUnsigned(value);
             private static Operand.OperandSize SizeOfIntegerSigned(long value) => (Operand.OperandSize)CodeGen.GetIntegralSizeSigned(value);
 
-            private static bool IsReferenceLiteralType(AssemblyExpr.Literal.LiteralType literalType) =>
+            internal static bool IsReferenceLiteralType(AssemblyExpr.Literal.LiteralType literalType) =>
                 literalType >= AssemblyExpr.Literal.LiteralType.RefData;
 
             internal static bool IsReferenceLiteralOperand(Operand operand, AssemblyExpr.OperandInstruction operandInstruction, Assembler assembler, out AssemblyExpr.LabelLiteral labelLiteral, out bool refResolve)
@@ -292,7 +292,7 @@ public partial class Assembler
 
                         if (assembler.nonResolvingPass)
                         {
-                            assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(operandInstruction, assembler.TextLocation, -1));
+                            assembler.symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(operandInstruction, assembler.TextLocation, -1, true));
                         }
                         labelLiteral = null;
                         refResolve = true;
