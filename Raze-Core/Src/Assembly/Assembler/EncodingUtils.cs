@@ -181,7 +181,7 @@ public partial class Assembler
             internal static Exception ThrowIvalidEncodingType(string t1, string t2) =>
                 Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Cannot encode instruction with operands '{t1.ToUpper()}, {t2.ToUpper()}'"));
 
-            internal static (Operand.OperandSize, Operand.OperandSize) HandleUnresolvedRef(AssemblyExpr expr, AssemblyExpr.LabelLiteral literal, Assembler assembler, bool noCalcRetSize=false)
+            internal static (Operand.OperandSize, Operand.OperandSize) HandleUnresolvedRef(AssemblyExpr expr, AssemblyExpr.LabelLiteral literal, Assembler assembler)
             {
                 if (literal.type == AssemblyExpr.Literal.LiteralType.RefData)
                 {
@@ -197,10 +197,10 @@ public partial class Assembler
                     }
                     else
                     {
-                        if (noCalcRetSize) return (DefaultUnresolvedReferenceSize, DefaultUnresolvedReferenceSize);
-
-                        var operandSize = SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + Linker.Elf64.Elf64_Shdr.dataVirtualAddress);
-                        return (operandSize, operandSize);
+                        return (
+                            SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + Linker.Elf64.Elf64_Shdr.dataVirtualAddress),
+                            SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + (Linker.Elf64.Elf64_Shdr.dataVirtualAddress - Linker.Elf64.Elf64_Shdr.textVirtualAddress))
+                        );
                     }
                 }
                 else if (literal.type == AssemblyExpr.Literal.LiteralType.RefProcedure)
@@ -217,8 +217,6 @@ public partial class Assembler
                     }
                     else
                     {
-                        if (noCalcRetSize) return (DefaultUnresolvedReferenceSize, DefaultUnresolvedReferenceSize);
-
                         return (
                             SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + Linker.Elf64.Elf64_Shdr.textVirtualAddress),
                             SizeOfIntegerSigned(CalculateJumpLocation(
@@ -244,8 +242,6 @@ public partial class Assembler
                     }
                     else
                     {
-                        if (noCalcRetSize) return (DefaultUnresolvedReferenceSize, DefaultUnresolvedReferenceSize);
-
                         return (
                             SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + Linker.Elf64.Elf64_Shdr.textVirtualAddress),
                             SizeOfIntegerSigned(CalculateJumpLocation(
@@ -266,7 +262,7 @@ public partial class Assembler
             internal static bool IsReferenceLiteralType(AssemblyExpr.Literal.LiteralType literalType) =>
                 literalType >= AssemblyExpr.Literal.LiteralType.RefData;
 
-            internal static bool IsReferenceLiteralOperand(Operand operand, AssemblyExpr.OperandInstruction operandInstruction, Assembler assembler, out AssemblyExpr.LabelLiteral labelLiteral, out bool refResolve)
+            internal static bool IsReferenceLiteralOperand(ref Operand operand, AssemblyExpr.OperandInstruction operandInstruction, Assembler assembler, out AssemblyExpr.LabelLiteral labelLiteral, out bool refResolve)
             {
                 var instructionOperand = operandInstruction.Operands[^1];
 
@@ -282,13 +278,25 @@ public partial class Assembler
                     if (IsReferenceLiteralType(ptr.offset.type))
                     {
                         labelLiteral = (AssemblyExpr.LabelLiteral)ptr.offset;
-                        HandleUnresolvedRef(operandInstruction, labelLiteral, assembler, true);
+                        
+                        (_, var size) = HandleUnresolvedRef(operandInstruction, labelLiteral, assembler);
+
+                        if (size == Operand.OperandSize._64Bits)
+                        {
+                            operand = new(Operand.OperandType.MOFFS, operand.size);
+                        }
+
                         refResolve = true;
                         return false;
                     }
                     else if (ptr.value == null)
                     {
                         // Rip-relative encoding (add to symbolTable)
+
+                        if ((Operand.OperandSize)ptr.offset.Size == Operand.OperandSize._64Bits)
+                        {
+                            operand = new(Operand.OperandType.MOFFS, operand.size);
+                        }
 
                         if (assembler.nonResolvingPass)
                         {

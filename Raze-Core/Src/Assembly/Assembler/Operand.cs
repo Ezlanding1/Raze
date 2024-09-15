@@ -51,8 +51,8 @@ public partial class Assembler
                 A = 2,                      // Accumulator Register (AL/AX/EAX/RAX)
                 C = 4,                      // Count Register (CL/CX/ECX/RCX)
                 D = 8,                      // Data Register (DL/DX/EDX/RDX)
-                MOFFS = 16 | M,             // Memory Offset
-                M = 32,                     // Memory
+                M = 16,                     // Memory
+                MOFFS = 32,                 // 64-Bit Memory Offset
                 IMM = 64 | One,             // Immediate
                 One = 128,                  // Immediate Operand '1'
                 XMM = 256,                  // SSE Register

@@ -32,7 +32,7 @@ public partial class Assembler
             
             if (instructionEncodings.TryGetValue(instruction.instruction.ToString(), out var encodings))
             {
-                if (EncodingUtils.IsReferenceLiteralOperand(operands[^1], instruction, assembler, out var labelLiteral, out refResolve))
+                if (EncodingUtils.IsReferenceLiteralOperand(ref operands[^1], instruction, assembler, out var labelLiteral, out refResolve))
                 {
                     (Operand.OperandSize absoluteJump, Operand.OperandSize relativeJump) =
                         EncodingUtils.HandleUnresolvedRef(instruction, labelLiteral, assembler);
