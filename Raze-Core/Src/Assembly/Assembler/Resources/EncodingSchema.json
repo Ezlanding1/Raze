@@ -1,215 +1,7888 @@
 {
+  "ADC": [
+    {
+      "Instruction": "ADC AL, IMM8",
+      "OpCode": "14",
+      "EncodingType": "NoModRegRM"
+    },
+    {
+      "Instruction": "ADC RM8, R8",
+      "OpCode": "10"
+    },
+    {
+      "Instruction": "ADC RM32, R32",
+      "OpCode": "11"
+    },
+    {
+      "Instruction": "ADC R8, RM8",
+      "OpCode": "12"
+    },
+    {
+      "Instruction": "ADC R32, RM32",
+      "OpCode": "13"
+    },
+    {
+      "Instruction": "ADC RM8, IMM8",
+      "OpCode": "80",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "ADC RM32, IMM8",
+      "OpCode": "83",
+      "EncodingType": "SignExtends",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "ADC RM8, R8",
+      "OpCode": "10",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "ADC RM16, R16",
+      "OpCode": "11",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "ADC RM64, R64",
+      "OpCode": "11",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "ADC R8, RM8",
+      "OpCode": "12",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "ADC R16, RM16",
+      "OpCode": "13",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "ADC R64, RM64",
+      "OpCode": "13",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "ADC AX, IMM16",
+      "OpCode": "15",
+      "EncodingType": "NoModRegRM | SizePrefix"
+    },
+    {
+      "Instruction": "ADC RM8, IMM8",
+      "OpCode": "80",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "ADC RM16, IMM8",
+      "OpCode": "83",
+      "EncodingType": "SizePrefix | SignExtends",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "ADC RM64, IMM8",
+      "OpCode": "83",
+      "EncodingType": "RexWPrefix | SignExtends",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "ADC EAX, IMM32",
+      "OpCode": "15",
+      "EncodingType": "NoModRegRM"
+    },
+    {
+      "Instruction": "ADC RM16, IMM16",
+      "OpCode": "81",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "ADC RAX, IMM32",
+      "OpCode": "15",
+      "EncodingType": "RexWPrefix | NoModRegRM | SignExtends"
+    },
+    {
+      "Instruction": "ADC RM32, IMM32",
+      "OpCode": "81",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "ADC RM64, IMM32",
+      "OpCode": "81",
+      "EncodingType": "RexWPrefix | SignExtends",
+      "OpCodeExtension": 2
+    }
+  ],
+  "ADCX": [
+    {
+      "Instruction": "ADCX R32, RM32",
+      "OpCode": "66 0F 38 F6"
+    },
+    {
+      "Instruction": "ADCX R64, RM64",
+      "OpCode": "66 0F 38 F6",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
   "ADD": [
     {
-      "Instruction": "ADD RM8, IMM8",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
-      "OpCode": 128
-    },
-    {
-      "Instruction": "ADD RM8, R8",
-      "OpCode": 0
-    },
-    {
-      "Instruction": "ADD RM8, R8",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
-      "OpCode": 0
-    },
-    {
-      "Instruction": "ADD RM64, R64",
-      "EncodingType": "RexWPrefix",
-      "OpCode": 1
-    },
-    {
-      "Instruction": "ADD RM16, IMM8",
-      "EncodingType": "SizePrefix | SignExtends",
-      "OpCode": 131
-    },
-    {
-      "Instruction": "ADD RM16, IMM16",
-      "EncodingType": "SizePrefix",
-      "OpCode": 129
-    },
-    {
       "Instruction": "ADD AL, IMM8",
-      "EncodingType": "NoModRegRM",
-      "OpCode": 4
+      "OpCode": "04",
+      "EncodingType": "NoModRegRM"
     },
     {
-      "Instruction": "ADD AX, IMM16",
-      "EncodingType": "SizePrefix | NoModRegRM",
-      "OpCode": 5
-    },
-    {
-      "Instruction": "ADD EAX, IMM32",
-      "EncodingType": "NoModRegRM",
-      "OpCode": 5
-    },
-    {
-      "Instruction": "ADD RAX, IMM32",
-      "EncodingType": "RexWPrefix | NoModRegRM",
-      "OpCode": 5
+      "Instruction": "ADD RM8, R8",
+      "OpCode": "00"
     },
     {
       "Instruction": "ADD RM32, R32",
-      "OpCode": 1
-    }
-  ],
-  "SUB": [
-    {
-      "Instruction": "SUB RM64, IMM32",
-      "EncodingType": "RexWPrefix",
-      "OpCodeExtension": 5,
-      "OpCode": 129
-    }
-  ],
-  "MOV": [
-    {
-      "Instruction": "MOV EAX, MOFFS32",
-      "EncodingType": "NoModRegRM",
-      "OpCode": 161
+      "OpCode": "01"
     },
     {
-      "Instruction": "MOV MOFFS32, EAX",
-      "EncodingType": "NoModRegRM",
-      "OpCode": 163
+      "Instruction": "ADD R8, RM8",
+      "OpCode": "02"
     },
     {
-      "Instruction": "MOV RM64, IMM8",
-      "EncodingType": "RexWPrefix",
-      "OpCode": 136
+      "Instruction": "ADD R32, RM32",
+      "OpCode": "03"
     },
     {
-      "Instruction": "MOV RM16, R16",
-      "EncodingType": "SizePrefix",
-      "OpCode": 137
+      "Instruction": "ADD RM8, IMM8",
+      "OpCode": "80",
+      "OpCodeExtension": 0
     },
     {
-      "Instruction": "MOV RM32, R32",
-      "OpCode": 137
+      "Instruction": "ADD RM32, IMM8",
+      "OpCode": "83",
+      "EncodingType": "SignExtends",
+      "OpCodeExtension": 0
     },
     {
-      "Instruction": "MOV RM64, R64",
-      "EncodingType": "RexWPrefix",
-      "OpCode": 137
+      "Instruction": "ADD RM8, R8",
+      "OpCode": "00",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
     },
     {
-      "Instruction": "MOV M8, IMM8",
-      "OpCodeExtension": 0,
-      "OpCode": 198
+      "Instruction": "ADD RM16, R16",
+      "OpCode": "01",
+      "EncodingType": "SizePrefix"
     },
     {
-      "Instruction": "MOV M16, IMM16",
-      "OpCodeExtension": 0,
-      "EncodingType": "SizePrefix",
-      "OpCode": 199
+      "Instruction": "ADD RM64, R64",
+      "OpCode": "01",
+      "EncodingType": "RexWPrefix"
     },
     {
-      "Instruction": "MOV M32, IMM32",
-      "OpCodeExtension": 0,
-      "OpCode": 199
+      "Instruction": "ADD R8, RM8",
+      "OpCode": "02",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
     },
     {
-      "Instruction": "MOV M64, IMM32",
-      "OpCodeExtension": 0,
-      "EncodingType": "RexWPrefix",
-      "OpCode": 199
+      "Instruction": "ADD R16, RM16",
+      "OpCode": "03",
+      "EncodingType": "SizePrefix"
     },
-
     {
-      "Instruction": "MOV RM64, IMM32",
+      "Instruction": "ADD R64, RM64",
+      "OpCode": "03",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "ADD AX, IMM16",
+      "OpCode": "05",
+      "EncodingType": "NoModRegRM | SizePrefix"
+    },
+    {
+      "Instruction": "ADD RM8, IMM8",
+      "OpCode": "80",
+      "EncodingType": "RexPrefix | SignExtends | NoUpper8BitEncoding",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "ADD RM16, IMM8",
+      "OpCode": "83",
+      "EncodingType": "SizePrefix | SignExtends",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "ADD RM64, IMM8",
+      "OpCode": "83",
       "EncodingType": "RexWPrefix | SignExtends",
-      "OpCode": 199
+      "OpCodeExtension": 0
     },
     {
-      "Instruction": "MOV RM32, IMM32",
-      "EncodingType": "AddRegisterToOpCode | NoModRegRM",
-      "OpCode": 184
+      "Instruction": "ADD EAX, IMM32",
+      "OpCode": "05",
+      "EncodingType": "NoModRegRM"
     },
     {
-      "Instruction": "MOV RM16, IMM16",
+      "Instruction": "ADD RM16, IMM16",
+      "OpCode": "81",
       "EncodingType": "SizePrefix",
-      "OpCode": 199
+      "OpCodeExtension": 0
     },
     {
-      "Instruction": "MOV RM64, R64",
+      "Instruction": "ADD RAX, IMM32",
+      "OpCode": "05",
+      "EncodingType": "RexWPrefix | NoModRegRM | SignExtends"
+    },
+    {
+      "Instruction": "ADD RM32, IMM32",
+      "OpCode": "81",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "ADD RM64, IMM32",
+      "OpCode": "81",
+      "EncodingType": "RexWPrefix | SignExtends",
+      "OpCodeExtension": 0
+    }
+  ],
+  "ADDPD": [
+    {
+      "Instruction": "ADDPD XMM, XMMRM128",
+      "OpCode": "66 0F 58"
+    }
+  ],
+  "ADDPS": [
+    {
+      "Instruction": "ADDPS XMM, XMMRM128",
+      "OpCode": "0F 58"
+    }
+  ],
+  "ADDSD": [
+    {
+      "Instruction": "ADDSD XMM, XMMRM64",
+      "OpCode": "F2 0F 58"
+    }
+  ],
+  "ADDSS": [
+    {
+      "Instruction": "ADDSS XMM, XMMRM32",
+      "OpCode": "F3 0F 58"
+    }
+  ],
+  "ADDSUBPD": [
+    {
+      "Instruction": "ADDSUBPD XMM, XMMRM128",
+      "OpCode": "66 0F D0"
+    }
+  ],
+  "ADDSUBPS": [
+    {
+      "Instruction": "ADDSUBPS XMM, XMMRM128",
+      "OpCode": "F2 0F D0"
+    }
+  ],
+  "ADOX": [
+    {
+      "Instruction": "ADOX R32, RM32",
+      "OpCode": "F3 0F 38 F6"
+    },
+    {
+      "Instruction": "ADOX R64, RM64",
+      "OpCode": "F3 0F 38 F6",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "AESDEC": [
+    {
+      "Instruction": "AESDEC XMM, XMMRM128",
+      "OpCode": "66 0F 38 DE"
+    }
+  ],
+  "AESDECLAST": [
+    {
+      "Instruction": "AESDECLAST XMM, XMMRM128",
+      "OpCode": "66 0F 38 DF"
+    }
+  ],
+  "AESENC": [
+    {
+      "Instruction": "AESENC XMM, XMMRM128",
+      "OpCode": "66 0F 38 DC"
+    }
+  ],
+  "AESENCLAST": [
+    {
+      "Instruction": "AESENCLAST XMM, XMMRM128",
+      "OpCode": "66 0F 38 DD"
+    }
+  ],
+  "AESIMC": [
+    {
+      "Instruction": "AESIMC XMM, XMMRM128",
+      "OpCode": "66 0F 38 DB"
+    }
+  ],
+  "AESKEYGENASSIST": [
+    {
+      "Instruction": "AESKEYGENASSIST XMM, XMMRM128, IMM8",
+      "OpCode": "66 0F 3A DF"
+    }
+  ],
+  "AND": [
+    {
+      "Instruction": "AND AL, IMM8",
+      "OpCode": "24",
+      "EncodingType": "NoModRegRM"
+    },
+    {
+      "Instruction": "AND RM8, R8",
+      "OpCode": "20"
+    },
+    {
+      "Instruction": "AND RM32, R32",
+      "OpCode": "21"
+    },
+    {
+      "Instruction": "AND R8, RM8",
+      "OpCode": "22"
+    },
+    {
+      "Instruction": "AND R32, RM32",
+      "OpCode": "23"
+    },
+    {
+      "Instruction": "AND RM8, IMM8",
+      "OpCode": "80",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "AND RM32, IMM8",
+      "OpCode": "83",
+      "EncodingType": "SignExtends",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "AND RM8, R8",
+      "OpCode": "20",
+      "EncodingType": "RexPrefix | SignExtends | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "AND RM16, R16",
+      "OpCode": "21",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "AND RM64, R64",
+      "OpCode": "21",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "AND R8, RM8",
+      "OpCode": "22",
+      "EncodingType": "RexPrefix | SignExtends | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "AND R16, RM16",
+      "OpCode": "23",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "AND R64, RM64",
+      "OpCode": "23",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "AND AX, IMM16",
+      "OpCode": "25",
+      "EncodingType": "NoModRegRM | SizePrefix"
+    },
+    {
+      "Instruction": "AND RM8, IMM8",
+      "OpCode": "80",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "AND RM16, IMM8",
+      "OpCode": "83",
+      "EncodingType": "SizePrefix | SignExtends",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "AND RM64, IMM8",
+      "OpCode": "83",
+      "EncodingType": "RexWPrefix | SignExtends",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "AND EAX, IMM32",
+      "OpCode": "25",
+      "EncodingType": "NoModRegRM"
+    },
+    {
+      "Instruction": "AND RM16, IMM16",
+      "OpCode": "81",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "AND RAX, IMM32",
+      "OpCode": "25",
+      "EncodingType": "RexWPrefix | NoModRegRM | SignExtends"
+    },
+    {
+      "Instruction": "AND RM32, IMM32",
+      "OpCode": "81",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "AND RM64, IMM32",
+      "OpCode": "81",
+      "EncodingType": "RexWPrefix | SignExtends",
+      "OpCodeExtension": 4
+    }
+  ],
+  "ANDPD": [
+    {
+      "Instruction": "ANDPD XMM, XMMRM128",
+      "OpCode": "66 0F 54"
+    }
+  ],
+  "ANDPS": [
+    {
+      "Instruction": "ANDPS XMM, XMMRM128",
+      "OpCode": "0F 54"
+    }
+  ],
+  "ANDNPD": [
+    {
+      "Instruction": "ANDNPD XMM, XMMRM128",
+      "OpCode": "66 0F 55"
+    }
+  ],
+  "ANDNPS": [
+    {
+      "Instruction": "ANDNPS XMM, XMMRM128",
+      "OpCode": "0F 55"
+    }
+  ],
+  "BLENDPD": [
+    {
+      "Instruction": "BLENDPD XMM, XMMRM128, IMM8",
+      "OpCode": "66 0F 3A 0D"
+    }
+  ],
+  "BLENDPS": [
+    {
+      "Instruction": "BLENDPS XMM, XMMRM128, IMM8",
+      "OpCode": "66 0F 3A 0C"
+    }
+  ],
+  "BSF": [
+    {
+      "Instruction": "BSF R32, RM32",
+      "OpCode": "0F BC"
+    },
+    {
+      "Instruction": "BSF R16, RM16",
+      "OpCode": "0F BC",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "BSF R64, RM64",
+      "OpCode": "0F BC",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "BSR": [
+    {
+      "Instruction": "BSR R32, RM32",
+      "OpCode": "0F BD"
+    },
+    {
+      "Instruction": "BSR R16, RM16",
+      "OpCode": "0F BD",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "BSR R64, RM64",
+      "OpCode": "0F BD",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "BSWAP": [
+    {
+      "Instruction": "BSWAP R32",
+      "OpCode": "0F C8",
+      "EncodingType": "NoModRegRM | AddRegisterToOpCode"
+    },
+    {
+      "Instruction": "BSWAP R64",
+      "OpCode": "0F C8",
+      "EncodingType": "RexWPrefix | NoModRegRM | AddRegisterToOpCode"
+    }
+  ],
+  "BT": [
+    {
+      "Instruction": "BT RM32, R32",
+      "OpCode": "0F A3"
+    },
+    {
+      "Instruction": "BT RM16, R16",
+      "OpCode": "0F A3",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "BT RM64, R64",
+      "OpCode": "0F A3",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "BT RM32, IMM8",
+      "OpCode": "0F BA",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "BT RM16, IMM8",
+      "OpCode": "0F BA",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "BT RM64, IMM8",
+      "OpCode": "0F BA",
       "EncodingType": "RexWPrefix",
-      "OpCode": 137
-    },
-    {
-      "Instruction": "MOV RM64, IMM64",
-      "EncodingType": "RexWPrefix | NoModRegRM | AddRegisterToOpCode",
-      "OpCode": 184
+      "OpCodeExtension": 4
     }
   ],
-  "PUSH": [
+  "BTC": [
     {
-      "Instruction": "PUSH IMM32",
-      "OpCode": 104
+      "Instruction": "BTC RM32, R32",
+      "OpCode": "0F BB"
     },
     {
-      "Instruction": "PUSH R64",
-      "EncodingType": "AddRegisterToOpCode | NoModRegRM",
-      "OpCode": 80
+      "Instruction": "BTC RM16, R16",
+      "OpCode": "0F BB",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "BTC RM64, R64",
+      "OpCode": "0F BB",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "BTC RM32, IMM8",
+      "OpCode": "0F BA",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "BTC RM16, IMM8",
+      "OpCode": "0F BA",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "BTC RM64, IMM8",
+      "OpCode": "0F BA",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 7
     }
   ],
-  "POP": [
+  "BTR": [
     {
-      "Instruction": "POP R64",
-      "EncodingType": "AddRegisterToOpCode | NoModRegRM",
-      "OpCode": 88
+      "Instruction": "BTR RM32, R32",
+      "OpCode": "0F B3"
+    },
+    {
+      "Instruction": "BTR RM16, R16",
+      "OpCode": "0F B3",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "BTR RM64, R64",
+      "OpCode": "0F B3",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "BTR RM32, IMM8",
+      "OpCode": "0F BA",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "BTR RM16, IMM8",
+      "OpCode": "0F BA",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "BTR RM64, IMM8",
+      "OpCode": "0F BA",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 6
+    }
+  ],
+  "BTS": [
+    {
+      "Instruction": "BTS RM32, R32",
+      "OpCode": "0F AB"
+    },
+    {
+      "Instruction": "BTS RM16, R16",
+      "OpCode": "0F AB",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "BTS RM64, R64",
+      "OpCode": "0F AB",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "BTS RM32, IMM8",
+      "OpCode": "0F BA",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "BTS RM16, IMM8",
+      "OpCode": "0F BA",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "BTS RM64, IMM8",
+      "OpCode": "0F BA",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 5
     }
   ],
   "CALL": [
     {
-      "Instruction": "CALL IMM32",
-      "EncodingType": "RelativeJump",
-      "OpCode": 232
-    }
-  ],
-  "JMP": [
-    {
-      "Instruction": "JMP IMM8",
-      "EncodingType": "RelativeJump",
-      "OpCode": 235
+      "Instruction": "CALL RM64",
+      "OpCode": "FF",
+      "OpCodeExtension": 2
     },
     {
-      "Instruction": "JMP IMM32",
-      "EncodingType": "RelativeJump",
-      "OpCode": 233
+      "Instruction": "CALL IMM32",
+      "OpCode": "E8",
+      "EncodingType": "RelativeJump | SignExtends"
+    }
+  ],
+  "CBW": [
+    {
+      "Instruction": "CBW",
+      "OpCode": "98",
+      "EncodingType": "SignExtends"
+    }
+  ],
+  "CWDE": [
+    {
+      "Instruction": "CWDE",
+      "OpCode": "98",
+      "EncodingType": "SignExtends"
+    }
+  ],
+  "CDQE": [
+    {
+      "Instruction": "CDQE",
+      "OpCode": "98",
+      "EncodingType": "RexWPrefix | SignExtends"
+    }
+  ],
+  "CLAC": [
+    {
+      "Instruction": "CLAC",
+      "OpCode": "0F 01 CA"
+    }
+  ],
+  "CLC": [
+    {
+      "Instruction": "CLC",
+      "OpCode": "F8"
+    }
+  ],
+  "CLD": [
+    {
+      "Instruction": "CLD",
+      "OpCode": "FC"
+    }
+  ],
+  "CLDEMOTE": [
+    {
+      "Instruction": "CLDEMOTE M8",
+      "OpCode": "0F 1C",
+      "OpCodeExtension": 0
+    }
+  ],
+  "CLFLUSH": [
+    {
+      "Instruction": "CLFLUSH M8",
+      "OpCode": "0F AE",
+      "OpCodeExtension": 7
+    }
+  ],
+  "CLFLUSHOPT": [
+    {
+      "Instruction": "CLFLUSHOPT M8",
+      "OpCode": "66 0F AE",
+      "OpCodeExtension": 7
+    }
+  ],
+  "CLI": [
+    {
+      "Instruction": "CLI",
+      "OpCode": "FA"
+    }
+  ],
+  "CLRSSBSY": [
+    {
+      "Instruction": "CLRSSBSY M64",
+      "OpCode": "F3 0F AE",
+      "OpCodeExtension": 6
+    }
+  ],
+  "CLTS": [
+    {
+      "Instruction": "CLTS",
+      "OpCode": "0F 06"
+    }
+  ],
+  "CLUI": [
+    {
+      "Instruction": "CLUI",
+      "OpCode": "F3 0F 01 EE"
+    }
+  ],
+  "CLWB": [
+    {
+      "Instruction": "CLWB M8",
+      "OpCode": "66 0F AE",
+      "OpCodeExtension": 6
+    }
+  ],
+  "CMC": [
+    {
+      "Instruction": "CMC",
+      "OpCode": "F5"
+    }
+  ],
+  "CMOVA": [
+    {
+      "Instruction": "CMOVA R32, RM32",
+      "OpCode": "0F 47"
+    },
+    {
+      "Instruction": "CMOVA R16, RM16",
+      "OpCode": "0F 47",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVA R64, RM64",
+      "OpCode": "0F 47",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVAE": [
+    {
+      "Instruction": "CMOVAE R32, RM32",
+      "OpCode": "0F 43"
+    },
+    {
+      "Instruction": "CMOVAE R16, RM16",
+      "OpCode": "0F 43",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVAE R64, RM64",
+      "OpCode": "0F 43",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVB": [
+    {
+      "Instruction": "CMOVB R32, RM32",
+      "OpCode": "0F 42"
+    },
+    {
+      "Instruction": "CMOVB R16, RM16",
+      "OpCode": "0F 42",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVB R64, RM64",
+      "OpCode": "0F 42",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVBE": [
+    {
+      "Instruction": "CMOVBE R32, RM32",
+      "OpCode": "0F 46"
+    },
+    {
+      "Instruction": "CMOVBE R16, RM16",
+      "OpCode": "0F 46",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVBE R64, RM64",
+      "OpCode": "0F 46",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVC": [
+    {
+      "Instruction": "CMOVC R32, RM32",
+      "OpCode": "0F 42"
+    },
+    {
+      "Instruction": "CMOVC R16, RM16",
+      "OpCode": "0F 42",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVC R64, RM64",
+      "OpCode": "0F 42",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVE": [
+    {
+      "Instruction": "CMOVE R32, RM32",
+      "OpCode": "0F 44"
+    },
+    {
+      "Instruction": "CMOVE R16, RM16",
+      "OpCode": "0F 44",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVE R64, RM64",
+      "OpCode": "0F 44",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVG": [
+    {
+      "Instruction": "CMOVG R32, RM32",
+      "OpCode": "0F 4F"
+    },
+    {
+      "Instruction": "CMOVG R16, RM16",
+      "OpCode": "0F 4F",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVG R64, RM64",
+      "OpCode": "0F 4F",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVGE": [
+    {
+      "Instruction": "CMOVGE R32, RM32",
+      "OpCode": "0F 4D"
+    },
+    {
+      "Instruction": "CMOVGE R16, RM16",
+      "OpCode": "0F 4D",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVGE R64, RM64",
+      "OpCode": "0F 4D",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVL": [
+    {
+      "Instruction": "CMOVL R32, RM32",
+      "OpCode": "0F 4C"
+    },
+    {
+      "Instruction": "CMOVL R16, RM16",
+      "OpCode": "0F 4C",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVL R64, RM64",
+      "OpCode": "0F 4C",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVLE": [
+    {
+      "Instruction": "CMOVLE R32, RM32",
+      "OpCode": "0F 4E"
+    },
+    {
+      "Instruction": "CMOVLE R16, RM16",
+      "OpCode": "0F 4E",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVLE R64, RM64",
+      "OpCode": "0F 4E",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVNA": [
+    {
+      "Instruction": "CMOVNA R32, RM32",
+      "OpCode": "0F 46"
+    },
+    {
+      "Instruction": "CMOVNA R16, RM16",
+      "OpCode": "0F 46",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVNA R64, RM64",
+      "OpCode": "0F 46",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVNAE": [
+    {
+      "Instruction": "CMOVNAE R32, RM32",
+      "OpCode": "0F 42"
+    },
+    {
+      "Instruction": "CMOVNAE R16, RM16",
+      "OpCode": "0F 42",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVNAE R64, RM64",
+      "OpCode": "0F 42",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVNB": [
+    {
+      "Instruction": "CMOVNB R32, RM32",
+      "OpCode": "0F 43"
+    },
+    {
+      "Instruction": "CMOVNB R16, RM16",
+      "OpCode": "0F 43",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVNB R64, RM64",
+      "OpCode": "0F 43",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVNBE": [
+    {
+      "Instruction": "CMOVNBE R32, RM32",
+      "OpCode": "0F 47"
+    },
+    {
+      "Instruction": "CMOVNBE R16, RM16",
+      "OpCode": "0F 47",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVNBE R64, RM64",
+      "OpCode": "0F 47",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVNC": [
+    {
+      "Instruction": "CMOVNC R32, RM32",
+      "OpCode": "0F 43"
+    },
+    {
+      "Instruction": "CMOVNC R16, RM16",
+      "OpCode": "0F 43",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVNC R64, RM64",
+      "OpCode": "0F 43",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVNE": [
+    {
+      "Instruction": "CMOVNE R32, RM32",
+      "OpCode": "0F 45"
+    },
+    {
+      "Instruction": "CMOVNE R16, RM16",
+      "OpCode": "0F 45",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVNE R64, RM64",
+      "OpCode": "0F 45",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVNG": [
+    {
+      "Instruction": "CMOVNG R32, RM32",
+      "OpCode": "0F 4E"
+    },
+    {
+      "Instruction": "CMOVNG R16, RM16",
+      "OpCode": "0F 4E",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVNG R64, RM64",
+      "OpCode": "0F 4E",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVNGE": [
+    {
+      "Instruction": "CMOVNGE R32, RM32",
+      "OpCode": "0F 4C"
+    },
+    {
+      "Instruction": "CMOVNGE R16, RM16",
+      "OpCode": "0F 4C",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVNGE R64, RM64",
+      "OpCode": "0F 4C",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVNL": [
+    {
+      "Instruction": "CMOVNL R32, RM32",
+      "OpCode": "0F 4D"
+    },
+    {
+      "Instruction": "CMOVNL R16, RM16",
+      "OpCode": "0F 4D",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVNL R64, RM64",
+      "OpCode": "0F 4D",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVNLE": [
+    {
+      "Instruction": "CMOVNLE R32, RM32",
+      "OpCode": "0F 4F"
+    },
+    {
+      "Instruction": "CMOVNLE R16, RM16",
+      "OpCode": "0F 4F",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVNLE R64, RM64",
+      "OpCode": "0F 4F",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVNO": [
+    {
+      "Instruction": "CMOVNO R32, RM32",
+      "OpCode": "0F 41"
+    },
+    {
+      "Instruction": "CMOVNO R16, RM16",
+      "OpCode": "0F 41",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVNO R64, RM64",
+      "OpCode": "0F 41",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVNP": [
+    {
+      "Instruction": "CMOVNP R32, RM32",
+      "OpCode": "0F 4B"
+    },
+    {
+      "Instruction": "CMOVNP R16, RM16",
+      "OpCode": "0F 4B",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVNP R64, RM64",
+      "OpCode": "0F 4B",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVNS": [
+    {
+      "Instruction": "CMOVNS R32, RM32",
+      "OpCode": "0F 49"
+    },
+    {
+      "Instruction": "CMOVNS R16, RM16",
+      "OpCode": "0F 49",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVNS R64, RM64",
+      "OpCode": "0F 49",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVNZ": [
+    {
+      "Instruction": "CMOVNZ R32, RM32",
+      "OpCode": "0F 45"
+    },
+    {
+      "Instruction": "CMOVNZ R16, RM16",
+      "OpCode": "0F 45",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVNZ R64, RM64",
+      "OpCode": "0F 45",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVO": [
+    {
+      "Instruction": "CMOVO R32, RM32",
+      "OpCode": "0F 40"
+    },
+    {
+      "Instruction": "CMOVO R16, RM16",
+      "OpCode": "0F 40",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVO R64, RM64",
+      "OpCode": "0F 40",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVP": [
+    {
+      "Instruction": "CMOVP R32, RM32",
+      "OpCode": "0F 4A"
+    },
+    {
+      "Instruction": "CMOVP R16, RM16",
+      "OpCode": "0F 4A",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVP R64, RM64",
+      "OpCode": "0F 4A",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVPE": [
+    {
+      "Instruction": "CMOVPE R32, RM32",
+      "OpCode": "0F 4A"
+    },
+    {
+      "Instruction": "CMOVPE R16, RM16",
+      "OpCode": "0F 4A",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVPE R64, RM64",
+      "OpCode": "0F 4A",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVPO": [
+    {
+      "Instruction": "CMOVPO R32, RM32",
+      "OpCode": "0F 4B"
+    },
+    {
+      "Instruction": "CMOVPO R16, RM16",
+      "OpCode": "0F 4B",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVPO R64, RM64",
+      "OpCode": "0F 4B",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVS": [
+    {
+      "Instruction": "CMOVS R32, RM32",
+      "OpCode": "0F 48"
+    },
+    {
+      "Instruction": "CMOVS R16, RM16",
+      "OpCode": "0F 48",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVS R64, RM64",
+      "OpCode": "0F 48",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMOVZ": [
+    {
+      "Instruction": "CMOVZ R32, RM32",
+      "OpCode": "0F 44"
+    },
+    {
+      "Instruction": "CMOVZ R16, RM16",
+      "OpCode": "0F 44",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMOVZ R64, RM64",
+      "OpCode": "0F 44",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMP": [
+    {
+      "Instruction": "CMP AL, IMM8",
+      "OpCode": "3C",
+      "EncodingType": "NoModRegRM"
+    },
+    {
+      "Instruction": "CMP RM8, R8",
+      "OpCode": "38"
+    },
+    {
+      "Instruction": "CMP RM32, R32",
+      "OpCode": "39"
+    },
+    {
+      "Instruction": "CMP R8, RM8",
+      "OpCode": "3A"
+    },
+    {
+      "Instruction": "CMP R32, RM32",
+      "OpCode": "3B"
+    },
+    {
+      "Instruction": "CMP RM8, IMM8",
+      "OpCode": "80",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "CMP RM32, IMM8",
+      "OpCode": "83",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "CMP RM8, R8",
+      "OpCode": "38",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "CMP RM16, R16",
+      "OpCode": "39",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMP RM64, R64",
+      "OpCode": "39",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "CMP R8, RM8",
+      "OpCode": "3A",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "CMP R16, RM16",
+      "OpCode": "3B",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMP R64, RM64",
+      "OpCode": "3B",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "CMP AX, IMM16",
+      "OpCode": "3D",
+      "EncodingType": "NoModRegRM | SizePrefix"
+    },
+    {
+      "Instruction": "CMP RM8, IMM8",
+      "OpCode": "80",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "CMP RM16, IMM8",
+      "OpCode": "83",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "CMP RM64, IMM8",
+      "OpCode": "83",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "CMP EAX, IMM32",
+      "OpCode": "3D",
+      "EncodingType": "NoModRegRM"
+    },
+    {
+      "Instruction": "CMP RM16, IMM16",
+      "OpCode": "81",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "CMP RAX, IMM32",
+      "OpCode": "3D",
+      "EncodingType": "RexWPrefix | NoModRegRM | SignExtends"
+    },
+    {
+      "Instruction": "CMP RM32, IMM32",
+      "OpCode": "81",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "CMP RM64, IMM32",
+      "OpCode": "81",
+      "EncodingType": "RexWPrefix | SignExtends",
+      "OpCodeExtension": 7
+    }
+  ],
+  "CMPPD": [
+    {
+      "Instruction": "CMPPD XMM, XMMRM128, IMM8",
+      "OpCode": "66 0F C2"
+    }
+  ],
+  "CMPPS": [
+    {
+      "Instruction": "CMPPS XMM, XMMRM128, IMM8",
+      "OpCode": "0F C2"
+    }
+  ],
+  "CMPS": [
+    {
+      "Instruction": "CMPS M8, M8",
+      "OpCode": "A6"
+    },
+    {
+      "Instruction": "CMPS M32, M32",
+      "OpCode": "A7"
+    },
+    {
+      "Instruction": "CMPS M16, M16",
+      "OpCode": "A7",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMPS M64, M64",
+      "OpCode": "A7",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "CMPS M8, M8",
+      "OpCode": "F3 A6"
+    },
+    {
+      "Instruction": "CMPS M32, M32",
+      "OpCode": "F3 A7"
+    },
+    {
+      "Instruction": "CMPS M8, M8",
+      "OpCode": "F2 A6"
+    },
+    {
+      "Instruction": "CMPS M32, M32",
+      "OpCode": "F2 A7"
+    },
+    {
+      "Instruction": "CMPS M8, M8",
+      "OpCode": "F3 A6",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "CMPS M16, M16",
+      "OpCode": "F3 A7",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMPS M64, M64",
+      "OpCode": "F3 A7",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "CMPS M8, M8",
+      "OpCode": "F2 A6",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "CMPS M16, M16",
+      "OpCode": "F2 A7",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMPS M64, M64",
+      "OpCode": "F2 A7",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMPSB": [
+    {
+      "Instruction": "CMPSB",
+      "OpCode": "A6"
+    }
+  ],
+  "CMPSW": [
+    {
+      "Instruction": "CMPSW",
+      "OpCode": "A7"
+    }
+  ],
+  "CMPSD": [
+    {
+      "Instruction": "CMPSD",
+      "OpCode": "A7"
+    },
+    {
+      "Instruction": "CMPSD XMM, XMMRM64, IMM8",
+      "OpCode": "F2 0F C2"
+    }
+  ],
+  "CMPSQ": [
+    {
+      "Instruction": "CMPSQ",
+      "OpCode": "A7",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CMPSS": [
+    {
+      "Instruction": "CMPSS XMM, XMMRM32, IMM8",
+      "OpCode": "F3 0F C2"
+    }
+  ],
+  "CMPXCHG8B": [
+    {
+      "Instruction": "CMPXCHG8B M64",
+      "OpCode": "0F C7",
+      "OpCodeExtension": 1
+    }
+  ],
+  "CMPXCHG16B": [
+    {
+      "Instruction": "CMPXCHG16B M128",
+      "OpCode": "0F C7",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 1
+    }
+  ],
+  "COMISD": [
+    {
+      "Instruction": "COMISD XMM, XMMRM64",
+      "OpCode": "66 0F 2F"
+    }
+  ],
+  "COMISS": [
+    {
+      "Instruction": "COMISS XMM, XMMRM32",
+      "OpCode": "0F 2F"
+    }
+  ],
+  "CPUID": [
+    {
+      "Instruction": "CPUID",
+      "OpCode": "0F A2"
+    }
+  ],
+  "CRC32": [
+    {
+      "Instruction": "CRC32 R32, RM8",
+      "OpCode": "F2 0F 38 F0"
+    },
+    {
+      "Instruction": "CRC32 R32, RM32",
+      "OpCode": "F2 0F 38 F1"
+    },
+    {
+      "Instruction": "CRC32 R32, RM8",
+      "OpCode": "F2 0F 38 F0",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "CRC32 R32, RM16",
+      "OpCode": "F2 0F 38 F1",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CRC32 R64, RM8",
+      "OpCode": "F2 0F 38 F0",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "CRC32 R64, RM64",
+      "OpCode": "F2 0F 38 F1",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CVTDQ2PD": [
+    {
+      "Instruction": "CVTDQ2PD XMM, XMMRM64",
+      "OpCode": "F3 0F E6"
+    }
+  ],
+  "CVTDQ2PS": [
+    {
+      "Instruction": "CVTDQ2PS XMM, XMMRM128",
+      "OpCode": "0F 5B"
+    }
+  ],
+  "CVTPD2DQ": [
+    {
+      "Instruction": "CVTPD2DQ XMM, XMMRM128",
+      "OpCode": "F2 0F E6"
+    }
+  ],
+  "CVTPD2PI": [
+    {
+      "Instruction": "CVTPD2PI MMX, XMMRM128",
+      "OpCode": "66 0F 2D"
+    }
+  ],
+  "CVTPD2PS": [
+    {
+      "Instruction": "CVTPD2PS XMM, XMMRM128",
+      "OpCode": "66 0F 5A"
+    }
+  ],
+  "CVTPI2PS": [
+    {
+      "Instruction": "CVTPI2PS XMM, MMXRM64",
+      "OpCode": "0F 2A"
+    }
+  ],
+  "CVTPS2DQ": [
+    {
+      "Instruction": "CVTPS2DQ XMM, XMMRM128",
+      "OpCode": "66 0F 5B"
+    }
+  ],
+  "CVTPS2PD": [
+    {
+      "Instruction": "CVTPS2PD XMM, XMMRM64",
+      "OpCode": "0F 5A"
+    }
+  ],
+  "CVTPS2PI": [
+    {
+      "Instruction": "CVTPS2PI MMX, XMMRM64",
+      "OpCode": "0F 2D"
+    }
+  ],
+  "CVTSD2SI": [
+    {
+      "Instruction": "CVTSD2SI R32, XMMRM64",
+      "OpCode": "F2 0F 2D"
+    },
+    {
+      "Instruction": "CVTSD2SI R64, XMMRM64",
+      "OpCode": "F2 0F 2D",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CVTSD2SS": [
+    {
+      "Instruction": "CVTSD2SS XMM, XMMRM64",
+      "OpCode": "F2 0F 5A"
+    }
+  ],
+  "CVTSI2SD": [
+    {
+      "Instruction": "CVTSI2SD XMM, RM64",
+      "OpCode": "F2 0F 2A",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CVTSI2SS": [
+    {
+      "Instruction": "CVTSI2SS XMM, RM32",
+      "OpCode": "F3 0F 2A"
+    },
+    {
+      "Instruction": "CVTSI2SS XMM, RM64",
+      "OpCode": "F3 0F 2A",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CVTSS2SD": [
+    {
+      "Instruction": "CVTSS2SD XMM, XMMRM32",
+      "OpCode": "F3 0F 5A"
+    }
+  ],
+  "CVTSS2SI": [
+    {
+      "Instruction": "CVTSS2SI R32, XMMRM32",
+      "OpCode": "F3 0F 2D"
+    },
+    {
+      "Instruction": "CVTSS2SI R64, XMMRM32",
+      "OpCode": "F3 0F 2D",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CVTTPD2DQ": [
+    {
+      "Instruction": "CVTTPD2DQ XMM, XMMRM128",
+      "OpCode": "66 0F E6"
+    }
+  ],
+  "CVTTPD2PI": [
+    {
+      "Instruction": "CVTTPD2PI MMX, XMMRM128",
+      "OpCode": "66 0F 2C"
+    }
+  ],
+  "CVTTPS2DQ": [
+    {
+      "Instruction": "CVTTPS2DQ XMM, XMMRM128",
+      "OpCode": "F3 0F 5B"
+    }
+  ],
+  "CVTTPS2PI": [
+    {
+      "Instruction": "CVTTPS2PI MMX, XMMRM64",
+      "OpCode": "0F 2C"
+    }
+  ],
+  "CVTTSD2SI": [
+    {
+      "Instruction": "CVTTSD2SI R32, XMMRM64",
+      "OpCode": "F2 0F 2C"
+    },
+    {
+      "Instruction": "CVTTSD2SI R64, XMMRM64",
+      "OpCode": "F2 0F 2C",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CVTTSS2SI": [
+    {
+      "Instruction": "CVTTSS2SI R32, XMMRM32",
+      "OpCode": "F3 0F 2C"
+    },
+    {
+      "Instruction": "CVTTSS2SI R64, XMMRM32",
+      "OpCode": "F3 0F 2C",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "CWD": [
+    {
+      "Instruction": "CWD",
+      "OpCode": "99",
+      "EncodingType": "SignExtends"
+    }
+  ],
+  "CDQ": [
+    {
+      "Instruction": "CDQ",
+      "OpCode": "99",
+      "EncodingType": "SignExtends"
+    }
+  ],
+  "CQO": [
+    {
+      "Instruction": "CQO",
+      "OpCode": "99",
+      "EncodingType": "RexWPrefix | SignExtends"
+    }
+  ],
+  "DEC": [
+    {
+      "Instruction": "DEC RM8",
+      "OpCode": "FE",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "DEC RM32",
+      "OpCode": "FF",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "DEC RM8",
+      "OpCode": "FE",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "DEC RM16",
+      "OpCode": "FF",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "DEC RM64",
+      "OpCode": "FF",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 1
+    }
+  ],
+  "DIV": [
+    {
+      "Instruction": "DIV RM8",
+      "OpCode": "F6",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "DIV RM32",
+      "OpCode": "F7",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "DIV RM8",
+      "OpCode": "F6",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "DIV RM16",
+      "OpCode": "F7",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "DIV RM64",
+      "OpCode": "F7",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 6
+    }
+  ],
+  "DIVPD": [
+    {
+      "Instruction": "DIVPD XMM, XMMRM128",
+      "OpCode": "66 0F 5E"
+    }
+  ],
+  "DIVPS": [
+    {
+      "Instruction": "DIVPS XMM, XMMRM128",
+      "OpCode": "0F 5E"
+    }
+  ],
+  "DIVSD": [
+    {
+      "Instruction": "DIVSD XMM, XMMRM64",
+      "OpCode": "F2 0F 5E"
+    }
+  ],
+  "DIVSS": [
+    {
+      "Instruction": "DIVSS XMM, XMMRM32",
+      "OpCode": "F3 0F 5E"
+    }
+  ],
+  "DPPD": [
+    {
+      "Instruction": "DPPD XMM, XMMRM128, IMM8",
+      "OpCode": "66 0F 3A 41"
+    }
+  ],
+  "DPPS": [
+    {
+      "Instruction": "DPPS XMM, XMMRM128, IMM8",
+      "OpCode": "66 0F 3A 40"
+    }
+  ],
+  "EMMS": [
+    {
+      "Instruction": "EMMS",
+      "OpCode": "0F 77"
+    }
+  ],
+  "ENDBR32": [
+    {
+      "Instruction": "ENDBR32",
+      "OpCode": "F3 0F 1E FB"
+    }
+  ],
+  "ENDBR64": [
+    {
+      "Instruction": "ENDBR64",
+      "OpCode": "F3 0F 1E FA"
+    }
+  ],
+  "ENTER": [
+    {
+      "Instruction": "ENTER IMM16, IMM8",
+      "OpCode": "C8",
+      "EncodingType": "SizePrefix"
+    }
+  ],
+  "F2XM1": [
+    {
+      "Instruction": "F2XM1",
+      "OpCode": "D9 F0"
+    }
+  ],
+  "FABS": [
+    {
+      "Instruction": "FABS",
+      "OpCode": "D9 E1"
+    }
+  ],
+  "FADD": [
+    {
+      "Instruction": "FADD M32",
+      "OpCode": "D8",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "FADD M64",
+      "OpCode": "DC",
+      "OpCodeExtension": 0
+    }
+  ],
+  "FADDP": [
+    {
+      "Instruction": "FADDP",
+      "OpCode": "DE C1"
+    }
+  ],
+  "FIADD": [
+    {
+      "Instruction": "FIADD M32",
+      "OpCode": "DA",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "FIADD M16",
+      "OpCode": "DE",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 0
+    }
+  ],
+  "FCHS": [
+    {
+      "Instruction": "FCHS",
+      "OpCode": "D9 E0"
+    }
+  ],
+  "FCLEX": [
+    {
+      "Instruction": "FCLEX",
+      "OpCode": "9B DB E2"
+    }
+  ],
+  "FNCLEX1": [
+    {
+      "Instruction": "FNCLEX1",
+      "OpCode": "DB E2"
+    }
+  ],
+  "FCOM": [
+    {
+      "Instruction": "FCOM M32",
+      "OpCode": "D8",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "FCOM M64",
+      "OpCode": "DC",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "FCOM",
+      "OpCode": "D8 D1"
+    }
+  ],
+  "FCOMP": [
+    {
+      "Instruction": "FCOMP M32",
+      "OpCode": "D8",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "FCOMP M64",
+      "OpCode": "DC",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "FCOMP",
+      "OpCode": "D8 D9"
+    }
+  ],
+  "FCOMPP": [
+    {
+      "Instruction": "FCOMPP",
+      "OpCode": "DE D9"
+    }
+  ],
+  "FCOS": [
+    {
+      "Instruction": "FCOS",
+      "OpCode": "D9 FF"
+    }
+  ],
+  "FDECSTP": [
+    {
+      "Instruction": "FDECSTP",
+      "OpCode": "D9 F6"
+    }
+  ],
+  "FDIV": [
+    {
+      "Instruction": "FDIV M32",
+      "OpCode": "D8",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "FDIV M64",
+      "OpCode": "DC",
+      "OpCodeExtension": 6
+    }
+  ],
+  "FDIVP": [
+    {
+      "Instruction": "FDIVP",
+      "OpCode": "DE F9"
+    }
+  ],
+  "FIDIV": [
+    {
+      "Instruction": "FIDIV M32",
+      "OpCode": "DA",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "FIDIV M16",
+      "OpCode": "DE",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 6
+    }
+  ],
+  "FDIVR": [
+    {
+      "Instruction": "FDIVR M32",
+      "OpCode": "D8",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "FDIVR M64",
+      "OpCode": "DC",
+      "OpCodeExtension": 7
+    }
+  ],
+  "FDIVRP": [
+    {
+      "Instruction": "FDIVRP",
+      "OpCode": "DE F1"
+    }
+  ],
+  "FIDIVR": [
+    {
+      "Instruction": "FIDIVR M32",
+      "OpCode": "DA",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "FIDIVR M16",
+      "OpCode": "DE",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 7
+    }
+  ],
+  "FICOM": [
+    {
+      "Instruction": "FICOM M32",
+      "OpCode": "DA",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "FICOM M16",
+      "OpCode": "DE",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 2
+    }
+  ],
+  "FICOMP": [
+    {
+      "Instruction": "FICOMP M32",
+      "OpCode": "DA",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "FICOMP M16",
+      "OpCode": "DE",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 3
+    }
+  ],
+  "FILD": [
+    {
+      "Instruction": "FILD M32",
+      "OpCode": "DB",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "FILD M64",
+      "OpCode": "DF",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "FILD M16",
+      "OpCode": "DF",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 0
+    }
+  ],
+  "FINCSTP": [
+    {
+      "Instruction": "FINCSTP",
+      "OpCode": "D9 F7"
+    }
+  ],
+  "FINIT": [
+    {
+      "Instruction": "FINIT",
+      "OpCode": "9B DB E3"
+    }
+  ],
+  "FNINIT1": [
+    {
+      "Instruction": "FNINIT1",
+      "OpCode": "DB E3"
+    }
+  ],
+  "FIST": [
+    {
+      "Instruction": "FIST M32",
+      "OpCode": "DB",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "FIST M16",
+      "OpCode": "DF",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 2
+    }
+  ],
+  "FISTP": [
+    {
+      "Instruction": "FISTP M32",
+      "OpCode": "DB",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "FISTP M64",
+      "OpCode": "DF",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "FISTP M16",
+      "OpCode": "DF",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 3
+    }
+  ],
+  "FISTTP": [
+    {
+      "Instruction": "FISTTP M32",
+      "OpCode": "DB",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "FISTTP M64",
+      "OpCode": "DD",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "FISTTP M16",
+      "OpCode": "DF",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 1
+    }
+  ],
+  "FLD": [
+    {
+      "Instruction": "FLD M32",
+      "OpCode": "D9",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "FLD M64",
+      "OpCode": "DD",
+      "OpCodeExtension": 0
+    }
+  ],
+  "FLD1": [
+    {
+      "Instruction": "FLD1",
+      "OpCode": "D9 E8"
+    }
+  ],
+  "FLDL2T": [
+    {
+      "Instruction": "FLDL2T",
+      "OpCode": "D9 E9"
+    }
+  ],
+  "FLDL2E": [
+    {
+      "Instruction": "FLDL2E",
+      "OpCode": "D9 EA"
+    }
+  ],
+  "FLDPI": [
+    {
+      "Instruction": "FLDPI",
+      "OpCode": "D9 EB"
+    }
+  ],
+  "FLDLG2": [
+    {
+      "Instruction": "FLDLG2",
+      "OpCode": "D9 EC"
+    }
+  ],
+  "FLDLN2": [
+    {
+      "Instruction": "FLDLN2",
+      "OpCode": "D9 ED"
+    }
+  ],
+  "FLDZ": [
+    {
+      "Instruction": "FLDZ",
+      "OpCode": "D9 EE"
+    }
+  ],
+  "FMUL": [
+    {
+      "Instruction": "FMUL M32",
+      "OpCode": "D8",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "FMUL M64",
+      "OpCode": "DC",
+      "OpCodeExtension": 1
+    }
+  ],
+  "FMULP": [
+    {
+      "Instruction": "FMULP",
+      "OpCode": "DE C9"
+    }
+  ],
+  "FIMUL": [
+    {
+      "Instruction": "FIMUL M32",
+      "OpCode": "DA",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "FIMUL M16",
+      "OpCode": "DE",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 1
+    }
+  ],
+  "FNOP": [
+    {
+      "Instruction": "FNOP",
+      "OpCode": "D9 D0"
+    }
+  ],
+  "FPATAN": [
+    {
+      "Instruction": "FPATAN",
+      "OpCode": "D9 F3"
+    }
+  ],
+  "FPREM": [
+    {
+      "Instruction": "FPREM",
+      "OpCode": "D9 F8"
+    }
+  ],
+  "FPREM1": [
+    {
+      "Instruction": "FPREM1",
+      "OpCode": "D9 F5"
+    }
+  ],
+  "FPTAN": [
+    {
+      "Instruction": "FPTAN",
+      "OpCode": "D9 F2"
+    }
+  ],
+  "FRNDINT": [
+    {
+      "Instruction": "FRNDINT",
+      "OpCode": "D9 FC"
+    }
+  ],
+  "FSCALE": [
+    {
+      "Instruction": "FSCALE",
+      "OpCode": "D9 FD"
+    }
+  ],
+  "FSIN": [
+    {
+      "Instruction": "FSIN",
+      "OpCode": "D9 FE"
+    }
+  ],
+  "FSINCOS": [
+    {
+      "Instruction": "FSINCOS",
+      "OpCode": "D9 FB"
+    }
+  ],
+  "FSQRT": [
+    {
+      "Instruction": "FSQRT",
+      "OpCode": "D9 FA"
+    }
+  ],
+  "FST": [
+    {
+      "Instruction": "FST M32",
+      "OpCode": "D9",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "FST M64",
+      "OpCode": "DD",
+      "OpCodeExtension": 2
+    }
+  ],
+  "FSTP": [
+    {
+      "Instruction": "FSTP M32",
+      "OpCode": "D9",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "FSTP M64",
+      "OpCode": "DD",
+      "OpCodeExtension": 3
+    }
+  ],
+  "FSTSW": [
+    {
+      "Instruction": "FSTSW AX",
+      "OpCode": "9B DF E0",
+      "EncodingType": "SizePrefix"
+    }
+  ],
+  "FNSTSW1": [
+    {
+      "Instruction": "FNSTSW1 AX",
+      "OpCode": "DF E0",
+      "EncodingType": "SizePrefix"
+    }
+  ],
+  "FSUB": [
+    {
+      "Instruction": "FSUB M32",
+      "OpCode": "D8",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "FSUB M64",
+      "OpCode": "DC",
+      "OpCodeExtension": 4
+    }
+  ],
+  "FSUBP": [
+    {
+      "Instruction": "FSUBP",
+      "OpCode": "DE E9"
+    }
+  ],
+  "FISUB": [
+    {
+      "Instruction": "FISUB M32",
+      "OpCode": "DA",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "FISUB M16",
+      "OpCode": "DE",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 4
+    }
+  ],
+  "FSUBR": [
+    {
+      "Instruction": "FSUBR M32",
+      "OpCode": "D8",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "FSUBR M64",
+      "OpCode": "DC",
+      "OpCodeExtension": 5
+    }
+  ],
+  "FSUBRP": [
+    {
+      "Instruction": "FSUBRP",
+      "OpCode": "DE E1"
+    }
+  ],
+  "FISUBR": [
+    {
+      "Instruction": "FISUBR M32",
+      "OpCode": "DA",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "FISUBR M16",
+      "OpCode": "DE",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 5
+    }
+  ],
+  "FTST": [
+    {
+      "Instruction": "FTST",
+      "OpCode": "D9 E4"
+    }
+  ],
+  "FUCOM": [
+    {
+      "Instruction": "FUCOM",
+      "OpCode": "DD E1"
+    }
+  ],
+  "FUCOMP": [
+    {
+      "Instruction": "FUCOMP",
+      "OpCode": "DD E9"
+    }
+  ],
+  "FUCOMPP": [
+    {
+      "Instruction": "FUCOMPP",
+      "OpCode": "DA E9"
+    }
+  ],
+  "FXAM": [
+    {
+      "Instruction": "FXAM",
+      "OpCode": "D9 E5"
+    }
+  ],
+  "FXCH": [
+    {
+      "Instruction": "FXCH",
+      "OpCode": "D9 C9"
+    }
+  ],
+  "FXTRACT": [
+    {
+      "Instruction": "FXTRACT",
+      "OpCode": "D9 F4"
+    }
+  ],
+  "FYL2X": [
+    {
+      "Instruction": "FYL2X",
+      "OpCode": "D9 F1"
+    }
+  ],
+  "FYL2XP1": [
+    {
+      "Instruction": "FYL2XP1",
+      "OpCode": "D9 F9"
+    }
+  ],
+  "GF2P8MULB": [
+    {
+      "Instruction": "GF2P8MULB XMM, XMMRM128",
+      "OpCode": "66 0F 38 CF"
+    }
+  ],
+  "HADDPD": [
+    {
+      "Instruction": "HADDPD XMM, XMMRM128",
+      "OpCode": "66 0F 7C"
+    }
+  ],
+  "HADDPS": [
+    {
+      "Instruction": "HADDPS XMM, XMMRM128",
+      "OpCode": "F2 0F 7C"
+    }
+  ],
+  "HLT": [
+    {
+      "Instruction": "HLT",
+      "OpCode": "F4"
+    }
+  ],
+  "HSUBPD": [
+    {
+      "Instruction": "HSUBPD XMM, XMMRM128",
+      "OpCode": "66 0F 7D"
+    }
+  ],
+  "HSUBPS": [
+    {
+      "Instruction": "HSUBPS XMM, XMMRM128",
+      "OpCode": "F2 0F 7D"
+    }
+  ],
+  "IDIV": [
+    {
+      "Instruction": "IDIV RM8",
+      "OpCode": "F6",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "IDIV RM32",
+      "OpCode": "F7",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "IDIV RM8",
+      "OpCode": "F6",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "IDIV RM16",
+      "OpCode": "F7",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "IDIV RM64",
+      "OpCode": "F7",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 7
+    }
+  ],
+  "IMUL": [
+    {
+      "Instruction": "IMUL RM8",
+      "OpCode": "F6",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "IMUL RM32",
+      "OpCode": "F7",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "IMUL RM8",
+      "OpCode": "F6",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "IMUL RM16",
+      "OpCode": "F7",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "IMUL RM64",
+      "OpCode": "F7",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "IMUL R32, RM32",
+      "OpCode": "0F AF"
+    },
+    {
+      "Instruction": "IMUL R32, RM32, IMM8",
+      "OpCode": "6B"
+    },
+    {
+      "Instruction": "IMUL R16, RM16",
+      "OpCode": "0F AF",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "IMUL R64, RM64",
+      "OpCode": "0F AF",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "IMUL R16, RM16, IMM8",
+      "OpCode": "6B",
+      "EncodingType": "SizePrefix | SignExtends"
+    },
+    {
+      "Instruction": "IMUL R64, RM64, IMM8",
+      "OpCode": "6B",
+      "EncodingType": "RexWPrefix | SignExtends"
+    },
+    {
+      "Instruction": "IMUL R16, RM16, IMM16",
+      "OpCode": "69",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "IMUL R32, RM32, IMM32",
+      "OpCode": "69"
+    },
+    {
+      "Instruction": "IMUL R64, RM64, IMM32",
+      "OpCode": "69",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "IN": [
+    {
+      "Instruction": "IN AL, IMM8",
+      "OpCode": "E4",
+      "EncodingType": "NoModRegRM"
+    },
+    {
+      "Instruction": "IN EAX, IMM8",
+      "OpCode": "E5",
+      "EncodingType": "NoModRegRM"
+    },
+    {
+      "Instruction": "IN AX, IMM8",
+      "OpCode": "E5",
+      "EncodingType": "NoModRegRM | SizePrefix"
+    },
+    {
+      "Instruction": "IN AL, DX",
+      "OpCode": "EC",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "IN AX, DX",
+      "OpCode": "ED",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "IN EAX, DX",
+      "OpCode": "ED",
+      "EncodingType": "SizePrefix"
     }
   ],
   "INC": [
     {
-      "Instruction": "INC R64",
+      "Instruction": "INC RM8",
+      "OpCode": "FE",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "INC RM32",
+      "OpCode": "FF",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "INC RM8",
+      "OpCode": "FE",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "INC RM16",
+      "OpCode": "FF",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "INC RM64",
+      "OpCode": "FF",
       "EncodingType": "RexWPrefix",
-      "OpCodeExtension": 0,
-      "OpCode": 255
+      "OpCodeExtension": 0
     }
   ],
-  "SYSCALL": [
+  "INCSSPD": [
     {
-      "Instruction": "SYSCALL",
-      "EncodingType": "ExpansionPrefix",
-      "OpCode": 5
+      "Instruction": "INCSSPD R32",
+      "OpCode": "F3 0F AE",
+      "OpCodeExtension": 5
     }
   ],
-  "RET": [
+  "INCSSPQ": [
     {
-      "Instruction": "RET",
-      "OpCode": 195
+      "Instruction": "INCSSPQ R64",
+      "OpCode": "F3 0F AE",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 5
+    }
+  ],
+  "INS": [
+    {
+      "Instruction": "INS M8, DX",
+      "OpCode": "6C",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "INS M16, DX",
+      "OpCode": "6D",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "INS M32, DX",
+      "OpCode": "6D",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "INS M8, DX",
+      "OpCode": "F3 6C",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "INS M8, DX",
+      "OpCode": "F3 6C",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "INS M16, DX",
+      "OpCode": "F3 6D",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "INS M32, DX",
+      "OpCode": "F3 6D",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "INS RM32, DX",
+      "OpCode": "F3 6D",
+      "EncodingType": "SizePrefix"
+    }
+  ],
+  "INSB": [
+    {
+      "Instruction": "INSB",
+      "OpCode": "6C"
+    }
+  ],
+  "INSW": [
+    {
+      "Instruction": "INSW",
+      "OpCode": "6D"
+    }
+  ],
+  "INSD": [
+    {
+      "Instruction": "INSD",
+      "OpCode": "6D"
+    }
+  ],
+  "INSERTPS": [
+    {
+      "Instruction": "INSERTPS XMM, XMMRM32, IMM8",
+      "OpCode": "66 0F 3A 21"
+    }
+  ],
+  "INT3": [
+    {
+      "Instruction": "INT3",
+      "OpCode": "CC"
+    }
+  ],
+  "INT": [
+    {
+      "Instruction": "INT IMM8",
+      "OpCode": "CD"
+    }
+  ],
+  "INT1": [
+    {
+      "Instruction": "INT1",
+      "OpCode": "F1"
+    }
+  ],
+  "INVD": [
+    {
+      "Instruction": "INVD",
+      "OpCode": "0F 08"
+    }
+  ],
+  "INVLPG": [
+    {
+      "Instruction": "INVLPG M16",
+      "OpCode": "0F 01",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "INVLPG M32",
+      "OpCode": "0F 01",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "INVLPG M64",
+      "OpCode": "0F 01",
+      "OpCodeExtension": 7
+    }
+  ],
+  "INVPCID": [
+    {
+      "Instruction": "INVPCID R64, M128",
+      "OpCode": "66 0F 38 82"
+    }
+  ],
+  "IRET": [
+    {
+      "Instruction": "IRET",
+      "OpCode": "CF"
+    }
+  ],
+  "IRETD": [
+    {
+      "Instruction": "IRETD",
+      "OpCode": "CF"
+    }
+  ],
+  "IRETQ": [
+    {
+      "Instruction": "IRETQ",
+      "OpCode": "CF",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "JA": [
+    {
+      "Instruction": "JA IMM8",
+      "OpCode": "77",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JA IMM32",
+      "OpCode": "0F 87",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JAE": [
+    {
+      "Instruction": "JAE IMM8",
+      "OpCode": "73",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JAE IMM32",
+      "OpCode": "0F 83",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JB": [
+    {
+      "Instruction": "JB IMM8",
+      "OpCode": "72",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JB IMM32",
+      "OpCode": "0F 82",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JBE": [
+    {
+      "Instruction": "JBE IMM8",
+      "OpCode": "76",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JBE IMM32",
+      "OpCode": "0F 86",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JC": [
+    {
+      "Instruction": "JC IMM8",
+      "OpCode": "72",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JC IMM32",
+      "OpCode": "0F 82",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JECXZ": [
+    {
+      "Instruction": "JECXZ IMM8",
+      "OpCode": "E3",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JRCXZ": [
+    {
+      "Instruction": "JRCXZ IMM8",
+      "OpCode": "E3",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JE": [
+    {
+      "Instruction": "JE IMM8",
+      "OpCode": "74",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JE IMM32",
+      "OpCode": "0F 84",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JG": [
+    {
+      "Instruction": "JG IMM8",
+      "OpCode": "7F",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JG IMM32",
+      "OpCode": "0F 8F",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JGE": [
+    {
+      "Instruction": "JGE IMM8",
+      "OpCode": "7D",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JGE IMM32",
+      "OpCode": "0F 8D",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JL": [
+    {
+      "Instruction": "JL IMM8",
+      "OpCode": "7C",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JL IMM32",
+      "OpCode": "0F 8C",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JLE": [
+    {
+      "Instruction": "JLE IMM8",
+      "OpCode": "7E",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JLE IMM32",
+      "OpCode": "0F 8E",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JNA": [
+    {
+      "Instruction": "JNA IMM8",
+      "OpCode": "76",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JNA IMM32",
+      "OpCode": "0F 86",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JNAE": [
+    {
+      "Instruction": "JNAE IMM8",
+      "OpCode": "72",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JNAE IMM32",
+      "OpCode": "0F 82",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JNB": [
+    {
+      "Instruction": "JNB IMM8",
+      "OpCode": "73",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JNB IMM32",
+      "OpCode": "0F 83",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JNBE": [
+    {
+      "Instruction": "JNBE IMM8",
+      "OpCode": "77",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JNBE IMM32",
+      "OpCode": "0F 87",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JNC": [
+    {
+      "Instruction": "JNC IMM8",
+      "OpCode": "73",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JNC IMM32",
+      "OpCode": "0F 83",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JNE": [
+    {
+      "Instruction": "JNE IMM8",
+      "OpCode": "75",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JNE IMM32",
+      "OpCode": "0F 85",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JNG": [
+    {
+      "Instruction": "JNG IMM8",
+      "OpCode": "7E",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JNG IMM32",
+      "OpCode": "0F 8E",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JNGE": [
+    {
+      "Instruction": "JNGE IMM8",
+      "OpCode": "7C",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JNGE IMM32",
+      "OpCode": "0F 8C",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JNL": [
+    {
+      "Instruction": "JNL IMM8",
+      "OpCode": "7D",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JNL IMM32",
+      "OpCode": "0F 8D",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JNLE": [
+    {
+      "Instruction": "JNLE IMM8",
+      "OpCode": "7F",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JNLE IMM32",
+      "OpCode": "0F 8F",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JNO": [
+    {
+      "Instruction": "JNO IMM8",
+      "OpCode": "71",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JNO IMM32",
+      "OpCode": "0F 81",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JNP": [
+    {
+      "Instruction": "JNP IMM8",
+      "OpCode": "7B",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JNP IMM32",
+      "OpCode": "0F 8B",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JNS": [
+    {
+      "Instruction": "JNS IMM8",
+      "OpCode": "79",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JNS IMM32",
+      "OpCode": "0F 89",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JNZ": [
+    {
+      "Instruction": "JNZ IMM8",
+      "OpCode": "75",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JNZ IMM32",
+      "OpCode": "0F 85",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JO": [
+    {
+      "Instruction": "JO IMM8",
+      "OpCode": "70",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JO IMM32",
+      "OpCode": "0F 80",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JP": [
+    {
+      "Instruction": "JP IMM8",
+      "OpCode": "7A",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JP IMM32",
+      "OpCode": "0F 8A",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JPE": [
+    {
+      "Instruction": "JPE IMM8",
+      "OpCode": "7A",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JPE IMM32",
+      "OpCode": "0F 8A",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JPO": [
+    {
+      "Instruction": "JPO IMM8",
+      "OpCode": "7B",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JPO IMM32",
+      "OpCode": "0F 8B",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JS": [
+    {
+      "Instruction": "JS IMM8",
+      "OpCode": "78",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JS IMM32",
+      "OpCode": "0F 88",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JZ": [
+    {
+      "Instruction": "JZ IMM8",
+      "OpCode": "74",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JZ IMM32",
+      "OpCode": "0F 84",
+      "EncodingType": "RelativeJump"
+    },
+    {
+      "Instruction": "JZ IMM32",
+      "OpCode": "0F 84",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "JMP": [
+    {
+      "Instruction": "JMP RM64",
+      "OpCode": "FF",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "JMP IMM8",
+      "OpCode": "EB",
+      "EncodingType": "RelativeJump | SignExtends"
+    },
+    {
+      "Instruction": "JMP IMM32",
+      "OpCode": "E9",
+      "EncodingType": "RelativeJump | SignExtends"
+    }
+  ],
+  "LDMXCSR": [
+    {
+      "Instruction": "LDMXCSR M32",
+      "OpCode": "0F AE",
+      "OpCodeExtension": 2
+    }
+  ],
+  "LEA": [
+    {
+      "Instruction": "LEA R32, M8",
+      "OpCode": "8D"
+    },
+    {
+      "Instruction": "LEA R32, M16",
+      "OpCode": "8D"
+    },
+    {
+      "Instruction": "LEA R32, M32",
+      "OpCode": "8D"
+    },
+    {
+      "Instruction": "LEA R32, M64",
+      "OpCode": "8D"
+    },
+    {
+      "Instruction": "LEA R16, M8",
+      "OpCode": "8D",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "LEA R16, M16",
+      "OpCode": "8D",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "LEA R16, M32",
+      "OpCode": "8D",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "LEA R16, M64",
+      "OpCode": "8D",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "LEA R64, M8",
+      "OpCode": "8D",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "LEA R64, M16",
+      "OpCode": "8D",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "LEA R64, M32",
+      "OpCode": "8D",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "LEA R64, M64",
+      "OpCode": "8D",
+      "EncodingType": "RexWPrefix"
     }
   ],
   "LEAVE": [
     {
       "Instruction": "LEAVE",
-      "OpCode": 201
+      "OpCode": "C9"
+    },
+    {
+      "Instruction": "LEAVE",
+      "OpCode": "C9"
     }
   ],
-  "ADDSS": [
+  "LFENCE": [
     {
-      "Instruction": "ADDSS XMM, XMM",
-      "EncodingType": "ExpansionPrefix | ScalarFloatingPrefix",
-      "OpCode": 88
+      "Instruction": "LFENCE",
+      "OpCode": "0F AE E8"
+    }
+  ],
+  "LLDT": [
+    {
+      "Instruction": "LLDT RM16",
+      "OpCode": "0F 00",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 2
+    }
+  ],
+  "LMSW": [
+    {
+      "Instruction": "LMSW RM16",
+      "OpCode": "0F 01",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 6
+    }
+  ],
+  "LOCK": [
+    {
+      "Instruction": "LOCK",
+      "OpCode": "F0"
+    }
+  ],
+  "LODS": [
+    {
+      "Instruction": "LODS M8",
+      "OpCode": "AC"
+    },
+    {
+      "Instruction": "LODS M32",
+      "OpCode": "AD"
+    },
+    {
+      "Instruction": "LODS M16",
+      "OpCode": "AD",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "LODS M64",
+      "OpCode": "AD",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "LODS AL",
+      "OpCode": "F3 AC"
+    },
+    {
+      "Instruction": "LODS EAX",
+      "OpCode": "F3 AD"
+    },
+    {
+      "Instruction": "LODS AL",
+      "OpCode": "F3 AC",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "LODS AX",
+      "OpCode": "F3 AD",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "LODS RAX",
+      "OpCode": "F3 AD",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "LODSB": [
+    {
+      "Instruction": "LODSB",
+      "OpCode": "AC"
+    }
+  ],
+  "LODSW": [
+    {
+      "Instruction": "LODSW",
+      "OpCode": "AD"
+    }
+  ],
+  "LODSD": [
+    {
+      "Instruction": "LODSD",
+      "OpCode": "AD"
+    }
+  ],
+  "LODSQ": [
+    {
+      "Instruction": "LODSQ",
+      "OpCode": "AD",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "LOOP": [
+    {
+      "Instruction": "LOOP IMM8",
+      "OpCode": "E2",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "LOOPE": [
+    {
+      "Instruction": "LOOPE IMM8",
+      "OpCode": "E1",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "LOOPNE": [
+    {
+      "Instruction": "LOOPNE IMM8",
+      "OpCode": "E0",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "LTR": [
+    {
+      "Instruction": "LTR RM16",
+      "OpCode": "0F 00",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 3
+    }
+  ],
+  "LZCNT": [
+    {
+      "Instruction": "LZCNT R32, RM32",
+      "OpCode": "F3 0F BD"
+    },
+    {
+      "Instruction": "LZCNT R16, RM16",
+      "OpCode": "F3 0F BD",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "LZCNT R64, RM64",
+      "OpCode": "F3 0F BD",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "MASKMOVDQU": [
+    {
+      "Instruction": "MASKMOVDQU XMM, XMM",
+      "OpCode": "66 0F F7"
+    }
+  ],
+  "MASKMOVQ": [
+    {
+      "Instruction": "MASKMOVQ MMX, MMX",
+      "OpCode": "0F F7"
+    }
+  ],
+  "MAXPD": [
+    {
+      "Instruction": "MAXPD XMM, XMMRM128",
+      "OpCode": "66 0F 5F"
+    }
+  ],
+  "MAXPS": [
+    {
+      "Instruction": "MAXPS XMM, XMMRM128",
+      "OpCode": "0F 5F"
+    }
+  ],
+  "MAXSD": [
+    {
+      "Instruction": "MAXSD XMM, XMMRM64",
+      "OpCode": "F2 0F 5F"
+    }
+  ],
+  "MAXSS": [
+    {
+      "Instruction": "MAXSS XMM, XMMRM32",
+      "OpCode": "F3 0F 5F"
+    }
+  ],
+  "MFENCE": [
+    {
+      "Instruction": "MFENCE",
+      "OpCode": "0F AE F0"
+    }
+  ],
+  "MINPD": [
+    {
+      "Instruction": "MINPD XMM, XMMRM128",
+      "OpCode": "66 0F 5D"
+    }
+  ],
+  "MINPS": [
+    {
+      "Instruction": "MINPS XMM, XMMRM128",
+      "OpCode": "0F 5D"
+    }
+  ],
+  "MINSD": [
+    {
+      "Instruction": "MINSD XMM, XMMRM64",
+      "OpCode": "F2 0F 5D"
+    }
+  ],
+  "MINSS": [
+    {
+      "Instruction": "MINSS XMM, XMMRM32",
+      "OpCode": "F3 0F 5D"
+    }
+  ],
+  "MONITOR": [
+    {
+      "Instruction": "MONITOR",
+      "OpCode": "0F 01 C8"
+    }
+  ],
+  "MOV": [
+    {
+      "Instruction": "MOV RM8, R8",
+      "OpCode": "88"
+    },
+    {
+      "Instruction": "MOV RM32, R32",
+      "OpCode": "89"
+    },
+    {
+      "Instruction": "MOV R8, RM8",
+      "OpCode": "8A"
+    },
+    {
+      "Instruction": "MOV R32, RM32",
+      "OpCode": "8B"
+    },
+    {
+      "Instruction": "MOV R8, IMM8",
+      "OpCode": "B0",
+      "EncodingType": "NoModRegRM | AddRegisterToOpCode"
+    },
+    {
+      "Instruction": "MOV RM8, R8",
+      "OpCode": "88",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "MOV RM16, R16",
+      "OpCode": "89",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "MOV RM64, R64",
+      "OpCode": "89",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "MOV R8, RM8",
+      "OpCode": "8A",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "MOV R16, RM16",
+      "OpCode": "8B",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "MOV R64, RM64",
+      "OpCode": "8B",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "MOV RM16, SEG",
+      "OpCode": "8C",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "MOV SEG, RM16",
+      "OpCode": "8E",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "MOV R8, IMM8",
+      "OpCode": "B0",
+      "EncodingType": "NoModRegRM | AddRegisterToOpCode | RexPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "MOV RM8, IMM8",
+      "OpCode": "C6",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "MOV SEG, RM64",
+      "OpCode": "8E",
+      "EncodingType": "RexWPrefix | SizePrefix"
+    },
+    {
+      "Instruction": "MOV R16, IMM16",
+      "OpCode": "B8",
+      "EncodingType": "NoModRegRM | SizePrefix | AddRegisterToOpCode"
+    },
+    {
+      "Instruction": "MOV RM8, IMM8",
+      "OpCode": "C6",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "MOV R32, IMM32",
+      "OpCode": "B8",
+      "EncodingType": "NoModRegRM | AddRegisterToOpCode"
+    },
+    {
+      "Instruction": "MOV RM16, IMM16",
+      "OpCode": "C7",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "MOV RM32, IMM32",
+      "OpCode": "C7",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "MOV RM64, IMM32",
+      "OpCode": "C7",
+      "EncodingType": "RexWPrefix | SignExtends",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "MOV AL, MOFFS8",
+      "OpCode": "A0"
+    },
+    {
+      "Instruction": "MOV EAX, MOFFS32",
+      "OpCode": "A1"
+    },
+    {
+      "Instruction": "MOV MOFFS8, AL",
+      "OpCode": "A2"
+    },
+    {
+      "Instruction": "MOV MOFFS32, EAX",
+      "OpCode": "A3"
+    },
+    {
+      "Instruction": "MOV R64, IMM64",
+      "OpCode": "B8",
+      "EncodingType": "RexWPrefix | NoModRegRM | AddRegisterToOpCode"
+    },
+    {
+      "Instruction": "MOV AL, MOFFS8",
+      "OpCode": "A0",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "MOV AX, MOFFS16",
+      "OpCode": "A1",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "MOV RAX, MOFFS64",
+      "OpCode": "A1",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "MOV MOFFS8, AL",
+      "OpCode": "A2",
+      "EncodingType": "RexWPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "MOV MOFFS16, AX",
+      "OpCode": "A3",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "MOV MOFFS64, RAX",
+      "OpCode": "A3",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "MOVAPD": [
+    {
+      "Instruction": "MOVAPD XMM, XMMRM128",
+      "OpCode": "66 0F 28"
+    },
+    {
+      "Instruction": "MOVAPD XMMRM128, XMM",
+      "OpCode": "66 0F 29"
+    }
+  ],
+  "MOVAPS": [
+    {
+      "Instruction": "MOVAPS XMM, XMMRM128",
+      "OpCode": "0F 28"
+    },
+    {
+      "Instruction": "MOVAPS XMMRM128, XMM",
+      "OpCode": "0F 29"
+    }
+  ],
+  "MOVBE": [
+    {
+      "Instruction": "MOVBE R32, M32",
+      "OpCode": "0F 38 F0"
+    },
+    {
+      "Instruction": "MOVBE M32, R32",
+      "OpCode": "0F 38 F1"
+    },
+    {
+      "Instruction": "MOVBE R16, M16",
+      "OpCode": "0F 38 F0",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "MOVBE R64, M64",
+      "OpCode": "0F 38 F0",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "MOVBE M16, R16",
+      "OpCode": "0F 38 F1",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "MOVBE M64, R64",
+      "OpCode": "0F 38 F1",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "MOVD": [
+    {
+      "Instruction": "MOVD MMX, RM32",
+      "OpCode": "0F 6E"
+    },
+    {
+      "Instruction": "MOVD RM32, MMX",
+      "OpCode": "0F 7E"
+    },
+    {
+      "Instruction": "MOVD XMM, RM32",
+      "OpCode": "66 0F 6E"
+    },
+    {
+      "Instruction": "MOVD RM32, XMM",
+      "OpCode": "66 0F 7E"
+    }
+  ],
+  "MOVQ": [
+    {
+      "Instruction": "MOVQ MMX, MMXRM64",
+      "OpCode": "0F 6F"
+    },
+    {
+      "Instruction": "MOVQ MMXRM64, MMX",
+      "OpCode": "0F 7F"
+    },
+    {
+      "Instruction": "MOVQ MMX, RM64",
+      "OpCode": "0F 6E",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "MOVQ RM64, MMX",
+      "OpCode": "0F 7E",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "MOVQ XMM, XMMRM64",
+      "OpCode": "F3 0F 7E"
+    },
+    {
+      "Instruction": "MOVQ XMMRM64, XMM",
+      "OpCode": "66 0F D6"
+    },
+    {
+      "Instruction": "MOVQ XMM, RM64",
+      "OpCode": "66 0F 6E",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "MOVQ RM64, XMM",
+      "OpCode": "66 0F 7E",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "MOVDDUP": [
+    {
+      "Instruction": "MOVDDUP XMM, XMMRM64",
+      "OpCode": "F2 0F 12"
+    }
+  ],
+  "MOVDIRI": [
+    {
+      "Instruction": "MOVDIRI M32, R32",
+      "OpCode": "0F 38 F9"
+    },
+    {
+      "Instruction": "MOVDIRI M64, R64",
+      "OpCode": "0F 38 F9",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "MOVDQA": [
+    {
+      "Instruction": "MOVDQA XMM, XMMRM128",
+      "OpCode": "66 0F 6F"
+    },
+    {
+      "Instruction": "MOVDQA XMMRM128, XMM",
+      "OpCode": "66 0F 7F"
+    }
+  ],
+  "MOVDQU": [
+    {
+      "Instruction": "MOVDQU XMM, XMMRM128",
+      "OpCode": "F3 0F 6F"
+    },
+    {
+      "Instruction": "MOVDQU XMMRM128, XMM",
+      "OpCode": "F3 0F 7F"
+    }
+  ],
+  "MOVDQ2Q": [
+    {
+      "Instruction": "MOVDQ2Q MMX, XMM",
+      "OpCode": "F2 0F D6"
+    }
+  ],
+  "MOVHLPS": [
+    {
+      "Instruction": "MOVHLPS XMM, XMM",
+      "OpCode": "0F 12"
+    }
+  ],
+  "MOVHPD": [
+    {
+      "Instruction": "MOVHPD XMM, M64",
+      "OpCode": "66 0F 16"
+    },
+    {
+      "Instruction": "MOVHPD M64, XMM",
+      "OpCode": "66 0F 17"
+    }
+  ],
+  "MOVHPS": [
+    {
+      "Instruction": "MOVHPS XMM, M64",
+      "OpCode": "0F 16"
+    },
+    {
+      "Instruction": "MOVHPS M64, XMM",
+      "OpCode": "0F 17"
+    }
+  ],
+  "MOVLHPS": [
+    {
+      "Instruction": "MOVLHPS XMM, XMM",
+      "OpCode": "0F 16"
+    }
+  ],
+  "MOVLPD": [
+    {
+      "Instruction": "MOVLPD XMM, M64",
+      "OpCode": "66 0F 12"
+    },
+    {
+      "Instruction": "MOVLPD M64, XMM",
+      "OpCode": "66 0F 13"
+    }
+  ],
+  "MOVLPS": [
+    {
+      "Instruction": "MOVLPS XMM, M64",
+      "OpCode": "0F 12"
+    },
+    {
+      "Instruction": "MOVLPS M64, XMM",
+      "OpCode": "0F 13"
+    }
+  ],
+  "MOVMSKPD": [
+    {
+      "Instruction": "MOVMSKPD R16, XMM",
+      "OpCode": "66 0F 50"
+    },
+    {
+      "Instruction": "MOVMSKPD R32, XMM",
+      "OpCode": "66 0F 50"
+    },
+    {
+      "Instruction": "MOVMSKPD R64, XMM",
+      "OpCode": "66 0F 50"
+    }
+  ],
+  "MOVMSKPS": [
+    {
+      "Instruction": "MOVMSKPS R16, XMM",
+      "OpCode": "0F 50"
+    },
+    {
+      "Instruction": "MOVMSKPS R32, XMM",
+      "OpCode": "0F 50"
+    },
+    {
+      "Instruction": "MOVMSKPS R64, XMM",
+      "OpCode": "0F 50"
+    }
+  ],
+  "MOVNTDQA": [
+    {
+      "Instruction": "MOVNTDQA XMM, M128",
+      "OpCode": "66 0F 38 2A"
+    }
+  ],
+  "MOVNTDQ": [
+    {
+      "Instruction": "MOVNTDQ M128, XMM",
+      "OpCode": "66 0F E7"
+    }
+  ],
+  "MOVNTI": [
+    {
+      "Instruction": "MOVNTI M32, R32",
+      "OpCode": "0F C3"
+    },
+    {
+      "Instruction": "MOVNTI M64, R64",
+      "OpCode": "0F C3",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "MOVNTPD": [
+    {
+      "Instruction": "MOVNTPD M128, XMM",
+      "OpCode": "66 0F 2B"
+    }
+  ],
+  "MOVNTPS": [
+    {
+      "Instruction": "MOVNTPS M128, XMM",
+      "OpCode": "0F 2B"
+    }
+  ],
+  "MOVNTQ": [
+    {
+      "Instruction": "MOVNTQ M64, MMX",
+      "OpCode": "0F E7"
+    }
+  ],
+  "MOVQ2DQ": [
+    {
+      "Instruction": "MOVQ2DQ XMM, MMX",
+      "OpCode": "F3 0F D6"
+    }
+  ],
+  "MOVS": [
+    {
+      "Instruction": "MOVS M8, M8",
+      "OpCode": "A4"
+    },
+    {
+      "Instruction": "MOVS M32, M32",
+      "OpCode": "A5"
+    },
+    {
+      "Instruction": "MOVS M16, M16",
+      "OpCode": "A5",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "MOVS M64, M64",
+      "OpCode": "A5",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "MOVS M8, M8",
+      "OpCode": "F3 A4"
+    },
+    {
+      "Instruction": "MOVS M32, M32",
+      "OpCode": "F3 A5"
+    },
+    {
+      "Instruction": "MOVS M8, M8",
+      "OpCode": "F3 A4",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "MOVS M16, M16",
+      "OpCode": "F3 A5",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "MOVS M64, M64",
+      "OpCode": "F3 A5",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "MOVSB": [
+    {
+      "Instruction": "MOVSB",
+      "OpCode": "A4"
+    }
+  ],
+  "MOVSW": [
+    {
+      "Instruction": "MOVSW",
+      "OpCode": "A5"
+    }
+  ],
+  "MOVSD": [
+    {
+      "Instruction": "MOVSD",
+      "OpCode": "A5"
+    },
+    {
+      "Instruction": "MOVSD XMM, XMM",
+      "OpCode": "F2 0F 10"
+    },
+    {
+      "Instruction": "MOVSD XMM, M64",
+      "OpCode": "F2 0F 10"
+    },
+    {
+      "Instruction": "MOVSD XMMRM64, XMM",
+      "OpCode": "F2 0F 11"
+    }
+  ],
+  "MOVSQ": [
+    {
+      "Instruction": "MOVSQ",
+      "OpCode": "A5",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "MOVSHDUP": [
+    {
+      "Instruction": "MOVSHDUP XMM, XMMRM128",
+      "OpCode": "F3 0F 16"
+    }
+  ],
+  "MOVSLDUP": [
+    {
+      "Instruction": "MOVSLDUP XMM, XMMRM128",
+      "OpCode": "F3 0F 12"
+    }
+  ],
+  "MOVSS": [
+    {
+      "Instruction": "MOVSS XMM, XMM",
+      "OpCode": "F3 0F 10"
+    },
+    {
+      "Instruction": "MOVSS XMM, M32",
+      "OpCode": "F3 0F 10"
+    },
+    {
+      "Instruction": "MOVSS XMMRM32, XMM",
+      "OpCode": "F3 0F 11"
+    }
+  ],
+  "MOVSX": [
+    {
+      "Instruction": "MOVSX R32, RM8",
+      "OpCode": "0F BE"
+    },
+    {
+      "Instruction": "MOVSX R16, RM8",
+      "OpCode": "0F BE",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "MOVSX R64, RM8",
+      "OpCode": "0F BE",
+      "EncodingType": "RexWPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "MOVSX R32, RM16",
+      "OpCode": "0F BF",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "MOVSX R64, RM16",
+      "OpCode": "0F BF",
+      "EncodingType": "RexWPrefix | SizePrefix"
+    }
+  ],
+  "MOVSXD": [
+    {
+      "Instruction": "MOVSXD R32, RM32",
+      "OpCode": "63"
+    },
+    {
+      "Instruction": "MOVSXD R16, RM16",
+      "OpCode": "63",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "MOVSXD R64, RM32",
+      "OpCode": "63",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "MOVUPD": [
+    {
+      "Instruction": "MOVUPD XMM, XMMRM128",
+      "OpCode": "66 0F 10"
+    },
+    {
+      "Instruction": "MOVUPD XMMRM128, XMM",
+      "OpCode": "66 0F 11"
+    }
+  ],
+  "MOVUPS": [
+    {
+      "Instruction": "MOVUPS XMM, XMMRM128",
+      "OpCode": "0F 10"
+    },
+    {
+      "Instruction": "MOVUPS XMMRM128, XMM",
+      "OpCode": "0F 11"
+    }
+  ],
+  "MOVZX": [
+    {
+      "Instruction": "MOVZX R32, RM8",
+      "OpCode": "0F B6"
+    },
+    {
+      "Instruction": "MOVZX R16, RM8",
+      "OpCode": "0F B6",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "MOVZX R64, RM8",
+      "OpCode": "0F B6",
+      "EncodingType": "RexWPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "MOVZX R32, RM16",
+      "OpCode": "0F B7",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "MOVZX R64, RM16",
+      "OpCode": "0F B7",
+      "EncodingType": "RexWPrefix | SizePrefix"
+    }
+  ],
+  "MPSADBW": [
+    {
+      "Instruction": "MPSADBW XMM, XMMRM128, IMM8",
+      "OpCode": "66 0F 3A 42"
+    }
+  ],
+  "MUL": [
+    {
+      "Instruction": "MUL RM8",
+      "OpCode": "F6",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "MUL RM32",
+      "OpCode": "F7",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "MUL RM8",
+      "OpCode": "F6",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "MUL RM16",
+      "OpCode": "F7",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "MUL RM64",
+      "OpCode": "F7",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 4
+    }
+  ],
+  "MULPD": [
+    {
+      "Instruction": "MULPD XMM, XMMRM128",
+      "OpCode": "66 0F 59"
+    }
+  ],
+  "MULPS": [
+    {
+      "Instruction": "MULPS XMM, XMMRM128",
+      "OpCode": "0F 59"
+    }
+  ],
+  "MULSD": [
+    {
+      "Instruction": "MULSD XMM, XMMRM64",
+      "OpCode": "F2 0F 59"
+    }
+  ],
+  "MULSS": [
+    {
+      "Instruction": "MULSS XMM, XMMRM32",
+      "OpCode": "F3 0F 59"
+    }
+  ],
+  "MWAIT": [
+    {
+      "Instruction": "MWAIT",
+      "OpCode": "0F 01 C9"
+    }
+  ],
+  "NEG": [
+    {
+      "Instruction": "NEG RM8",
+      "OpCode": "F6",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "NEG RM32",
+      "OpCode": "F7",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "NEG RM8",
+      "OpCode": "F6",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "NEG RM16",
+      "OpCode": "F7",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "NEG RM64",
+      "OpCode": "F7",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 3
+    }
+  ],
+  "NOP": [
+    {
+      "Instruction": "NOP",
+      "OpCode": "90"
+    },
+    {
+      "Instruction": "NOP RM32",
+      "OpCode": "0F 1F",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "NOP RM16",
+      "OpCode": "0F 1F",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 0
+    }
+  ],
+  "NOT": [
+    {
+      "Instruction": "NOT RM8",
+      "OpCode": "F6",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "NOT RM32",
+      "OpCode": "F7",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "NOT RM8",
+      "OpCode": "F6",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "NOT RM16",
+      "OpCode": "F7",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "NOT RM64",
+      "OpCode": "F7",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 2
+    }
+  ],
+  "OR": [
+    {
+      "Instruction": "OR AL, IMM8",
+      "OpCode": "0C",
+      "EncodingType": "NoModRegRM"
+    },
+    {
+      "Instruction": "OR RM8, R8",
+      "OpCode": "08"
+    },
+    {
+      "Instruction": "OR RM32, R32",
+      "OpCode": "09"
+    },
+    {
+      "Instruction": "OR R8, RM8",
+      "OpCode": "0A"
+    },
+    {
+      "Instruction": "OR R32, RM32",
+      "OpCode": "0B"
+    },
+    {
+      "Instruction": "OR RM8, IMM8",
+      "OpCode": "80",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "OR RM32, IMM8",
+      "OpCode": "83",
+      "EncodingType": "SignExtends",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "OR RM8, R8",
+      "OpCode": "08",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "OR RM16, R16",
+      "OpCode": "09",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "OR RM64, R64",
+      "OpCode": "09",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "OR R8, RM8",
+      "OpCode": "0A",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "OR R16, RM16",
+      "OpCode": "0B",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "OR R64, RM64",
+      "OpCode": "0B",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "OR AX, IMM16",
+      "OpCode": "0D",
+      "EncodingType": "NoModRegRM | SizePrefix"
+    },
+    {
+      "Instruction": "OR RM8, IMM8",
+      "OpCode": "80",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "OR RM16, IMM8",
+      "OpCode": "83",
+      "EncodingType": "SizePrefix | SignExtends",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "OR RM64, IMM8",
+      "OpCode": "83",
+      "EncodingType": "RexWPrefix | SignExtends",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "OR EAX, IMM32",
+      "OpCode": "0D",
+      "EncodingType": "NoModRegRM"
+    },
+    {
+      "Instruction": "OR RM16, IMM16",
+      "OpCode": "81",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "OR RAX, IMM32",
+      "OpCode": "0D",
+      "EncodingType": "RexWPrefix | NoModRegRM | SignExtends"
+    },
+    {
+      "Instruction": "OR RM32, IMM32",
+      "OpCode": "81",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "OR RM64, IMM32",
+      "OpCode": "81",
+      "EncodingType": "RexWPrefix | SignExtends",
+      "OpCodeExtension": 1
+    }
+  ],
+  "ORPS": [
+    {
+      "Instruction": "ORPS XMM, XMMRM128",
+      "OpCode": "0F 56"
+    }
+  ],
+  "OUT": [
+    {
+      "Instruction": "OUT IMM8, AL",
+      "OpCode": "E6",
+      "EncodingType": "NoModRegRM"
+    },
+    {
+      "Instruction": "OUT IMM8, EAX",
+      "OpCode": "E7",
+      "EncodingType": "NoModRegRM"
+    },
+    {
+      "Instruction": "OUT IMM8, AX",
+      "OpCode": "E7",
+      "EncodingType": "NoModRegRM | SizePrefix"
+    },
+    {
+      "Instruction": "OUT DX, AL",
+      "OpCode": "EE",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "OUT DX, AX",
+      "OpCode": "EF",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "OUT DX, EAX",
+      "OpCode": "EF",
+      "EncodingType": "SizePrefix"
+    }
+  ],
+  "OUTS": [
+    {
+      "Instruction": "OUTS DX, M8",
+      "OpCode": "6E",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "OUTS DX, M16",
+      "OpCode": "6F",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "OUTS DX, M32",
+      "OpCode": "6F",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "OUTS DX, RM8",
+      "OpCode": "F3 6E",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "OUTS DX, RM16",
+      "OpCode": "F3 6F",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "OUTS DX, RM32",
+      "OpCode": "F3 6F",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "OUTS DX, RM8",
+      "OpCode": "F3 6E",
+      "EncodingType": "SizePrefix | RexPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "OUTS DX, RM8",
+      "OpCode": "F3 6E",
+      "EncodingType": "RexWPrefix | SizePrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "OUTS DX, RM32",
+      "OpCode": "F3 6F",
+      "EncodingType": "RexWPrefix | SizePrefix"
+    }
+  ],
+  "OUTSB": [
+    {
+      "Instruction": "OUTSB",
+      "OpCode": "6E"
+    }
+  ],
+  "OUTSW": [
+    {
+      "Instruction": "OUTSW",
+      "OpCode": "6F"
+    }
+  ],
+  "OUTSD": [
+    {
+      "Instruction": "OUTSD",
+      "OpCode": "6F"
+    }
+  ],
+  "PABSB": [
+    {
+      "Instruction": "PABSB MMX, MMXRM64",
+      "OpCode": "0F 38 1C"
+    },
+    {
+      "Instruction": "PABSB XMM, XMMRM128",
+      "OpCode": "66 0F 38 1C"
+    }
+  ],
+  "PABSW": [
+    {
+      "Instruction": "PABSW MMX, MMXRM64",
+      "OpCode": "0F 38 1D"
+    },
+    {
+      "Instruction": "PABSW XMM, XMMRM128",
+      "OpCode": "66 0F 38 1D"
+    }
+  ],
+  "PABSD": [
+    {
+      "Instruction": "PABSD MMX, MMXRM64",
+      "OpCode": "0F 38 1E"
+    },
+    {
+      "Instruction": "PABSD XMM, XMMRM128",
+      "OpCode": "66 0F 38 1E"
+    }
+  ],
+  "PACKSSWB": [
+    {
+      "Instruction": "PACKSSWB MMX, MMXRM64",
+      "OpCode": "0F 63"
+    },
+    {
+      "Instruction": "PACKSSWB XMM, XMMRM128",
+      "OpCode": "66 0F 63"
+    }
+  ],
+  "PACKSSDW": [
+    {
+      "Instruction": "PACKSSDW MMX, MMXRM64",
+      "OpCode": "0F 6B"
+    },
+    {
+      "Instruction": "PACKSSDW XMM, XMMRM128",
+      "OpCode": "66 0F 6B"
+    }
+  ],
+  "PACKUSDW": [
+    {
+      "Instruction": "PACKUSDW XMM, XMMRM128",
+      "OpCode": "66 0F 38 2B"
+    }
+  ],
+  "PACKUSWB": [
+    {
+      "Instruction": "PACKUSWB MMX, MMXRM64",
+      "OpCode": "0F 67"
+    },
+    {
+      "Instruction": "PACKUSWB XMM, XMMRM128",
+      "OpCode": "66 0F 67"
+    }
+  ],
+  "PADDB": [
+    {
+      "Instruction": "PADDB MMX, MMXRM64",
+      "OpCode": "0F FC"
+    },
+    {
+      "Instruction": "PADDB XMM, XMMRM128",
+      "OpCode": "66 0F FC"
+    }
+  ],
+  "PADDW": [
+    {
+      "Instruction": "PADDW MMX, MMXRM64",
+      "OpCode": "0F FD"
+    },
+    {
+      "Instruction": "PADDW XMM, XMMRM128",
+      "OpCode": "66 0F FD"
+    }
+  ],
+  "PADDD": [
+    {
+      "Instruction": "PADDD MMX, MMXRM64",
+      "OpCode": "0F FE"
+    },
+    {
+      "Instruction": "PADDD XMM, XMMRM128",
+      "OpCode": "66 0F FE"
+    }
+  ],
+  "PADDQ": [
+    {
+      "Instruction": "PADDQ MMX, MMXRM64",
+      "OpCode": "0F D4"
+    },
+    {
+      "Instruction": "PADDQ XMM, XMMRM128",
+      "OpCode": "66 0F D4"
+    }
+  ],
+  "PADDSB": [
+    {
+      "Instruction": "PADDSB MMX, MMXRM64",
+      "OpCode": "0F EC"
+    },
+    {
+      "Instruction": "PADDSB XMM, XMMRM128",
+      "OpCode": "66 0F EC"
+    }
+  ],
+  "PADDSW": [
+    {
+      "Instruction": "PADDSW MMX, MMXRM64",
+      "OpCode": "0F ED"
+    },
+    {
+      "Instruction": "PADDSW XMM, XMMRM128",
+      "OpCode": "66 0F ED"
+    }
+  ],
+  "PADDUSB": [
+    {
+      "Instruction": "PADDUSB MMX, MMXRM64",
+      "OpCode": "0F DC"
+    },
+    {
+      "Instruction": "PADDUSB XMM, XMMRM128",
+      "OpCode": "66 0F DC"
+    }
+  ],
+  "PADDUSW": [
+    {
+      "Instruction": "PADDUSW MMX, MMXRM64",
+      "OpCode": "0F DD"
+    },
+    {
+      "Instruction": "PADDUSW XMM, XMMRM128",
+      "OpCode": "66 0F DD"
+    }
+  ],
+  "PALIGNR": [
+    {
+      "Instruction": "PALIGNR MMX, MMXRM64, IMM8",
+      "OpCode": "0F 3A 0F"
+    },
+    {
+      "Instruction": "PALIGNR XMM, XMMRM128, IMM8",
+      "OpCode": "66 0F 3A 0F"
+    }
+  ],
+  "PAND": [
+    {
+      "Instruction": "PAND MMX, MMXRM64",
+      "OpCode": "0F DB"
+    },
+    {
+      "Instruction": "PAND XMM, XMMRM128",
+      "OpCode": "66 0F DB"
+    }
+  ],
+  "PANDN": [
+    {
+      "Instruction": "PANDN MMX, MMXRM64",
+      "OpCode": "0F DF"
+    },
+    {
+      "Instruction": "PANDN XMM, XMMRM128",
+      "OpCode": "66 0F DF"
+    }
+  ],
+  "PAUSE": [
+    {
+      "Instruction": "PAUSE",
+      "OpCode": "F3 90"
+    }
+  ],
+  "PAVGB": [
+    {
+      "Instruction": "PAVGB MMX, MMXRM64",
+      "OpCode": "0F E0"
+    }
+  ],
+  "PAVGW": [
+    {
+      "Instruction": "PAVGW MMX, MMXRM64",
+      "OpCode": "0F E3"
+    },
+    {
+      "Instruction": "PAVGW XMM, XMMRM128",
+      "OpCode": "66 0F E3"
+    }
+  ],
+  "PBLENDW": [
+    {
+      "Instruction": "PBLENDW XMM, XMMRM128, IMM8",
+      "OpCode": "66 0F 3A 0E"
+    }
+  ],
+  "PCLMULQDQ": [
+    {
+      "Instruction": "PCLMULQDQ XMM, XMMRM128, IMM8",
+      "OpCode": "66 0F 3A 44"
+    }
+  ],
+  "PCMPEQB": [
+    {
+      "Instruction": "PCMPEQB MMX, MMXRM64",
+      "OpCode": "0F 74"
+    },
+    {
+      "Instruction": "PCMPEQB XMM, XMMRM128",
+      "OpCode": "66 0F 74"
+    }
+  ],
+  "PCMPEQW": [
+    {
+      "Instruction": "PCMPEQW MMX, MMXRM64",
+      "OpCode": "0F 75"
+    },
+    {
+      "Instruction": "PCMPEQW XMM, XMMRM128",
+      "OpCode": "66 0F 75"
+    }
+  ],
+  "PCMPEQD": [
+    {
+      "Instruction": "PCMPEQD MMX, MMXRM64",
+      "OpCode": "0F 76"
+    },
+    {
+      "Instruction": "PCMPEQD XMM, XMMRM128",
+      "OpCode": "66 0F 76"
+    }
+  ],
+  "PCMPEQQ": [
+    {
+      "Instruction": "PCMPEQQ XMM, XMMRM128",
+      "OpCode": "66 0F 38 29"
+    }
+  ],
+  "PCMPGTB": [
+    {
+      "Instruction": "PCMPGTB MMX, MMXRM64",
+      "OpCode": "0F 64"
+    },
+    {
+      "Instruction": "PCMPGTB XMM, XMMRM128",
+      "OpCode": "66 0F 64"
+    }
+  ],
+  "PCMPGTW": [
+    {
+      "Instruction": "PCMPGTW MMX, MMXRM64",
+      "OpCode": "0F 65"
+    },
+    {
+      "Instruction": "PCMPGTW XMM, XMMRM128",
+      "OpCode": "66 0F 65"
+    }
+  ],
+  "PCMPGTD": [
+    {
+      "Instruction": "PCMPGTD MMX, MMXRM64",
+      "OpCode": "0F 66"
+    },
+    {
+      "Instruction": "PCMPGTD XMM, XMMRM128",
+      "OpCode": "66 0F 66"
+    }
+  ],
+  "PCMPGTQ": [
+    {
+      "Instruction": "PCMPGTQ XMM, XMMRM128",
+      "OpCode": "66 0F 38 37"
+    }
+  ],
+  "PCONFIG": [
+    {
+      "Instruction": "PCONFIG",
+      "OpCode": "0F 01 C5"
+    }
+  ],
+  "PEXTRD": [
+    {
+      "Instruction": "PEXTRD RM32, XMM, IMM8",
+      "OpCode": "66 0F 3A 16"
+    }
+  ],
+  "PEXTRQ": [
+    {
+      "Instruction": "PEXTRQ RM64, XMM, IMM8",
+      "OpCode": "66 0F 3A 16",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "PEXTRW": [
+    {
+      "Instruction": "PEXTRW R16, MMX, IMM8",
+      "OpCode": "0F C5"
+    },
+    {
+      "Instruction": "PEXTRW R32, MMX, IMM8",
+      "OpCode": "0F C5"
+    },
+    {
+      "Instruction": "PEXTRW R64, MMX, IMM8",
+      "OpCode": "0F C5"
+    },
+    {
+      "Instruction": "PEXTRW R16, XMM, IMM8",
+      "OpCode": "66 0F C5"
+    },
+    {
+      "Instruction": "PEXTRW R32, XMM, IMM8",
+      "OpCode": "66 0F C5"
+    },
+    {
+      "Instruction": "PEXTRW R64, XMM, IMM8",
+      "OpCode": "66 0F C5"
+    }
+  ],
+  "PHADDW": [
+    {
+      "Instruction": "PHADDW MMX, MMXRM64",
+      "OpCode": "0F 38 01"
+    },
+    {
+      "Instruction": "PHADDW XMM, XMMRM128",
+      "OpCode": "66 0F 38 01"
+    }
+  ],
+  "PHADDD": [
+    {
+      "Instruction": "PHADDD MMX, MMXRM64",
+      "OpCode": "0F 38 02"
+    },
+    {
+      "Instruction": "PHADDD XMM, XMMRM128",
+      "OpCode": "66 0F 38 02"
+    }
+  ],
+  "PHADDSW": [
+    {
+      "Instruction": "PHADDSW MMX, MMXRM64",
+      "OpCode": "0F 38 03"
+    },
+    {
+      "Instruction": "PHADDSW XMM, XMMRM128",
+      "OpCode": "66 0F 38 03"
+    }
+  ],
+  "PHMINPOSUW": [
+    {
+      "Instruction": "PHMINPOSUW XMM, XMMRM128",
+      "OpCode": "66 0F 38 41"
+    }
+  ],
+  "PHSUBW": [
+    {
+      "Instruction": "PHSUBW MMX, MMXRM64",
+      "OpCode": "0F 38 05"
+    },
+    {
+      "Instruction": "PHSUBW XMM, XMMRM128",
+      "OpCode": "66 0F 38 05"
+    }
+  ],
+  "PHSUBD": [
+    {
+      "Instruction": "PHSUBD MMX, MMXRM64",
+      "OpCode": "0F 38 06"
+    },
+    {
+      "Instruction": "PHSUBD XMM, XMMRM128",
+      "OpCode": "66 0F 38 06"
+    }
+  ],
+  "PHSUBSW": [
+    {
+      "Instruction": "PHSUBSW MMX, MMXRM64",
+      "OpCode": "0F 38 07"
+    },
+    {
+      "Instruction": "PHSUBSW XMM, XMMRM128",
+      "OpCode": "66 0F 38 07"
+    }
+  ],
+  "PINSRD": [
+    {
+      "Instruction": "PINSRD XMM, RM32, IMM8",
+      "OpCode": "66 0F 3A 22"
+    }
+  ],
+  "PINSRQ": [
+    {
+      "Instruction": "PINSRQ XMM, RM64, IMM8",
+      "OpCode": "66 0F 3A 22",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "PMADDUBSW": [
+    {
+      "Instruction": "PMADDUBSW MMX, MMXRM64",
+      "OpCode": "0F 38 04"
+    },
+    {
+      "Instruction": "PMADDUBSW XMM, XMMRM128",
+      "OpCode": "66 0F 38 04"
+    }
+  ],
+  "PMADDWD": [
+    {
+      "Instruction": "PMADDWD MMX, MMXRM64",
+      "OpCode": "0F F5"
+    },
+    {
+      "Instruction": "PMADDWD XMM, XMMRM128",
+      "OpCode": "66 0F F5"
+    }
+  ],
+  "PMAXSW": [
+    {
+      "Instruction": "PMAXSW MMX, MMXRM64",
+      "OpCode": "0F EE"
+    },
+    {
+      "Instruction": "PMAXSW XMM, XMMRM128",
+      "OpCode": "66 0F EE"
+    }
+  ],
+  "PMAXSB": [
+    {
+      "Instruction": "PMAXSB XMM, XMMRM128",
+      "OpCode": "66 0F 38 3C"
+    }
+  ],
+  "PMAXSD": [
+    {
+      "Instruction": "PMAXSD XMM, XMMRM128",
+      "OpCode": "66 0F 38 3D"
+    }
+  ],
+  "PMAXUB": [
+    {
+      "Instruction": "PMAXUB MMX, MMXRM64",
+      "OpCode": "0F DE"
+    },
+    {
+      "Instruction": "PMAXUB XMM, XMMRM128",
+      "OpCode": "66 0F DE"
+    }
+  ],
+  "PMAXUD": [
+    {
+      "Instruction": "PMAXUD XMM, XMMRM128",
+      "OpCode": "66 0F 38 3F"
+    }
+  ],
+  "PMINSW": [
+    {
+      "Instruction": "PMINSW MMX, MMXRM64",
+      "OpCode": "0F EA"
+    },
+    {
+      "Instruction": "PMINSW XMM, XMMRM128",
+      "OpCode": "66 0F EA"
+    }
+  ],
+  "PMINSB": [
+    {
+      "Instruction": "PMINSB XMM, XMMRM128",
+      "OpCode": "66 0F 38 38"
+    }
+  ],
+  "PMINSD": [
+    {
+      "Instruction": "PMINSD XMM, XMMRM128",
+      "OpCode": "66 0F 38 39"
+    }
+  ],
+  "PMINUB": [
+    {
+      "Instruction": "PMINUB MMX, MMXRM64",
+      "OpCode": "0F DA"
+    },
+    {
+      "Instruction": "PMINUB XMM, XMMRM128",
+      "OpCode": "66 0F DA"
+    }
+  ],
+  "PMINUD": [
+    {
+      "Instruction": "PMINUD XMM, XMMRM128",
+      "OpCode": "66 0F 38 3B"
+    }
+  ],
+  "PMOVMSKB": [
+    {
+      "Instruction": "PMOVMSKB R16, MMX",
+      "OpCode": "0F D7"
+    },
+    {
+      "Instruction": "PMOVMSKB R32, MMX",
+      "OpCode": "0F D7"
+    },
+    {
+      "Instruction": "PMOVMSKB R64, MMX",
+      "OpCode": "0F D7"
+    },
+    {
+      "Instruction": "PMOVMSKB R16, XMM",
+      "OpCode": "66 0F D7"
+    },
+    {
+      "Instruction": "PMOVMSKB R32, XMM",
+      "OpCode": "66 0F D7"
+    },
+    {
+      "Instruction": "PMOVMSKB R64, XMM",
+      "OpCode": "66 0F D7"
+    }
+  ],
+  "PMOVSXBW": [
+    {
+      "Instruction": "PMOVSXBW XMM, XMMRM64",
+      "OpCode": "66 0F 38 20"
+    }
+  ],
+  "PMOVSXBD": [
+    {
+      "Instruction": "PMOVSXBD XMM, XMMRM32",
+      "OpCode": "66 0F 38 21"
+    }
+  ],
+  "PMOVSXBQ": [
+    {
+      "Instruction": "PMOVSXBQ XMM, XMMRM16",
+      "OpCode": "66 0F 38 22",
+      "EncodingType": "SizePrefix"
+    }
+  ],
+  "PMOVSXWQ": [
+    {
+      "Instruction": "PMOVSXWQ XMM, XMMRM32",
+      "OpCode": "66 0F 38 24"
+    }
+  ],
+  "PMOVSXDQ": [
+    {
+      "Instruction": "PMOVSXDQ XMM, XMMRM64",
+      "OpCode": "66 0F 38 25"
+    }
+  ],
+  "PMOVZXBW": [
+    {
+      "Instruction": "PMOVZXBW XMM, XMMRM64",
+      "OpCode": "66 0F 38 30"
+    }
+  ],
+  "PMOVZXBD": [
+    {
+      "Instruction": "PMOVZXBD XMM, XMMRM32",
+      "OpCode": "66 0F 38 31"
+    }
+  ],
+  "PMOVZXBQ": [
+    {
+      "Instruction": "PMOVZXBQ XMM, XMMRM16",
+      "OpCode": "66 0F 38 32",
+      "EncodingType": "SizePrefix"
+    }
+  ],
+  "PMOVZXWD": [
+    {
+      "Instruction": "PMOVZXWD XMM, XMMRM64",
+      "OpCode": "66 0F 38 33"
+    }
+  ],
+  "PMOVZXWQ": [
+    {
+      "Instruction": "PMOVZXWQ XMM, XMMRM32",
+      "OpCode": "66 0F 38 34"
+    }
+  ],
+  "PMOVZXDQ": [
+    {
+      "Instruction": "PMOVZXDQ XMM, XMMRM64",
+      "OpCode": "66 0F 38 35"
+    }
+  ],
+  "PMULDQ": [
+    {
+      "Instruction": "PMULDQ XMM, XMMRM128",
+      "OpCode": "66 0F 38 28"
+    }
+  ],
+  "PMULHRSW": [
+    {
+      "Instruction": "PMULHRSW MMX, MMXRM64",
+      "OpCode": "0F 38 0B"
+    },
+    {
+      "Instruction": "PMULHRSW XMM, XMMRM128",
+      "OpCode": "66 0F 38 0B"
+    }
+  ],
+  "PMULHUW": [
+    {
+      "Instruction": "PMULHUW MMX, MMXRM64",
+      "OpCode": "0F E4"
+    },
+    {
+      "Instruction": "PMULHUW XMM, XMMRM128",
+      "OpCode": "66 0F E4"
+    }
+  ],
+  "PMULHW": [
+    {
+      "Instruction": "PMULHW MMX, MMXRM64",
+      "OpCode": "0F E5"
+    },
+    {
+      "Instruction": "PMULHW XMM, XMMRM128",
+      "OpCode": "66 0F E5"
+    }
+  ],
+  "PMULLD": [
+    {
+      "Instruction": "PMULLD XMM, XMMRM128",
+      "OpCode": "66 0F 38 40"
+    }
+  ],
+  "PMULLW": [
+    {
+      "Instruction": "PMULLW MMX, MMXRM64",
+      "OpCode": "0F D5"
+    },
+    {
+      "Instruction": "PMULLW XMM, XMMRM128",
+      "OpCode": "66 0F D5"
+    }
+  ],
+  "PMULUDQ": [
+    {
+      "Instruction": "PMULUDQ MMX, MMXRM64",
+      "OpCode": "0F F4"
+    },
+    {
+      "Instruction": "PMULUDQ XMM, XMMRM128",
+      "OpCode": "66 0F F4"
+    }
+  ],
+  "POP": [
+    {
+      "Instruction": "POP R64",
+      "OpCode": "58",
+      "EncodingType": "NoModRegRM | AddRegisterToOpCode"
+    },
+    {
+      "Instruction": "POP RM64",
+      "OpCode": "8F",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "POP R16",
+      "OpCode": "58",
+      "EncodingType": "NoModRegRM | SizePrefix | AddRegisterToOpCode"
+    },
+    {
+      "Instruction": "POP RM16",
+      "OpCode": "8F",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "POP FS",
+      "OpCode": "0F A1",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "POP FS",
+      "OpCode": "0F A1",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "POP GS",
+      "OpCode": "0F A9",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "POP GS",
+      "OpCode": "0F A9",
+      "EncodingType": "SizePrefix"
+    }
+  ],
+  "POPCNT": [
+    {
+      "Instruction": "POPCNT R32, RM32",
+      "OpCode": "F3 0F B8"
+    },
+    {
+      "Instruction": "POPCNT R16, RM16",
+      "OpCode": "F3 0F B8",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "POPCNT R64, RM64",
+      "OpCode": "F3 0F B8",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "POPF": [
+    {
+      "Instruction": "POPF",
+      "OpCode": "9D"
+    }
+  ],
+  "POPFQ": [
+    {
+      "Instruction": "POPFQ",
+      "OpCode": "9D"
+    }
+  ],
+  "POR": [
+    {
+      "Instruction": "POR MMX, MMXRM64",
+      "OpCode": "0F EB"
+    },
+    {
+      "Instruction": "POR XMM, XMMRM128",
+      "OpCode": "66 0F EB"
+    }
+  ],
+  "PREFETCHT0": [
+    {
+      "Instruction": "PREFETCHT0 M8",
+      "OpCode": "0F 18",
+      "OpCodeExtension": 1
+    }
+  ],
+  "PREFETCHT1": [
+    {
+      "Instruction": "PREFETCHT1 M8",
+      "OpCode": "0F 18",
+      "OpCodeExtension": 2
+    }
+  ],
+  "PREFETCHT2": [
+    {
+      "Instruction": "PREFETCHT2 M8",
+      "OpCode": "0F 18",
+      "OpCodeExtension": 3
+    }
+  ],
+  "PREFETCHNTA": [
+    {
+      "Instruction": "PREFETCHNTA M8",
+      "OpCode": "0F 18",
+      "OpCodeExtension": 0
+    }
+  ],
+  "PREFETCHW": [
+    {
+      "Instruction": "PREFETCHW M8",
+      "OpCode": "0F 0D",
+      "OpCodeExtension": 1
+    }
+  ],
+  "PSADBW": [
+    {
+      "Instruction": "PSADBW MMX, MMXRM64",
+      "OpCode": "0F F6"
+    },
+    {
+      "Instruction": "PSADBW XMM, XMMRM128",
+      "OpCode": "66 0F F6"
+    }
+  ],
+  "PSHUFB": [
+    {
+      "Instruction": "PSHUFB MMX, MMXRM64",
+      "OpCode": "0F 38 00"
+    },
+    {
+      "Instruction": "PSHUFB XMM, XMMRM128",
+      "OpCode": "66 0F 38 00"
+    }
+  ],
+  "PSHUFD": [
+    {
+      "Instruction": "PSHUFD XMM, XMMRM128, IMM8",
+      "OpCode": "66 0F 70"
+    }
+  ],
+  "PSHUFHW": [
+    {
+      "Instruction": "PSHUFHW XMM, XMMRM128, IMM8",
+      "OpCode": "F3 0F 70"
+    }
+  ],
+  "PSHUFLW": [
+    {
+      "Instruction": "PSHUFLW XMM, XMMRM128, IMM8",
+      "OpCode": "F2 0F 70"
+    }
+  ],
+  "PSHUFW": [
+    {
+      "Instruction": "PSHUFW MMX, MMXRM64, IMM8",
+      "OpCode": "0F 70"
+    }
+  ],
+  "PSIGNB": [
+    {
+      "Instruction": "PSIGNB MMX, MMXRM64",
+      "OpCode": "0F 38 08"
+    },
+    {
+      "Instruction": "PSIGNB XMM, XMMRM128",
+      "OpCode": "66 0F 38 08"
+    }
+  ],
+  "PSIGNW": [
+    {
+      "Instruction": "PSIGNW MMX, MMXRM64",
+      "OpCode": "0F 38 09"
+    },
+    {
+      "Instruction": "PSIGNW XMM, XMMRM128",
+      "OpCode": "66 0F 38 09"
+    }
+  ],
+  "PSIGND": [
+    {
+      "Instruction": "PSIGND MMX, MMXRM64",
+      "OpCode": "0F 38 0A"
+    },
+    {
+      "Instruction": "PSIGND XMM, XMMRM128",
+      "OpCode": "66 0F 38 0A"
+    }
+  ],
+  "PSLLDQ": [
+    {
+      "Instruction": "PSLLDQ XMM, IMM8",
+      "OpCode": "66 0F 73",
+      "OpCodeExtension": 7
+    }
+  ],
+  "PSLLW": [
+    {
+      "Instruction": "PSLLW MMX, MMXRM64",
+      "OpCode": "0F F1"
+    },
+    {
+      "Instruction": "PSLLW XMM, XMMRM128",
+      "OpCode": "66 0F F1"
+    },
+    {
+      "Instruction": "PSLLW MMX, IMM8",
+      "OpCode": "0F 71",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "PSLLW XMM, IMM8",
+      "OpCode": "66 0F 71",
+      "OpCodeExtension": 6
+    }
+  ],
+  "PSLLD": [
+    {
+      "Instruction": "PSLLD MMX, MMXRM64",
+      "OpCode": "0F F2"
+    },
+    {
+      "Instruction": "PSLLD XMM, XMMRM128",
+      "OpCode": "66 0F F2"
+    },
+    {
+      "Instruction": "PSLLD MMX, IMM8",
+      "OpCode": "0F 72",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "PSLLD XMM, IMM8",
+      "OpCode": "66 0F 72",
+      "OpCodeExtension": 6
+    }
+  ],
+  "PSLLQ": [
+    {
+      "Instruction": "PSLLQ MMX, MMXRM64",
+      "OpCode": "0F F3"
+    },
+    {
+      "Instruction": "PSLLQ XMM, XMMRM128",
+      "OpCode": "66 0F F3"
+    },
+    {
+      "Instruction": "PSLLQ MMX, IMM8",
+      "OpCode": "0F 73",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "PSLLQ XMM, IMM8",
+      "OpCode": "66 0F 73",
+      "OpCodeExtension": 6
+    }
+  ],
+  "PSRAW": [
+    {
+      "Instruction": "PSRAW MMX, MMXRM64",
+      "OpCode": "0F E1"
+    },
+    {
+      "Instruction": "PSRAW XMM, XMMRM128",
+      "OpCode": "66 0F E1"
+    },
+    {
+      "Instruction": "PSRAW MMX, IMM8",
+      "OpCode": "0F 71",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "PSRAW XMM, IMM8",
+      "OpCode": "66 0F 71",
+      "OpCodeExtension": 4
+    }
+  ],
+  "PSRAD": [
+    {
+      "Instruction": "PSRAD MMX, MMXRM64",
+      "OpCode": "0F E2"
+    },
+    {
+      "Instruction": "PSRAD XMM, XMMRM128",
+      "OpCode": "66 0F E2"
+    },
+    {
+      "Instruction": "PSRAD MMX, IMM8",
+      "OpCode": "0F 72",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "PSRAD XMM, IMM8",
+      "OpCode": "66 0F 72",
+      "OpCodeExtension": 4
+    }
+  ],
+  "PSRLDQ": [
+    {
+      "Instruction": "PSRLDQ XMM, IMM8",
+      "OpCode": "66 0F 73",
+      "OpCodeExtension": 3
+    }
+  ],
+  "PSRLW": [
+    {
+      "Instruction": "PSRLW MMX, MMXRM64",
+      "OpCode": "0F D1"
+    },
+    {
+      "Instruction": "PSRLW XMM, XMMRM128",
+      "OpCode": "66 0F D1"
+    },
+    {
+      "Instruction": "PSRLW MMX, IMM8",
+      "OpCode": "0F 71",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "PSRLW XMM, IMM8",
+      "OpCode": "66 0F 71",
+      "OpCodeExtension": 2
+    }
+  ],
+  "PSRLD": [
+    {
+      "Instruction": "PSRLD MMX, MMXRM64",
+      "OpCode": "0F D2"
+    },
+    {
+      "Instruction": "PSRLD XMM, XMMRM128",
+      "OpCode": "66 0F D2"
+    },
+    {
+      "Instruction": "PSRLD MMX, IMM8",
+      "OpCode": "0F 72",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "PSRLD XMM, IMM8",
+      "OpCode": "66 0F 72",
+      "OpCodeExtension": 2
+    }
+  ],
+  "PSRLQ": [
+    {
+      "Instruction": "PSRLQ MMX, MMXRM64",
+      "OpCode": "0F D3"
+    },
+    {
+      "Instruction": "PSRLQ XMM, XMMRM128",
+      "OpCode": "66 0F D3"
+    },
+    {
+      "Instruction": "PSRLQ MMX, IMM8",
+      "OpCode": "0F 73",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "PSRLQ XMM, IMM8",
+      "OpCode": "66 0F 73",
+      "OpCodeExtension": 2
+    }
+  ],
+  "PSUBB": [
+    {
+      "Instruction": "PSUBB MMX, MMXRM64",
+      "OpCode": "0F F8"
+    },
+    {
+      "Instruction": "PSUBB XMM, XMMRM128",
+      "OpCode": "66 0F F8"
+    }
+  ],
+  "PSUBW": [
+    {
+      "Instruction": "PSUBW MMX, MMXRM64",
+      "OpCode": "0F F9"
+    },
+    {
+      "Instruction": "PSUBW XMM, XMMRM128",
+      "OpCode": "66 0F F9"
+    }
+  ],
+  "PSUBD": [
+    {
+      "Instruction": "PSUBD MMX, MMXRM64",
+      "OpCode": "0F FA"
+    },
+    {
+      "Instruction": "PSUBD XMM, XMMRM128",
+      "OpCode": "66 0F FA"
+    }
+  ],
+  "PSUBQ": [
+    {
+      "Instruction": "PSUBQ MMX, MMXRM64",
+      "OpCode": "0F FB"
+    },
+    {
+      "Instruction": "PSUBQ XMM, XMMRM128",
+      "OpCode": "66 0F FB"
+    }
+  ],
+  "PSUBSB": [
+    {
+      "Instruction": "PSUBSB MMX, MMXRM64",
+      "OpCode": "0F E8"
+    },
+    {
+      "Instruction": "PSUBSB XMM, XMMRM128",
+      "OpCode": "66 0F E8"
+    }
+  ],
+  "PSUBSW": [
+    {
+      "Instruction": "PSUBSW MMX, MMXRM64",
+      "OpCode": "0F E9"
+    },
+    {
+      "Instruction": "PSUBSW XMM, XMMRM128",
+      "OpCode": "66 0F E9"
+    }
+  ],
+  "PSUBUSB": [
+    {
+      "Instruction": "PSUBUSB MMX, MMXRM64",
+      "OpCode": "0F D8"
+    },
+    {
+      "Instruction": "PSUBUSB XMM, XMMRM128",
+      "OpCode": "66 0F D8"
+    }
+  ],
+  "PSUBUSW": [
+    {
+      "Instruction": "PSUBUSW MMX, MMXRM64",
+      "OpCode": "0F D9"
+    },
+    {
+      "Instruction": "PSUBUSW XMM, XMMRM128",
+      "OpCode": "66 0F D9"
+    }
+  ],
+  "PTEST": [
+    {
+      "Instruction": "PTEST XMM, XMMRM128",
+      "OpCode": "66 0F 38 17"
+    }
+  ],
+  "PUNPCKHBW": [
+    {
+      "Instruction": "PUNPCKHBW MMX, MMXRM64",
+      "OpCode": "0F 68"
+    },
+    {
+      "Instruction": "PUNPCKHBW XMM, XMMRM128",
+      "OpCode": "66 0F 68"
+    }
+  ],
+  "PUNPCKHWD": [
+    {
+      "Instruction": "PUNPCKHWD MMX, MMXRM64",
+      "OpCode": "0F 69"
+    },
+    {
+      "Instruction": "PUNPCKHWD XMM, XMMRM128",
+      "OpCode": "66 0F 69"
+    }
+  ],
+  "PUNPCKHDQ": [
+    {
+      "Instruction": "PUNPCKHDQ MMX, MMXRM64",
+      "OpCode": "0F 6A"
+    },
+    {
+      "Instruction": "PUNPCKHDQ XMM, XMMRM128",
+      "OpCode": "66 0F 6A"
+    }
+  ],
+  "PUNPCKHQDQ": [
+    {
+      "Instruction": "PUNPCKHQDQ XMM, XMMRM128",
+      "OpCode": "66 0F 6D"
+    }
+  ],
+  "PUNPCKLBW": [
+    {
+      "Instruction": "PUNPCKLBW MMX, MMXRM32",
+      "OpCode": "0F 60"
+    },
+    {
+      "Instruction": "PUNPCKLBW XMM, XMMRM128",
+      "OpCode": "66 0F 60"
+    }
+  ],
+  "PUNPCKLWD": [
+    {
+      "Instruction": "PUNPCKLWD MMX, MMXRM32",
+      "OpCode": "0F 61"
+    },
+    {
+      "Instruction": "PUNPCKLWD XMM, XMMRM128",
+      "OpCode": "66 0F 61"
+    }
+  ],
+  "PUNPCKLDQ": [
+    {
+      "Instruction": "PUNPCKLDQ MMX, MMXRM32",
+      "OpCode": "0F 62"
+    },
+    {
+      "Instruction": "PUNPCKLDQ XMM, XMMRM128",
+      "OpCode": "66 0F 62"
+    }
+  ],
+  "PUNPCKLQDQ": [
+    {
+      "Instruction": "PUNPCKLQDQ XMM, XMMRM128",
+      "OpCode": "66 0F 6C"
+    }
+  ],
+  "PUSH": [
+    {
+      "Instruction": "PUSH R64",
+      "OpCode": "50",
+      "EncodingType": "NoModRegRM | AddRegisterToOpCode"
+    },
+    {
+      "Instruction": "PUSH RM64",
+      "OpCode": "FF",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "PUSH R16",
+      "OpCode": "50",
+      "EncodingType": "NoModRegRM | SizePrefix | AddRegisterToOpCode"
+    },
+    {
+      "Instruction": "PUSH RM16",
+      "OpCode": "FF",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "PUSH IMM8",
+      "OpCode": "6A"
+    },
+    {
+      "Instruction": "PUSH FS",
+      "OpCode": "0F A0",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "PUSH GS",
+      "OpCode": "0F A8",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "PUSH IMM16",
+      "OpCode": "68",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "PUSH IMM32",
+      "OpCode": "68"
+    }
+  ],
+  "PUSHF": [
+    {
+      "Instruction": "PUSHF",
+      "OpCode": "9C"
+    }
+  ],
+  "PUSHFQ": [
+    {
+      "Instruction": "PUSHFQ",
+      "OpCode": "9C"
+    }
+  ],
+  "PXOR": [
+    {
+      "Instruction": "PXOR MMX, MMXRM64",
+      "OpCode": "0F EF"
+    },
+    {
+      "Instruction": "PXOR XMM, XMMRM128",
+      "OpCode": "66 0F EF"
+    }
+  ],
+  "RCL": [
+    {
+      "Instruction": "RCL RM8, CL",
+      "OpCode": "D2",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "RCL RM32, CL",
+      "OpCode": "D3",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "RCL RM8, CL",
+      "OpCode": "D2",
+      "EncodingType": "RexPrefix",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "RCL RM8, IMM8",
+      "OpCode": "C0",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "RCL RM16, CL",
+      "OpCode": "D3",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "RCL RM64, CL",
+      "OpCode": "D3",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "RCL RM32, IMM8",
+      "OpCode": "C1",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "RCL RM8, IMM8",
+      "OpCode": "C0",
+      "EncodingType": "RexPrefix",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "RCL RM16, IMM8",
+      "OpCode": "C1",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "RCL RM64, IMM8",
+      "OpCode": "C1",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 2
+    }
+  ],
+  "RCR": [
+    {
+      "Instruction": "RCR RM8, CL",
+      "OpCode": "D2",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "RCR RM32, CL",
+      "OpCode": "D3",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "RCR RM8, CL",
+      "OpCode": "D2",
+      "EncodingType": "RexPrefix",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "RCR RM8, IMM8",
+      "OpCode": "C0",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "RCR RM16, CL",
+      "OpCode": "D3",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "RCR RM64, CL",
+      "OpCode": "D3",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "RCR RM32, IMM8",
+      "OpCode": "C1",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "RCR RM8, IMM8",
+      "OpCode": "C0",
+      "EncodingType": "RexPrefix",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "RCR RM16, IMM8",
+      "OpCode": "C1",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "RCR RM64, IMM8",
+      "OpCode": "C1",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 3
+    }
+  ],
+  "ROL": [
+    {
+      "Instruction": "ROL RM8, CL",
+      "OpCode": "D2",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "ROL RM32, CL",
+      "OpCode": "D3",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "ROL RM8, CL",
+      "OpCode": "D2",
+      "EncodingType": "RexPrefix",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "ROL RM8, IMM8",
+      "OpCode": "C0",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "ROL RM16, CL",
+      "OpCode": "D3",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "ROL RM64, CL",
+      "OpCode": "D3",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "ROL RM32, IMM8",
+      "OpCode": "C1",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "ROL RM8, IMM8",
+      "OpCode": "C0",
+      "EncodingType": "RexPrefix",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "ROL RM16, IMM8",
+      "OpCode": "C1",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "ROL RM64, IMM8",
+      "OpCode": "C1",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 0
+    }
+  ],
+  "ROR": [
+    {
+      "Instruction": "ROR RM8, CL",
+      "OpCode": "D2",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "ROR RM32, CL",
+      "OpCode": "D3",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "ROR RM8, CL",
+      "OpCode": "D2",
+      "EncodingType": "RexPrefix",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "ROR RM8, IMM8",
+      "OpCode": "C0",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "ROR RM16, CL",
+      "OpCode": "D3",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "ROR RM64, CL",
+      "OpCode": "D3",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "ROR RM32, IMM8",
+      "OpCode": "C1",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "ROR RM8, IMM8",
+      "OpCode": "C0",
+      "EncodingType": "RexPrefix",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "ROR RM16, IMM8",
+      "OpCode": "C1",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "ROR RM64, IMM8",
+      "OpCode": "C1",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 1
+    }
+  ],
+  "RCPPS": [
+    {
+      "Instruction": "RCPPS XMM, XMMRM128",
+      "OpCode": "0F 53"
+    }
+  ],
+  "RCPSS": [
+    {
+      "Instruction": "RCPSS XMM, XMMRM32",
+      "OpCode": "F3 0F 53"
+    }
+  ],
+  "RDFSBASE": [
+    {
+      "Instruction": "RDFSBASE R32",
+      "OpCode": "F3 0F AE",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "RDFSBASE R64",
+      "OpCode": "F3 0F AE",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 0
+    }
+  ],
+  "RDGSBASE": [
+    {
+      "Instruction": "RDGSBASE R32",
+      "OpCode": "F3 0F AE",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "RDGSBASE R64",
+      "OpCode": "F3 0F AE",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 1
+    }
+  ],
+  "RDMSR": [
+    {
+      "Instruction": "RDMSR",
+      "OpCode": "0F 32"
+    }
+  ],
+  "RDPID": [
+    {
+      "Instruction": "RDPID R64",
+      "OpCode": "F3 0F C7",
+      "OpCodeExtension": 7
+    }
+  ],
+  "RDPKRU": [
+    {
+      "Instruction": "RDPKRU",
+      "OpCode": "0F 01 EE"
+    }
+  ],
+  "RDPMC": [
+    {
+      "Instruction": "RDPMC",
+      "OpCode": "0F 33"
+    }
+  ],
+  "RDRAND": [
+    {
+      "Instruction": "RDRAND R32",
+      "OpCode": "0F C7",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "RDRAND R16",
+      "OpCode": "0F C7",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "RDRAND R64",
+      "OpCode": "0F C7",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 6
+    }
+  ],
+  "RDSEED": [
+    {
+      "Instruction": "RDSEED R32",
+      "OpCode": "0F C7",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "RDSEED R16",
+      "OpCode": "0F C7",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "RDSEED R64",
+      "OpCode": "0F C7",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 7
+    }
+  ],
+  "RDTSC": [
+    {
+      "Instruction": "RDTSC",
+      "OpCode": "0F 31"
+    }
+  ],
+  "RDTSCP": [
+    {
+      "Instruction": "RDTSCP",
+      "OpCode": "0F 01 F9"
+    }
+  ],
+  "STOS": [
+    {
+      "Instruction": "STOS M8",
+      "OpCode": "AA"
+    },
+    {
+      "Instruction": "STOS M32",
+      "OpCode": "AB"
+    },
+    {
+      "Instruction": "STOS M8",
+      "OpCode": "F3 AA"
+    },
+    {
+      "Instruction": "STOS M32",
+      "OpCode": "F3 AB"
+    },
+    {
+      "Instruction": "STOS M16",
+      "OpCode": "AB",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "STOS M64",
+      "OpCode": "AB",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "STOS M8",
+      "OpCode": "F3 AA",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "STOS M16",
+      "OpCode": "F3 AB",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "STOS M64",
+      "OpCode": "F3 AB",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "SCAS": [
+    {
+      "Instruction": "SCAS M8",
+      "OpCode": "AE"
+    },
+    {
+      "Instruction": "SCAS M32",
+      "OpCode": "AF"
+    },
+    {
+      "Instruction": "SCAS M8",
+      "OpCode": "F3 AE"
+    },
+    {
+      "Instruction": "SCAS M32",
+      "OpCode": "F3 AF"
+    },
+    {
+      "Instruction": "SCAS M8",
+      "OpCode": "F2 AE"
+    },
+    {
+      "Instruction": "SCAS M32",
+      "OpCode": "F2 AF"
+    },
+    {
+      "Instruction": "SCAS M16",
+      "OpCode": "AF",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "SCAS M64",
+      "OpCode": "AF",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "SCAS M8",
+      "OpCode": "F3 AE",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "SCAS M16",
+      "OpCode": "F3 AF",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "SCAS M64",
+      "OpCode": "F3 AF",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "SCAS M8",
+      "OpCode": "F2 AE",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "SCAS M16",
+      "OpCode": "F2 AF",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "SCAS M64",
+      "OpCode": "F2 AF",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "RET": [
+    {
+      "Instruction": "RET",
+      "OpCode": "C3"
+    },
+    {
+      "Instruction": "RET",
+      "OpCode": "CB"
+    },
+    {
+      "Instruction": "RET IMM16",
+      "OpCode": "C2",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "RET IMM16",
+      "OpCode": "CA",
+      "EncodingType": "SizePrefix"
+    }
+  ],
+  "ROUNDPD": [
+    {
+      "Instruction": "ROUNDPD XMM, XMMRM128, IMM8",
+      "OpCode": "66 0F 3A 09"
+    }
+  ],
+  "ROUNDSD": [
+    {
+      "Instruction": "ROUNDSD XMM, XMMRM64, IMM8",
+      "OpCode": "66 0F 3A 0B"
+    }
+  ],
+  "ROUNDSS": [
+    {
+      "Instruction": "ROUNDSS XMM, XMMRM32, IMM8",
+      "OpCode": "66 0F 3A 0A"
+    }
+  ],
+  "RSM": [
+    {
+      "Instruction": "RSM",
+      "OpCode": "0F AA"
+    }
+  ],
+  "RSQRTPS": [
+    {
+      "Instruction": "RSQRTPS XMM, XMMRM128",
+      "OpCode": "0F 52"
+    }
+  ],
+  "RSQRTSS": [
+    {
+      "Instruction": "RSQRTSS XMM, XMMRM32",
+      "OpCode": "F3 0F 52"
+    }
+  ],
+  "SAL": [
+    {
+      "Instruction": "SAL RM8, CL",
+      "OpCode": "D2",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "SAL RM32, CL",
+      "OpCode": "D3",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "SAL RM8, CL",
+      "OpCode": "D2",
+      "EncodingType": "RexPrefix",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "SAL RM8, IMM8",
+      "OpCode": "C0",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "SAL RM16, CL",
+      "OpCode": "D3",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "SAL RM64, CL",
+      "OpCode": "D3",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "SAL RM32, IMM8",
+      "OpCode": "C1",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "SAL RM8, IMM8",
+      "OpCode": "C0",
+      "EncodingType": "RexPrefix",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "SAL RM16, IMM8",
+      "OpCode": "C1",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "SAL RM64, IMM8",
+      "OpCode": "C1",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 4
+    }
+  ],
+  "SAR": [
+    {
+      "Instruction": "SAR RM8, CL",
+      "OpCode": "D2",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "SAR RM32, CL",
+      "OpCode": "D3",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "SAR RM8, CL",
+      "OpCode": "D2",
+      "EncodingType": "RexPrefix",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "SAR RM8, IMM8",
+      "OpCode": "C0",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "SAR RM16, CL",
+      "OpCode": "D3",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "SAR RM64, CL",
+      "OpCode": "D3",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "SAR RM32, IMM8",
+      "OpCode": "C1",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "SAR RM8, IMM8",
+      "OpCode": "C0",
+      "EncodingType": "RexPrefix",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "SAR RM16, IMM8",
+      "OpCode": "C1",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 7
+    },
+    {
+      "Instruction": "SAR RM64, IMM8",
+      "OpCode": "C1",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 7
+    }
+  ],
+  "SHL": [
+    {
+      "Instruction": "SHL RM8, CL",
+      "OpCode": "D2",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "SHL RM32, CL",
+      "OpCode": "D3",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "SHL RM8, CL",
+      "OpCode": "D2",
+      "EncodingType": "RexPrefix",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "SHL RM8, IMM8",
+      "OpCode": "C0",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "SHL RM16, CL",
+      "OpCode": "D3",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "SHL RM64, CL",
+      "OpCode": "D3",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "SHL RM32, IMM8",
+      "OpCode": "C1",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "SHL RM8, IMM8",
+      "OpCode": "C0",
+      "EncodingType": "RexPrefix",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "SHL RM16, IMM8",
+      "OpCode": "C1",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 4
+    },
+    {
+      "Instruction": "SHL RM64, IMM8",
+      "OpCode": "C1",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 4
+    }
+  ],
+  "SHR": [
+    {
+      "Instruction": "SHR RM8, CL",
+      "OpCode": "D2",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "SHR RM32, CL",
+      "OpCode": "D3",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "SHR RM8, CL",
+      "OpCode": "D2",
+      "EncodingType": "RexPrefix",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "SHR RM8, IMM8",
+      "OpCode": "C0",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "SHR RM16, CL",
+      "OpCode": "D3",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "SHR RM64, CL",
+      "OpCode": "D3",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "SHR RM32, IMM8",
+      "OpCode": "C1",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "SHR RM8, IMM8",
+      "OpCode": "C0",
+      "EncodingType": "RexPrefix",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "SHR RM16, IMM8",
+      "OpCode": "C1",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "SHR RM64, IMM8",
+      "OpCode": "C1",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 5
+    }
+  ],
+  "SBB": [
+    {
+      "Instruction": "SBB AL, IMM8",
+      "OpCode": "1C",
+      "EncodingType": "NoModRegRM"
+    },
+    {
+      "Instruction": "SBB RM8, R8",
+      "OpCode": "18"
+    },
+    {
+      "Instruction": "SBB RM32, R32",
+      "OpCode": "19"
+    },
+    {
+      "Instruction": "SBB R8, RM8",
+      "OpCode": "1A"
+    },
+    {
+      "Instruction": "SBB R32, RM32",
+      "OpCode": "1B"
+    },
+    {
+      "Instruction": "SBB RM8, IMM8",
+      "OpCode": "80",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "SBB RM32, IMM8",
+      "OpCode": "83",
+      "EncodingType": "SignExtends",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "SBB RM8, R8",
+      "OpCode": "18",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "SBB RM16, R16",
+      "OpCode": "19",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "SBB RM64, R64",
+      "OpCode": "19",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "SBB R8, RM8",
+      "OpCode": "1A",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "SBB R16, RM16",
+      "OpCode": "1B",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "SBB R64, RM64",
+      "OpCode": "1B",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "SBB AX, IMM16",
+      "OpCode": "1D",
+      "EncodingType": "NoModRegRM | SizePrefix"
+    },
+    {
+      "Instruction": "SBB RM8, IMM8",
+      "OpCode": "80",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "SBB RM16, IMM8",
+      "OpCode": "83",
+      "EncodingType": "SizePrefix | SignExtends",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "SBB RM64, IMM8",
+      "OpCode": "83",
+      "EncodingType": "RexWPrefix | SignExtends",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "SBB EAX, IMM32",
+      "OpCode": "1D",
+      "EncodingType": "NoModRegRM"
+    },
+    {
+      "Instruction": "SBB RM16, IMM16",
+      "OpCode": "81",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "SBB RAX, IMM32",
+      "OpCode": "1D",
+      "EncodingType": "RexWPrefix | NoModRegRM | SignExtends"
+    },
+    {
+      "Instruction": "SBB RM32, IMM32",
+      "OpCode": "81",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "SBB RM64, IMM32",
+      "OpCode": "81",
+      "EncodingType": "RexWPrefix | SignExtends",
+      "OpCodeExtension": 3
+    }
+  ],
+  "SCASB": [
+    {
+      "Instruction": "SCASB",
+      "OpCode": "AE"
+    }
+  ],
+  "SCASW": [
+    {
+      "Instruction": "SCASW",
+      "OpCode": "AF"
+    }
+  ],
+  "SCASD": [
+    {
+      "Instruction": "SCASD",
+      "OpCode": "AF"
+    }
+  ],
+  "SCASQ": [
+    {
+      "Instruction": "SCASQ",
+      "OpCode": "AF",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "SENDUIPI": [
+    {
+      "Instruction": "SENDUIPI R16",
+      "OpCode": "F3 0F C7",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "SENDUIPI R32",
+      "OpCode": "F3 0F C7",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "SENDUIPI R64",
+      "OpCode": "F3 0F C7",
+      "OpCodeExtension": 6
+    }
+  ],
+  "SERIALIZE": [
+    {
+      "Instruction": "SERIALIZE",
+      "OpCode": "0F 01 E8"
+    }
+  ],
+  "SETA": [
+    {
+      "Instruction": "SETA RM8",
+      "OpCode": "0F 97"
+    },
+    {
+      "Instruction": "SETA RM8",
+      "OpCode": "0F 97",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETAE": [
+    {
+      "Instruction": "SETAE RM8",
+      "OpCode": "0F 93"
+    },
+    {
+      "Instruction": "SETAE RM8",
+      "OpCode": "0F 93",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETB": [
+    {
+      "Instruction": "SETB RM8",
+      "OpCode": "0F 92"
+    },
+    {
+      "Instruction": "SETB RM8",
+      "OpCode": "0F 92",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETBE": [
+    {
+      "Instruction": "SETBE RM8",
+      "OpCode": "0F 96"
+    },
+    {
+      "Instruction": "SETBE RM8",
+      "OpCode": "0F 96",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETC": [
+    {
+      "Instruction": "SETC RM8",
+      "OpCode": "0F 92"
+    },
+    {
+      "Instruction": "SETC RM8",
+      "OpCode": "0F 92",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETE": [
+    {
+      "Instruction": "SETE RM8",
+      "OpCode": "0F 94"
+    },
+    {
+      "Instruction": "SETE RM8",
+      "OpCode": "0F 94",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETG": [
+    {
+      "Instruction": "SETG RM8",
+      "OpCode": "0F 9F"
+    },
+    {
+      "Instruction": "SETG RM8",
+      "OpCode": "0F 9F",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETGE": [
+    {
+      "Instruction": "SETGE RM8",
+      "OpCode": "0F 9D"
+    },
+    {
+      "Instruction": "SETGE RM8",
+      "OpCode": "0F 9D",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETL": [
+    {
+      "Instruction": "SETL RM8",
+      "OpCode": "0F 9C"
+    },
+    {
+      "Instruction": "SETL RM8",
+      "OpCode": "0F 9C",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETLE": [
+    {
+      "Instruction": "SETLE RM8",
+      "OpCode": "0F 9E"
+    },
+    {
+      "Instruction": "SETLE RM8",
+      "OpCode": "0F 9E",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETNA": [
+    {
+      "Instruction": "SETNA RM8",
+      "OpCode": "0F 96"
+    },
+    {
+      "Instruction": "SETNA RM8",
+      "OpCode": "0F 96",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETNAE": [
+    {
+      "Instruction": "SETNAE RM8",
+      "OpCode": "0F 92"
+    },
+    {
+      "Instruction": "SETNAE RM8",
+      "OpCode": "0F 92",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETNB": [
+    {
+      "Instruction": "SETNB RM8",
+      "OpCode": "0F 93"
+    },
+    {
+      "Instruction": "SETNB RM8",
+      "OpCode": "0F 93",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETNBE": [
+    {
+      "Instruction": "SETNBE RM8",
+      "OpCode": "0F 97"
+    },
+    {
+      "Instruction": "SETNBE RM8",
+      "OpCode": "0F 97",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETNC": [
+    {
+      "Instruction": "SETNC RM8",
+      "OpCode": "0F 93"
+    },
+    {
+      "Instruction": "SETNC RM8",
+      "OpCode": "0F 93",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETNE": [
+    {
+      "Instruction": "SETNE RM8",
+      "OpCode": "0F 95"
+    },
+    {
+      "Instruction": "SETNE RM8",
+      "OpCode": "0F 95",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETNG": [
+    {
+      "Instruction": "SETNG RM8",
+      "OpCode": "0F 9E"
+    },
+    {
+      "Instruction": "SETNG RM8",
+      "OpCode": "0F 9E",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETNGE": [
+    {
+      "Instruction": "SETNGE RM8",
+      "OpCode": "0F 9C"
+    },
+    {
+      "Instruction": "SETNGE RM8",
+      "OpCode": "0F 9C",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETNL": [
+    {
+      "Instruction": "SETNL RM8",
+      "OpCode": "0F 9D"
+    },
+    {
+      "Instruction": "SETNL RM8",
+      "OpCode": "0F 9D",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETNLE": [
+    {
+      "Instruction": "SETNLE RM8",
+      "OpCode": "0F 9F"
+    },
+    {
+      "Instruction": "SETNLE RM8",
+      "OpCode": "0F 9F",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETNO": [
+    {
+      "Instruction": "SETNO RM8",
+      "OpCode": "0F 91"
+    },
+    {
+      "Instruction": "SETNO RM8",
+      "OpCode": "0F 91",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETNP": [
+    {
+      "Instruction": "SETNP RM8",
+      "OpCode": "0F 9B"
+    },
+    {
+      "Instruction": "SETNP RM8",
+      "OpCode": "0F 9B",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETNS": [
+    {
+      "Instruction": "SETNS RM8",
+      "OpCode": "0F 99"
+    },
+    {
+      "Instruction": "SETNS RM8",
+      "OpCode": "0F 99",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETNZ": [
+    {
+      "Instruction": "SETNZ RM8",
+      "OpCode": "0F 95"
+    },
+    {
+      "Instruction": "SETNZ RM8",
+      "OpCode": "0F 95",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETO": [
+    {
+      "Instruction": "SETO RM8",
+      "OpCode": "0F 90"
+    },
+    {
+      "Instruction": "SETO RM8",
+      "OpCode": "0F 90",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETP": [
+    {
+      "Instruction": "SETP RM8",
+      "OpCode": "0F 9A"
+    },
+    {
+      "Instruction": "SETP RM8",
+      "OpCode": "0F 9A",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETPE": [
+    {
+      "Instruction": "SETPE RM8",
+      "OpCode": "0F 9A"
+    },
+    {
+      "Instruction": "SETPE RM8",
+      "OpCode": "0F 9A",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETPO": [
+    {
+      "Instruction": "SETPO RM8",
+      "OpCode": "0F 9B"
+    },
+    {
+      "Instruction": "SETPO RM8",
+      "OpCode": "0F 9B",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETS": [
+    {
+      "Instruction": "SETS RM8",
+      "OpCode": "0F 98"
+    },
+    {
+      "Instruction": "SETS RM8",
+      "OpCode": "0F 98",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETZ": [
+    {
+      "Instruction": "SETZ RM8",
+      "OpCode": "0F 94"
+    },
+    {
+      "Instruction": "SETZ RM8",
+      "OpCode": "0F 94",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    }
+  ],
+  "SETSSBSY": [
+    {
+      "Instruction": "SETSSBSY",
+      "OpCode": "F3 0F 01 E8"
+    }
+  ],
+  "SFENCE": [
+    {
+      "Instruction": "SFENCE",
+      "OpCode": "0F AE F8"
+    }
+  ],
+  "SGDT": [
+    {
+      "Instruction": "SGDT M16",
+      "OpCode": "0F 01",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "SGDT M32",
+      "OpCode": "0F 01",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "SGDT M64",
+      "OpCode": "0F 01",
+      "OpCodeExtension": 0
+    }
+  ],
+  "SHA1RNDS4": [
+    {
+      "Instruction": "SHA1RNDS4 XMM, XMMRM128, IMM8",
+      "OpCode": "0F 3A CC"
+    }
+  ],
+  "SHA1NEXTE": [
+    {
+      "Instruction": "SHA1NEXTE XMM, XMMRM128",
+      "OpCode": "0F 38 C8"
+    }
+  ],
+  "SHA1MSG1": [
+    {
+      "Instruction": "SHA1MSG1 XMM, XMMRM128",
+      "OpCode": "0F 38 C9"
+    }
+  ],
+  "SHA1MSG2": [
+    {
+      "Instruction": "SHA1MSG2 XMM, XMMRM128",
+      "OpCode": "0F 38 CA"
+    }
+  ],
+  "SHA256MSG1": [
+    {
+      "Instruction": "SHA256MSG1 XMM, XMMRM128",
+      "OpCode": "0F 38 CC"
+    }
+  ],
+  "SHA256MSG2": [
+    {
+      "Instruction": "SHA256MSG2 XMM, XMMRM128",
+      "OpCode": "0F 38 CD"
+    }
+  ],
+  "SHLD": [
+    {
+      "Instruction": "SHLD RM32, R32, CL",
+      "OpCode": "0F A5"
+    },
+    {
+      "Instruction": "SHLD RM16, R16, CL",
+      "OpCode": "0F A5",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "SHLD RM32, R32, IMM8",
+      "OpCode": "0F A4"
+    },
+    {
+      "Instruction": "SHLD RM64, R64, CL",
+      "OpCode": "0F A5",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "SHLD RM16, R16, IMM8",
+      "OpCode": "0F A4",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "SHLD RM64, R64, IMM8",
+      "OpCode": "0F A4",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "SHRD": [
+    {
+      "Instruction": "SHRD RM32, R32, CL",
+      "OpCode": "0F AD"
+    },
+    {
+      "Instruction": "SHRD RM16, R16, CL",
+      "OpCode": "0F AD",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "SHRD RM32, R32, IMM8",
+      "OpCode": "0F AC"
+    },
+    {
+      "Instruction": "SHRD RM64, R64, CL",
+      "OpCode": "0F AD",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "SHRD RM16, R16, IMM8",
+      "OpCode": "0F AC",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "SHRD RM64, R64, IMM8",
+      "OpCode": "0F AC",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "SHUFPD": [
+    {
+      "Instruction": "SHUFPD XMM, XMMRM128, IMM8",
+      "OpCode": "66 0F C6"
+    }
+  ],
+  "SHUFPS": [
+    {
+      "Instruction": "SHUFPS XMM, XMMRM128, IMM8",
+      "OpCode": "0F C6"
+    }
+  ],
+  "SIDT": [
+    {
+      "Instruction": "SIDT M16",
+      "OpCode": "0F 01",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "SIDT M32",
+      "OpCode": "0F 01",
+      "OpCodeExtension": 1
+    },
+    {
+      "Instruction": "SIDT M64",
+      "OpCode": "0F 01",
+      "OpCodeExtension": 1
+    }
+  ],
+  "SLDT": [
+    {
+      "Instruction": "SLDT RM16",
+      "OpCode": "0F 00",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 0
+    }
+  ],
+  "SMSW": [
+    {
+      "Instruction": "SMSW RM16",
+      "OpCode": "0F 01",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 4
+    }
+  ],
+  "SQRTPD": [
+    {
+      "Instruction": "SQRTPD XMM, XMMRM128",
+      "OpCode": "66 0F 51"
+    }
+  ],
+  "SQRTPS": [
+    {
+      "Instruction": "SQRTPS XMM, XMMRM128",
+      "OpCode": "0F 51"
+    }
+  ],
+  "SQRTSS": [
+    {
+      "Instruction": "SQRTSS XMM, XMMRM32",
+      "OpCode": "F3 0F 51"
+    }
+  ],
+  "STAC": [
+    {
+      "Instruction": "STAC",
+      "OpCode": "0F 01 CB"
+    }
+  ],
+  "STC": [
+    {
+      "Instruction": "STC",
+      "OpCode": "F9"
+    }
+  ],
+  "STD": [
+    {
+      "Instruction": "STD",
+      "OpCode": "FD"
+    }
+  ],
+  "STI": [
+    {
+      "Instruction": "STI",
+      "OpCode": "FB"
+    }
+  ],
+  "STMXCSR": [
+    {
+      "Instruction": "STMXCSR M32",
+      "OpCode": "0F AE",
+      "OpCodeExtension": 3
+    }
+  ],
+  "STOSB": [
+    {
+      "Instruction": "STOSB",
+      "OpCode": "AA"
+    }
+  ],
+  "STOSW": [
+    {
+      "Instruction": "STOSW",
+      "OpCode": "AB"
+    }
+  ],
+  "STOSD": [
+    {
+      "Instruction": "STOSD",
+      "OpCode": "AB"
+    }
+  ],
+  "STOSQ": [
+    {
+      "Instruction": "STOSQ",
+      "OpCode": "AB",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "STR": [
+    {
+      "Instruction": "STR RM16",
+      "OpCode": "0F 00",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 1
+    }
+  ],
+  "STUI": [
+    {
+      "Instruction": "STUI",
+      "OpCode": "F3 0F 01 EF"
+    }
+  ],
+  "SUB": [
+    {
+      "Instruction": "SUB AL, IMM8",
+      "OpCode": "2C",
+      "EncodingType": "NoModRegRM"
+    },
+    {
+      "Instruction": "SUB RM8, R8",
+      "OpCode": "28"
+    },
+    {
+      "Instruction": "SUB RM32, R32",
+      "OpCode": "29"
+    },
+    {
+      "Instruction": "SUB R8, RM8",
+      "OpCode": "2A"
+    },
+    {
+      "Instruction": "SUB R32, RM32",
+      "OpCode": "2B"
+    },
+    {
+      "Instruction": "SUB RM8, IMM8",
+      "OpCode": "80",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "SUB RM32, IMM8",
+      "OpCode": "83",
+      "EncodingType": "SignExtends",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "SUB RM8, R8",
+      "OpCode": "28",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "SUB RM16, R16",
+      "OpCode": "29",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "SUB RM64, R64",
+      "OpCode": "29",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "SUB R8, RM8",
+      "OpCode": "2A",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "SUB R16, RM16",
+      "OpCode": "2B",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "SUB R64, RM64",
+      "OpCode": "2B",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "SUB AX, IMM16",
+      "OpCode": "2D",
+      "EncodingType": "NoModRegRM | SizePrefix"
+    },
+    {
+      "Instruction": "SUB RM8, IMM8",
+      "OpCode": "80",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "SUB RM16, IMM8",
+      "OpCode": "83",
+      "EncodingType": "SizePrefix | SignExtends",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "SUB RM64, IMM8",
+      "OpCode": "83",
+      "EncodingType": "RexWPrefix | SignExtends",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "SUB EAX, IMM32",
+      "OpCode": "2D",
+      "EncodingType": "NoModRegRM"
+    },
+    {
+      "Instruction": "SUB RM16, IMM16",
+      "OpCode": "81",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "SUB RAX, IMM32",
+      "OpCode": "2D",
+      "EncodingType": "RexWPrefix | NoModRegRM | SignExtends"
+    },
+    {
+      "Instruction": "SUB RM32, IMM32",
+      "OpCode": "81",
+      "OpCodeExtension": 5
+    },
+    {
+      "Instruction": "SUB RM64, IMM32",
+      "OpCode": "81",
+      "EncodingType": "RexWPrefix | SignExtends",
+      "OpCodeExtension": 5
+    }
+  ],
+  "SUBPD": [
+    {
+      "Instruction": "SUBPD XMM, XMMRM128",
+      "OpCode": "66 0F 5C"
+    }
+  ],
+  "SUBPS": [
+    {
+      "Instruction": "SUBPS XMM, XMMRM128",
+      "OpCode": "0F 5C"
+    }
+  ],
+  "SUBSD": [
+    {
+      "Instruction": "SUBSD XMM, XMMRM64",
+      "OpCode": "F2 0F 5C"
+    }
+  ],
+  "SUBSS": [
+    {
+      "Instruction": "SUBSS XMM, XMMRM32",
+      "OpCode": "F3 0F 5C"
+    }
+  ],
+  "SWAPGS": [
+    {
+      "Instruction": "SWAPGS",
+      "OpCode": "0F 01 F8"
+    }
+  ],
+  "SYSCALL": [
+    {
+      "Instruction": "SYSCALL",
+      "OpCode": "0F 05"
+    }
+  ],
+  "SYSENTER": [
+    {
+      "Instruction": "SYSENTER",
+      "OpCode": "0F 34"
+    }
+  ],
+  "SYSEXIT": [
+    {
+      "Instruction": "SYSEXIT",
+      "OpCode": "0F 35"
+    },
+    {
+      "Instruction": "SYSEXIT",
+      "OpCode": "0F 35",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "SYSRET": [
+    {
+      "Instruction": "SYSRET",
+      "OpCode": "0F 07"
+    },
+    {
+      "Instruction": "SYSRET",
+      "OpCode": "0F 07",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "TEST": [
+    {
+      "Instruction": "TEST RM8, R8",
+      "OpCode": "84"
+    },
+    {
+      "Instruction": "TEST RM32, R32",
+      "OpCode": "85"
+    },
+    {
+      "Instruction": "TEST RM8, IMM8",
+      "OpCode": "F6",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "TEST RM8, R8",
+      "OpCode": "84",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "TEST RM16, R16",
+      "OpCode": "85",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "TEST RM64, R64",
+      "OpCode": "85",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "TEST AX, IMM16",
+      "OpCode": "A9",
+      "EncodingType": "NoModRegRM | SizePrefix"
+    },
+    {
+      "Instruction": "TEST RM8, IMM8",
+      "OpCode": "F6",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "TEST EAX, IMM32",
+      "OpCode": "A9",
+      "EncodingType": "NoModRegRM"
+    },
+    {
+      "Instruction": "TEST RM16, IMM16",
+      "OpCode": "F7",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "TEST RAX, IMM32",
+      "OpCode": "A9",
+      "EncodingType": "RexWPrefix | NoModRegRM | SignExtends"
+    },
+    {
+      "Instruction": "TEST RM32, IMM32",
+      "OpCode": "F7",
+      "OpCodeExtension": 0
+    },
+    {
+      "Instruction": "TEST RM64, IMM32",
+      "OpCode": "F7",
+      "EncodingType": "RexWPrefix | SignExtends",
+      "OpCodeExtension": 0
+    }
+  ],
+  "TESTUI": [
+    {
+      "Instruction": "TESTUI",
+      "OpCode": "F3 0F 01 ED"
+    }
+  ],
+  "TZCNT": [
+    {
+      "Instruction": "TZCNT R32, RM32",
+      "OpCode": "F3 0F BC"
+    },
+    {
+      "Instruction": "TZCNT R16, RM16",
+      "OpCode": "F3 0F BC",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "TZCNT R64, RM64",
+      "OpCode": "F3 0F BC",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "UCOMISD": [
+    {
+      "Instruction": "UCOMISD XMM, XMMRM64",
+      "OpCode": "66 0F 2E"
+    }
+  ],
+  "UCOMISS": [
+    {
+      "Instruction": "UCOMISS XMM, XMMRM32",
+      "OpCode": "0F 2E"
+    }
+  ],
+  "UD01": [
+    {
+      "Instruction": "UD01 R32, RM32",
+      "OpCode": "0F FF"
+    }
+  ],
+  "UD1": [
+    {
+      "Instruction": "UD1 R32, RM32",
+      "OpCode": "0F B9"
+    }
+  ],
+  "UD2": [
+    {
+      "Instruction": "UD2",
+      "OpCode": "0F 0B"
+    }
+  ],
+  "UIRET": [
+    {
+      "Instruction": "UIRET",
+      "OpCode": "F3 0F 01 EC"
+    }
+  ],
+  "UNPCKHPD": [
+    {
+      "Instruction": "UNPCKHPD XMM, XMMRM128",
+      "OpCode": "66 0F 15"
+    }
+  ],
+  "UNPCKHPS": [
+    {
+      "Instruction": "UNPCKHPS XMM, XMMRM128",
+      "OpCode": "0F 15"
+    }
+  ],
+  "UNPCKLPD": [
+    {
+      "Instruction": "UNPCKLPD XMM, XMMRM128",
+      "OpCode": "66 0F 14"
+    }
+  ],
+  "UNPCKLPS": [
+    {
+      "Instruction": "UNPCKLPS XMM, XMMRM128",
+      "OpCode": "0F 14"
+    }
+  ],
+  "VERR": [
+    {
+      "Instruction": "VERR RM16",
+      "OpCode": "0F 00",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 4
+    }
+  ],
+  "VERW": [
+    {
+      "Instruction": "VERW RM16",
+      "OpCode": "0F 00",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 5
+    }
+  ],
+  "WAIT": [
+    {
+      "Instruction": "WAIT",
+      "OpCode": "9B"
+    }
+  ],
+  "FWAIT": [
+    {
+      "Instruction": "FWAIT",
+      "OpCode": "9B"
+    }
+  ],
+  "WBINVD": [
+    {
+      "Instruction": "WBINVD",
+      "OpCode": "0F 09"
+    }
+  ],
+  "WBNOINVD": [
+    {
+      "Instruction": "WBNOINVD",
+      "OpCode": "F3 0F 09"
+    }
+  ],
+  "WRFSBASE": [
+    {
+      "Instruction": "WRFSBASE R32",
+      "OpCode": "F3 0F AE",
+      "OpCodeExtension": 2
+    },
+    {
+      "Instruction": "WRFSBASE R64",
+      "OpCode": "F3 0F AE",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 2
+    }
+  ],
+  "WRGSBASE": [
+    {
+      "Instruction": "WRGSBASE R32",
+      "OpCode": "F3 0F AE",
+      "OpCodeExtension": 3
+    },
+    {
+      "Instruction": "WRGSBASE R64",
+      "OpCode": "F3 0F AE",
+      "EncodingType": "RexWPrefix",
+      "OpCodeExtension": 3
+    }
+  ],
+  "WRMSR": [
+    {
+      "Instruction": "WRMSR",
+      "OpCode": "0F 30"
+    }
+  ],
+  "WRPKRU": [
+    {
+      "Instruction": "WRPKRU",
+      "OpCode": "0F 01 EF"
+    }
+  ],
+  "XABORT": [
+    {
+      "Instruction": "XABORT IMM8",
+      "OpCode": "C6 F8"
+    }
+  ],
+  "XACQUIRE": [
+    {
+      "Instruction": "XACQUIRE",
+      "OpCode": "F2"
+    }
+  ],
+  "XRELEASE": [
+    {
+      "Instruction": "XRELEASE",
+      "OpCode": "F3"
+    }
+  ],
+  "XADD": [
+    {
+      "Instruction": "XADD RM8, R8",
+      "OpCode": "0F C0"
+    },
+    {
+      "Instruction": "XADD RM32, R32",
+      "OpCode": "0F C1"
+    },
+    {
+      "Instruction": "XADD RM8, R8",
+      "OpCode": "0F C0",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "XADD RM16, R16",
+      "OpCode": "0F C1",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "XADD RM64, R64",
+      "OpCode": "0F C1",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "XBEGIN": [
+    {
+      "Instruction": "XBEGIN IMM16",
+      "OpCode": "C7 F8",
+      "EncodingType": "RelativeJump | SizePrefix"
+    },
+    {
+      "Instruction": "XBEGIN IMM32",
+      "OpCode": "C7 F8",
+      "EncodingType": "RelativeJump"
+    }
+  ],
+  "XCHG": [
+    {
+      "Instruction": "XCHG EAX, R32",
+      "OpCode": "90",
+      "EncodingType": "NoModRegRM | AddRegisterToOpCode"
+    },
+    {
+      "Instruction": "XCHG R32, EAX",
+      "OpCode": "90",
+      "EncodingType": "NoModRegRM | AddRegisterToOpCode"
+    },
+    {
+      "Instruction": "XCHG AX, R16",
+      "OpCode": "90",
+      "EncodingType": "NoModRegRM | SizePrefix | AddRegisterToOpCode"
+    },
+    {
+      "Instruction": "XCHG R16, AX",
+      "OpCode": "90",
+      "EncodingType": "NoModRegRM | SizePrefix | AddRegisterToOpCode"
+    },
+    {
+      "Instruction": "XCHG RAX, R64",
+      "OpCode": "90",
+      "EncodingType": "RexWPrefix | NoModRegRM | AddRegisterToOpCode"
+    },
+    {
+      "Instruction": "XCHG R64, RAX",
+      "OpCode": "90",
+      "EncodingType": "RexWPrefix | NoModRegRM | AddRegisterToOpCode"
+    },
+    {
+      "Instruction": "XCHG RM8, R8",
+      "OpCode": "86"
+    },
+    {
+      "Instruction": "XCHG R8, RM8",
+      "OpCode": "86"
+    },
+    {
+      "Instruction": "XCHG RM32, R32",
+      "OpCode": "87"
+    },
+    {
+      "Instruction": "XCHG R32, RM32",
+      "OpCode": "87"
+    },
+    {
+      "Instruction": "XCHG RM8, R8",
+      "OpCode": "86",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "XCHG R8, RM8",
+      "OpCode": "86",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "XCHG RM16, R16",
+      "OpCode": "87",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "XCHG R16, RM16",
+      "OpCode": "87",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "XCHG RM64, R64",
+      "OpCode": "87",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "XCHG R64, RM64",
+      "OpCode": "87",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "XEND": [
+    {
+      "Instruction": "XEND",
+      "OpCode": "0F 01 D5"
+    }
+  ],
+  "XGETBV": [
+    {
+      "Instruction": "XGETBV",
+      "OpCode": "0F 01 D0"
+    }
+  ],
+  "XLAT": [
+    {
+      "Instruction": "XLAT M8",
+      "OpCode": "D7"
+    }
+  ],
+  "XLATB": [
+    {
+      "Instruction": "XLATB",
+      "OpCode": "D7"
+    },
+    {
+      "Instruction": "XLATB",
+      "OpCode": "D7",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
+  "XOR": [
+    {
+      "Instruction": "XOR AL, IMM8",
+      "OpCode": "34",
+      "EncodingType": "NoModRegRM"
+    },
+    {
+      "Instruction": "XOR RM8, R8",
+      "OpCode": "30"
+    },
+    {
+      "Instruction": "XOR RM32, R32",
+      "OpCode": "31"
+    },
+    {
+      "Instruction": "XOR R8, RM8",
+      "OpCode": "32"
+    },
+    {
+      "Instruction": "XOR R32, RM32",
+      "OpCode": "33"
+    },
+    {
+      "Instruction": "XOR RM8, IMM8",
+      "OpCode": "80",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "XOR RM32, IMM8",
+      "OpCode": "83",
+      "EncodingType": "SignExtends",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "XOR RM8, R8",
+      "OpCode": "30",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "XOR RM16, R16",
+      "OpCode": "31",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "XOR RM64, R64",
+      "OpCode": "31",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "XOR R8, RM8",
+      "OpCode": "32",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+    },
+    {
+      "Instruction": "XOR R16, RM16",
+      "OpCode": "33",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "XOR R64, RM64",
+      "OpCode": "33",
+      "EncodingType": "RexWPrefix"
+    },
+    {
+      "Instruction": "XOR AX, IMM16",
+      "OpCode": "35",
+      "EncodingType": "NoModRegRM | SizePrefix"
+    },
+    {
+      "Instruction": "XOR RM8, IMM8",
+      "OpCode": "80",
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "XOR RM16, IMM8",
+      "OpCode": "83",
+      "EncodingType": "SizePrefix | SignExtends",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "XOR RM64, IMM8",
+      "OpCode": "83",
+      "EncodingType": "RexWPrefix | SignExtends",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "XOR EAX, IMM32",
+      "OpCode": "35",
+      "EncodingType": "NoModRegRM"
+    },
+    {
+      "Instruction": "XOR RM16, IMM16",
+      "OpCode": "81",
+      "EncodingType": "SizePrefix",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "XOR RAX, IMM32",
+      "OpCode": "35",
+      "EncodingType": "RexWPrefix | NoModRegRM | SignExtends"
+    },
+    {
+      "Instruction": "XOR RM32, IMM32",
+      "OpCode": "81",
+      "OpCodeExtension": 6
+    },
+    {
+      "Instruction": "XOR RM64, IMM32",
+      "OpCode": "81",
+      "EncodingType": "RexWPrefix | SignExtends",
+      "OpCodeExtension": 6
+    }
+  ],
+  "XORPS": [
+    {
+      "Instruction": "XORPS XMM, XMMRM128",
+      "OpCode": "0F 57"
+    }
+  ],
+  "XRESLDTRK": [
+    {
+      "Instruction": "XRESLDTRK",
+      "OpCode": "F2 0F 01 E9"
+    }
+  ],
+  "XSETBV": [
+    {
+      "Instruction": "XSETBV",
+      "OpCode": "0F 01 D1"
+    }
+  ],
+  "XSUSLDTRK": [
+    {
+      "Instruction": "XSUSLDTRK",
+      "OpCode": "F2 0F 01 E8"
+    }
+  ],
+  "XTEST": [
+    {
+      "Instruction": "XTEST",
+      "OpCode": "0F 01 D6"
+    }
+  ],
+  "PREFETCHWT1": [
+    {
+      "Instruction": "PREFETCHWT1 M8",
+      "OpCode": "0F 0D",
+      "OpCodeExtension": 2
     }
   ]
 }
