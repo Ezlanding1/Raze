@@ -7,75 +7,75 @@ using System.Threading.Tasks;
 
 namespace Raze;
 
-internal class TokenList
+internal partial class TokenList
 {
     // Higher tokens have a higher precedence
-    public static readonly Dictionary<Token.TokenType, string> Tokens = new Dictionary<Token.TokenType, string>()
+    public static readonly Dictionary<Token.TokenType, Regex> Tokens = new Dictionary<Token.TokenType, Regex>()
     {
         // Non Finite Tokens
-        { Token.TokenType.BINARY, /*lang=regex*/@"0[bB][0-1]+" },
-        { Token.TokenType.HEX, /*lang=regex*/@"0[xX][0-9a-fA-F]+" },
-        { Token.TokenType.FLOATING, /*lang=regex*/@"[0-9]+\.(?![a-zA-Z_])[0-9]*" },
-        { Token.TokenType.UNSIGNED_INTEGER, /*lang=regex*/@"[0-9]+[uU]" },
-        { Token.TokenType.INTEGER, /*lang=regex*/@"[0-9]+" },
-        { Token.TokenType.IDENTIFIER, /*lang=regex*/@"[a-zA-Z_][a-zA-Z0-9_]*" },
-        { Token.TokenType.REF_STRING, /*lang=regex*/"\"[^\"^\r^\n^;]*\"?" },
-        { Token.TokenType.STRING, /*lang=regex*/"\'[^\'^\r^\n^;]*\'?" },
-        { Token.TokenType.WHITESPACE, /*lang=regex*/@"[\s]" },
+        { Token.TokenType.BINARY, Patterns.BINARY() },
+        { Token.TokenType.HEX, Patterns.HEX() },
+        { Token.TokenType.FLOATING, Patterns.FLOATING() },
+        { Token.TokenType.UNSIGNED_INTEGER, Patterns.UNSIGNED_INTEGER() },
+        { Token.TokenType.INTEGER, Patterns.INTEGER() },
+        { Token.TokenType.IDENTIFIER, Patterns.IDENTIFIER() },
+        { Token.TokenType.REF_STRING, Patterns.REF_STRING() },
+        { Token.TokenType.STRING, Patterns.STRING() },
+        { Token.TokenType.WHITESPACE, Patterns.WHITESPACE() },
 
         // Comparison Operators
-        { Token.TokenType.EQUALTO, /*lang=regex*/"[=][=]" },
-        { Token.TokenType.GREATEREQUAL, /*lang=regex*/"[>][=]" },
-        { Token.TokenType.LESSEQUAL, /*lang=regex*/"[<][=]" },
-        { Token.TokenType.NOTEQUALTO, /*lang=regex*/"[!][=]" },
+        { Token.TokenType.EQUALTO, Patterns.EQUALTO() },
+        { Token.TokenType.GREATEREQUAL, Patterns.GREATEREQUAL() },
+        { Token.TokenType.LESSEQUAL, Patterns.LESSEQUAL() },
+        { Token.TokenType.NOTEQUALTO, Patterns.NOTEQUALTO() },
 
         // Assignment Operators
-        { Token.TokenType.PLUSPLUS, /*lang=regex*/"[+][+]" },
-        { Token.TokenType.MINUSMINUS, /*lang=regex*/"[-][-]" },
-        { Token.TokenType.EQUALS, "=" },
+        { Token.TokenType.PLUSPLUS, Patterns.PLUSPLUS() },
+        { Token.TokenType.MINUSMINUS, Patterns.MINUSMINUS() },
+        { Token.TokenType.EQUALS, Patterns.EQUALS() },
 
         // Logical Operators
-        { Token.TokenType.OR, /*lang=regex*/"[|][|]" },
-        { Token.TokenType.AND, /*lang=regex*/"[&][&]" },
+        { Token.TokenType.OR, Patterns.OR() },
+        { Token.TokenType.AND, Patterns.AND() },
         
         // Mathematical Operators
-        { Token.TokenType.PLUS, "[+]" },
-        { Token.TokenType.MINUS, "[-]" },
-        { Token.TokenType.DIVIDE, "[/]" },
-        { Token.TokenType.MULTIPLY, "[*]" },
-        { Token.TokenType.MODULO, "[%]" },
+        { Token.TokenType.PLUS, Patterns.PLUS() },
+        { Token.TokenType.MINUS, Patterns.MINUS() },
+        { Token.TokenType.DIVIDE, Patterns.DIVIDE() },
+        { Token.TokenType.MULTIPLY, Patterns.MULTIPLY() },
+        { Token.TokenType.MODULO, Patterns.MODULO() },
 
         // Bitwise Operators
-        { Token.TokenType.SHIFTRIGHT, /*lang=regex*/"[>][>]" },
-        { Token.TokenType.SHIFTLEFT, /*lang=regex*/"[<][<]" },
+        { Token.TokenType.SHIFTRIGHT, Patterns.SHIFTRIGHT() },
+        { Token.TokenType.SHIFTLEFT, Patterns.SHIFTLEFT() },
 
-        { Token.TokenType.B_OR, "[|]" },
-        { Token.TokenType.B_AND, "[&]" },
-        { Token.TokenType.B_XOR, @"[\^]" },
-        { Token.TokenType.B_NOT, @"[~]" },
+        { Token.TokenType.B_OR, Patterns.B_OR() },
+        { Token.TokenType.B_AND, Patterns.B_AND() },
+        { Token.TokenType.B_XOR, Patterns.B_XOR() },
+        { Token.TokenType.B_NOT, Patterns.B_NOT() },
 
         // GreaterThan and LessThan
-        { Token.TokenType.GREATER, "[>]" },
-        { Token.TokenType.LESS, "[<]" },
+        { Token.TokenType.GREATER, Patterns.GREATER() },
+        { Token.TokenType.LESS, Patterns.LESS() },
 
         // Unary Operators
-        { Token.TokenType.NOT, "[!]" },
+        { Token.TokenType.NOT, Patterns.NOT() },
 
         // Braces and Brackets
-        { Token.TokenType.LPAREN, "[(]" },
-        { Token.TokenType.RPAREN, "[)]" },
-        { Token.TokenType.LBRACE, "[{]" },
-        { Token.TokenType.RBRACE, "[}]" },
-        { Token.TokenType.LBRACKET, "[[]" },
-        { Token.TokenType.RBRACKET, "[]]" },
+        { Token.TokenType.LPAREN, Patterns.LPAREN() },
+        { Token.TokenType.RPAREN, Patterns.RPAREN() },
+        { Token.TokenType.LBRACE, Patterns.LBRACE() },
+        { Token.TokenType.RBRACE, Patterns.RBRACE() },
+        { Token.TokenType.LBRACKET, Patterns.LBRACKET() },
+        { Token.TokenType.RBRACKET, Patterns.RBRACKET() },
 
         // Others
-        { Token.TokenType.COMMA, "[,]" },
-        { Token.TokenType.DOT, "[.]" },
-        { Token.TokenType.COLON, "[:]" },
-        { Token.TokenType.SEMICOLON, "[;]" },
-        { Token.TokenType.DOLLAR, "[$]" },
-        { Token.TokenType.COMMENT, /*lang=regex*/"(?m)[#].*$" },
+        { Token.TokenType.COMMA, Patterns.COMMA() },
+        { Token.TokenType.DOT, Patterns.DOT() },
+        { Token.TokenType.COLON, Patterns.COLON() },
+        { Token.TokenType.SEMICOLON, Patterns.SEMICOLON() },
+        { Token.TokenType.DOLLAR, Patterns.DOLLAR() },
+        { Token.TokenType.COMMENT, Patterns.COMMENT() },
     };
     
     public static readonly HashSet<string> Reserved = new HashSet<string>()

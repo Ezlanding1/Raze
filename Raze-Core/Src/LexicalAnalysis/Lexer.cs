@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Raze;
 
-public class Lexer
+public partial class Lexer
 {
     const int StringTruncateLength = 40;
 
@@ -55,15 +55,15 @@ public class Lexer
         );
 
         if (tokenDefinition == null)
-                {
+        {
             Diagnostics.Report(new Diagnostic.LexDiagnostic(Diagnostic.DiagnosticName.IllegalCharError, location, lexeme[0]));
             location = new(location.Ln, location.Col + 1);
-                    return null;
-                }
+            return null;
+        }
 
         var pattern = tokenDefinition.type;
         Token? token = pattern switch
-                {
+        {
             Token.TokenType.WHITESPACE or
             Token.TokenType.COMMENT => null,
 
@@ -112,34 +112,29 @@ public class Lexer
         // Intializes the Regexes for escape characters
         // In accordance to the escape character standard: https://www.ibm.com/docs/en/zos/2.4.0?topic=set-escape-sequences
 
-        stringEscapeCodes = new (Regex, char)[12];
-
-        stringEscapeCodes[0] = (new Regex(@"\\\\"), '\\');
-        stringEscapeCodes[1] = (new Regex(@"\\a"), '\a');
-        stringEscapeCodes[2] = (new Regex(@"\\b"), '\b');
-        stringEscapeCodes[3] = (new Regex(@"\\f"), '\f');
-        stringEscapeCodes[4] = (new Regex(@"\\n"), '\n');
-        stringEscapeCodes[5] = (new Regex(@"\\r"), '\r');
-        stringEscapeCodes[6] = (new Regex(@"\\t"), '\t');
-        stringEscapeCodes[7] = (new Regex(@"\\v"), '\v');
-        stringEscapeCodes[8] = (new Regex(@"\\'"), '\'');
-        stringEscapeCodes[9] = (new Regex(@"\\\"""), '\"');
-        stringEscapeCodes[10] =  (new Regex(@"\\\?"), '?');
-        stringEscapeCodes[11] =  (new Regex(@"\\0"), '\0');
+        stringEscapeCodes =
+        [
+            (TokenList.Patterns.EscapeBackslash(), '\\'),
+            (TokenList.Patterns.EscapeA(), '\a'),
+            (TokenList.Patterns.EscapeB(), '\b'),
+            (TokenList.Patterns.EscapeF(), '\f'),
+            (TokenList.Patterns.EscapeN(), '\n'),
+            (TokenList.Patterns.EscapeR(), '\r'),
+            (TokenList.Patterns.EscapeT(), '\t'),
+            (TokenList.Patterns.EscapeV(), '\v'),
+            (TokenList.Patterns.EscapeSingleQuote(), '\''),
+            (TokenList.Patterns.EscapeDoubleQuote(), '\"'),
+            (TokenList.Patterns.EscapeQuestionMark(), '?'),
+            (TokenList.Patterns.Escape0(), '\0'),
+        ];
     }
 }
 
 // Holds a token's regex and literal
-class TokenDefinition
+class TokenDefinition(Token.TokenType type, Regex pattern)
 {
-    public Token.TokenType type;
-    public Regex regex;
-
-    public TokenDefinition(Token.TokenType type, string pattern)
-    {
-        this.type = type;
-        regex = new Regex(pattern);
-    }
+    public Token.TokenType type = type;
+    public Regex regex = pattern;
 
     public Match Match(string str)
     {
