@@ -16,117 +16,76 @@ public class Lexer
     TokenDefinition[] tokenDefinitions;
     public static (Regex, char)[] stringEscapeCodes;
     StreamReader streamReader;
-    int line;
-    int col;
-    int index;
+    Location location;
 
     public Lexer(FileInfo fileName)
     {
         this.tokens = new();
         this.streamReader = new StreamReader(fileName.OpenRead());
-        this.line = 1;
-        this.col = 0;
-        this.index = 0;
+        location = new(1, 1);
         InitRegex();
     }
 
     public List<Token> Tokenize()
     {
-        string line;
+        string? line;
         while ((line = streamReader.ReadLine()) != null)
         {
-            string lexeme;
-            while ((lexeme = line.Substring(index)) != "")
+            while (location.Idx < line.Length)
             {
-                Token token = Generate(lexeme);
+                Token? token = Generate(line[location.Idx..]);
                 if (token != null)
                     tokens.Add(token);
             }
-            index = 0;
+            location = new(location.Ln + 1, 1);
         }
         return tokens;
     }
 
-    private Token Generate(string lexeme)
+    private Token? Generate(string lexeme)
     {
-        foreach (TokenDefinition pattern in tokenDefinitions)
-        {
-            var match = pattern.Match(lexeme);
+        Match match = Match.Empty;
 
-            if (match.Success && match.Index == 0)
+        var tokenDefinition = tokenDefinitions.FirstOrDefault(
+            pattern => 
             {
-                index += match.Length;
-                col += match.Length;
-
-                if (pattern.type == Token.TokenType.WHITESPACE)
-                {
-                    if (lexeme[0] == '\n')
-                    {
-                        line++;
-                        col = 0;
-                    }
-                    return null;
-                }
-                if (pattern.type == Token.TokenType.IDENTIFIER)
-                {
-                    if (TokenList.Reserved.Contains(match.ToString()))
-                    {
-                        return new Token(Token.TokenType.RESERVED, match.ToString());
-                    }
-                }
-                if (pattern.type == Token.TokenType.COMMENT)
-                {
-                    return null;
-                }
-                if (pattern.type == Token.TokenType.STRING)
-                {
-                    string str = match.ToString();
-                    if (str.Length == 2)
-                    {
-                        Diagnostics.Report(new Diagnostic.LexDiagnostic(Diagnostic.DiagnosticName.EmptyStringLiteral, new object[] { }, line, col));
-                    }
-                    if (str[^1] != '\'' || str.Length == 1)
-                    {
-                        Diagnostics.Report(new Diagnostic.LexDiagnostic(Diagnostic.DiagnosticName.NonTerminatedString, new object[] { (str.Length <= StringTruncateLength) ? str + "'" : str.Substring(0, StringTruncateLength) + "'..." }, line, col));
-                    }
-                    return new Token(pattern.type, Escape(str[1..^1]));
-                }
-                if (pattern.type == Token.TokenType.REF_STRING)
-                {
-                    string str = match.ToString();
-                    if (str[^1] != '\"' || str.Length == 1)
-                    {
-                        Diagnostics.Report(new Diagnostic.LexDiagnostic(Diagnostic.DiagnosticName.NonTerminatedString, new object[] { (str.Length <= StringTruncateLength) ? str + "'" : str.Substring(0, StringTruncateLength) + "'..." }, line, col));
-                    }
-                    return new Token(pattern.type, Escape(str[1..^1]));
-                }
-                if (pattern.type == Token.TokenType.FLOATING)
-                {
-                    string floating = match.ToString();
-                    if (floating[^1] == '.')
-                    {
-                        Diagnostics.Report(new Diagnostic.LexDiagnostic(Diagnostic.DiagnosticName.InvalidFormattedNumber, new object[] { floating }, line, col));
-                    }
-                    return new Token(pattern.type, floating);
-                }
-                if (pattern.type == Token.TokenType.HEX || pattern.type == Token.TokenType.BINARY)
-                {
-                    return new Token(pattern.type, match.ToString()[2..]);
-                }
-                if (pattern.type == Token.TokenType.UNSIGNED_INTEGER)
-                {
-                    return new Token(pattern.type, match.ToString()[..^1]);
-                }
-                return new Token(pattern.type, match.ToString());
+                match = pattern.Match(lexeme);
+                return match.Success && match.Index == 0;
             }
-        }
+        );
 
-        Diagnostics.Report(new Diagnostic.LexDiagnostic(Diagnostic.DiagnosticName.IllegalCharError, new object[] { lexeme[0] }, line, col));
-        index++;
-        return null;
+        if (tokenDefinition == null)
+                {
+            Diagnostics.Report(new Diagnostic.LexDiagnostic(Diagnostic.DiagnosticName.IllegalCharError, location, lexeme[0]));
+            location = new(location.Ln, location.Col + 1);
+                    return null;
+                }
+
+        var pattern = tokenDefinition.type;
+        Token? token = pattern switch
+                {
+            Token.TokenType.WHITESPACE or
+            Token.TokenType.COMMENT => null,
+
+            Token.TokenType.IDENTIFIER => LexIdentifier(match, pattern),
+            Token.TokenType.STRING => LexString(match, pattern),
+            Token.TokenType.REF_STRING => LexRefString(match, pattern),
+            Token.TokenType.FLOATING => LexFloating(match, pattern),
+
+            Token.TokenType.HEX or
+            Token.TokenType.BINARY => new Token(pattern, match.ToString()[2..], location),
+
+            Token.TokenType.UNSIGNED_INTEGER => new Token(pattern, match.ToString()[..^1], location),
+
+            _ => new Token(pattern, match.ToString(), location)
+
+        };
+
+        location = new(location.Ln, location.Col + match.Length);
+        return token;
     }
 
-    private string Escape (string str)
+    private static string Escape(string str)
     {
         foreach ((Regex, char) regex in stringEscapeCodes)
         {

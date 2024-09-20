@@ -14,10 +14,10 @@ public partial class Analyzer
         private protected string import = import;
         private protected ExprUtils.QueueList<Token> name = name;
 
-        public RuntimeLibrarySingleton(string import, string name) : this(import, new ExprUtils.QueueList<Token>() { new(Token.TokenType.IDENTIFIER, name) })
+        public RuntimeLibrarySingleton(string import, string name) : this(import, new ExprUtils.QueueList<Token>() { new(Token.TokenType.IDENTIFIER, name, Location.NoLocation) })
         {
         }
-        public RuntimeLibrarySingleton(string import, List<string> name) : this(import, new ExprUtils.QueueList<Token>(name.Select(x => new Token(Token.TokenType.IDENTIFIER, x)).ToList()))
+        public RuntimeLibrarySingleton(string import, List<string> name) : this(import, new ExprUtils.QueueList<Token>(name.Select(x => new Token(Token.TokenType.IDENTIFIER, x, Location.NoLocation)).ToList()))
         {
         }
 
@@ -95,7 +95,7 @@ public partial class Analyzer
                 SymbolTableSingleton.SymbolTable.SetContext(SymbolTableSingleton.SymbolTable.GetRuntimeImport(fileInfo).importClass);
                 InitialPass.HandleTypeNameReference(name);
                 
-                Expr.Function result = SymbolTableSingleton.SymbolTable.GetFunction(functionName, argumentTypes.Select(x => x.Value).ToArray());
+                Expr.Function result = SymbolTableSingleton.SymbolTable.GetFunction(new(Token.TokenType.IDENTIFIER, functionName, Location.NoLocation), argumentTypes.Select(x => x.Value).ToArray());
 
                 if (result == SymbolTableSingleton.SymbolTable.FunctionNotFoundDefinition)
                 {

@@ -146,7 +146,7 @@ public partial class Analyzer
                 new Expr.Import(
                     new Expr.Import.FileInfo("Raze.rz"),
                     false,
-                    new (new ([new(Token.TokenType.IDENTIFIER, "Std")]), true)
+                    new (new ([new(Token.TokenType.IDENTIFIER, "Std", Location.NoLocation)]), true)
                 )
             }
         };
@@ -274,7 +274,7 @@ public partial class Analyzer
 
             if (variable == null)
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UndefinedReference, "variable", key.lexeme));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UndefinedReference, key.location, "variable", key.lexeme));
                 return VarNotFoundData;
             }
 
@@ -282,7 +282,7 @@ public partial class Analyzer
             {
                 if (!assigns && !value.initialized)
                 {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.VariableUsedBeforeInitialization, key.lexeme));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.VariableUsedBeforeInitialization, key.location, key.lexeme));
                 }
             }
 
@@ -334,12 +334,12 @@ public partial class Analyzer
 
             if (_class == null)
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UndefinedReference, "class", key.lexeme));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UndefinedReference, key.location, "class", key.lexeme));
                 return new SpecialObjects.Any(key);
             }
             else if (_class is Expr.Function)
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UndefinedReference, "function", key.lexeme));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UndefinedReference, key.location, "function", key.lexeme));
                 return ClassNotFoundDefinition;
             }
             return _class;
@@ -379,12 +379,12 @@ public partial class Analyzer
 
             if (_class == null)
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UndefinedReference, "class", key.lexeme));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UndefinedReference, key.location, "class", key.lexeme));
                 return new SpecialObjects.Any(key);
             }
             else if (_class is Expr.Function)
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UndefinedReference, "function", key.lexeme));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UndefinedReference, key.location, "function", key.lexeme));
                 return ClassNotFoundDefinition;
             }
             return _class;
@@ -415,9 +415,9 @@ public partial class Analyzer
             return null;
         }
 
-        public Expr.Function GetFunction(string key, Expr.Type[] types)
+        public Expr.Function GetFunction(Token key, Expr.Type[] types)
         {
-            Expr.Function? function = _GetFunction(key, types);
+            Expr.Function? function = _GetFunction(key.lexeme, types);
 
             if (function == null)
             {
@@ -429,11 +429,11 @@ public partial class Analyzer
         {
             return (symbol = _GetFunction(key, types)) != null;
         }
-        public Expr.Function FunctionSearchFail(string key, Expr.Type[] types)
+        public Expr.Function FunctionSearchFail(Token key, Expr.Type[] types)
         {
             if (!types.Any(x => x == TypeCheckUtils.anyType))
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UndefinedReference, "function", Expr.Call.CallNameToString(key, types)));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UndefinedReference, key.location, "function", Expr.Call.CallNameToString(key.lexeme, types)));
             }
             return FunctionNotFoundDefinition;
         }
@@ -474,18 +474,18 @@ public partial class Analyzer
                 {
                     if (duplicate.name.lexeme == "Main")
                     {
-                        Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.MainDoubleDeclaration));
+                        Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.MainDoubleDeclaration, duplicate.name.location, []));
                     }
 
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, "function", duplicate));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, duplicate.name.location, "function", duplicate));
                 }
                 else if (duplicate is Expr.Primitive)
                 {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, "primitive class", duplicate.name.lexeme));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, duplicate.name.location, "primitive class", duplicate.name.lexeme));
                 }
                 else
                 {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, "class", duplicate.name.lexeme));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, duplicate.name.location, "class", duplicate.name.lexeme));
                 }
             }
         }
@@ -493,7 +493,7 @@ public partial class Analyzer
         {
             foreach (var duplicate in declarations.GroupBy(x => x.name.lexeme).Where(x => x.Count() > 1).Select(x => x.ElementAt(0)))
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, "variable", duplicate.name.lexeme));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, duplicate.name.location, "variable",  duplicate.name.lexeme));
             }
         }
 
@@ -554,7 +554,7 @@ public partial class Analyzer
                 {
                     if (item is not Expr.Function function)
                     {
-                        Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidCall, item));
+                        Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidCall, item.name.location, item));
                         return false;
                     }
                     if (ParamMatch(types, function))
@@ -565,7 +565,7 @@ public partial class Analyzer
                         }
                         else
                         {
-                            Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.AmbiguousCall, value, function));
+                            Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.AmbiguousCall, function.name.location, value, function));
                             return false;
                         }
                     }

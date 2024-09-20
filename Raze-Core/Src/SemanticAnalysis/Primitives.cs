@@ -176,7 +176,7 @@ public partial class Analyzer
         }
         public static Diagnostic.AnalyzerDiagnostic InvalidOperation(Token op, string type1, string type2)
         {
-            return new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOperatorCall_Arity2, type1, type2, $"{SymbolToPrimitiveName(op)}({type1}, {type2})");
+            return new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOperatorCall_Arity2, op.location, type1, type2, $"{SymbolToPrimitiveName(op)}({type1}, {type2})");
         }
 
         // Unary Operation
@@ -194,7 +194,7 @@ public partial class Analyzer
 
             if (pName == "Increment" || pName == "Decrement")
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifier_Ref));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifier_Ref, op.location, []));
                 return Parser.VoidTokenType;
             }
 
@@ -244,7 +244,7 @@ public partial class Analyzer
         }
         public static Diagnostic.AnalyzerDiagnostic InvalidOperation(Token op, string type)
         {
-            return new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOperatorCall_Arity1, type, SymbolToPrimitiveName(op));
+            return new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOperatorCall_Arity1, op.location, type, SymbolToPrimitiveName(op));
         }
 
         public static bool IsVoidType(Expr.Type type)

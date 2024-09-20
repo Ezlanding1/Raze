@@ -861,7 +861,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         bool hasVTable = expr.internalClass.emitVTable || expr.internalClass.GetVirtualMethods().Count != 0;
         int size = Math.Max(1, expr.internalClass.size);
 
-        new Expr.HeapAlloc(new Expr.Literal(new(Parser.LiteralTokenType.Integer, size.ToString()))).Accept(this);
+        new Expr.HeapAlloc(new Expr.Literal(new(Parser.LiteralTokenType.Integer, size.ToString(), Location.NoLocation))).Accept(this);
 
         if (hasVTable)
         {

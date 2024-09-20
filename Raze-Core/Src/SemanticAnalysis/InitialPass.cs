@@ -46,7 +46,7 @@ public partial class Analyzer
 
                 if (expr.modifiers["operator"])
                 {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.TopLevelCode));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.TopLevelCode, expr.name.location, []));
                     expr.modifiers["operator"] = false;
                 }
             }
@@ -69,7 +69,7 @@ public partial class Analyzer
                     case "Subtract":
                         if (expr.Arity != 1 && expr.Arity != 2)
                         {
-                            Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOperatorArity, expr.name.lexeme, "1 or 2"));
+                            Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOperatorArity, expr.name.location, expr.name.lexeme, "1 or 2"));
                         }
                         break;
 
@@ -92,7 +92,7 @@ public partial class Analyzer
                     case "Indexer":
                         if (expr.Arity != 2)
                         {
-                            Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOperatorArity, expr.name.lexeme, 2));
+                            Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOperatorArity, expr.name.location, expr.name.lexeme, 2));
                         }
                         break;
 
@@ -102,11 +102,11 @@ public partial class Analyzer
                     case "Not":
                         if (expr.Arity != 1)
                         {
-                            Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOperatorArity, expr.name.lexeme, 1));
+                            Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOperatorArity, expr.name.location, expr.name.lexeme, 1));
                         }
                         break;
                     default:
-                        Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UnrecognizedOperator, expr.name.lexeme));
+                        Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UnrecognizedOperator, expr.name.location, expr.name.lexeme));
                         expr.modifiers["operator"] = false;
                         break;
                 }
@@ -114,11 +114,11 @@ public partial class Analyzer
 
             if (expr.Abstract && (symbolTable.NearestEnclosingClass() == null || (symbolTable.NearestEnclosingClass() is Expr.Class _class  && !_class.trait)))
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.AbstractFunctionNotInTrait));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.AbstractFunctionNotInTrait, expr.name.location, []));
             }
             if (expr.modifiers["virtual"] && expr.modifiers["inline"])
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifierPair, "virtual", "inline"));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifierPair, expr.name.location, "virtual", "inline"));
                 expr.modifiers["inline"] = false;
             }
 
@@ -171,7 +171,7 @@ public partial class Analyzer
             expr.superclass.Accept(this);
             if (expr.superclass.type?.Matches(expr) == true)
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.CircularInheritance, expr.ToString(), expr.superclass.type.ToString()));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.CircularInheritance, expr.name.location, expr.ToString(), expr.superclass.type.ToString()));
                 expr.superclass.type = TypeCheckUtils.anyType;
             }
 
@@ -275,7 +275,7 @@ public partial class Analyzer
         {
             if (expr.member.HandleThis())
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidAssignStatement, "'this'"));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidAssignStatement, expr.member.GetLastName().location, "'this'"));
             }
 
             expr.member.Accept(this);
@@ -302,7 +302,7 @@ public partial class Analyzer
 
             foreach (var item in expr.definitions.Where(x => x is Expr.Function function && function.constructor))
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.PrimitiveWithConstructor));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.PrimitiveWithConstructor, item.name.location, []));
             }
 
             symbolTable.UpContext();
@@ -357,16 +357,16 @@ public partial class Analyzer
 
             if (constructor._returnType.typeName != null)
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.ConstructorWithNonVoidReturnType));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.ConstructorWithNonVoidReturnType, constructor.name.location, []));
             }
             if (constructor.modifiers["static"])
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidConstructorModifier, "static"));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidConstructorModifier, constructor.name.location, "static"));
                 constructor.modifiers["static"] = false;
             }
             if (constructor.modifiers["operator"])
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidConstructorModifier, "operator"));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidConstructorModifier, constructor.name.location, "operator"));
                 constructor.modifiers["operator"] = false;
             }
         }

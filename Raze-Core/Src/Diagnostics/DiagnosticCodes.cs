@@ -46,4 +46,9 @@ public abstract partial class Diagnostic
     }
     private bool VerboseFileName() =>
         Diagnostics.debugErrors || SymbolTableSingleton.SymbolTable.IsImport;
+
+    private string GetLocation(Location location)
+    {
+        return (location == Location.NoLocation) ? "" : location.ToString();
+    }
 }

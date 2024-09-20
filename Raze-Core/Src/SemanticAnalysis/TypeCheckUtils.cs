@@ -14,21 +14,21 @@ public partial class Analyzer
         // Primitive Types:
 
         public readonly static Expr.Class objectType = new SpecialObjects.Object();
-        public readonly static Expr.Class anyType = new SpecialObjects.Any(new(Token.TokenType.IDENTIFIER, "any"));
-        public readonly static Expr.Class _voidType = new Expr.Class(new(Token.TokenType.RESERVED, "void"), new(), new(), new(null));
-        private readonly static Expr.Type integralType = new(new Token((Token.TokenType)Parser.LiteralTokenType.Integer));
+        public readonly static Expr.Class anyType = new SpecialObjects.Any(new(Token.TokenType.IDENTIFIER, "any", Location.NoLocation));
+        public readonly static Expr.Class _voidType = new Expr.Class(new(Token.TokenType.RESERVED, "void", Location.NoLocation), new(), new(), new(null));
+        private readonly static Expr.Type integralType = new(new Token((Token.TokenType)Parser.LiteralTokenType.Integer, Location.NoLocation));
 
         public static Dictionary<Parser.LiteralTokenType, Expr.Type> literalTypes = new Dictionary<Parser.LiteralTokenType, Expr.Type>()
         {
             { Parser.VoidTokenType, _voidType },
             { Parser.LiteralTokenType.Integer, integralType },
-            { Parser.LiteralTokenType.UnsignedInteger, new(new Token((Token.TokenType)Parser.LiteralTokenType.UnsignedInteger)) },
-            { Parser.LiteralTokenType.Floating, new(new Token((Token.TokenType)Parser.LiteralTokenType.Floating)) },
-            { Parser.LiteralTokenType.String, new(new Token((Token.TokenType)Parser.LiteralTokenType.String)) },
+            { Parser.LiteralTokenType.UnsignedInteger, new(new Token((Token.TokenType)Parser.LiteralTokenType.UnsignedInteger, Location.NoLocation)) },
+            { Parser.LiteralTokenType.Floating, new(new Token((Token.TokenType)Parser.LiteralTokenType.Floating, Location.NoLocation)) },
+            { Parser.LiteralTokenType.String, new(new Token((Token.TokenType)Parser.LiteralTokenType.String, Location.NoLocation)) },
             { Parser.LiteralTokenType.Binary, integralType },
             { Parser.LiteralTokenType.Hex, integralType },
-            { Parser.LiteralTokenType.Boolean, new(new Token((Token.TokenType)Parser.LiteralTokenType.Boolean)) },
-            { Parser.LiteralTokenType.RefString, new(new Token((Token.TokenType)Parser.LiteralTokenType.RefString)) },
+            { Parser.LiteralTokenType.Boolean, new(new Token((Token.TokenType)Parser.LiteralTokenType.Boolean, Location.NoLocation)) },
+            { Parser.LiteralTokenType.RefString, new(new Token((Token.TokenType)Parser.LiteralTokenType.RefString, Location.NoLocation)) },
         };
 
         public static Dictionary<string, Expr.Type> keywordTypes = new Dictionary<string, Expr.Type>()
@@ -131,22 +131,22 @@ public partial class Analyzer
         {
             if (!expr.constructor && callee.constructor)
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.ConstructorCalledAsMethod));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.ConstructorCalledAsMethod, expr.name.location, []));
             }
             else if (expr.constructor && !callee.constructor)
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.MethodCalledAsConstructor));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.MethodCalledAsConstructor, expr.name.location, []));
             }
 
             if (expr.callee != null)
             {
                 if (expr.instanceCall && callee.modifiers["static"])
                 {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.StaticMethodCalledFromInstanceContext));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.StaticMethodCalledFromInstanceContext, expr.name.location, []));
                 }
                 if (!expr.instanceCall && !callee.modifiers["static"] && !expr.constructor)
                 {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InstanceMethodCalledFromStaticContext));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InstanceMethodCalledFromStaticContext, expr.name.location, []));
                 }
             }
             ValidateFunctionParameterModifiers(expr);

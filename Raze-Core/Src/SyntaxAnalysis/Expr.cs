@@ -711,7 +711,7 @@ public abstract partial class Expr
         {
             this.declarations = declarations;
             this.superclass = superclass;
-            this.superclass.typeName ??= new([new Token(Token.TokenType.IDENTIFIER, "object")]);
+            this.superclass.typeName ??= new([new Token(Token.TokenType.IDENTIFIER, "object", Location.NoLocation)]);
             this.trait = trait;
         }
 

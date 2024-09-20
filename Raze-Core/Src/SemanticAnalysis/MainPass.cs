@@ -64,8 +64,8 @@ public partial class Analyzer
             }
 
             bool found = 
-                (!arg0.Item1 && ResolveCallReferenceUsingCallee(name, (Expr.DataType)argumentTypes[0], argumentTypes, true)) ||
-                (!arg1.Item1 && ResolveCallReferenceUsingCallee(name, (Expr.DataType)argumentTypes[1], argumentTypes.Reverse().ToArray(), true));
+                (!arg0.Item1 && ResolveCallReferenceUsingCallee(name, expr.op.location, (Expr.DataType)argumentTypes[0], argumentTypes, true)) ||
+                (!arg1.Item1 && ResolveCallReferenceUsingCallee(name, expr.op.location, (Expr.DataType)argumentTypes[1], argumentTypes.Reverse().ToArray(), true));
 
             if (!found)
             {
@@ -100,7 +100,7 @@ public partial class Analyzer
                     TypeCheckUtils.anyType;
             }
 
-            if (!ResolveCallReferenceUsingCallee(name, (Expr.DataType)argumentTypes[0], argumentTypes, true))
+            if (!ResolveCallReferenceUsingCallee(name, expr.op.location, (Expr.DataType)argumentTypes[0], argumentTypes, true))
             {
                 if (argumentTypes[0] != TypeCheckUtils.anyType)
                 {
@@ -127,10 +127,10 @@ public partial class Analyzer
             {
                 var callee = (Expr.DataType)expr.callee.Accept(this);
                 
-                if (!ResolveCallReferenceUsingCallee(expr.name.lexeme, callee, argumentTypes, false))
+                if (!ResolveCallReferenceUsingCallee(expr.name.lexeme, expr.name.location, callee, argumentTypes, false))
                 {
                     symbolTable.SetContext(callee);
-                    symbolTable.SetContext(symbolTable.FunctionSearchFail(expr.name.lexeme, argumentTypes));
+                    symbolTable.SetContext(symbolTable.FunctionSearchFail(expr.name, argumentTypes));
                 }
             }
             else
@@ -144,7 +144,7 @@ public partial class Analyzer
                 else
                 {
                     symbolTable.SetContext(context);
-                    symbolTable.SetContext(symbolTable.GetFunction(expr.name.lexeme, argumentTypes));
+                    symbolTable.SetContext(symbolTable.GetFunction(expr.name, argumentTypes));
                 }
             }
 
@@ -162,7 +162,7 @@ public partial class Analyzer
             return expr.internalFunction._returnType.type;
         }
 
-        private bool ResolveCallReferenceUsingCallee(string name, Expr.DataType callee, Expr.Type[] argumentTypes, bool invokableIsOp)
+        private bool ResolveCallReferenceUsingCallee(string name, Location location, Expr.DataType callee, Expr.Type[] argumentTypes, bool invokableIsOp)
         {
             var currentCallee = callee;
             do
@@ -176,6 +176,7 @@ public partial class Analyzer
                         symbolTable.SetContext(callee);
                         Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
                             Diagnostic.DiagnosticName.UndefinedReference_Suggestion,
+                            location,
                             "function",
                             callee + "." + Expr.Call.CallNameToString(name, argumentTypes),
                             symbol
@@ -216,7 +217,7 @@ public partial class Analyzer
 
             if (symbolTable.TryGetVariable(name, out _, out _, true))
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, "variable", name.lexeme));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, name.location, "variable", name.lexeme));
             }
 
             if (symbolTable.Current == null) return TypeCheckUtils._voidType;
@@ -261,7 +262,7 @@ public partial class Analyzer
 
                 if (symbolTable.TryGetVariable(paramExpr.name, out _, out _, true))
                 {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, "variable", paramExpr.name.lexeme));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, paramExpr.name.location, "variable", paramExpr.name.lexeme));
                 }
                 paramExpr.stack._ref = paramExpr.modifiers["ref"];
 
@@ -307,7 +308,7 @@ public partial class Analyzer
 
         public override Expr.Type VisitAssignExpr(Expr.Assign expr)
         {
-            string memberName = expr.member.GetLastName().lexeme;
+            Token memberName = expr.member.GetLastName();
             string? valueName = (expr.value as Expr.GetReference)?.GetLastName().lexeme;
 
             Expr.Type assignType = expr.value.Accept(this);
@@ -330,11 +331,11 @@ public partial class Analyzer
 
             if (symbolTable.Current is Expr.Function function && 
                     TypeCheckUtils.IsVariableWithRefModifier(expr.value) && 
-                    (!symbolTable.IsLocallyScoped(memberName) || symbolTable.VariableIsParameter(function, expr.member.GetLastData(), out _)))
+                    (!symbolTable.IsLocallyScoped(memberName.lexeme) || symbolTable.VariableIsParameter(function, expr.member.GetLastData(), out _)))
             {
                 if (valueName != null && symbolTable.IsLocallyScoped(valueName) && !symbolTable.VariableIsParameter(function, ((Expr.GetReference)expr.value).GetLastData(), out _))
                 {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DanglingPointerCreated_Assigned, memberName));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DanglingPointerCreated_Assigned, memberName.location, memberName.lexeme));
                 }
             }
 
@@ -370,7 +371,7 @@ public partial class Analyzer
             }
             if (expr.internalClass.trait)
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InstanceOfTraitCreated));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InstanceOfTraitCreated, expr.call.name.location, []));
             }
             return expr.internalClass;
         }
@@ -446,7 +447,7 @@ public partial class Analyzer
 
                 if (expr._ref && expr.IsMethodCall() && !((Expr.Invokable)expr.getters[^1]).internalFunction.refReturn)
                 {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidRefModifier, "method"));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidRefModifier, expr.GetLastName().location, "method"));
                 }
 
                 return symbolTable.Current;
@@ -512,17 +513,17 @@ public partial class Analyzer
 
         public override Expr.Type VisitReturnExpr(Expr.Return expr)
         {
-            string? name = (expr.value as Expr.GetReference)?.GetLastName().lexeme;
+            Token? name = (expr.value as Expr.GetReference)?.GetLastName();
             Expr.Type type = expr.value.Accept(this);
 
             if (symbolTable.Current is Expr.Function function && function.refReturn)
             {
-                if (name != null && symbolTable.IsLocallyScoped(name))
+                if (name != null && symbolTable.IsLocallyScoped(name.lexeme))
                 {
                     Expr.GetReference getRef = (Expr.GetReference)expr.value;
                     if (!getRef.GetLastData()._ref || !symbolTable.VariableIsParameter(function, getRef.GetLastData(), out _))
                     {
-                        Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DanglingPointerCreated_Returned, name));
+                        Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DanglingPointerCreated_Returned, name.location, name.lexeme));
                     }
                 }
             }
@@ -558,12 +559,12 @@ public partial class Analyzer
             {
                 if (function.modifiers["override"])
                 {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifierPair, "static", "override"));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifierPair, function.name.location, "static", "override"));
                     function.modifiers["override"] = false;
                 }
                 if (function.modifiers["virtual"])
                 {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifierPair, "static", "virtual"));
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifierPair, function.name.location, "static", "virtual"));
                     function.modifiers["virtual"] = false;
                 }
                 return;
@@ -584,6 +585,7 @@ public partial class Analyzer
                         {
                             Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
                                 Diagnostic.DiagnosticName.TypeMismatch_OverridenMethod,
+                                function.name.location,
                                 function,
                                 virtualFunc._returnType.type
                             ));
@@ -595,7 +597,7 @@ public partial class Analyzer
             }
             if (function.modifiers["override"])
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOverrideModifier, function.ToString()));
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOverrideModifier, function.name.location, function.ToString()));
             }
         }
 

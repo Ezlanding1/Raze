@@ -50,7 +50,7 @@ public partial class Parser
             {
                 if (returned)
                 {
-                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssemblyBlockReturn));
+                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssemblyBlockReturn, parser.Previous().location, []));
                 }
                 returned = true;
 
@@ -121,7 +121,7 @@ public partial class Parser
                     }
                     else
                     {
-                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InlineAssemblyInvalidFreeOperand, name));
+                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InlineAssemblyInvalidFreeOperand, parser.Previous().location, name));
                     }
                 }
                 else
@@ -138,7 +138,7 @@ public partial class Parser
         {
             if (!Enum.TryParse(parser.Previous().lexeme, out AssemblyExpr.Instruction instruction))
             {
-                Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnsupportedInstruction, parser.Previous().lexeme));
+                Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnsupportedInstruction, parser.Previous().location, parser.Previous().lexeme));
             }
             
             var op1 = ParseOperand();
@@ -185,7 +185,7 @@ public partial class Parser
             }
             else if (parser.TypeMatch(Token.TokenType.INTEGER, Token.TokenType.REF_STRING, Token.TokenType.FLOATING, Token.TokenType.STRING, Token.TokenType.HEX, Token.TokenType.BINARY))
             {
-                return new Expr.InlineAssembly.Literal(new(new((LiteralTokenType)parser.Previous().type, parser.Previous().lexeme)));
+                return new Expr.InlineAssembly.Literal(new(new((LiteralTokenType)parser.Previous().type, parser.Previous().lexeme, parser.Previous().location)));
             }
             else
             {
@@ -246,7 +246,7 @@ public partial class Parser
                 }
                 catch (OverflowException)
                 {
-                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InlineAssemblyInvalidPtrOffset, offsetStr));
+                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InlineAssemblyInvalidPtrOffset, parser.Previous().location, offsetStr));
                 }
                 catch (FormatException)
                 {
@@ -268,7 +268,7 @@ public partial class Parser
             {
                 LiteralTokenType FailParse()
                 {
-                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InlineAssemblyInvalidRegisterOption, parser.Previous().lexeme));
+                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InlineAssemblyInvalidRegisterOption, parser.Previous().location, parser.Previous().lexeme));
                     return LiteralTokenType.Integer;
                 }
 

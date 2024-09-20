@@ -177,7 +177,7 @@ public partial class Parser
                 {
                     if (IsAtEnd())
                     {
-                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedEndInFunctionParameters, name.lexeme));
+                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedEndInFunctionParameters, name.location, name.lexeme));
                         return new Expr.Function(modifiers, refReturn, _return, name, parameters, new(new()));
                     }
 
@@ -230,7 +230,7 @@ public partial class Parser
 
                 if (Enum.GetNames<LiteralTokenType>().Contains(name.type.ToString()))
                 {
-                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidClassName, name.lexeme));
+                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidClassName, name.location, name.lexeme));
                 }
 
                 Expr.TypeReference superclass = new(null);
@@ -259,7 +259,7 @@ public partial class Parser
                         }
                         else
                         {
-                            Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidClassDefinition, current?.lexeme));
+                            Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidClassDefinition, current?.location ?? Location.NoLocation, current?.lexeme));
                             Advance();
                         }
                     }
@@ -280,7 +280,7 @@ public partial class Parser
 
                 if (Enum.GetNames<LiteralTokenType>().Contains(name.type.ToString()))
                 {
-                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidPrimitiveName, name.lexeme));
+                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidPrimitiveName, name.location, name.lexeme));
                 }
 
                 ExpectValue(Token.TokenType.IDENTIFIER, "sizeof", "'sizeof' keyword");
@@ -291,7 +291,7 @@ public partial class Parser
                 {
                     if (!new List<string>() { "8", "4", "2", "1" }.Contains(Previous().lexeme))
                     {
-                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidPrimitiveSize, Previous().lexeme));
+                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidPrimitiveSize, Previous().location, Previous().lexeme));
                     }
                     else
                     {
@@ -313,7 +313,7 @@ public partial class Parser
 
                     if (!Enum.GetNames<LiteralTokenType>().Contains(superclassName))
                     {
-                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidPrimitiveSuperclass, Previous().lexeme));
+                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidPrimitiveSuperclass, Previous().location, Previous().lexeme));
                         superclassName = null;
                     }
                 }
@@ -329,7 +329,7 @@ public partial class Parser
                     }
                     else if (!IsAtEnd())
                     {
-                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidClassDefinition, current?.lexeme));
+                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidClassDefinition, current?.location ?? Location.NoLocation, current?.lexeme));
                         Advance();
                     }
                     else
@@ -397,12 +397,12 @@ public partial class Parser
                     {
                         if (ReservedValueMatch("if"))
                         {
-                            Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.NoMatchingIf, "else if"));
+                            Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.NoMatchingIf, conditionalType.location, "else if"));
                             return new Expr.If(new(GetCondition(), GetBlock("else if")));
                         }
                         else
                         {
-                            Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.NoMatchingIf, "else"));
+                            Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.NoMatchingIf, conditionalType.location, "else"));
                             return GetBlock("else");
                         }
 
@@ -597,7 +597,7 @@ public partial class Parser
 
             if (TypeMatch(Array.ConvertAll<LiteralTokenType, Token.TokenType>(Enum.GetValues<LiteralTokenType>(), new(x => (Token.TokenType)x))))
             {
-                getter = new Expr.Literal(new LiteralToken((LiteralTokenType)Previous().type, Previous().lexeme));
+                getter = new Expr.Literal(new LiteralToken((LiteralTokenType)Previous().type, Previous().lexeme, Previous().location));
             }
             else if (TypeMatch(Token.TokenType.LPAREN))
             {
@@ -631,7 +631,7 @@ public partial class Parser
                 {
                     if (variable.IsMethodCall())
                     {
-                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssignStatement, "method"));
+                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssignStatement, Previous().location, "method"));
                     }
                     return new Expr.Assign(variable, NoSemicolon());
                 }
@@ -639,7 +639,7 @@ public partial class Parser
                 {
                     if (variable.IsMethodCall())
                     {
-                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssignStatement, "method"));
+                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssignStatement, Previous().location, "method"));
                     }
                     var op = tokens[index - 2];
                     return new Expr.Assign(variable, new Expr.Binary(variable, op, NoSemicolon()));
@@ -689,7 +689,7 @@ public partial class Parser
             }
             else
             {
-                Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidClassDefinition, Previous().lexeme));
+                Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidClassDefinition, Previous().location, Previous().lexeme));
                 return null;
             }
             Expect(Token.TokenType.SEMICOLON, "';' after expression");
@@ -708,14 +708,14 @@ public partial class Parser
     {
         if (variable is not Expr.AmbiguousGetReference getRef)
         {
-            Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidDeclareStatement));
+            Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidDeclareStatement, variable.GetLastName().location, []));
             return null;
         }
 
         var name = Previous();
         if (name.lexeme == "this")
         {
-            Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidThisKeyword));
+            Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidThisKeyword, name.location, []));
             name.type = Token.TokenType.IDENTIFIER;
         }
 
@@ -818,7 +818,7 @@ public partial class Parser
 
     private void End()
     {
-        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.ExpressionReachedUnexpectedEnd, (current == null)? Previous().lexeme : current.lexeme));
+        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.ExpressionReachedUnexpectedEnd, current?.location ?? Location.NoLocation, (current == null)? Previous().lexeme : current.lexeme));
     }
 
     private List<Expr> GetArgs()
@@ -832,15 +832,15 @@ public partial class Parser
             {
                 if (TypeMatch(Token.TokenType.COMMA))
                 {
-                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedTokenInFunctionArguments, "comma ','"));
+                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedTokenInFunctionArguments, Previous().location, "comma ','"));
                     while (TypeMatch(Token.TokenType.COMMA))
                     {
-                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedTokenInFunctionArguments, "comma ','"));
+                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedTokenInFunctionArguments, Previous().location, "comma ','"));
                     }
                 }
                 if (TypeMatch(Token.TokenType.RPAREN))
                 {
-                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedTokenInFunctionArguments, "comma ','"));
+                    Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedTokenInFunctionArguments, Previous().location, "comma ','"));
                     break;
                 }
             }
@@ -885,6 +885,7 @@ public partial class Parser
     private void PanicUntilSynchronized(Token.TokenType expectedToken, string errorMessage) => PanicUntil(SynchronizationTokens, expectedToken, errorMessage);
     private void PanicUntil(Token.TokenType[] types, Token.TokenType expectedToken, string errorMessage)
     {
+        Location startingLocation = current.location;
         string panicInvalidTokens = current.lexeme;
         Advance();
         while (!(IsAtEnd() || TypeMatch(types)))
@@ -892,7 +893,7 @@ public partial class Parser
             panicInvalidTokens += " " + current.lexeme;
             Advance();
         }
-        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.TokenExpected, expectedToken, errorMessage, panicInvalidTokens));
+        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.TokenExpected, startingLocation, expectedToken, errorMessage, panicInvalidTokens));
         MovePrevious();
     }
 
@@ -1003,7 +1004,7 @@ public partial class Parser
 
     private void Expected(string type, string errorMessage)
     {
-        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.TokenExpected, type, errorMessage, current?.lexeme));
+        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.TokenExpected, current?.location ?? Location.NoLocation, type, errorMessage, current?.lexeme));
     }
 
     private Token Previous(int sub = 1)
