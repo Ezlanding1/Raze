@@ -393,8 +393,6 @@ public abstract partial class AssemblyExpr
             UnsignedInteger = Parser.LiteralTokenType.UnsignedInteger,
             Floating = Parser.LiteralTokenType.Floating,
             String = Parser.LiteralTokenType.String,
-            Binary = Parser.LiteralTokenType.Binary,
-            Hex = Parser.LiteralTokenType.Hex,
             Boolean = Parser.LiteralTokenType.Boolean,
             RefData,
             RefProcedure,

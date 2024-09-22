@@ -23,10 +23,8 @@ public partial class Parser
         UnsignedInteger = Token.TokenType.UNSIGNED_INTEGER,
         Floating = Token.TokenType.FLOATING,
         String = Token.TokenType.STRING,
-        Binary = Token.TokenType.BINARY,
-        Hex = Token.TokenType.HEX,
-        Boolean = Token.TokenType.BOOLEAN,
-        RefString = Token.TokenType.REF_STRING
+        RefString = Token.TokenType.REF_STRING,
+        Boolean = Token.TokenType.BOOLEAN
     }
 
     internal static readonly Token.TokenType[] SynchronizationTokens =

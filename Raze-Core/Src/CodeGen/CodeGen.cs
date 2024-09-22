@@ -564,8 +564,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             case Parser.LiteralTokenType.String:
             case Parser.LiteralTokenType.Integer:
             case Parser.LiteralTokenType.UnsignedInteger:
-            case Parser.LiteralTokenType.Binary:
-            case Parser.LiteralTokenType.Hex:
             case Parser.LiteralTokenType.Boolean:
                 return new AssemblyExpr.UnresolvedLiteral((AssemblyExpr.Literal.LiteralType)expr.literal.type, expr.literal.lexeme);
             default:

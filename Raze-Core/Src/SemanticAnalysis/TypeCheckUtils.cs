@@ -16,17 +16,14 @@ public partial class Analyzer
         public readonly static Expr.Class objectType = new SpecialObjects.Object();
         public readonly static Expr.Class anyType = new SpecialObjects.Any(new(Token.TokenType.IDENTIFIER, "any", Location.NoLocation));
         public readonly static Expr.Class _voidType = new Expr.Class(new(Token.TokenType.RESERVED, "void", Location.NoLocation), new(), new(), new(null));
-        private readonly static Expr.Type integralType = new(new Token((Token.TokenType)Parser.LiteralTokenType.Integer, Location.NoLocation));
 
         public static Dictionary<Parser.LiteralTokenType, Expr.Type> literalTypes = new Dictionary<Parser.LiteralTokenType, Expr.Type>()
         {
             { Parser.VoidTokenType, _voidType },
-            { Parser.LiteralTokenType.Integer, integralType },
+            { Parser.LiteralTokenType.Integer, new(new Token((Token.TokenType)Parser.LiteralTokenType.Integer, Location.NoLocation)) },
             { Parser.LiteralTokenType.UnsignedInteger, new(new Token((Token.TokenType)Parser.LiteralTokenType.UnsignedInteger, Location.NoLocation)) },
             { Parser.LiteralTokenType.Floating, new(new Token((Token.TokenType)Parser.LiteralTokenType.Floating, Location.NoLocation)) },
             { Parser.LiteralTokenType.String, new(new Token((Token.TokenType)Parser.LiteralTokenType.String, Location.NoLocation)) },
-            { Parser.LiteralTokenType.Binary, integralType },
-            { Parser.LiteralTokenType.Hex, integralType },
             { Parser.LiteralTokenType.Boolean, new(new Token((Token.TokenType)Parser.LiteralTokenType.Boolean, Location.NoLocation)) },
             { Parser.LiteralTokenType.RefString, new(new Token((Token.TokenType)Parser.LiteralTokenType.RefString, Location.NoLocation)) },
         };
@@ -43,16 +40,12 @@ public partial class Analyzer
 
         public static RuntimeLibrarySingletonDataType heapallocType = new("Raze.Std", "HeapData");
 
-        public static RuntimeLibrarySingletonDataType defaultIntegralLiteralType = new("Raze.Std", ["Std", "int64"]);
-
         public static Dictionary<Parser.LiteralTokenType, RuntimeLibrarySingletonDataType> defualtLiteralTypes = new()
         {
-            { Parser.LiteralTokenType.Integer, defaultIntegralLiteralType },
+            { Parser.LiteralTokenType.Integer,  new("Raze.Std", ["Std", "int64"]) },
             { Parser.LiteralTokenType.UnsignedInteger, new("Raze.Std", ["Std", "uint64"]) },
             { Parser.LiteralTokenType.Floating, new("Raze.Std", ["Std", "float64"]) },
             { Parser.LiteralTokenType.String, new("Raze.Std", ["Std", "char"]) },
-            { Parser.LiteralTokenType.Binary, defaultIntegralLiteralType },
-            { Parser.LiteralTokenType.Hex, defaultIntegralLiteralType },
             { Parser.LiteralTokenType.Boolean, new("Raze.Std", ["Std", "bool"]) },
             { Parser.LiteralTokenType.RefString, new("Raze.Std", ["Std", "string"]) },
         };

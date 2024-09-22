@@ -13,8 +13,6 @@ internal partial class TokenList
     public static readonly Dictionary<Token.TokenType, Regex> Tokens = new Dictionary<Token.TokenType, Regex>()
     {
         // Non Finite Tokens
-        { Token.TokenType.BINARY, Patterns.BINARY() },
-        { Token.TokenType.HEX, Patterns.HEX() },
         { Token.TokenType.FLOATING, Patterns.FLOATING() },
         { Token.TokenType.UNSIGNED_INTEGER, Patterns.UNSIGNED_INTEGER() },
         { Token.TokenType.INTEGER, Patterns.INTEGER() },

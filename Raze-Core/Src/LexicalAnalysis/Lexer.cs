@@ -72,13 +72,7 @@ public partial class Lexer
             Token.TokenType.REF_STRING => LexRefString(match, pattern),
             Token.TokenType.FLOATING => LexFloating(match, pattern),
 
-            Token.TokenType.HEX or
-            Token.TokenType.BINARY => new Token(pattern, match.ToString()[2..], location),
-
-            Token.TokenType.UNSIGNED_INTEGER => new Token(pattern, match.ToString()[..^1], location),
-
             _ => new Token(pattern, match.ToString(), location)
-
         };
 
         location = new(location.Ln, location.Col + match.Length);

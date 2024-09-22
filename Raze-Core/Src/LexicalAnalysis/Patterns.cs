@@ -12,15 +12,11 @@ internal partial class TokenList
     internal partial class Patterns
     {
         // Tokens
-        [GeneratedRegex(@"0[bB][0-1]+")]
-        public static partial Regex BINARY();
-        [GeneratedRegex(@"0[xX][0-9a-fA-F]+")]
-        public static partial Regex HEX();
         [GeneratedRegex(@"[0-9]+\.(?![a-zA-Z_])[0-9]*")]
         public static partial Regex FLOATING();
-        [GeneratedRegex(@"[0-9]+[uU]")]
+        [GeneratedRegex(@"(0[xX][0-9a-fA-F]+|0[bB][0-1]+|[0-9]+)[uU]")]
         public static partial Regex UNSIGNED_INTEGER();
-        [GeneratedRegex(@"[0-9]+")]
+        [GeneratedRegex(@"(0[xX][0-9a-fA-F]+|0[bB][0-1]+|[0-9]+)")]
         public static partial Regex INTEGER();
         [GeneratedRegex(@"[a-zA-Z_][a-zA-Z0-9_]*")]
         public static partial Regex IDENTIFIER();

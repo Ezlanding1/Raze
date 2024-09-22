@@ -55,7 +55,7 @@ partial class Syntaxes
                 {
                     return $"{(string.IsNullOrEmpty(instruction.name) ? "" : (instruction.name + ": "))}{InstructionUtils.dataSize[instruction.Size]} {UnescapeString(instruction.literal.value.SelectMany(x => x).ToArray())}";
                 }
-                else if ((int)instruction.literal.type >= 9)
+                else if (instruction.literal.type >= AssemblyExpr.Literal.LiteralType.RefData)
                 {
                     return $"{(string.IsNullOrEmpty(instruction.name) ? "" : (instruction.name + ": "))}{InstructionUtils.dataSize[AssemblyExpr.Register.RegisterSize._64Bits]} {string.Join(", ", instruction.literal.value.Select(x => VisitImmediate(new AssemblyExpr.LabelLiteral(instruction.literal.type, x))))}";
                 }
@@ -159,10 +159,6 @@ partial class Syntaxes
                         Array.Resize(ref number, 8);
                         return BitConverter.ToUInt64(number).ToString();
                     }
-                    case AssemblyExpr.Literal.LiteralType.Hex:
-                        return "0x" + IntegralImmediateToString(instruction.value, 16);
-                    case AssemblyExpr.Literal.LiteralType.Binary:
-                        return "0b" + IntegralImmediateToString(instruction.value, 2);
                     default:
                         return IntegralImmediateToString(instruction.value, 10);
                 }

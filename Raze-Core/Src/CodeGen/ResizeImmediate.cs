@@ -43,8 +43,6 @@ public partial class AssemblyExpr
                         break;
                     }
                 case Literal.LiteralType.UnsignedInteger:
-                case Literal.LiteralType.Binary:
-                case Literal.LiteralType.Hex:
                     {
                         int dCount = value.Reverse().TakeWhile(x => x == 0).Count();
 
@@ -84,8 +82,6 @@ public partial class AssemblyExpr
                     ResizeSignedInteger(ref literal.value, (int)size);
                     return true;
                 case Literal.LiteralType.UnsignedInteger:
-                case Literal.LiteralType.Binary:
-                case Literal.LiteralType.Hex:
                     Array.Resize(ref literal.value, (int)size);
                     return true;
             };

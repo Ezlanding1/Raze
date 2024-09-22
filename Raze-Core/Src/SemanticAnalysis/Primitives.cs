@@ -13,14 +13,24 @@ public partial class Analyzer
     {
         private static dynamic ToType(AssemblyExpr.UnresolvedLiteral literal) => literal.type switch
         {            
-            AssemblyExpr.Literal.LiteralType.Integer => long.Parse(literal.value),
+            AssemblyExpr.Literal.LiteralType.Integer => ToTypeInt(literal.value),
+            AssemblyExpr.Literal.LiteralType.UnsignedInteger => ToTypeUint(literal.value),
             AssemblyExpr.Literal.LiteralType.Floating => double.Parse(literal.value),
             AssemblyExpr.Literal.LiteralType.String => literal.value,
-            AssemblyExpr.Literal.LiteralType.Binary => Convert.ToInt64(literal.value, 2),
-            AssemblyExpr.Literal.LiteralType.Hex => Convert.ToInt64(literal.value, 16),
             AssemblyExpr.Literal.LiteralType.Boolean => byte.Parse(literal.value),
             AssemblyExpr.Literal.LiteralType.RefData => literal.value
         };
+
+        private static dynamic ToTypeInt(string value)
+        {
+            (int _base, string str) = AssemblyExpr.ImmediateGenerator.GetBaseAndStrFromPrefix(value);
+            return Convert.ToInt64(str, _base);
+        }
+        private static dynamic ToTypeUint(string value)
+        {
+            (int _base, string str) = AssemblyExpr.ImmediateGenerator.GetBaseAndStrFromPrefix(value[..^1]);
+            return Convert.ToUInt64(str, _base);
+        }
 
         // Binary Operation
         public static Parser.LiteralTokenType OperationType(Token op, Parser.LiteralTokenType type1, Parser.LiteralTokenType type2)
@@ -64,44 +74,33 @@ public partial class Analyzer
             {
                 case (Integer, Integer): return Integer; // INTEGER OP INTEGER
                 case (Integer, Floating): case (Floating, Integer): return Floating; // INTEGER OP FLOATING
+                case (Integer, UnsignedInteger): case (UnsignedInteger, Integer):
                 case (Integer, Parser.LiteralTokenType.String):
                 case (Parser.LiteralTokenType.String, Integer):
                 case (Integer, RefString):
                 case (RefString, Integer): Diagnostics.Report(InvalidOperation(op, type1, type2)); break;  // INTEGER OP STRING
-                case (Integer, Binary): case (Binary, Integer): return Integer; // INTEGER OP BINARY
-                case (Integer, Hex): case (Hex, Integer): return Integer; // INTEGER OP HEX
                 case (Integer, Parser.LiteralTokenType.Boolean): case (Parser.LiteralTokenType.Boolean, Integer): Diagnostics.Report(InvalidOperation(op, type1, type2)); break;  // INTEGER OP BOOLEAN
+
+                case (UnsignedInteger, UnsignedInteger): return UnsignedInteger; // UNSIGNED_INTEGER OP UNSIGNED_INTEGER
+                case (UnsignedInteger, Parser.LiteralTokenType.String):
+                case (Parser.LiteralTokenType.String, UnsignedInteger):
+                case (UnsignedInteger, RefString):
+                case (RefString, UnsignedInteger): Diagnostics.Report(InvalidOperation(op, type1, type2)); break;  // UNSIGNED_INTEGER OP STRING
+                case (UnsignedInteger, Parser.LiteralTokenType.Boolean): case (Parser.LiteralTokenType.Boolean, UnsignedInteger): Diagnostics.Report(InvalidOperation(op, type1, type2)); break;  // UNSIGNED_INTEGER OP BOOLEAN
 
                 case (Floating, Floating): return Floating; // FLOATING OP FLOATING
                 case (Floating, Parser.LiteralTokenType.String):
                 case (Parser.LiteralTokenType.String, Floating):
                 case (Floating, RefString):
                 case (RefString, Floating): Diagnostics.Report(InvalidOperation(op, type1, type2)); break; // FLOATING OP STRING
-                case (Floating, Binary): case (Binary, Floating): Diagnostics.Report(InvalidOperation(op, type1, type2)); break;  // FLOATING OP BINARY
-                case (Floating, Hex): case (Hex, Floating): Diagnostics.Report(InvalidOperation(op, type1, type2)); break;  // FLOATING OP HEX
                 case (Floating, Parser.LiteralTokenType.Boolean): case (Parser.LiteralTokenType.Boolean, Floating): Diagnostics.Report(InvalidOperation(op, type1, type2)); break;  // FLOATING OP BOOLEAN
 
                 case (Parser.LiteralTokenType.String, Parser.LiteralTokenType.String):
                 case (RefString, RefString): Diagnostics.Report(InvalidOperation(op, type1, type2)); break; // STRING OP STRING
-                case (Parser.LiteralTokenType.String, Binary):
-                case (Binary, Parser.LiteralTokenType.String):
-                case (RefString, Binary):
-                case (Binary, RefString): Diagnostics.Report(InvalidOperation(op, type1, type2)); break;  // STRING OP BINARY
-                case (Parser.LiteralTokenType.String, Hex):
-                case (Hex, Parser.LiteralTokenType.String):
-                case (RefString, Hex):
-                case (Hex, RefString): Diagnostics.Report(InvalidOperation(op, type1, type2)); break;  // STRING OP HEX
                 case (Parser.LiteralTokenType.String, Parser.LiteralTokenType.Boolean):
                 case (Parser.LiteralTokenType.Boolean, Parser.LiteralTokenType.String):
                 case (RefString, Parser.LiteralTokenType.Boolean):
                 case (Parser.LiteralTokenType.Boolean, RefString): Diagnostics.Report(InvalidOperation(op, type1, type2)); break;  // STRING OP BOOLEAN
-
-                case (Binary, Binary): return Integer; // BINARY OP BINARY
-                case (Binary, Hex): case (Hex, Binary): Diagnostics.Report(InvalidOperation(op, type1, type2)); break;  // BINARY OP HEX
-                case (Binary, Parser.LiteralTokenType.Boolean): case (Parser.LiteralTokenType.Boolean, Binary): Diagnostics.Report(InvalidOperation(op, type1, type2)); break;  // BINARY OP BOOLEAN
-
-                case (Hex, Hex): return Integer; // HEX OP HEX
-                case (Hex, Parser.LiteralTokenType.Boolean): case (Parser.LiteralTokenType.Boolean, Hex): Diagnostics.Report(InvalidOperation(op, type1, type2)); break;  // HEX OP BOOLEAN
 
                 case (Parser.LiteralTokenType.Boolean, Parser.LiteralTokenType.Boolean): return Parser.LiteralTokenType.Boolean; // BOOLEAN OP BOOLEAN
 
@@ -139,7 +138,12 @@ public partial class Analyzer
                     }
                 ).ToString();
 
-            return new AssemblyExpr.UnresolvedLiteral((AssemblyExpr.Literal.LiteralType)OperationType(op, (Parser.LiteralTokenType)a.type, (Parser.LiteralTokenType)b.type), result);
+            var type = (AssemblyExpr.Literal.LiteralType)OperationType(op, (Parser.LiteralTokenType)a.type, (Parser.LiteralTokenType)b.type);
+
+            if (type == AssemblyExpr.Literal.LiteralType.UnsignedInteger)
+                result += 'u';
+
+            return new AssemblyExpr.UnresolvedLiteral(type, result);
         }
 
         private static string Add(dynamic a, dynamic b, bool stringAddition, CodeGen assembler)
@@ -192,7 +196,12 @@ public partial class Analyzer
 
             // Note: All cases where an operator's return type for given literal is not correctly expressed in the switch should be handled individually, here
 
-            if (pName == "Increment" || pName == "Decrement")
+            if (type1 == UnsignedInteger && pName == "Subtract")
+            {
+                Diagnostics.Report(InvalidOperation(op, type1));
+                return Parser.VoidTokenType;
+            }
+            else if (pName == "Increment" || pName == "Decrement")
             {
                 Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifier_Ref, op.location, []));
                 return Parser.VoidTokenType;
@@ -202,15 +211,13 @@ public partial class Analyzer
             {
                 case Integer: return Integer; // INTEGER OP
 
+                case UnsignedInteger: return UnsignedInteger; // UNSIGNED_INTEGER OP
+
                 case Floating: Diagnostics.Report(InvalidOperation(op, Floating)); break;  // FLOATING OP
 
                 case Parser.LiteralTokenType.String: Diagnostics.Report(InvalidOperation(op, Parser.LiteralTokenType.String)); break;  // STRING OP
 
                 case RefString: Diagnostics.Report(InvalidOperation(op, RefString)); break;  // REF_STRING OP
-
-                case Binary: return Integer; // BINARY OP
-
-                case Hex: return Integer; // HEX OP
 
                 case Parser.LiteralTokenType.Boolean: return Parser.LiteralTokenType.Boolean; // BOOLEAN OP
 
@@ -235,7 +242,12 @@ public partial class Analyzer
                     }
                 ).ToString();
 
-            return new AssemblyExpr.UnresolvedLiteral((AssemblyExpr.Literal.LiteralType)OperationType(op, (Parser.LiteralTokenType)a.type), result);
+            var type = (AssemblyExpr.Literal.LiteralType)OperationType(op, (Parser.LiteralTokenType)a.type);
+
+            if (type == AssemblyExpr.Literal.LiteralType.UnsignedInteger)
+                result += 'u';
+
+            return new AssemblyExpr.UnresolvedLiteral(type, result);
         }
 
         public static Diagnostic.AnalyzerDiagnostic InvalidOperation(Token op, Parser.LiteralTokenType type)

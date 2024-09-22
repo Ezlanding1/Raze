@@ -9,16 +9,14 @@ namespace Raze;
 public partial class Token
 {
     internal enum TokenType : byte
-    {
-        BINARY,           
-        HEX,            
-        FLOATING,           
+    {       
         INTEGER,
         UNSIGNED_INTEGER,
-        IDENTIFIER,            
+        FLOATING,           
         STRING,
         REF_STRING,
         BOOLEAN,
+        IDENTIFIER,            
         WHITESPACE,            
         EQUALTO,            
         GREATEREQUAL,            

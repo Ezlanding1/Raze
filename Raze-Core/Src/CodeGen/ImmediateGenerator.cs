@@ -17,11 +17,9 @@ public partial class AssemblyExpr
             return literalType switch
             {
                 Literal.LiteralType.Integer => ParseInteger(str, size),
-                Literal.LiteralType.UnsignedInteger => ParseUnsignedInteger(str, size, literalType),
+                Literal.LiteralType.UnsignedInteger => ParseUnsignedInteger(str, size),
                 Literal.LiteralType.Floating => ParseFloating(str, size),
-                Literal.LiteralType.Binary => ParseUnsignedInteger(str, size, literalType),
-                Literal.LiteralType.Hex => ParseUnsignedInteger(str, size, literalType),
-                Literal.LiteralType.Boolean => ParseUnsignedInteger(str, size, Literal.LiteralType.UnsignedInteger),
+                Literal.LiteralType.Boolean => ParseInteger(str, size),
                 Literal.LiteralType.String => ParseString(str, size),
                 Literal.LiteralType.RefData or
                 Literal.LiteralType.RefProcedure or
@@ -31,48 +29,57 @@ public partial class AssemblyExpr
 
         private static byte[] ParseInteger(string str, Register.RegisterSize size)
         {
-            (bool successfulParse, byte[] result) = size switch
-            {
-                Register.RegisterSize._8BitsUpper or
-                Register.RegisterSize._8Bits => (sbyte.TryParse(str, out var literal), new byte[] { (byte)literal }),
-                Register.RegisterSize._16Bits => (short.TryParse(str, out var literal), BitConverter.GetBytes(literal)),
-                Register.RegisterSize._32Bits => (int.TryParse(str, out var literal), BitConverter.GetBytes(literal)),
-                Register.RegisterSize._64Bits => (long.TryParse(str, out var literal), BitConverter.GetBytes(literal))
-            };
-
-            if (!successfulParse)
-            {
-                ThrowInvalidSizedLiteral(Parser.LiteralTokenType.Integer, str, size);
-            }
-            return result;
-        }
-
-        private static byte[] ParseUnsignedInteger(string str, Register.RegisterSize size, Literal.LiteralType literalType)
-        {
-            (int _base, string prefix) = literalType switch
-            {
-                Literal.LiteralType.UnsignedInteger => (10, ""),
-                Literal.LiteralType.Hex => (16, "0x"),
-                Literal.LiteralType.Binary => (2, "0b"),
-            };
+            (int _base, str) = GetBaseAndStrFromPrefix(str);
 
             try
             {
                 return size switch
                 {
                     Register.RegisterSize._8BitsUpper or
-                    Register.RegisterSize._8Bits => new byte[] { Convert.ToByte(str, _base) },
-                    Register.RegisterSize._16Bits => BitConverter.GetBytes(Convert.ToUInt16(str, _base)),
-                    Register.RegisterSize._32Bits => BitConverter.GetBytes(Convert.ToUInt32(str, _base)),
+                    Register.RegisterSize._8Bits => [unchecked((byte)Convert.ToSByte(str, _base))],
+                    Register.RegisterSize._16Bits => BitConverter.GetBytes(Convert.ToInt16(str, _base)),
+                    Register.RegisterSize._32Bits => BitConverter.GetBytes(Convert.ToInt32(str, _base)),
                     Register.RegisterSize._64Bits => BitConverter.GetBytes(Convert.ToInt64(str, _base))
                 };
             }
             catch (OverflowException)
             {
-                ThrowInvalidSizedLiteral((Parser.LiteralTokenType)literalType, prefix + str, size);
+                ThrowInvalidSizedLiteral(Parser.LiteralTokenType.Integer, str, size);
             }
             return new byte[(int)size];
         }
+
+        private static byte[] ParseUnsignedInteger(string str, Register.RegisterSize size)
+        {
+            (int _base, str) = GetBaseAndStrFromPrefix(str[..^1]);
+
+            try
+            {
+                return size switch
+                {
+                    Register.RegisterSize._8BitsUpper or
+                    Register.RegisterSize._8Bits => [Convert.ToByte(str, _base)],
+                    Register.RegisterSize._16Bits => BitConverter.GetBytes(Convert.ToUInt16(str, _base)),
+                    Register.RegisterSize._32Bits => BitConverter.GetBytes(Convert.ToUInt32(str, _base)),
+                    Register.RegisterSize._64Bits => BitConverter.GetBytes(Convert.ToUInt64(str, _base))
+                };
+            }
+            catch (OverflowException)
+            {
+                ThrowInvalidSizedLiteral(Parser.LiteralTokenType.UnsignedInteger, str, size);
+            }
+            return new byte[(int)size];
+        }
+
+        public static (int, string) GetBaseAndStrFromPrefix(string str) =>
+            (str.Length < 2)? 
+                (10, str) : 
+                str[..2].ToLower() switch
+                {
+                    "0x" => (16, str[2..]),
+                    "0b" => (2, str[2..]),
+                    _ => (10, str),
+                };
 
         private static byte[] ParseFloating(string str, Register.RegisterSize size)
         {
