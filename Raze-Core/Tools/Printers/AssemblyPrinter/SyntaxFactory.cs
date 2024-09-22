@@ -22,14 +22,19 @@ partial class Syntaxes
 
         public class SyntaxTypeCreator
         {
-            public static ISyntaxFactory? FactoryMethod(string type)
+            public static ISyntaxFactory FactoryMethod(AssemblySyntax syntax)
             {
-                return type switch
+                return syntax switch
                 {
-                    "Intel_x86_64_NASM" => new IntelSyntax(),
-                    "Intel_x86_64_AT&T" => new AttSyntax(),
-                    _ => null
+                    AssemblySyntax.Intel_x86_64_NASM => new IntelSyntax(),
+                    AssemblySyntax.Intel_x86_64_ATT => new AttSyntax()
                 };
+            }
+
+            public enum AssemblySyntax
+            {
+                Intel_x86_64_NASM,
+                Intel_x86_64_ATT
             }
         }
     }

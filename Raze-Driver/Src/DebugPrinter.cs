@@ -43,7 +43,7 @@ internal partial class Shell
             if (compileOptions.DebugAssemblyOption)
             {
                 // Debug - Print Assembly
-                Raze.Tools.AssemblyPrinter.PrintAssembly(assembly);
+                Raze.Tools.AssemblyPrinter.PrintAssembly(assembly, compileOptions.AssemblyFlavorOption);
             }
         }
     }

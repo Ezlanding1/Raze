@@ -55,6 +55,12 @@ internal partial class Shell
         { AllowMultipleArgumentsPerToken = true, Arity = ArgumentArity.ZeroOrMore };
         libraryOption.AddAlias("-l");
 
+        var assemblyFlavorOption = new Option<string>(
+            name: "--assembly-flavor",
+            description: "Syntax of assembly printed to Console (use with --debug-assembly)"
+        );
+        assemblyFlavorOption.SetDefaultValue("Intel");
+
         return new()
         {
             FileArgument = fileArgument,
@@ -69,7 +75,8 @@ internal partial class Shell
             Architecture = GenerateSystemInfoOption("--sysinfo-architecture", "Target CPU architecture"),
             Osabi = GenerateSystemInfoOption("--sysinfo-osabi", "Target OS ABI"),
             BitFormat = GenerateSystemInfoOption("--sysinfo-bitformat", "Target bit format"),
-            LibraryOption = libraryOption
+            LibraryOption = libraryOption,
+            AssemblyFlavorOption = assemblyFlavorOption
         };
     }
 

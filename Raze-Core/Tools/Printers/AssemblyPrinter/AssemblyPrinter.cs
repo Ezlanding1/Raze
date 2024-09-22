@@ -1,6 +1,4 @@
-﻿#define Intel_x86_64_NASM
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,24 +15,21 @@ public class AssemblyPrinter
         this.assembly = assembly;
     }
 
-    public static void PrintAssembly(CodeGen.Assembly assembly)
+    public static void PrintAssembly(CodeGen.Assembly assembly, string syntax)
     {
         AssemblyPrinter printer = new(assembly);
-        printer.PrintAssembly();
+        printer.PrintAssembly(syntax);
     }
 
-    public void PrintAssembly()
+    public void PrintAssembly(string syntax)
     {
-        Syntaxes.SyntaxFactory.ISyntaxFactory Syntax;
-        #if Intel_x86_64_NASM
-        Syntax = Syntaxes.SyntaxFactory.SyntaxTypeCreator.FactoryMethod("Intel_x86_64_NASM");
-        #endif
-
-        if (Syntax == null)
+        // Note: Only Intel (NASM) assembly syntax is currently supported
+        Syntaxes.SyntaxFactory.ISyntaxFactory Syntax = syntax.ToLower() switch
         {
-            Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("No Syntax Type Defined"));
-        }
-        
+            "intel" or "nasm" => Syntaxes.SyntaxFactory.SyntaxTypeCreator.FactoryMethod(Syntaxes.SyntaxFactory.SyntaxTypeCreator.AssemblySyntax.Intel_x86_64_NASM),
+            _ => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Assembly flavor '{syntax}' not supported"))
+        };
+
         Syntax.Run(Syntax.header);
         Syntax.Run(CodeGen.ISection.Text.GenerateHeaderInstructions());
         Syntax.Run(CodeGen.ISection.Text.GenerateDriverInstructions(SymbolTableSingleton.SymbolTable.main));

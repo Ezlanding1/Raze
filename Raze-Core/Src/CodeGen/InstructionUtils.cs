@@ -170,6 +170,23 @@ public class InstructionUtils
         { "R15D", (AssemblyExpr.Register.RegisterName.R15, AssemblyExpr.Register.RegisterSize._32Bits) },
         { "R15W", (AssemblyExpr.Register.RegisterName.R15, AssemblyExpr.Register.RegisterSize._16Bits) },
         { "R15B", (AssemblyExpr.Register.RegisterName.R15, AssemblyExpr.Register.RegisterSize._8Bits) },
+
+        { "XMM0", (AssemblyExpr.Register.RegisterName.XMM0, AssemblyExpr.Register.RegisterSize._128Bits) },
+        { "XMM1", (AssemblyExpr.Register.RegisterName.XMM1, AssemblyExpr.Register.RegisterSize._128Bits) },
+        { "XMM2", (AssemblyExpr.Register.RegisterName.XMM2, AssemblyExpr.Register.RegisterSize._128Bits) },
+        { "XMM3", (AssemblyExpr.Register.RegisterName.XMM3, AssemblyExpr.Register.RegisterSize._128Bits) },
+        { "XMM4", (AssemblyExpr.Register.RegisterName.XMM4, AssemblyExpr.Register.RegisterSize._128Bits) },
+        { "XMM5", (AssemblyExpr.Register.RegisterName.XMM5, AssemblyExpr.Register.RegisterSize._128Bits) },
+        { "XMM6", (AssemblyExpr.Register.RegisterName.XMM6, AssemblyExpr.Register.RegisterSize._128Bits) },
+        { "XMM7", (AssemblyExpr.Register.RegisterName.XMM7, AssemblyExpr.Register.RegisterSize._128Bits) },
+        { "XMM8", (AssemblyExpr.Register.RegisterName.XMM8, AssemblyExpr.Register.RegisterSize._128Bits) },
+        { "XMM9", (AssemblyExpr.Register.RegisterName.XMM9, AssemblyExpr.Register.RegisterSize._128Bits) },
+        { "XMM10", (AssemblyExpr.Register.RegisterName.XMM10, AssemblyExpr.Register.RegisterSize._128Bits) },
+        { "XMM11", (AssemblyExpr.Register.RegisterName.XMM11, AssemblyExpr.Register.RegisterSize._128Bits) },
+        { "XMM12", (AssemblyExpr.Register.RegisterName.XMM12, AssemblyExpr.Register.RegisterSize._128Bits) },
+        { "XMM13", (AssemblyExpr.Register.RegisterName.XMM13, AssemblyExpr.Register.RegisterSize._128Bits) },
+        { "XMM14", (AssemblyExpr.Register.RegisterName.XMM14, AssemblyExpr.Register.RegisterSize._128Bits) },
+        { "XMM15", (AssemblyExpr.Register.RegisterName.XMM15, AssemblyExpr.Register.RegisterSize._128Bits) },
     };
 
     internal static AssemblyExpr.Register.RegisterSize ToRegisterSize(int size)
@@ -181,23 +198,4 @@ public class InstructionUtils
 
         throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Invalid Register Size ({size})"));
     }
-
-
-    internal readonly static Dictionary<AssemblyExpr.Register.RegisterSize?, string> wordSize = new()
-    {
-        { AssemblyExpr.Register.RegisterSize._64Bits, "QWORD"}, // 64-Bits
-        { AssemblyExpr.Register.RegisterSize._32Bits, "DWORD"}, // 32-Bits
-        { AssemblyExpr.Register.RegisterSize._16Bits, "WORD"}, // 16-Bits
-        { AssemblyExpr.Register.RegisterSize._8BitsUpper, "BYTE"}, // 8-Bits
-        { AssemblyExpr.Register.RegisterSize._8Bits, "BYTE"}, // 8-Bits
-    };
-
-    internal readonly static Dictionary<AssemblyExpr.Register.RegisterSize, string> dataSize = new()
-    {
-        { AssemblyExpr.Register.RegisterSize._64Bits, "dq"}, // 64-Bits
-        { AssemblyExpr.Register.RegisterSize._32Bits, "dd"}, // 32-Bits
-        { AssemblyExpr.Register.RegisterSize._16Bits, "dw"}, // 16-Bits
-        { AssemblyExpr.Register.RegisterSize._8BitsUpper, "db"}, // 8-Bits
-        { AssemblyExpr.Register.RegisterSize._8Bits, "db"}, // 8-Bits
-    };
 }

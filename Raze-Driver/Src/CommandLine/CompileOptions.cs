@@ -35,6 +35,7 @@ internal partial class Shell
         public required bool DebugAstOption { get; set; }
         public required bool DebugAssemblyOption { get; set; }
         public required bool DebugErrorsOption { get; set; }
+        public required string AssemblyFlavorOption { get; set; }
 
         public required bool DryRunOption { get; init; }
         public SystemInfo SystemInfo { get; init; }
@@ -92,10 +93,11 @@ internal partial class Shell
         public required Option<string?> Osabi { get; init; }
         public required Option<string?> BitFormat { get; init; }
         public required Option<string[]?> LibraryOption { get; init; }
+        public required Option<string> AssemblyFlavorOption { get; init; }
 
         public List<Option> GetOptions()
         {
-            return new List<Option>() { OutputOption, DebugOption, DebugInputOption, DebugTokensOption, DebugAstOption, DebugAssemblyOption, DebugErrorsOption, DryRunOption, Architecture, Osabi, BitFormat, LibraryOption };
+            return new List<Option>() { OutputOption, DebugOption, DebugInputOption, DebugTokensOption, DebugAstOption, DebugAssemblyOption, DebugErrorsOption, DryRunOption, Architecture, Osabi, BitFormat, LibraryOption, AssemblyFlavorOption };
         }
         public List<Argument> GetArguments()
         {
@@ -119,7 +121,8 @@ internal partial class Shell
                 DebugAssemblyOption = bindingContext.ParseResult.GetValueForOption(DebugAssemblyOption),
                 DebugErrorsOption = bindingContext.ParseResult.GetValueForOption(DebugErrorsOption),
                 DryRunOption = bindingContext.ParseResult.GetValueForOption(DryRunOption),
-                LibraryArgument = bindingContext.ParseResult.GetValueForOption(LibraryOption)
+                LibraryArgument = bindingContext.ParseResult.GetValueForOption(LibraryOption),
+                AssemblyFlavorOption = bindingContext.ParseResult.GetValueForOption(AssemblyFlavorOption)
             };
             compileOptions.DebugOption = bindingContext.ParseResult.GetValueForOption(DebugOption);
 
