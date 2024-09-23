@@ -23,10 +23,10 @@ public class AssemblyPrinter
 
     public void PrintAssembly(string syntax)
     {
-        // Note: Only Intel (NASM) assembly syntax is currently supported
         Syntaxes.SyntaxFactory.ISyntaxFactory Syntax = syntax.ToLower() switch
         {
             "intel" or "nasm" => Syntaxes.SyntaxFactory.SyntaxTypeCreator.FactoryMethod(Syntaxes.SyntaxFactory.SyntaxTypeCreator.AssemblySyntax.Intel_x86_64_NASM),
+            "att" or "at&t" or "gas" => Syntaxes.SyntaxFactory.SyntaxTypeCreator.FactoryMethod(Syntaxes.SyntaxFactory.SyntaxTypeCreator.AssemblySyntax.Intel_x86_64_ATT),
             _ => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Assembly flavor '{syntax}' not supported"))
         };
 
