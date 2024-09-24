@@ -20,9 +20,9 @@ internal partial class TokenList
         public static partial Regex INTEGER();
         [GeneratedRegex(@"[a-zA-Z_][a-zA-Z0-9_]*")]
         public static partial Regex IDENTIFIER();
-        [GeneratedRegex("\"[^\"^\r^\n^;]*\"?")]
+        [GeneratedRegex("\"[^\"\r\n]*\"?")]
         public static partial Regex REF_STRING();
-        [GeneratedRegex("\'[^\'^\r^\n^;]*\'?")]
+        [GeneratedRegex("\'[^\'\r\n]*\'?")]
         public static partial Regex STRING();
         [GeneratedRegex(@"\s")]
         public static partial Regex WHITESPACE();
