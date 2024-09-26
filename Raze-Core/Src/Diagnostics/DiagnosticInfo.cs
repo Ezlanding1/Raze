@@ -24,6 +24,7 @@ public abstract partial class Diagnostic
         { DiagnosticName.NonTerminatedString, ("String '{0}' was not terminated", Severity.Error) },
         { DiagnosticName.InvalidFormattedNumber, ("'{0}' is incorectly formatted", Severity.Error) },
         { DiagnosticName.IllegalCharError, ("Character '{0}' is Illegal", Severity.Error) },
+        { DiagnosticName.UnrecognizedEscapeSequence, ("The string escape sequence '{0}' is not recognized", Severity.Error) },
         
         // ParserError
         { DiagnosticName.UnexpectedEndInFunctionParameters, ("Function '{0}' reached an unexpected end in its parameters", Severity.Error) },

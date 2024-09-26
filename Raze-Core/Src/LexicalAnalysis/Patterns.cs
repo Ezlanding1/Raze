@@ -96,32 +96,5 @@ internal partial class TokenList
         public static partial Regex DOLLAR();
         [GeneratedRegex("(?m)[#].*$")]
         public static partial Regex COMMENT();
-
-
-        // Escape-Sequences
-        [GeneratedRegex(@"\\\\")]
-        public static partial Regex EscapeBackslash();
-        [GeneratedRegex(@"\\a")]
-        public static partial Regex EscapeA();
-        [GeneratedRegex(@"\\b")]
-        public static partial Regex EscapeB();
-        [GeneratedRegex(@"\\f")]
-        public static partial Regex EscapeF();
-        [GeneratedRegex(@"\\n")]
-        public static partial Regex EscapeN();
-        [GeneratedRegex(@"\\r")]
-        public static partial Regex EscapeR();
-        [GeneratedRegex(@"\\t")]
-        public static partial Regex EscapeT();
-        [GeneratedRegex(@"\\v")]
-        public static partial Regex EscapeV();
-        [GeneratedRegex(@"\\'")]
-        public static partial Regex EscapeSingleQuote();
-        [GeneratedRegex(@"\\\""")]
-        public static partial Regex EscapeDoubleQuote();
-        [GeneratedRegex(@"\\\?")]
-        public static partial Regex EscapeQuestionMark();
-        [GeneratedRegex(@"\\0")]
-        public static partial Regex Escape0();
     }
 }

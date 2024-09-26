@@ -24,7 +24,8 @@ public abstract partial class Diagnostic
         NonTerminatedString,
         InvalidFormattedNumber,
         IllegalCharError,
-        
+        UnrecognizedEscapeSequence,
+
         // ParserError
         UnexpectedEndInFunctionParameters,
         InvalidClassName,

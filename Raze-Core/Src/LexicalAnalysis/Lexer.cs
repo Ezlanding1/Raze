@@ -14,7 +14,7 @@ public partial class Lexer
 
     List<Token> tokens;
     TokenDefinition[] tokenDefinitions;
-    public static (Regex, char)[] stringEscapeCodes;
+    public static (char, char)[] stringEscapeCodes;
     StreamReader streamReader;
     Location location;
 
@@ -79,13 +79,32 @@ public partial class Lexer
         return token;
     }
 
-    private static string Escape(string str)
+    private string Escape(string str)
     {
-        foreach ((Regex, char) regex in stringEscapeCodes)
+        StringBuilder builder = new(str);
+
+        for (int i = 1; i < builder.Length; i++)
         {
-            str = regex.Item1.Replace(str, regex.Item2.ToString());
+            if (builder[i-1] == '\\')
+            {
+                int idx = stringEscapeCodes
+                    .Select(x => x.Item1)
+                    .ToList()
+                    .IndexOf(builder[i]);
+
+                if (idx != -1)
+                {
+                    builder.Remove(i-1, 2);
+                    builder.Insert(i-1, stringEscapeCodes[idx].Item2);
+                }
+                else
+                {
+                    Diagnostics.Report(new Diagnostic.LexDiagnostic(Diagnostic.DiagnosticName.UnrecognizedEscapeSequence, location, "\\" + builder[i]));
+                }
+            }
         }
-        return str;
+
+        return builder.ToString();
     }
 
     private void InitRegex()
@@ -108,18 +127,18 @@ public partial class Lexer
 
         stringEscapeCodes =
         [
-            (TokenList.Patterns.EscapeBackslash(), '\\'),
-            (TokenList.Patterns.EscapeA(), '\a'),
-            (TokenList.Patterns.EscapeB(), '\b'),
-            (TokenList.Patterns.EscapeF(), '\f'),
-            (TokenList.Patterns.EscapeN(), '\n'),
-            (TokenList.Patterns.EscapeR(), '\r'),
-            (TokenList.Patterns.EscapeT(), '\t'),
-            (TokenList.Patterns.EscapeV(), '\v'),
-            (TokenList.Patterns.EscapeSingleQuote(), '\''),
-            (TokenList.Patterns.EscapeDoubleQuote(), '\"'),
-            (TokenList.Patterns.EscapeQuestionMark(), '?'),
-            (TokenList.Patterns.Escape0(), '\0'),
+            ('\\', '\\'),
+            ('a', '\a'),
+            ('b', '\b'),
+            ('f', '\f'),
+            ('n', '\n'),
+            ('r', '\r'),
+            ('t', '\t'),
+            ('v', '\v'),
+            ('\'','\''),
+            ('\"','\"'),
+            ('?', '?'),
+            ('0', '\0'),
         ];
     }
 }
