@@ -99,6 +99,8 @@ to_flags['description'] = [
     ('sign extend', 'SignExtends', 'sign extend'),
     ('sign-extend', 'SignExtends', 'sign-extend'),
     ('signextend', 'SignExtends', 'signextend'),
+    ('sign-extension', 'SignExtends', 'sign-extension'),
+    ('sign- extension', 'SignExtends', 'sign-extension'),
     ('Jump far', 'FarJump', 'Jump far')
 ]
 
