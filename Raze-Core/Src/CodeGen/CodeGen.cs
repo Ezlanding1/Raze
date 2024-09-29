@@ -673,7 +673,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(localConditionalCount)));
 
         expr.conditional.block.Accept(this);
-        expr.updateExpr.Accept(this);
+        alloc.Free(expr.updateExpr.Accept(this));
 
         // Condition Label
         Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(localConditionalCount + 1)));
