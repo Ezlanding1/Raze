@@ -30,6 +30,7 @@ encodingtype_sizes = {
     'SizePrefix' : 1,
     'NoModRegRM' : -1,
     'SignExtends' : 0,
+    'ZeroExtends' : 0,
     'AddRegisterToOpCode' : 0,
     'RelativeJump' : 0,
     'NoUpper8BitEncoding' : 0,

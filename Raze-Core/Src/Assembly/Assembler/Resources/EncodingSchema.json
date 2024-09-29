@@ -65,7 +65,7 @@
     {
       "Instruction": "ADC AX, IMM16",
       "OpCode": "15",
-      "EncodingType": "NoModRegRM | SizePrefix"
+      "EncodingType": "SizePrefix | NoModRegRM"
     },
     {
       "Instruction": "ADC RM8, IMM8",
@@ -76,7 +76,7 @@
     {
       "Instruction": "ADC RM16, IMM8",
       "OpCode": "83",
-      "EncodingType": "SignExtends | SizePrefix",
+      "EncodingType": "SizePrefix | SignExtends",
       "OpCodeExtension": 2
     },
     {
@@ -99,7 +99,7 @@
     {
       "Instruction": "ADC RAX, IMM32",
       "OpCode": "15",
-      "EncodingType": "NoModRegRM | SignExtends | RexWPrefix"
+      "EncodingType": "SignExtends | NoModRegRM | RexWPrefix"
     },
     {
       "Instruction": "ADC RM32, IMM32",
@@ -190,18 +190,18 @@
     {
       "Instruction": "ADD AX, IMM16",
       "OpCode": "05",
-      "EncodingType": "NoModRegRM | SizePrefix"
+      "EncodingType": "SizePrefix | NoModRegRM"
     },
     {
       "Instruction": "ADD RM8, IMM8",
       "OpCode": "80",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding | SignExtends",
+      "EncodingType": "RexPrefix | SignExtends | NoUpper8BitEncoding",
       "OpCodeExtension": 0
     },
     {
       "Instruction": "ADD RM16, IMM8",
       "OpCode": "83",
-      "EncodingType": "SignExtends | SizePrefix",
+      "EncodingType": "SizePrefix | SignExtends",
       "OpCodeExtension": 0
     },
     {
@@ -224,7 +224,7 @@
     {
       "Instruction": "ADD RAX, IMM32",
       "OpCode": "05",
-      "EncodingType": "NoModRegRM | SignExtends | RexWPrefix"
+      "EncodingType": "SignExtends | NoModRegRM | RexWPrefix"
     },
     {
       "Instruction": "ADD RM32, IMM32",
@@ -357,7 +357,7 @@
     {
       "Instruction": "AND RM8, R8",
       "OpCode": "20",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding | SignExtends"
+      "EncodingType": "RexPrefix | SignExtends | NoUpper8BitEncoding"
     },
     {
       "Instruction": "AND RM16, R16",
@@ -372,7 +372,7 @@
     {
       "Instruction": "AND R8, RM8",
       "OpCode": "22",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding | SignExtends"
+      "EncodingType": "RexPrefix | SignExtends | NoUpper8BitEncoding"
     },
     {
       "Instruction": "AND R16, RM16",
@@ -387,7 +387,7 @@
     {
       "Instruction": "AND AX, IMM16",
       "OpCode": "25",
-      "EncodingType": "NoModRegRM | SizePrefix"
+      "EncodingType": "SizePrefix | NoModRegRM"
     },
     {
       "Instruction": "AND RM8, IMM8",
@@ -398,7 +398,7 @@
     {
       "Instruction": "AND RM16, IMM8",
       "OpCode": "83",
-      "EncodingType": "SignExtends | SizePrefix",
+      "EncodingType": "SizePrefix | SignExtends",
       "OpCodeExtension": 4
     },
     {
@@ -421,7 +421,7 @@
     {
       "Instruction": "AND RAX, IMM32",
       "OpCode": "25",
-      "EncodingType": "NoModRegRM | SignExtends | RexWPrefix"
+      "EncodingType": "SignExtends | NoModRegRM | RexWPrefix"
     },
     {
       "Instruction": "AND RM32, IMM32",
@@ -656,7 +656,7 @@
     {
       "Instruction": "CALL IMM32",
       "OpCode": "E8",
-      "EncodingType": "RelativeJump | SignExtends"
+      "EncodingType": "SignExtends | RelativeJump"
     }
   ],
   "CBW": [
@@ -1302,7 +1302,7 @@
     {
       "Instruction": "CMP AX, IMM16",
       "OpCode": "3D",
-      "EncodingType": "NoModRegRM | SizePrefix"
+      "EncodingType": "SizePrefix | NoModRegRM"
     },
     {
       "Instruction": "CMP RM8, IMM8",
@@ -1336,7 +1336,7 @@
     {
       "Instruction": "CMP RAX, IMM32",
       "OpCode": "3D",
-      "EncodingType": "NoModRegRM | SignExtends | RexWPrefix"
+      "EncodingType": "SignExtends | NoModRegRM | RexWPrefix"
     },
     {
       "Instruction": "CMP RM32, IMM32",
@@ -2519,7 +2519,7 @@
     {
       "Instruction": "IMUL R16, RM16, IMM8",
       "OpCode": "6B",
-      "EncodingType": "SignExtends | SizePrefix"
+      "EncodingType": "SizePrefix | SignExtends"
     },
     {
       "Instruction": "IMUL R64, RM64, IMM8",
@@ -2555,7 +2555,7 @@
     {
       "Instruction": "IN AX, IMM8",
       "OpCode": "E5",
-      "EncodingType": "NoModRegRM | SizePrefix"
+      "EncodingType": "SizePrefix | NoModRegRM"
     },
     {
       "Instruction": "IN AL, DX",
@@ -3138,12 +3138,12 @@
     {
       "Instruction": "JMP IMM8",
       "OpCode": "EB",
-      "EncodingType": "RelativeJump | SignExtends"
+      "EncodingType": "SignExtends | RelativeJump"
     },
     {
       "Instruction": "JMP IMM32",
       "OpCode": "E9",
-      "EncodingType": "RelativeJump | SignExtends"
+      "EncodingType": "SignExtends | RelativeJump"
     }
   ],
   "LDMXCSR": [
@@ -3499,7 +3499,7 @@
     {
       "Instruction": "MOV R8, IMM8",
       "OpCode": "B0",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding | NoModRegRM | AddRegisterToOpCode"
+      "EncodingType": "RexPrefix | NoUpper8BitEncoding | AddRegisterToOpCode | NoModRegRM"
     },
     {
       "Instruction": "MOV RM8, IMM8",
@@ -3509,12 +3509,12 @@
     {
       "Instruction": "MOV SEG, RM64",
       "OpCode": "8E",
-      "EncodingType": "RexWPrefix | SizePrefix"
+      "EncodingType": "SizePrefix | RexWPrefix"
     },
     {
       "Instruction": "MOV R16, IMM16",
       "OpCode": "B8",
-      "EncodingType": "AddRegisterToOpCode | NoModRegRM | SizePrefix"
+      "EncodingType": "SizePrefix | AddRegisterToOpCode | NoModRegRM"
     },
     {
       "Instruction": "MOV RM8, IMM8",
@@ -3987,22 +3987,22 @@
     {
       "Instruction": "MOVSX R16, RM8",
       "OpCode": "0F BE",
-      "EncodingType": "SignExtends | SizePrefix"
+      "EncodingType": "SizePrefix | SignExtends"
     },
     {
       "Instruction": "MOVSX R64, RM8",
       "OpCode": "0F BE",
-      "EncodingType": "NoUpper8BitEncoding | SignExtends | RexWPrefix"
+      "EncodingType": "SignExtends | NoUpper8BitEncoding | RexWPrefix"
     },
     {
       "Instruction": "MOVSX R32, RM16",
       "OpCode": "0F BF",
-      "EncodingType": "SignExtends | SizePrefix"
+      "EncodingType": "SizePrefix | SignExtends"
     },
     {
       "Instruction": "MOVSX R64, RM16",
       "OpCode": "0F BF",
-      "EncodingType": "RexWPrefix | SignExtends | SizePrefix"
+      "EncodingType": "SizePrefix | SignExtends | RexWPrefix"
     }
   ],
   "MOVSXD": [
@@ -4014,7 +4014,7 @@
     {
       "Instruction": "MOVSXD R16, RM16",
       "OpCode": "63",
-      "EncodingType": "SignExtends | SizePrefix"
+      "EncodingType": "SizePrefix | SignExtends"
     },
     {
       "Instruction": "MOVSXD R64, RM32",
@@ -4045,27 +4045,28 @@
   "MOVZX": [
     {
       "Instruction": "MOVZX R32, RM8",
-      "OpCode": "0F B6"
+      "OpCode": "0F B6",
+      "EncodingType": "ZeroExtends"
     },
     {
       "Instruction": "MOVZX R16, RM8",
       "OpCode": "0F B6",
-      "EncodingType": "SizePrefix"
+      "EncodingType": "SizePrefix | ZeroExtends"
     },
     {
       "Instruction": "MOVZX R64, RM8",
       "OpCode": "0F B6",
-      "EncodingType": "NoUpper8BitEncoding | RexWPrefix"
+      "EncodingType": "ZeroExtends | NoUpper8BitEncoding | RexWPrefix"
     },
     {
       "Instruction": "MOVZX R32, RM16",
       "OpCode": "0F B7",
-      "EncodingType": "SizePrefix"
+      "EncodingType": "SizePrefix | ZeroExtends"
     },
     {
       "Instruction": "MOVZX R64, RM16",
       "OpCode": "0F B7",
-      "EncodingType": "RexWPrefix | SizePrefix"
+      "EncodingType": "SizePrefix | ZeroExtends | RexWPrefix"
     }
   ],
   "MPSADBW": [
@@ -4277,7 +4278,7 @@
     {
       "Instruction": "OR AX, IMM16",
       "OpCode": "0D",
-      "EncodingType": "NoModRegRM | SizePrefix"
+      "EncodingType": "SizePrefix | NoModRegRM"
     },
     {
       "Instruction": "OR RM8, IMM8",
@@ -4288,7 +4289,7 @@
     {
       "Instruction": "OR RM16, IMM8",
       "OpCode": "83",
-      "EncodingType": "SignExtends | SizePrefix",
+      "EncodingType": "SizePrefix | SignExtends",
       "OpCodeExtension": 1
     },
     {
@@ -4311,7 +4312,7 @@
     {
       "Instruction": "OR RAX, IMM32",
       "OpCode": "0D",
-      "EncodingType": "NoModRegRM | SignExtends | RexWPrefix"
+      "EncodingType": "SignExtends | NoModRegRM | RexWPrefix"
     },
     {
       "Instruction": "OR RM32, IMM32",
@@ -4345,7 +4346,7 @@
     {
       "Instruction": "OUT IMM8, AX",
       "OpCode": "E7",
-      "EncodingType": "NoModRegRM | SizePrefix"
+      "EncodingType": "SizePrefix | NoModRegRM"
     },
     {
       "Instruction": "OUT DX, AL",
@@ -4397,17 +4398,17 @@
     {
       "Instruction": "OUTS DX, RM8",
       "OpCode": "F3 6E",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding | SizePrefix"
+      "EncodingType": "SizePrefix | RexPrefix | NoUpper8BitEncoding"
     },
     {
       "Instruction": "OUTS DX, RM8",
       "OpCode": "F3 6E",
-      "EncodingType": "RexWPrefix | NoUpper8BitEncoding | SizePrefix"
+      "EncodingType": "SizePrefix | NoUpper8BitEncoding | RexWPrefix"
     },
     {
       "Instruction": "OUTS DX, RM32",
       "OpCode": "F3 6F",
-      "EncodingType": "RexWPrefix | SizePrefix"
+      "EncodingType": "SizePrefix | RexWPrefix"
     }
   ],
   "OUTSB": [
@@ -5100,7 +5101,7 @@
     {
       "Instruction": "POP R16",
       "OpCode": "58",
-      "EncodingType": "AddRegisterToOpCode | NoModRegRM | SizePrefix"
+      "EncodingType": "SizePrefix | AddRegisterToOpCode | NoModRegRM"
     },
     {
       "Instruction": "POP RM16",
@@ -5154,7 +5155,8 @@
   "POPFQ": [
     {
       "Instruction": "POPFQ",
-      "OpCode": "9D"
+      "OpCode": "9D",
+      "EncodingType": "ZeroExtends"
     }
   ],
   "POR": [
@@ -5622,7 +5624,7 @@
     {
       "Instruction": "PUSH R16",
       "OpCode": "50",
-      "EncodingType": "AddRegisterToOpCode | NoModRegRM | SizePrefix"
+      "EncodingType": "SizePrefix | AddRegisterToOpCode | NoModRegRM"
     },
     {
       "Instruction": "PUSH RM16",
@@ -6484,7 +6486,7 @@
     {
       "Instruction": "SBB AX, IMM16",
       "OpCode": "1D",
-      "EncodingType": "NoModRegRM | SizePrefix"
+      "EncodingType": "SizePrefix | NoModRegRM"
     },
     {
       "Instruction": "SBB RM8, IMM8",
@@ -6495,7 +6497,7 @@
     {
       "Instruction": "SBB RM16, IMM8",
       "OpCode": "83",
-      "EncodingType": "SignExtends | SizePrefix",
+      "EncodingType": "SizePrefix | SignExtends",
       "OpCodeExtension": 3
     },
     {
@@ -6518,7 +6520,7 @@
     {
       "Instruction": "SBB RAX, IMM32",
       "OpCode": "1D",
-      "EncodingType": "NoModRegRM | SignExtends | RexWPrefix"
+      "EncodingType": "SignExtends | NoModRegRM | RexWPrefix"
     },
     {
       "Instruction": "SBB RM32, IMM32",
@@ -7234,7 +7236,7 @@
     {
       "Instruction": "SUB AX, IMM16",
       "OpCode": "2D",
-      "EncodingType": "NoModRegRM | SizePrefix"
+      "EncodingType": "SizePrefix | NoModRegRM"
     },
     {
       "Instruction": "SUB RM8, IMM8",
@@ -7245,7 +7247,7 @@
     {
       "Instruction": "SUB RM16, IMM8",
       "OpCode": "83",
-      "EncodingType": "SignExtends | SizePrefix",
+      "EncodingType": "SizePrefix | SignExtends",
       "OpCodeExtension": 5
     },
     {
@@ -7268,7 +7270,7 @@
     {
       "Instruction": "SUB RAX, IMM32",
       "OpCode": "2D",
-      "EncodingType": "NoModRegRM | SignExtends | RexWPrefix"
+      "EncodingType": "SignExtends | NoModRegRM | RexWPrefix"
     },
     {
       "Instruction": "SUB RM32, IMM32",
@@ -7378,7 +7380,7 @@
     {
       "Instruction": "TEST AX, IMM16",
       "OpCode": "A9",
-      "EncodingType": "NoModRegRM | SizePrefix"
+      "EncodingType": "SizePrefix | NoModRegRM"
     },
     {
       "Instruction": "TEST RM8, IMM8",
@@ -7400,7 +7402,7 @@
     {
       "Instruction": "TEST RAX, IMM32",
       "OpCode": "A9",
-      "EncodingType": "NoModRegRM | SignExtends | RexWPrefix"
+      "EncodingType": "SignExtends | NoModRegRM | RexWPrefix"
     },
     {
       "Instruction": "TEST RM32, IMM32",
@@ -7621,7 +7623,7 @@
     {
       "Instruction": "XBEGIN IMM16",
       "OpCode": "C7 F8",
-      "EncodingType": "RelativeJump | SizePrefix"
+      "EncodingType": "SizePrefix | RelativeJump"
     },
     {
       "Instruction": "XBEGIN IMM32",
@@ -7643,12 +7645,12 @@
     {
       "Instruction": "XCHG AX, R16",
       "OpCode": "90",
-      "EncodingType": "AddRegisterToOpCode | NoModRegRM | SizePrefix"
+      "EncodingType": "SizePrefix | AddRegisterToOpCode | NoModRegRM"
     },
     {
       "Instruction": "XCHG R16, AX",
       "OpCode": "90",
-      "EncodingType": "AddRegisterToOpCode | NoModRegRM | SizePrefix"
+      "EncodingType": "SizePrefix | AddRegisterToOpCode | NoModRegRM"
     },
     {
       "Instruction": "XCHG RAX, R64",
@@ -7802,7 +7804,7 @@
     {
       "Instruction": "XOR AX, IMM16",
       "OpCode": "35",
-      "EncodingType": "NoModRegRM | SizePrefix"
+      "EncodingType": "SizePrefix | NoModRegRM"
     },
     {
       "Instruction": "XOR RM8, IMM8",
@@ -7813,7 +7815,7 @@
     {
       "Instruction": "XOR RM16, IMM8",
       "OpCode": "83",
-      "EncodingType": "SignExtends | SizePrefix",
+      "EncodingType": "SizePrefix | SignExtends",
       "OpCodeExtension": 6
     },
     {
@@ -7836,7 +7838,7 @@
     {
       "Instruction": "XOR RAX, IMM32",
       "OpCode": "35",
-      "EncodingType": "NoModRegRM | SignExtends | RexWPrefix"
+      "EncodingType": "SignExtends | NoModRegRM | RexWPrefix"
     },
     {
       "Instruction": "XOR RM32, IMM32",
@@ -7887,4 +7889,4 @@
       "OpCodeExtension": 2
     }
   ]
-} 
+}
