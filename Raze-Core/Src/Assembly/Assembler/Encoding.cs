@@ -55,42 +55,52 @@ public partial class Assembler
 
             public bool SpecialMatch(AssemblyExpr.OperandInstruction assemblyExpr, params Operand[] operands)
             {
-                for (int i = 0; i < operands.Length; i++)
+                foreach (var (operand, idx) in assemblyExpr.Operands
+                    .Select((op, idx) => (op, idx))
+                    .Where(x => Operand.OperandType.IMM.HasFlag(operands[x.idx].type)))
                 {
-                    if (Operand.OperandType.IMM.HasFlag(operands[i].type) && operands[i].size != this.operands[i].size && ((AssemblyExpr.Literal)assemblyExpr.Operands[i]).type < AssemblyExpr.Literal.LiteralType.RefData)
-                    {
-                        if (!AssemblyExpr.ImmediateGenerator.ResizeImmediate((AssemblyExpr.Literal)assemblyExpr.Operands[i], this.operands[i].size))
-                            return false;
-                    }
-                }
+                    AssemblyExpr.Literal literal = (AssemblyExpr.Literal)operand;
 
-                if (operands.Length == 2 && Operand.OperandType.IMM.HasFlag(operands[1].type)
-                    && ((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).type < AssemblyExpr.Literal.LiteralType.RefData)
-                {
-                    if (encodingType.HasFlag(EncodingTypes.SignExtends))
+                    if (operands[idx].size != this.operands[idx].size && literal.type < AssemblyExpr.Literal.LiteralType.RefData)
                     {
-                        switch (this.operands[1].size)
-                        {
-                            case Operand.OperandSize._8Bits:
-                                if (((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value[0] > sbyte.MaxValue) return false;
-                                break;
-                            case Operand.OperandSize._16Bits:
-                                if (BitConverter.ToInt16(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value) > short.MaxValue) return false;
-                                break;
-                            case Operand.OperandSize._32Bits:
-                                if (BitConverter.ToInt32(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value) > int.MaxValue) return false;
-                                break;
-                            default:
-                                if (BitConverter.ToInt64(((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2).value) > long.MaxValue) return false;
-                                break;
-                        }
+                        if (!AssemblyExpr.ImmediateGenerator.ResizeImmediate(literal, this.operands[idx].size))
+                            return false;
                     }
-                    if (this.operands[1].type == Operand.OperandType.One)
+                    
+                    if (encodingType.HasFlag(EncodingTypes.SignExtends) && literal.type == AssemblyExpr.Literal.LiteralType.UnsignedInteger)
                     {
-                        if (!AssemblyExpr.ImmediateGenerator.IsOne((AssemblyExpr.Literal)((AssemblyExpr.Binary)assemblyExpr).operand2))
+                        bool unsignedIntDoesNotFit = this.operands[idx].size switch
+                        {
+                            Operand.OperandSize._8Bits => literal.value[0] > sbyte.MaxValue,
+                            Operand.OperandSize._16Bits => BitConverter.ToUInt16(literal.value) > short.MaxValue,
+                            Operand.OperandSize._32Bits => BitConverter.ToUInt32(literal.value) > int.MaxValue,
+                            _ => BitConverter.ToUInt64(literal.value) > long.MaxValue
+                        };
+                        
+                        if (unsignedIntDoesNotFit)
                         {
                             return false;
                         }
+                    }
+                    else if (encodingType.HasFlag(EncodingTypes.ZeroExtends) && literal.type == AssemblyExpr.Literal.LiteralType.Integer)
+                    {
+                        bool signedIntDoesNotFit = this.operands[idx].size switch
+                        {
+                            Operand.OperandSize._8Bits => unchecked((sbyte)literal.value[0]) < 0,
+                            Operand.OperandSize._16Bits => BitConverter.ToInt16(literal.value) < 0,
+                            Operand.OperandSize._32Bits => BitConverter.ToInt32(literal.value) < 0,
+                            _ => BitConverter.ToInt64(literal.value) < 0
+                        };
+                        
+                        if (signedIntDoesNotFit)
+                        {
+                            return false;
+                        }
+                    }
+
+                    if (this.operands[idx].type == Operand.OperandType.One && !AssemblyExpr.ImmediateGenerator.IsOne(literal))
+                    {
+                        return false;
                     }
                 }
 

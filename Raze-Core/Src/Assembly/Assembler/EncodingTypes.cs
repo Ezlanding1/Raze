@@ -21,9 +21,10 @@ public partial class Assembler
                 SizePrefix = 4,
                 NoModRegRM = 8,
                 SignExtends = 16,
-                AddRegisterToOpCode = 32,
-                RelativeJump = 64,
-                NoUpper8BitEncoding = 128
+                ZeroExtends = 32,
+                AddRegisterToOpCode = 64,
+                RelativeJump = 128,
+                NoUpper8BitEncoding = 256
             }
         }
     }
