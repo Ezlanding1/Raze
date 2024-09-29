@@ -1,0 +1,13 @@
+{
+    "const char *" : ["string", 8],
+    "char *" : ["String", 8],
+    "int" : ["int", 4],
+    "size_t" : ["uint64", 8],
+    "unsigned int" : ["uint", 4],
+    "unsigned long" : ["uint64", 8],
+    "long" : ["int64", 8],
+    "umode_t" : ["uint16", 2],
+    "struct __kernel_timespec *" : ["Timespec", 8],
+    "time_t" : ["int64", 8],
+    "suseconds_t" : ["int64", 8]
+}
