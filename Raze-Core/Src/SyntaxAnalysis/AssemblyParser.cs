@@ -294,7 +294,7 @@ public partial class Parser
             if (!(parser.TypeMatch(Token.TokenType.IDENTIFIER) || parser.ReservedValueMatch("this")))
                 parser.Expected("IDENTIFIER, 'this'", "after escape '$'");
 
-            return new Expr.InlineAssembly.Variable(new Expr.AmbiguousGetReference(parser.Previous(), true));
+            return new Expr.InlineAssembly.Variable(parser.GetReference(null));
         }
     }
 }
