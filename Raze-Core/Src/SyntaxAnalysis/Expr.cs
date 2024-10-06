@@ -725,7 +725,7 @@ public abstract partial class Expr
             size = (emitVTable || GetVirtualMethods().Count != 0) ? 8 : 0;
             foreach (var declaration in declarations)
             {
-                CodeGen.RegisterAlloc.AllocateVariable(this, declaration.stack);
+                CodeGen.RegisterAlloc.AllocateHeapVariable(this, declaration.stack);
             }
         }
 

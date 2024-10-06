@@ -20,14 +20,18 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             current = (Expr.Definition)current.enclosing;
         }
 
-        public static void AllocateVariable(Expr.Definition current, Expr.StackData variable, AssemblyExpr.Register.RegisterName registerName=AssemblyExpr.Register.RegisterName.RBP)
+        public static void AllocateHeapVariable(Expr.Definition current, Expr.StackData variable, AssemblyExpr.Register.RegisterName registerName = AssemblyExpr.Register.RegisterName.RBP)
+        {
+            var variableSize = variable._ref ? 8 : variable.size;
+            variable.value = new AssemblyExpr.Pointer(registerName, current.size, (AssemblyExpr.Register.RegisterSize)variableSize);
+            current.size += variableSize;
+        }
+        public void AllocateVariable(Expr.StackData variable, AssemblyExpr.Register.RegisterName registerName=AssemblyExpr.Register.RegisterName.RBP)
         {
             var variableSize = variable._ref ? 8 : variable.size;
             current.size += variableSize;
             variable.value = new AssemblyExpr.Pointer(registerName, -current.size, (AssemblyExpr.Register.RegisterSize)variableSize);
         }
-        public void AllocateVariable(Expr.StackData variable, AssemblyExpr.Register.RegisterName registerName=AssemblyExpr.Register.RegisterName.RBP) =>
-            AllocateVariable(current, variable, registerName);
 
         public void AllocateParameters(Expr.Function function, CodeGen codeGen)
         {

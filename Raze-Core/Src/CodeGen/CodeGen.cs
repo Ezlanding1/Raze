@@ -69,9 +69,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             }
             else
             {
-
                 localParams[0] =
-                    alloc.ReserveScratchRegister(this, AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits);
+                    alloc.ReserveScratchRegister(this, AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits);
             }
         }
 
@@ -148,7 +147,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             Emit(new AssemblyExpr.Binary(
                 AssemblyExpr.Instruction.MOV,
                 reg,
-                new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RDI, -8, InstructionUtils.SYS_SIZE)
+                new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RDI, 0, InstructionUtils.SYS_SIZE)
             ));
             EmitCall(new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL,
                 new AssemblyExpr.Pointer(reg, callee.GetOffsetOfVTableMethod(call.internalFunction), InstructionUtils.SYS_SIZE)
@@ -865,7 +864,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         {
             Emit(new AssemblyExpr.Binary(
                 AssemblyExpr.Instruction.MOV,
-                new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RDI, -(int)InstructionUtils.SYS_SIZE, InstructionUtils.SYS_SIZE),
+                new AssemblyExpr.Pointer(alloc.GetRegister(AssemblyExpr.Register.RegisterName.RAX, InstructionUtils.SYS_SIZE), 0, InstructionUtils.SYS_SIZE),
                 new AssemblyExpr.DataRef("VTABLE_FOR_" + expr.internalClass.name.lexeme)
             ));
         }
@@ -939,6 +938,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rdi, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [0])));
         Emit(new AssemblyExpr.Nullary(AssemblyExpr.Instruction.SYSCALL));
 
+        alloc.NullReg(AssemblyExpr.Register.RegisterName.RAX);
+        alloc.NeededAlloc(AssemblyExpr.Register.RegisterSize._64Bits, this, AssemblyExpr.Register.RegisterName.RAX);
+
         if (size.IsLiteral())
         {
             var ptr = new AssemblyExpr.Pointer(rax, BitConverter.ToInt32(((AssemblyExpr.Literal)size).value), InstructionUtils.SYS_SIZE);
@@ -961,8 +963,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [12])));
 
-        alloc.NullReg(AssemblyExpr.Register.RegisterName.RDI);
-        alloc.NeededAlloc(AssemblyExpr.Register.RegisterSize._64Bits, this, AssemblyExpr.Register.RegisterName.RDI);
 
         Emit(new AssemblyExpr.Nullary(AssemblyExpr.Instruction.SYSCALL));
 
@@ -971,8 +971,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
 
         alloc.Free(size);
-        alloc.FreeRegister(rax);
-        return rdi;
+        alloc.FreeRegister(rdi);
+        return rax;
     }
     
     private AssemblyExpr.IValue CompareVTables(Expr.Is expr)
