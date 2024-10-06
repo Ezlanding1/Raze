@@ -86,6 +86,14 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             return idx;
         }
 
+        public void StoreHeapAllocRetReg(AssemblyExpr.Register reg) => registers[0] = reg.nameBox;
+        public AssemblyExpr.Register GetHeapAllocRetReg()
+        {
+            var result = new AssemblyExpr.Register(registers[0], AssemblyExpr.Register.RegisterSize._64Bits);
+            NullReg(0);
+            return result;
+        }
+
         public void SaveScratchRegistersBeforeCall(CodeGen codeGen, int arity)
         {
             for (int i = 0; i < InstructionUtils.NonSseScratchRegisterCount; i++)
@@ -118,6 +126,14 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         public void ReserveRegister(CodeGen codeGen, AssemblyExpr.Register.RegisterName name) =>
             _ReserveRegister(codeGen, NameToIdx(name), RegisterIdx);
+
+
+        public AssemblyExpr.Register ReserveRegister(CodeGen codeGen, AssemblyExpr.Register.RegisterName name, AssemblyExpr.Register.RegisterSize size)
+        {
+            var regIdx = RegisterIdx;
+            _ReserveRegister(codeGen, NameToIdx(name), RegisterIdx);
+            return GetRegister(regIdx, size);
+        }
 
         private void _ReserveRegister(CodeGen assembler, int i, int newIdx)
         {

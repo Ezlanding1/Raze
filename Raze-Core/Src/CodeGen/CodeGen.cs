@@ -70,7 +70,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             else
             {
                 localParams[0] =
-                    alloc.ReserveScratchRegister(this, AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits);
+                    alloc.GetHeapAllocRetReg();
             }
         }
 
@@ -858,7 +858,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         bool hasVTable = expr.internalClass.emitVTable || expr.internalClass.GetVirtualMethods().Count != 0;
         int size = Math.Max(1, expr.internalClass.size);
 
-        new Expr.HeapAlloc(new Expr.Literal(new(Parser.LiteralTokenType.Integer, size.ToString(), Location.NoLocation))).Accept(this);
+        alloc.StoreHeapAllocRetReg((AssemblyExpr.Register)
+            new Expr.HeapAlloc(new Expr.Literal(new(Parser.LiteralTokenType.Integer, size.ToString(), Location.NoLocation))).Accept(this)
+        );
 
         if (hasVTable)
         {
@@ -938,8 +940,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rdi, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [0])));
         Emit(new AssemblyExpr.Nullary(AssemblyExpr.Instruction.SYSCALL));
 
-        alloc.NullReg(AssemblyExpr.Register.RegisterName.RAX);
+        alloc.Free(rax);
+        rax = alloc.GetRegister(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits);
         alloc.NeededAlloc(AssemblyExpr.Register.RegisterSize._64Bits, this, AssemblyExpr.Register.RegisterName.RAX);
+        var retReg = rax;
+        alloc.ReserveRegister(this, 0);
+        rax = alloc.GetRegister(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits);
 
         if (size.IsLiteral())
         {
@@ -972,7 +978,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         alloc.Free(size);
         alloc.FreeRegister(rdi);
-        return rax;
+        alloc.FreeRegister(rax);
+        return retReg;
     }
     
     private AssemblyExpr.IValue CompareVTables(Expr.Is expr)
