@@ -271,12 +271,12 @@ public abstract partial class Expr
             {
                 Function currentFunction;
 
-                if (codeGen is InlinedCodeGen inlinedCodeGen && inlinedCodeGen.inlineState.inline)
+                if (codeGen is InlinedCodeGen inlinedCodeGen && inlinedCodeGen.inlineState != null)
                 {
-                    currentFunction = ((InlinedCodeGen.InlineStateInlined)inlinedCodeGen.inlineState).currentInlined;
+                    currentFunction = inlinedCodeGen.inlineState.currentInlined;
 
                     var nonLiteral = op.NonLiteral(codeGen, currentFunction._returnType.type);
-                    ((InlinedCodeGen.InlineStateInlined)inlinedCodeGen.inlineState).callee = nonLiteral;
+                    inlinedCodeGen.inlineState.callee = nonLiteral;
                     inlinedCodeGen.LockOperand(nonLiteral);
                 }
                 else

@@ -1,28 +1,15 @@
 ﻿namespace Raze;
 
-public class InlinedCodeGen : CodeGen
+public partial class InlinedCodeGen : CodeGen
 {
-    public class InlineStateNoInline(InlineStateNoInline lastState, bool inline = false)
-    {
-        public InlineStateNoInline lastState = lastState;
-
-        public bool inline = inline;
-    }
-
-    public class InlineStateInlined(InlineStateNoInline lastState, Expr.Function currentInlined)
-        : InlineStateNoInline(lastState, true)
+    internal class InlineState(Expr.Function currentInlined)
     {
         public int inlineLabelIdx = -1;
         public bool secondJump = false;
-        public Expr.Function currentInlined = currentInlined;
         public AssemblyExpr.IValue? callee;
+        public Expr.Function currentInlined = currentInlined;
     }
-
-    public InlineStateNoInline inlineState = new(null);
-
-    public InlinedCodeGen()
-    {
-    }
+    internal InlineState? inlineState = null;
 
     public override AssemblyExpr.IValue? VisitUnaryExpr(Expr.Unary expr)
     {
@@ -33,22 +20,12 @@ public class InlinedCodeGen : CodeGen
 
         if (!expr.internalFunction.modifiers["inline"])
         {
-            inlineState = new(inlineState);
-
-            var tmp = base.VisitUnaryExpr(expr);
-
-            inlineState = inlineState.lastState;
-
-            return tmp;
+            using (new SaveInlineStateNoInline(this))
+                return base.VisitUnaryExpr(expr);
         }
 
-        inlineState = new InlineStateInlined(inlineState, expr.internalFunction);
-
-        var ret = HandleInvokable(expr);
-
-        inlineState = inlineState.lastState;
-
-        return ret;
+        using (new SaveInlineStateInline(this, expr.internalFunction))
+            return HandleInvokable(expr);
     }
 
     public override AssemblyExpr.IValue? VisitBinaryExpr(Expr.Binary expr)
@@ -60,38 +37,23 @@ public class InlinedCodeGen : CodeGen
 
         if (!expr.internalFunction.modifiers["inline"])
         {
-            inlineState = new(inlineState);
-
-            var tmp = base.VisitBinaryExpr(expr);
-
-            inlineState = inlineState.lastState;
-
-            return tmp;
+            using (new SaveInlineStateNoInline(this))
+                return base.VisitBinaryExpr(expr);
         }
 
-        inlineState = new InlineStateInlined(inlineState, expr.internalFunction);
-
-        var ret = HandleInvokable(expr);
-
-        inlineState = inlineState.lastState;
-
-        return ret;
+        using (new SaveInlineStateInline(this, expr.internalFunction))
+            return HandleInvokable(expr);
     }
 
     public override AssemblyExpr.IValue? VisitCallExpr(Expr.Call expr)
     {
         if (!expr.internalFunction.modifiers["inline"])
         {
-            inlineState = new(inlineState);
-
-            var tmp = base.VisitCallExpr(expr);
-
-            inlineState = inlineState.lastState;
-
-            return tmp;
+            using (new SaveInlineStateNoInline(this))
+                return base.VisitCallExpr(expr);
         }
 
-        inlineState = new InlineStateInlined(inlineState, expr.internalFunction);
+        var saveInlineState = new SaveInlineStateInline(this, expr.internalFunction);
 
         (AssemblyExpr.IValue? enclosingThisStackDataValue, int thisSize) = (null, -1);
         bool lastThisIsLocked = false;
@@ -140,8 +102,7 @@ public class InlinedCodeGen : CodeGen
             Expr.DataType.This(thisSize).value = enclosingThisStackDataValue;
         }
 
-        inlineState = inlineState.lastState;
-
+        saveInlineState.Dispose();
         return ret;
     }
 
@@ -167,7 +128,7 @@ public class InlinedCodeGen : CodeGen
             alloc.Free(bodyExpr.Accept(this), false);
         }
 
-        var ret = ((InlineStateInlined)inlineState).callee;
+        var ret = inlineState.callee;
         RegisterState? state = alloc.SaveRegisterState(ret);
 
         for (int i = 0; i < invokable.Arguments.Count; i++)
@@ -220,62 +181,60 @@ public class InlinedCodeGen : CodeGen
 
     public override AssemblyExpr.IValue? VisitReturnExpr(Expr.Return expr)
     {
-        if (!inlineState.inline)
+        if (inlineState == null)
         {
             return base.VisitReturnExpr(expr);
         }
 
-        if (!expr.IsVoid(((InlineStateInlined)inlineState).currentInlined))
+        if (!expr.IsVoid(inlineState.currentInlined))
         {
-            var function = ((InlineStateInlined)inlineState).currentInlined;
+            Expr.Function current = inlineState.currentInlined;
 
-            AssemblyExpr.Instruction instruction = GetMoveInstruction(function.refReturn, function._returnType.type);
+            AssemblyExpr.Instruction instruction = GetMoveInstruction(current.refReturn, current._returnType.type);
                 
-            var returnSize = InstructionUtils.ToRegisterSize(((InlineStateInlined)inlineState).currentInlined._returnType.type.allocSize);
+            var returnSize = InstructionUtils.ToRegisterSize(current._returnType.type.allocSize);
             AssemblyExpr.IValue operand = expr.value.Accept(this).IfLiteralCreateLiteral(returnSize);
 
-            if (((InlineStateInlined)inlineState).currentInlined.refReturn)
+            if (current.refReturn)
             {
                 (instruction, operand) = PreserveRefPtrVariable(expr.value, (AssemblyExpr.Pointer)operand);
             }
 
-            ref var callee = ref ((InlineStateInlined)inlineState).callee;
-
-            if (callee == null)
+            if (inlineState.callee == null)
             {
                 alloc.Free(operand);
-                ((InlineStateInlined)inlineState).callee = alloc.NextRegister(returnSize, function._returnType.type);
+                inlineState.callee = alloc.NextRegister(returnSize, current._returnType.type);
             }
 
             if (operand.IsRegister(out var op))
             {
-                if (!callee.IsRegister(out var reg) || op.Name != reg.Name)
+                if (!inlineState.callee.IsRegister(out var reg) || op.Name != reg.Name)
                 {
-                    if (!HandleSeteOptimization(op, callee))
+                    if (!HandleSeteOptimization(op, inlineState.callee))
                     {
-                        Emit(new AssemblyExpr.Binary(instruction, callee, operand));
+                        Emit(new AssemblyExpr.Binary(instruction, inlineState.callee, operand));
                     }
                 }
             }
             else
             {
-                Emit(new AssemblyExpr.Binary(instruction, ((InlineStateInlined)inlineState).callee, operand));
+                Emit(new AssemblyExpr.Binary(instruction, inlineState.callee, operand));
             }
         }
         else
         {
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, ((InlineStateInlined)inlineState).callee, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 0 })));
+            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, inlineState.callee, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [0])));
         }
 
-        if (((InlineStateInlined)inlineState).inlineLabelIdx == -1)
+        if (inlineState.inlineLabelIdx == -1)
         {
-            ((InlineStateInlined)inlineState).inlineLabelIdx = conditionalCount;
+            inlineState.inlineLabelIdx = conditionalCount;
             Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.JMP, new AssemblyExpr.LocalProcedureRef(CreateConditionalLabel(conditionalCount++))));
         }
         else
         {
-            ((InlineStateInlined)inlineState).secondJump = true;
-            Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.JMP, new AssemblyExpr.LocalProcedureRef(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))));
+            inlineState.secondJump = true;
+            Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.JMP, new AssemblyExpr.LocalProcedureRef(CreateConditionalLabel(inlineState.inlineLabelIdx))));
         }
 
         return null;
@@ -330,22 +289,22 @@ public class InlinedCodeGen : CodeGen
     private void HandleInlinedReturnOptimization()
     {
         if (assembly.text[^1] is AssemblyExpr.Unary jmpInstruction && jmpInstruction.instruction == AssemblyExpr.Instruction.JMP
-            && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.Name == CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx))
+            && jmpInstruction.operand is AssemblyExpr.LocalProcedureRef procRef && procRef.Name == CreateConditionalLabel(inlineState.inlineLabelIdx))
         {
             assembly.text.RemoveAt(assembly.text.Count - 1);
 
-            if (((InlineStateInlined)inlineState).secondJump)
+            if (inlineState.secondJump)
             {
-                Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
+                Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(inlineState.inlineLabelIdx)));
             }
             else
             {
                 conditionalCount--;
             }
         }
-        else if (((InlineStateInlined)inlineState).inlineLabelIdx != -1)
+        else if (inlineState.inlineLabelIdx != -1)
         {
-            Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(((InlineStateInlined)inlineState).inlineLabelIdx)));
+            Emit(new AssemblyExpr.LocalProcedure(CreateConditionalLabel(inlineState.inlineLabelIdx)));
         }
     }
 }
