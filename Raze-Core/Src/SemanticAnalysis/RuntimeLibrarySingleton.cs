@@ -93,7 +93,10 @@ public partial class Analyzer
                 SymbolTableSingleton.SymbolTable.currentFileInfo = fileInfo;
 
                 SymbolTableSingleton.SymbolTable.SetContext(SymbolTableSingleton.SymbolTable.GetRuntimeImport(fileInfo).importClass);
-                InitialPass.HandleTypeNameReference(name);
+                if (name.Count != 0)
+                {
+                    InitialPass.HandleTypeNameReference(name);
+                }
                 
                 Expr.Function result = SymbolTableSingleton.SymbolTable.GetFunction(new(Token.TokenType.IDENTIFIER, functionName, Location.NoLocation), argumentTypes.Select(x => x.Value).ToArray());
 

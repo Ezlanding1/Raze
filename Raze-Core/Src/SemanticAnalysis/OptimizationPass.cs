@@ -59,7 +59,10 @@ public partial class Analyzer
             {
                 expr.call.Accept(this);
                 using (new SaveContext())
+                {
+                    TypeCheckUtils.newFunction.Value.Accept(this);
                     expr.internalClass.Accept(this);
+                }
             }
             else
             {
@@ -67,7 +70,16 @@ public partial class Analyzer
             }
             return null;
         }
-        
+
+        public override object VisitHeapAllocExpr(Expr.HeapAlloc expr)
+        {
+            using (new SaveContext())
+                TypeCheckUtils.newFunction.Value.Accept(this);
+
+            expr.size.Accept(this);
+            return null;
+        }
+
         public override object VisitBinaryExpr(Expr.Binary expr)
         {
             if (expr.internalFunction != null)

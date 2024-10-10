@@ -148,6 +148,14 @@ public partial class Analyzer
                     false,
                     new (new ([new(Token.TokenType.IDENTIFIER, "Std", Location.NoLocation)]), true)
                 )
+            },
+            {
+                "System",
+                new Expr.Import(
+                    new Expr.Import.FileInfo("System.rz"),
+                    false,
+                    new(new(null), false)
+                )
             }
         };
 

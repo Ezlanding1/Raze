@@ -38,8 +38,6 @@ public partial class Analyzer
 
         // Runtime Library Types:
 
-        public static RuntimeLibrarySingletonDataType heapallocType = new("Raze.Std", "HeapData");
-
         public static Dictionary<Parser.LiteralTokenType, RuntimeLibrarySingletonDataType> defualtLiteralTypes = new()
         {
             { Parser.LiteralTokenType.Integer,  new("Raze.Std", ["Std", "int64"]) },
@@ -49,6 +47,9 @@ public partial class Analyzer
             { Parser.LiteralTokenType.Boolean, new("Raze.Std", ["Std", "bool"]) },
             { Parser.LiteralTokenType.RefString, new("Raze.Std", ["Std", "string"]) },
         };
+
+        public static RuntimeLibrarySingletonDataType heapallocType = new("Raze.Std", "HeapData");
+        public static RuntimeLibrarySingletonFunction newFunction = new("System", new ExprUtils.QueueList<Token> { }, "New", [defualtLiteralTypes[Parser.LiteralTokenType.UnsignedInteger]]);
 
 
         public static void MustMatchType(Expr.Type type1, Expr.Type type2, bool _ref1, Expr expr2, bool declare, bool _return) =>

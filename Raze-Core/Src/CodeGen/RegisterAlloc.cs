@@ -86,14 +86,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             return idx;
         }
 
-        public void StoreHeapAllocRetReg(AssemblyExpr.Register reg) => registers[0] = reg.nameBox;
-        public AssemblyExpr.Register GetHeapAllocRetReg()
-        {
-            var result = new AssemblyExpr.Register(registers[0], AssemblyExpr.Register.RegisterSize._64Bits);
-            NullReg(0);
-            return result;
-        }
-
         public void SaveScratchRegistersBeforeCall(CodeGen codeGen, int arity)
         {
             for (int i = 0; i < InstructionUtils.NonSseScratchRegisterCount; i++)

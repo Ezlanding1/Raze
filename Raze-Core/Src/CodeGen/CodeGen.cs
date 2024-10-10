@@ -69,8 +69,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             }
             else
             {
-                localParams[0] =
-                    alloc.GetHeapAllocRetReg();
+                localParams[0] = alloc.GetRegister(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits);
             }
         }
 
@@ -858,9 +857,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         bool hasVTable = expr.internalClass.emitVTable || expr.internalClass.GetVirtualMethods().Count != 0;
         int size = Math.Max(1, expr.internalClass.size);
 
-        alloc.StoreHeapAllocRetReg((AssemblyExpr.Register)
-            new Expr.HeapAlloc(new Expr.Literal(new(Parser.LiteralTokenType.Integer, size.ToString(), Location.NoLocation))).Accept(this)
-        );
+        new Expr.HeapAlloc(new Expr.Literal(new(Parser.LiteralTokenType.Integer, size.ToString(), Location.NoLocation))).Accept(this);
 
         if (hasVTable)
         {
@@ -924,62 +921,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
     public AssemblyExpr.IValue VisitHeapAllocExpr(Expr.HeapAlloc expr)
     {
-        var size = expr.size.Accept(this)
-            .NonPointer(this, null)
-            .IfLiteralCreateLiteral(AssemblyExpr.Register.RegisterSize._64Bits);
-
-        // either dealloc on exit (handled by OS), require manual delete, or implement GC
-        alloc.ReserveRegister(this, 0);
-        var rax = alloc.GetRegister(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits);
-        alloc.ReserveRegister(this, AssemblyExpr.Register.RegisterName.RDI);
-        var rdi = alloc.GetRegister(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._64Bits);
-
-        // Move the following into a runtime procedure, and pass in the expr.internalClass.size as a parameter
-        // {
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [12])));
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rdi, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [0])));
-        Emit(new AssemblyExpr.Nullary(AssemblyExpr.Instruction.SYSCALL));
-
-        alloc.Free(rax);
-        rax = alloc.GetRegister(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits);
-        alloc.NeededAlloc(AssemblyExpr.Register.RegisterSize._64Bits, this, AssemblyExpr.Register.RegisterName.RAX);
-        var retReg = rax;
-        alloc.ReserveRegister(this, 0);
-        rax = alloc.GetRegister(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._64Bits);
-
-        if (size.IsLiteral())
+        var call = new Expr.Call(new(Token.TokenType.IDENTIFIER, "", Location.NoLocation), [expr.size], null)
         {
-            var ptr = new AssemblyExpr.Pointer(rax, BitConverter.ToInt32(((AssemblyExpr.Literal)size).value), InstructionUtils.SYS_SIZE);
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, rdi, ptr));
-        }
-        else
-        {
-            if (size.Size < AssemblyExpr.Register.RegisterSize._32Bits)
-            {
-                alloc.Free(size);
-                var newReg = alloc.NextRegister(InstructionUtils.SYS_SIZE);
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOVZX, newReg, size));
-                size = newReg;
-            }
-            ((AssemblyExpr.IRegisterPointer)size).Size = AssemblyExpr.Register.RegisterSize._64Bits;
-
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.ADD, rax, size));
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rdi, rax));
-        }
-
-        Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [12])));
-
-
-        Emit(new AssemblyExpr.Nullary(AssemblyExpr.Instruction.SYSCALL));
-
-        //Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, rbx));
-        // }
-
-
-        alloc.Free(size);
-        alloc.FreeRegister(rdi);
-        alloc.FreeRegister(rax);
-        return retReg;
+            internalFunction = Analyzer.TypeCheckUtils.newFunction.Value
+        };
+        return call.Accept(this);
     }
     
     private AssemblyExpr.IValue CompareVTables(Expr.Is expr)
