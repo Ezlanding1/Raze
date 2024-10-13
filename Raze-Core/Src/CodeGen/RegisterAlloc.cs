@@ -293,7 +293,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             return state;
         }
 
-        public void SetRegisterState(RegisterState? state, ref AssemblyExpr.IValue? value, CodeGen codeGen)
+        public void SetRegisterState(RegisterState? state, ref AssemblyExpr.IValue? value, InlinedCodeGen codeGen)
         {
             if (state == null || value.IsLiteral())
                 return;
@@ -301,13 +301,21 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             var register = ((AssemblyExpr.IRegisterPointer)value).GetRegister()!;
             int idx = NameToIdx(register.Name);
 
-            registers[idx] = (register = new AssemblyExpr.Register(register.Name, register.Size)).nameBox;
             registerStates[idx] = (RegisterState)state;
 
-            if (value.IsRegister())
-                value = register;
+            if (codeGen.inlineState != null && codeGen.inlineState.secondJump)
+            {
+                registers[idx] = (register = new AssemblyExpr.Register(register.Name, register.Size)).nameBox;
 
-            codeGen.alloc.NeededAlloc(value.Size, codeGen, idx);
+                if (value.IsRegister())
+                    value = register;
+
+                codeGen.alloc.NeededAlloc(value.Size, codeGen, idx);
+            }
+            else
+            {
+                registers[idx] = register.nameBox;
+            }
         }
     }
 }
