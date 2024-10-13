@@ -1,0 +1,28 @@
+class Foo { }
+
+class Bar extends Foo
+{
+    function bool ReturnTrue()
+    {
+        return true;
+    }
+}
+
+class Baz extends Foo { }
+
+function int8 Main()
+{
+    Foo foo = new Bar();
+
+    # The 'is' operator will return 'true' if the expression on the left is an instance of the type on the right
+    bool b = foo is Bar;
+
+    # The 'as' operator will cast an oject to a derived class if possible. If not, it will return 'null'
+    Bar bar = foo as Bar;
+    if (b != null)
+    {
+        b |= b.ReturnTrue();
+    }
+
+    return b.ToInt8();
+}

@@ -1,0 +1,13 @@
+# Import the 'HeapData' type, since it is the return value of the heapalloc expression
+import HeapData from Raze;
+
+function Main()
+{
+    uint64 i = 10;
+    # The heapalloc expression allocates an arbitrary amount of data on the heap
+    # It returns an instance of 'HeapData', a mutable heap array
+    # Allocate 10 bytes of data on heap
+    HeapData data = heapalloc(i);
+    data[0u] = 10;
+    return data[0u];
+}

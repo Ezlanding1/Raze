@@ -1,0 +1,10 @@
+# Create a comment with the hash symbol '#'
+
+# Declare a Main function, the start of execution
+# If a function returns void, do not list a return type 
+function Main()
+{
+    # (The 'Print' function is automatically imported from Raze.rz, so no additional import is needed)
+    # Invoke the 'Print' function to print the specified text to stdout
+    Print("Hello, World!");
+}

@@ -1,0 +1,28 @@
+# Example: FizzBuzz
+
+import String from Strings;
+
+function Main()
+{
+    for (int i = 1; i <= 100; i++)
+    {
+        String s = new String("");
+
+        if (i % 3 == 0)
+        {
+            s += "Fizz";
+        }
+
+        if (i % 5 == 0)
+        {
+            s += "Buzz";
+        }
+
+        if (s.Length() == 0u)
+        {
+            s = i.ToString();
+        }
+
+        Print(s);
+    }
+}

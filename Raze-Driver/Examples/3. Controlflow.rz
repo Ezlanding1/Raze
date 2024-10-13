@@ -1,0 +1,33 @@
+function Main()
+{
+    int i = 5;
+    # The three basic control-flow structures in Raze are:
+
+    # If Statements
+    if (i == 9)
+    {
+        i += 5;
+    }
+    else if (i == 5)
+    {
+        i++;
+    }
+    else
+    {
+        i--;
+    }
+
+    # While Loops
+    while (i < 50)
+    {
+        i += 4;
+    }
+
+    # For Loops
+    for (int j = 0; j < 10; j++)
+    {
+        i += j;
+    }
+
+    Print(i.ToString());
+}

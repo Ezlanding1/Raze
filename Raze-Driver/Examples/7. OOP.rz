@@ -1,0 +1,59 @@
+# Traits cannot be instantiated and may have abstract methods (functions declared without a body)
+trait Shape
+{
+	function int Area();
+	function int Perimeter();
+}
+
+# Square extends Shape, and therefore must implement its abstract methods
+class Square extends Shape
+{
+	int length;
+
+	function Square(int length)
+	{
+		this.length = length;
+	}
+
+	function int Area()
+	{
+		return length * length;
+	}
+	function int Perimeter()
+	{
+		return 4 * length;
+	}
+}
+
+class Rectangle extends Shape
+{
+	int height;
+	int width;
+
+	function Rectangle(int height, int width)
+	{
+		this.height = height;
+		this.width = width;
+	}
+
+	function int Area()
+	{
+		return height * width;
+	}
+	function int Perimeter()
+	{
+		return (2 * height) + (2 * width);
+	}
+}
+
+function int Main()
+{
+	Shape rectangle = new Rectangle(4, 5);
+	Shape square = new Square(5);
+	return AddAreaAndPerimeter(rectangle) + AddAreaAndPerimeter(square);
+}
+
+function int AddAreaAndPerimeter(Shape shape)
+{
+	return shape.Area() + shape.Perimeter();	
+}

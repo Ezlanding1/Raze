@@ -1,0 +1,46 @@
+# Example: Cars
+
+trait Vehicle
+{
+    int capacity;
+    string license;
+
+    function Drive();
+}
+
+class Car extends Vehicle
+{
+    function Car(int capacity, string license)
+    {
+        this.capacity = 20;
+        this.license = license;
+    }
+
+    function Drive()
+    {
+        Print("Driving a car with capacity " + capacity.ToString() + " and license number " + license);
+    }
+}
+
+class Bus extends Vehicle
+{
+    function Car(int capacity, string license)
+    {
+        this.capacity = 5;
+        this.license = license;
+    }
+
+    function Drive()
+    {
+        Print("Driving a bus with capacity " + capacity.ToString() + " and license number " + license);
+    }
+}
+
+function Main()
+{
+    Bus bus = new Bus("ABC123");
+    bus.Drive();
+
+    Car car = new Car("DEF456");
+    car.Drive();
+}

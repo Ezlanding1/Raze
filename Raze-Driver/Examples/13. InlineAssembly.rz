@@ -1,0 +1,22 @@
+# Inline assembly is possible by using the 'asm' block
+function int Main()
+{
+    return Foo(true);
+}
+
+# A function with inline assembly must contain the 'unsafe' modifier
+function unsafe int Foo(bool b)
+{
+    asm {
+        # Allocate a register named 'REG' with a size of 32-bits
+        alloc REG::32;
+
+        # Use '$' to reference a variable
+        MOVZX REG, $b; 
+        SUB REG, 1;
+
+        return REG;
+
+        free REG;
+    }
+}

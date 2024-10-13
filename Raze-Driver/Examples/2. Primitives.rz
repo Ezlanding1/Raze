@@ -1,0 +1,29 @@
+function uint8 Main()
+{
+    # Below are the primitive types in Raze, defined in 'Raze.rz' (however, new pritmives can be easily defined. See: PrimitiveClass.rz)
+
+    # Boolean types
+    bool b = true;
+
+    # Integer types
+    int8 i8 = 127;
+    int16 i16 = 32767;
+    int i32 = 2147483647;
+    int64 i64 = 9223372036854775807;
+
+    # Unsigned-Ineger types
+    uint8 ui8 = 255u;
+    uint16 ui16 = 65535u;
+    uint ui32 = 4294967295u;
+    uint64 ui64 = 18446744073709551615u;
+
+    # Floating-Point types
+    float f = 25.5;
+    float64 f64 = 25.5;
+
+    # String types
+    char c = 'A';
+    string s = "Hello, World!";
+
+    return ui8;
+}

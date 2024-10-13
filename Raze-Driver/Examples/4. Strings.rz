@@ -1,0 +1,16 @@
+# Import 'String' type
+import String from Strings;
+
+function Main()
+{
+    # 'string' is an immutable and unresizable string stored in the data section
+    string str = "Hello, World!";
+    Print(str);
+
+    # 'String' is a mutable and resizable string stored on the heap
+    String str2 = new String("Hello");
+    str2 = str2 + " World!";
+    Print(str2);
+
+    # A stack-based mutable and unresizable string stored on stack...
+}

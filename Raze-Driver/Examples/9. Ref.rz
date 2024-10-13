@@ -1,0 +1,12 @@
+# The ref keyword allows a reference to a type to be passed into function
+function int Foo(ref int i)
+{
+    i = 100;
+}
+
+function int Main()
+{
+	int i = 50;
+	Foo(ref i);
+    return i;
+}

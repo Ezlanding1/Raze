@@ -1,0 +1,27 @@
+class IntWrapper
+{
+    int i = 5;
+
+    function IntWrapper()
+    {
+        i = 5;
+    }
+    function IntWrapper(int i)
+    {
+        this.i = i;
+    }
+
+    # Operators may be overloaded
+    # Use the function modifiers 'operator' 'static' 'inline' to tell the compiler that this function is an operator, static, and must be inlined
+    function operator static inline Add(IntWrapper i, IntWrapper j)
+    {
+        return new IntWrapper(i.i + j.i);
+    }
+}
+
+function int Main()
+{
+    a = new IntWrapper();
+    b = new IntWrapper();
+    return (a + b).i;
+}

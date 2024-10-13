@@ -1,0 +1,16 @@
+# The import expression will import Raze code from another file
+
+# This line will import the Classes.rz file, allowing usage of its definitions. For example, you can use 'Classes.Student'
+# import Classes;
+
+# This variation of the import expression will import all the definitions from Classes.rz into the current context, allowing usage of 'Student' and 'Main'
+# import * from Classes; 
+
+# Since we only need the 'Student' class, the following syntax can be used
+import Student from Classes;
+
+function Main()
+{
+    Student s = new Student(10, "John");
+    Print(s.name);
+}
