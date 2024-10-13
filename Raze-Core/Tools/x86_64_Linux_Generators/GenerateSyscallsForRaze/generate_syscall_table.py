@@ -61,6 +61,7 @@ bytesToIndex = {
 def get_inline_asm_instructions(typeInfo, args, function_return_type):
     return_type_name = ''
     result = ''
+    allocs = ''
     for arg in enumerate(args):
 
         if arg[1] == 'void':
@@ -76,8 +77,9 @@ def get_inline_asm_instructions(typeInfo, args, function_return_type):
 
         if not argName[0].isnumeric():
             argName = '$' + argName
+        allocs += f'\t\talloc {register};\n'
         result += f'\t\tMOV {register}, {argName};\n'
-    result += '\t\tSYSCALL;\n'
+    result += '\t\tSYSCALL;\n\n'
 
     if function_return_type != 'void':
         if function_return_type not in typeConversionTable:
@@ -88,7 +90,7 @@ def get_inline_asm_instructions(typeInfo, args, function_return_type):
             result += f'\t\treturn {register};\n'
             return_type_name = argTypeInfo[0] + ' '
 
-    return (return_type_name, result)
+    return (return_type_name, allocs, result)
 
 
 lastNum = '0'
@@ -115,12 +117,13 @@ def generate_syscall_function(syscall: list[str]) -> str:
     if function_arguments == None:
         return ''
 
-    return_type_name, function_instructions = get_inline_asm_instructions(typeInfo, [syscall[0]] + syscall[2:], function_return_type)
+    return_type_name, function_allocs, function_instructions = get_inline_asm_instructions(typeInfo, [syscall[0]] + syscall[2:], function_return_type)
 
     return ( ''
         f'function unsafe static {return_type_name}{function_name}({function_arguments})\n'
         f'{{\n'
         f'\tasm {{\n'
+        f'{function_allocs}\n'
         f'{function_instructions}'
         f'\t}}\n'
         f'}}\n\n'
