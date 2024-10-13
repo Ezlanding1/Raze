@@ -2,12 +2,11 @@
 
 public partial class InlinedCodeGen : CodeGen
 {
-    internal class InlineState(Expr.Function currentInlined)
+    internal class InlineState
     {
         public int inlineLabelIdx = -1;
         public bool secondJump = false;
         public AssemblyExpr.IValue? callee;
-        public Expr.Function currentInlined = currentInlined;
     }
     internal InlineState? inlineState = null;
 
@@ -186,9 +185,9 @@ public partial class InlinedCodeGen : CodeGen
             return base.VisitReturnExpr(expr);
         }
 
-        if (!expr.IsVoid(inlineState.currentInlined))
+        if (!expr.IsVoid(alloc.Current))
         {
-            Expr.Function current = inlineState.currentInlined;
+            Expr.Function current = (Expr.Function)alloc.Current;
 
             AssemblyExpr.Instruction instruction = GetMoveInstruction(current.refReturn, current._returnType.type);
                 

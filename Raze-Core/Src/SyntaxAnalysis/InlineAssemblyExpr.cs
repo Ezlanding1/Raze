@@ -264,25 +264,21 @@ public abstract partial class Expr
 
             public override void Accept(CodeGen codeGen)
             {
-                ReturnOperand(codeGen, value, value.ToOperand(codeGen, (AssemblyExpr.Register.RegisterSize)((Function)codeGen.alloc.current)._returnType.type.allocSize));
+                ReturnOperand(codeGen, value, value.ToOperand(codeGen, (AssemblyExpr.Register.RegisterSize)((Function)codeGen.alloc.Current)._returnType.type.allocSize));
             }
 
             public static void ReturnOperand(CodeGen codeGen, Operand operand, AssemblyExpr.IValue op)
             {
-                Function currentFunction;
+                Function currentFunction = (Function)codeGen.alloc.Current;
 
                 if (codeGen is InlinedCodeGen inlinedCodeGen && inlinedCodeGen.inlineState != null)
                 {
-                    currentFunction = inlinedCodeGen.inlineState.currentInlined;
-
                     var nonLiteral = op.NonLiteral(codeGen, currentFunction._returnType.type);
                     inlinedCodeGen.inlineState.callee = nonLiteral;
                     inlinedCodeGen.LockOperand(nonLiteral);
                 }
                 else
                 {
-                    currentFunction = (Function)codeGen.alloc.current;
-
                     var instruction = CodeGen.GetMoveInstruction(false, currentFunction._returnType.type);
                     var _returnRegister = CodeGen.IsFloatingType(operand.Type()) ?
                         new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.XMM0, AssemblyExpr.Register.RegisterSize._128Bits) :

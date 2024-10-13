@@ -9,7 +9,10 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 {
     internal partial class RegisterAlloc
     {
-        public Expr.Definition current;
+        public Expr.Definition Current { get => currentInlined ?? current; set => current = value; }
+        private Expr.Definition current;
+        public Expr.Function? currentInlined;
+
         private Stack<int> frameSize = new();
 
         public void UpContext()
@@ -17,7 +20,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             if (current == null)
                 Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Up Context Called On 'GLOBAL' context (no enclosing) in assembler"));
 
-            current = (Expr.Definition)current.enclosing;
+            current = (Expr.Definition)Current.enclosing;
         }
 
         public static void AllocateHeapVariable(Expr.Definition current, Expr.StackData variable, AssemblyExpr.Register.RegisterName registerName = AssemblyExpr.Register.RegisterName.RBP)
@@ -93,19 +96,19 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         public void InitializeFunction(Expr.Function function, CodeGen codeGen)
         {
             fncPushPreserved = new(codeGen.assembly.text.Count);
-            current = function;
+            Current = function;
             CreateBlock();
         }
 
-        public void CreateBlock() => frameSize.Push(current.size);
+        public void CreateBlock() => frameSize.Push(Current.size);
 
         public void RemoveBlock()
         {
-            if (current is Expr.Function)
+            if (Current is Expr.Function)
             {
-                fncPushPreserved.size = Math.Max(fncPushPreserved.size, current.size);
+                fncPushPreserved.size = Math.Max(fncPushPreserved.size, Current.size);
             }
-            current.size = frameSize.Pop();
+            Current.size = frameSize.Pop();
         }
     }
 }

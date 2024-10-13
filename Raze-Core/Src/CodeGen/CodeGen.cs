@@ -183,7 +183,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
     public AssemblyExpr.IValue? VisitClassExpr(Expr.Class expr)
     {
-        alloc.current = expr;
+        alloc.Current = expr;
 
         if (!expr.trait)
         {
@@ -232,7 +232,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         AssemblyExpr.IValue? operand = expr.value?.Accept(this)
             ?.IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)expr.stack.size, true);
 
-        if (alloc.current is not Expr.Class)
+        if (alloc.Current is not Expr.Class)
         {
             alloc.AllocateVariable(expr.stack);
         }
@@ -242,7 +242,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         if (operand == null)
         {
-            if (alloc.current is Expr.Class)
+            if (alloc.Current is Expr.Class)
             {
                 operand = GetDefaultValueOfType(type);
             }
@@ -325,9 +325,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         if (expr.constructor && expr.enclosing is Expr.Class _class)
         {
-            alloc.current = _class;
+            alloc.Current = _class;
             alloc.ListAccept(_class.declarations, this);
-            alloc.current = expr;
+            alloc.Current = expr;
         }
 
         expr.block.Accept(this);
@@ -699,9 +699,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
     public virtual AssemblyExpr.IValue? VisitReturnExpr(Expr.Return expr)
     {
-        if (!expr.IsVoid(alloc.current))
+        if (!expr.IsVoid(alloc.Current))
         {
-            var function = (Expr.Function)alloc.current;
+            var function = (Expr.Function)alloc.Current;
             AssemblyExpr.Instruction instruction = GetMoveInstruction(function.refReturn, function._returnType.type);
 
             AssemblyExpr.IValue operand = expr.value.Accept(this)
@@ -721,7 +721,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             {
                 if (operand.Size < AssemblyExpr.Register.RegisterSize._32Bits)
                 {
-                    Emit(PartialRegisterOptimize(((Expr.Function)alloc.current)._returnType.type, _returnRegister, operand));
+                    Emit(PartialRegisterOptimize(((Expr.Function)alloc.Current)._returnType.type, _returnRegister, operand));
                 }
                 else
                 {
@@ -828,7 +828,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
     public AssemblyExpr.IValue? VisitPrimitiveExpr(Expr.Primitive expr)
     {
-        alloc.current = expr;
+        alloc.Current = expr;
         alloc.ListAccept(expr.definitions, this);
         alloc.UpContext();
         return null;
