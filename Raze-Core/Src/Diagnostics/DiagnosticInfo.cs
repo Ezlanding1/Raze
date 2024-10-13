@@ -80,7 +80,7 @@ public abstract partial class Diagnostic
         { DiagnosticName.InvalidMainFunctionModifier_Include, ("The Main function must have the '{0}' modifier", Severity.Error) },
         { DiagnosticName.InvalidMainFunctionModifier_NoInclude, ("The Main function may not have the '{0}' modifier", Severity.Error) },
         { DiagnosticName.InvalidParameterModifier_Ref, ("Cannot assign when non-variable is passed to 'ref' parameter", Severity.Error) },
-        { DiagnosticName.InvalidMainFunctionReturnType, ("Main can only return types 'Integer', and 'void'. Got '{0}'", Severity.Error) },
+        { DiagnosticName.InvalidMainFunctionReturnType, ("Main can only return types 'void', 'Integer', and 'Unsigned Integer'. Got '{0}'", Severity.Error) },
         { DiagnosticName.PrimitiveWithConstructor, ("A primitive may not have a constructor", Severity.Error) },
         { DiagnosticName.CircularInheritance, ("Cicular inheritance between types '{0}' and '{1}'", Severity.Error) },
         { DiagnosticName.VariableUsedBeforeInitialization, ("Variable '{0}' used before initialization", Severity.Error) },

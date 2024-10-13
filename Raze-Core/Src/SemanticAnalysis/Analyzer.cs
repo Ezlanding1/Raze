@@ -41,7 +41,9 @@ public partial class Analyzer
             return;
         }
 
-        if (main._returnType.type.name.lexeme != "void" && !TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Integer].Matches(main._returnType.type))
+        if (!Primitives.IsVoidType(main._returnType.type) &&
+            !TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Integer].Matches(main._returnType.type) &&
+            !TypeCheckUtils.literalTypes[Parser.LiteralTokenType.UnsignedInteger].Matches(main._returnType.type))
         {
             Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidMainFunctionReturnType, main.name.location, main._returnType.type));
         }

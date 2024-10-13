@@ -26,9 +26,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                 return new Text
                 {
                     { new AssemblyExpr.Procedure("_start") },
-                    { new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL, new AssemblyExpr.ProcedureRef(CodeGen.ToMangledName(main))) },
-                    { new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._32Bits), (Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Integer].Matches(main._returnType.type)) ? new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._32Bits) : new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 0 })) },
-                    { new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, new byte[] { 60 })) },
+                    { new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL, new AssemblyExpr.ProcedureRef(ToMangledName(main))) },
+                    { new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._32Bits), Analyzer.Primitives.IsVoidType(main._returnType.type) ? new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [0]) : new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._32Bits)) },
+                    { new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [60])) },
                     { new AssemblyExpr.Nullary(AssemblyExpr.Instruction.SYSCALL) }
                 };
             }
@@ -42,9 +42,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             }
         }
 
-        IEnumerator<AssemblyExpr> IEnumerable<AssemblyExpr>.GetEnumerator() 
-        { 
-            return GetEnumerator(); 
+        IEnumerator<AssemblyExpr> IEnumerable<AssemblyExpr>.GetEnumerator()
+        {
+            return GetEnumerator();
         }
     }
 }
