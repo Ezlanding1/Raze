@@ -135,8 +135,7 @@ public partial class InlinedCodeGen : CodeGen
             invokable.internalFunction.parameters[i].stack.inlinedData = false;
             alloc.Free(invokable.internalFunction.parameters[i].stack.value, true);
         }
-
-        alloc.SetRegisterState(state, ret);
+        alloc.SetRegisterState(state, ref ret, this);
 
         UnlockOperand(ret);
 

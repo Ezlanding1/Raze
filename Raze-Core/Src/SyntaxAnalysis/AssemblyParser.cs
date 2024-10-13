@@ -90,13 +90,13 @@ public partial class Parser
                     if (InstructionUtils.Registers.TryGetValue(name, out var reg))
                     {
                         name = reg.Item1.ToString();
-                        namedRegisters[name] = new Expr.InlineAssembly.NamedRegister(null);
+                        namedRegisters[name] = new Expr.InlineAssembly.NamedRegister();
 
                         return new Expr.InlineAssembly.NamedAlloc(namedRegisters[name], reg.Item1, reg.Item2);
                     }
                     else
                     {
-                        namedRegisters[name] = new Expr.InlineAssembly.NamedRegister(null);
+                        namedRegisters[name] = new Expr.InlineAssembly.NamedRegister();
 
                         (var type, var size) = ParseRegisterOptions();
                         return new Expr.InlineAssembly.UnnamedAlloc(namedRegisters[name], type, size);
@@ -203,7 +203,7 @@ public partial class Parser
                 {
                     return value;
                 }
-                return new Expr.InlineAssembly.NamedRegister(new(reg.Item1, reg.Item2));
+                return new Expr.InlineAssembly.StandardRegister(new(reg.Item1, reg.Item2));
             }
             else if (namedRegisters.TryGetValue(name, out Expr.InlineAssembly.NamedRegister? value))
             {

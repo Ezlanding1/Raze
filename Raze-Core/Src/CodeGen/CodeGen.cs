@@ -863,7 +863,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         {
             Emit(new AssemblyExpr.Binary(
                 AssemblyExpr.Instruction.MOV,
-                new AssemblyExpr.Pointer(alloc.GetRegister(AssemblyExpr.Register.RegisterName.RAX, InstructionUtils.SYS_SIZE), 0, InstructionUtils.SYS_SIZE),
+                new AssemblyExpr.Pointer(new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, InstructionUtils.SYS_SIZE), 0, InstructionUtils.SYS_SIZE),
                 new AssemblyExpr.DataRef("VTABLE_FOR_" + expr.internalClass.name.lexeme)
             ));
         }

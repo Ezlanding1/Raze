@@ -138,9 +138,14 @@ public abstract partial class Expr
             public override Variable? GetVariable() => null;
         }
 
-        internal class NamedRegister(AssemblyExpr.Register? register) : Register
+        internal class NamedRegister() : Register
         {
-            public AssemblyExpr.Register? register = register;
+            public AssemblyExpr.Register? register;
+
+            private protected NamedRegister(AssemblyExpr.Register? register) : this()
+            {
+                this.register = register;
+            }
 
             public override AssemblyExpr.Register ToOperand(CodeGen codeGen, AssemblyExpr.Register.RegisterSize defaultSize)
                 => register!;
@@ -151,6 +156,12 @@ public abstract partial class Expr
                     Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Floating] :
                     Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Integer];
             }
+        }
+
+        internal class StandardRegister(AssemblyExpr.Register? register) : NamedRegister(register)
+        {
+            public override AssemblyExpr.Register ToOperand(CodeGen codeGen, AssemblyExpr.Register.RegisterSize defaultSize)
+                => new(register!.Name, register.Size);
         }
 
         internal class UnnamedRegister(Parser.LiteralTokenType type, AssemblyExpr.Register.RegisterSize size) : Register
@@ -293,6 +304,8 @@ public abstract partial class Expr
                     {
                         codeGen.Emit(new AssemblyExpr.Binary(instruction, _returnRegister, op));
                     }
+
+                    codeGen.alloc.Free(op);
                 }
 
                 if (currentFunction._returnType.type is Primitive primitive)
