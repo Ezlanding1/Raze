@@ -67,7 +67,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                 {
                     var enclosing = SymbolTableSingleton.SymbolTable.NearestEnclosingClass(call.internalFunction);
                     var size = enclosing.allocSize;
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.AllocParam(0, InstructionUtils.ToRegisterSize(size), localParams, enclosing, this), new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, -8, (AssemblyExpr.Register.RegisterSize)size)));
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.AllocParam(0, InstructionUtils.ToRegisterSize(size), localParams, enclosing, this), new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, -size, (AssemblyExpr.Register.RegisterSize)size)));
                 }
             }
             else
