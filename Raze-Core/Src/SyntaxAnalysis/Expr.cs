@@ -669,33 +669,33 @@ public abstract partial class Expr
             this.size = size;
         }
 
-        private List<Function>? virtualMethods;
-        public List<Function> GetVirtualMethods()
+        private List<(Function, bool)>? virtualMethods;
+        public List<(Function, bool)> GetVirtualMethods(bool head=true)
         {
             if (virtualMethods != null)
             {
                 return virtualMethods;
             }
-            virtualMethods = new List<Function>((SuperclassType as DataType)?.GetVirtualMethods() ?? []);
+            virtualMethods = new List<(Function, bool)>((SuperclassType as DataType)?.GetVirtualMethods(false) ?? []);
 
-            foreach (var function in definitions.Where(x => x is Function func && (func.modifiers["virtual"] || func.modifiers["override"])).Cast<Function>())
+            foreach (var function in definitions.Where(x => x is Function func && (func.Abstract || func.modifiers["virtual"] || func.modifiers["override"])).Cast<Function>())
             {
-                int idx = virtualMethods.FindIndex(x => Analyzer.SymbolTable.MatchFunction(function, x));
+                int idx = virtualMethods.FindIndex(x => Analyzer.SymbolTable.MatchFunction(function, x.Item1));
                 if (idx == -1)
                 {
-                    virtualMethods.Add(function);
+                    virtualMethods.Add((function, function.dead));
                 }
                 else
                 {
-                    function.dead = function.dead && virtualMethods[idx].dead;
-                    virtualMethods[idx] = function;
+                    function.dead = function.dead && virtualMethods[idx].Item1.dead;
+                    virtualMethods[idx] = (function, virtualMethods[idx].Item2 && (head || function.dead));
                 }
             }
             return virtualMethods;
         }
 
         public int GetOffsetOfVTableMethod(Function function) =>
-            (GetVirtualMethods().ToList().IndexOf(function) + 1) * 8;
+            (GetVirtualMethods().Select(x => x.Item1).ToList().IndexOf(function) + 1) * 8;
     }
 
     public class Class : DataType
@@ -706,6 +706,7 @@ public abstract partial class Expr
         public bool trait;
         public override int allocSize => 8;
         public bool emitVTable;
+        public bool HasVTable => emitVTable || GetVirtualMethods().Any(x => !x.Item2);
 
         public Class(Token name, List<Declare> declarations, List<Definition> definitions, TypeReference superclass, bool trait=false) : base(name, definitions)
         {

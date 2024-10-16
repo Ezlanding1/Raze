@@ -202,9 +202,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
     private void GenerateVirtualTable(Expr.Class expr)
     {
-        IEnumerable<Expr.Function> virtualMethods = expr.GetVirtualMethods();
+        IEnumerable<(Expr.Function, bool)> virtualMethods = expr.GetVirtualMethods();
 
-        if (expr.emitVTable || virtualMethods.Any())
+        if (expr.HasVTable)
         {
             EmitData(new AssemblyExpr.Data("VTABLE_FOR_" + expr.name.lexeme,
                 new(
@@ -212,9 +212,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                     AssemblyExpr.ImmediateGenerator.Generate(AssemblyExpr.Literal.LiteralType.RefData, "TYPEINFO_FOR_" + expr.name.lexeme, AssemblyExpr.Register.RegisterSize._64Bits))
                 )
             );
-            foreach (Expr.Function function in virtualMethods)
+            foreach ((Expr.Function function, bool dead) in virtualMethods)
             {
-                if (!function.dead)
+                if (!dead)
                 {
                     EmitData(new AssemblyExpr.Data(null, new AssemblyExpr.ProcedureRef(ToMangledName(function))));
                 }
@@ -862,12 +862,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
     public AssemblyExpr.IValue? VisitNewExpr(Expr.New expr)
     {
-        bool hasVTable = expr.internalClass.emitVTable || expr.internalClass.GetVirtualMethods().Count != 0;
         int size = Math.Max(1, expr.internalClass.size);
 
         new Expr.HeapAlloc(new Expr.Literal(new(Parser.LiteralTokenType.Integer, size.ToString(), Location.NoLocation))).Accept(this);
 
-        if (hasVTable)
+        if (expr.internalClass.HasVTable)
         {
             Emit(new AssemblyExpr.Binary(
                 AssemblyExpr.Instruction.MOV,
