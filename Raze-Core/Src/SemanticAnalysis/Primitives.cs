@@ -206,6 +206,10 @@ public partial class Analyzer
                 Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifier_Ref, op.location, []));
                 return Parser.VoidTokenType;
             }
+            else if (type1 == Floating && pName == "Subtract")
+            {
+                return Floating;
+            }
 
             switch (type1)
             {
