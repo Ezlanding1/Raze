@@ -15,7 +15,8 @@ public static class Diagnostics
     public static bool debugErrors;
     public static FileInfo mainFile;
     public static List<DirectoryInfo> importDirs;
-    
+    public static string runtimeName;
+
     public static void ThrowCompilerErrors()
     {
         if (errorEncountered)

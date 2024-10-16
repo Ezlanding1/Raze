@@ -74,4 +74,14 @@ public class SystemInfo
         }
         throw Diagnostics.Panic(new Diagnostic.DriverDiagnostic(Diagnostic.DiagnosticName.UnsupportedSystem_CPU_Architecture, architecture));
     }
+
+    public string GetRuntimeName()
+    {
+        return osabi switch
+        {
+            OsAbi.Linux or
+            OsAbi.System_V => "x86_64_Linux_Runtime",
+            _ => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Runtime name not found for OsAbi {osabi}"))
+        };
+    }
 }
