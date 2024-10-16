@@ -203,6 +203,8 @@ public partial class Analyzer
         {
             symbolTable.SetContext(expr);
 
+            HandleTraitSuperclass(expr);
+
             Expr.ListAccept(expr.declarations, this);
             Expr.ListAccept(expr.definitions, this);
 
@@ -551,6 +553,21 @@ public partial class Analyzer
         public override Expr.Type VisitNoOpExpr(Expr.NoOp expr)
         {
             return TypeCheckUtils.anyType;
+        }
+
+        private void HandleTraitSuperclass(Expr.Class _class)
+        {
+            var superclass = _class.SuperclassType as Expr.Class;
+            if (superclass?.trait == true)
+            {
+                foreach (var abstractFunction in superclass.definitions.Where(x => x is Expr.Function func && func.Abstract).Cast<Expr.Function>())
+                {
+                    if (!symbolTable.TryGetFunction(abstractFunction.name.lexeme, abstractFunction.parameters.Select(x => x.stack.type).ToArray(), out var virtualFunc))
+                    {
+                        Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.ClassDoesNotOverrideAbstractFunction, _class.name.lexeme, superclass.name.lexeme, abstractFunction.ToString()));
+                    }
+                }
+            }
         }
 
         private void FindVirtualFunctionForOverride(Expr.Function function)

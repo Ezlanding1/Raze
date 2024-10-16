@@ -183,8 +183,6 @@ public partial class Analyzer
                 expr.definitions.Add(new SpecialObjects.DefaultConstructor(((Expr.Class)symbolTable.Current).name));
             }
 
-            HandleTraitSuperclass(expr);
-
             if (expr.superclass.type is Expr.Class _class)
             {
                 expr.declarations.InsertRange(0, _class.declarations);
@@ -307,21 +305,6 @@ public partial class Analyzer
 
             symbolTable.UpContext();
             return null;
-        }
-
-        private void HandleTraitSuperclass(Expr.Class _class)
-        {
-            var superclass = _class.SuperclassType as Expr.Class;
-            if (superclass?.trait == true)
-            {
-                foreach (var abstractFunction in superclass.definitions.Where(x => x is Expr.Function func && func.Abstract).Cast<Expr.Function>())
-                {
-                    if (!symbolTable.TryGetFunction(abstractFunction.name.lexeme, abstractFunction.parameters.Select(x => x.stack.type).ToArray(), out var virtualFunc))
-                    {
-                        Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.ClassDoesNotOverrideAbstractFunction, _class.name.lexeme, superclass.name.lexeme, abstractFunction.ToString()));
-                    }
-                }
-            }
         }
 
         private void GetVariableDefinition(ExprUtils.QueueList<Token> typeName, Expr.StackData stack)

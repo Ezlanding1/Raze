@@ -48,7 +48,10 @@ public partial class Analyzer
                 SymbolTableSingleton.SymbolTable.currentFileInfo = fileInfo;
 
                 SymbolTableSingleton.SymbolTable.SetContext(SymbolTableSingleton.SymbolTable.GetRuntimeImport(fileInfo).importClass);
-                InitialPass.HandleTypeNameReference(name);
+                if (name.Count != 0)
+                {
+                    InitialPass.HandleTypeNameReference(name);
+                }
 
                 Expr.DataType result = (Expr.DataType)SymbolTableSingleton.SymbolTable.Current!;
 

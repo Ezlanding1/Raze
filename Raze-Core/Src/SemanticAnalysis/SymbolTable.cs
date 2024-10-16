@@ -69,7 +69,7 @@ public partial class Analyzer
 
             SpecialObjects.AddExprsToImportToplevelWrapper(importClass, expressions);
             this.imports[import.fileInfo] = new(importClass, expressions, this.globals);
-            
+
             imports.ForEach(SymbolTableSingleton.SymbolTable.AddImport);
         }
 
@@ -146,7 +146,7 @@ public partial class Analyzer
                 new Expr.Import(
                     new Expr.Import.FileInfo("Raze.rz"),
                     false,
-                    new (new ([new(Token.TokenType.IDENTIFIER, "Std", Location.NoLocation)]), true)
+                    new(new([new(Token.TokenType.IDENTIFIER, "Std", Location.NoLocation)]), true)
                 )
             },
             {
