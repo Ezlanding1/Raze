@@ -62,5 +62,11 @@ public partial class Analyzer
         }
         public static string GetImportClassName(string name) =>
             name[..name.LastIndexOf(".rz")].Replace('.', '_');
+
+        public static Expr.Call GenerateRuntimeCall(List<Expr> args, Expr.Function internalFunction) =>
+            new Expr.Call(new(Token.TokenType.IDENTIFIER, "", Location.NoLocation), args, null)
+            {
+                internalFunction = internalFunction
+            };
     }
 }

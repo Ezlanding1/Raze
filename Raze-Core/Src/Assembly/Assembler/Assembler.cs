@@ -28,7 +28,7 @@ public partial class Assembler :
 
     public void Assemble(CodeGen.Assembly assembly)
     {
-        AssembleTextSection(CodeGen.ISection.Text.GenerateDriverInstructions(SymbolTableSingleton.SymbolTable.main));
+        AssembleTextSection(CodeGen.ISection.Text.GenerateDriverInstructions());
 
         AssembleTextSection(assembly.text);
 

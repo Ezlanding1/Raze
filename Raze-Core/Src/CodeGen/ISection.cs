@@ -21,16 +21,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                 return new TopLevel() { new AssemblyExpr.Global("_start"), new AssemblyExpr.Section("text") };
             }
 
-            public static Text GenerateDriverInstructions(Expr.Function main)
+            public static Text GenerateDriverInstructions()
             {
-                return new Text
-                {
-                    { new AssemblyExpr.Procedure("_start") },
-                    { new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL, new AssemblyExpr.ProcedureRef(ToMangledName(main))) },
-                    { new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RDI, AssemblyExpr.Register.RegisterSize._32Bits), Analyzer.Primitives.IsVoidType(main._returnType.type) ? new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [0]) : new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._32Bits)) },
-                    { new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._32Bits), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [60])) },
-                    { new AssemblyExpr.Nullary(AssemblyExpr.Instruction.SYSCALL) }
-                };
+                return new Text() { new AssemblyExpr.Procedure("_start") };
             }
         }
 

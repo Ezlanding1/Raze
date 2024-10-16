@@ -20,6 +20,7 @@ public partial class Analyzer
 
         internal override void Run()
         {
+            TypeCheckUtils.exitFunction.Value.Accept(this);
             symbolTable.main?.Accept(this);
             classesToCalculateSize.ToList().ForEach(_class => _class.CalculateSizeAndAllocateVariables());
         }

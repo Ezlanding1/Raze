@@ -50,6 +50,7 @@ public partial class Analyzer
 
         public static RuntimeLibrarySingletonDataType heapallocType = new("Raze.Std", "HeapData");
         public static RuntimeLibrarySingletonFunction newFunction = new("System", new ExprUtils.QueueList<Token> { }, "New", [defualtLiteralTypes[Parser.LiteralTokenType.UnsignedInteger]]);
+        public static RuntimeLibrarySingletonFunction exitFunction = new("System", new ExprUtils.QueueList<Token> { }, "Exit", [new("Raze.Std", ["Std", "int"])]);
 
 
         public static void MustMatchType(Expr.Type type1, Expr.Type type2, bool _ref1, Expr expr2, bool declare, bool _return) =>

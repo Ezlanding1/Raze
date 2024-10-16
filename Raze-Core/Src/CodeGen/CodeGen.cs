@@ -29,6 +29,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
     public Assembly Generate()
     {
         Analyzer.SpecialObjects.ParentExprsToImportTopLevelWrappers();
+
+        GenerateProgramDriver();
+
         SymbolTableSingleton.SymbolTable.IterateImports(import =>
         {
             foreach (Expr expr in import.expressions)
@@ -837,9 +840,14 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
     {
         return expr.keyword switch
         {
+            // Keywords for internal compiler use
+            "EAX" => new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._32Bits),
+
+            // Language Keywords
             "null" => NullLiteral,
             "true" => new AssemblyExpr.UnresolvedLiteral(AssemblyExpr.Literal.LiteralType.Boolean, "1"),
             "false" => new AssemblyExpr.UnresolvedLiteral(AssemblyExpr.Literal.LiteralType.Boolean, "0"),
+
             _ => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"'{expr.keyword}' is not a keyword")),
         };
     }
@@ -919,12 +927,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         }
     }
 
-    public AssemblyExpr.IValue VisitHeapAllocExpr(Expr.HeapAlloc expr)
+    public AssemblyExpr.IValue? VisitHeapAllocExpr(Expr.HeapAlloc expr)
     {
-        var call = new Expr.Call(new(Token.TokenType.IDENTIFIER, "", Location.NoLocation), [expr.size], null)
-        {
-            internalFunction = Analyzer.TypeCheckUtils.newFunction.Value
-        };
+        var call = Analyzer.SpecialObjects.GenerateRuntimeCall([expr.size], Analyzer.TypeCheckUtils.newFunction.Value);
         return call.Accept(this);
     }
     

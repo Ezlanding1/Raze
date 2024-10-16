@@ -32,7 +32,7 @@ public class AssemblyPrinter
 
         Syntax.Run(Syntax.header);
         Syntax.Run(CodeGen.ISection.Text.GenerateHeaderInstructions());
-        Syntax.Run(CodeGen.ISection.Text.GenerateDriverInstructions(SymbolTableSingleton.SymbolTable.main));
+        Syntax.Run(CodeGen.ISection.Text.GenerateDriverInstructions());
         Syntax.Run(assembly.text);
         Syntax.Run(CodeGen.ISection.Data.GenerateHeaderInstructions());
         Syntax.Run(assembly.data);

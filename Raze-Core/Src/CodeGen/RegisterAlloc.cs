@@ -31,7 +31,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         readonly StrongBox<AssemblyExpr.Register.RegisterName>?[] registers = new StrongBox<AssemblyExpr.Register.RegisterName>[InstructionUtils.storageRegisters.Length];
 
-        public FunctionPushPreserved fncPushPreserved;
+        public FunctionPushPreserved fncPushPreserved = new(0);
 
         public AssemblyExpr.Register GetRegister(AssemblyExpr.Register.RegisterName name, AssemblyExpr.Register.RegisterSize size) =>
             GetRegister(NameToIdx(name), size);
