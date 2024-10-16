@@ -63,9 +63,25 @@ public partial class Analyzer
                     TypeCheckUtils.anyType;
             }
 
-            bool found = 
-                (!arg0.Item1 && ResolveCallReferenceUsingCallee(name, expr.op.location, (Expr.DataType)argumentTypes[0], argumentTypes, true)) ||
-                (!arg1.Item1 && ResolveCallReferenceUsingCallee(name, expr.op.location, (Expr.DataType)argumentTypes[1], argumentTypes.Reverse().ToArray(), true));
+            bool found =
+                (!arg0.Item1 &&
+                ResolveCallReferenceUsingCallee(name, expr.op.location, (Expr.DataType)argumentTypes[0], argumentTypes, true)) ||
+                (!arg1.Item1 &&
+                ResolveCallReferenceUsingCallee(name, expr.op.location, (Expr.DataType)argumentTypes[1], argumentTypes, true));
+
+            if (!found)
+            {
+                var reversedArgTypes = argumentTypes.Reverse().ToArray();
+
+                found =
+                    (!arg1.Item1 &&
+                    ResolveCallReferenceUsingCallee(name, expr.op.location, (Expr.DataType)argumentTypes[1], reversedArgTypes, true)) ||
+                    (!arg0.Item1 &&
+                    ResolveCallReferenceUsingCallee(name, expr.op.location, (Expr.DataType)argumentTypes[0], reversedArgTypes, true));
+
+                if (found)
+                    (expr.left, expr.right) = (expr.right, expr.left);
+            }
 
             if (!found)
             {
