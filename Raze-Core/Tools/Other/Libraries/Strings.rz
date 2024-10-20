@@ -1,0 +1,67 @@
+import HeapData from Raze;
+
+class String
+{
+	HeapData data;
+
+	function String(string str)
+	{
+		uint64 len = str.Length();
+
+		data = heapalloc(len + 1u);
+
+		for (uint64 i = 0u; i < len; i++)
+		{
+			this[i] = str[i];
+		}
+		this[len] = '\0';
+	}
+	function String(uint64 size)
+	{
+		data = heapalloc(size + 1u);
+		data[size] = 0u;
+	}
+
+    function unsafe uint64 Length()
+    {
+        uint64 count = 0u;
+        while (data[count] != 0u)
+        {
+            count++;
+        }
+        return count;
+    }
+
+	function unsafe operator inline static ref char Indexer(String str, uint64 i)
+	{
+        HeapData data = str.data;
+		asm {
+            ADD $data, $i;
+            return $data;
+		}
+	}
+
+    function String()
+    {
+    }
+
+    function operator unsafe static inline String Add(string s1, String s2)
+    {
+        return s1+ s2.ToStdString();
+    }
+
+	function operator unsafe static String Add(String s1, string s2)
+    {
+        return s1.ToStdString() + s2;
+    }
+
+	function operator unsafe static inline String Add(String s1, String s2)
+    {
+        return s1.ToStdString() + s2.ToStdString();
+    }
+    
+    function unsafe string ToStdString()
+    {
+        asm { return $data; }
+    }
+}

@@ -1,0 +1,423 @@
+import String from Strings;
+
+class Std
+{
+    primitive class bool sizeof 1 extends Boolean 
+    {
+        function operator unsafe inline bool NotEqualTo(bool i, bool j){asm {CMP $i, $j; alloc REG::8; return SETNE REG;}}
+        function operator unsafe inline bool EqualTo(bool i, bool j){asm {CMP $i, $j; alloc REG::8; return SETE REG;}}
+        function operator unsafe inline bool GreaterThan(bool i, bool j){asm {CMP $i, $j; alloc REG::8; return SETG REG;}}
+        function operator unsafe inline bool LessThan(bool i, bool j){asm {CMP $i, $j; alloc REG::8; return SETL REG;}}
+        function operator unsafe inline bool GreaterThanOrEqualTo(bool i, bool j){asm {CMP $i, $j; alloc REG::8; return SETGE REG;}}
+        function operator unsafe inline bool LessThanOrEqualTo(bool i, bool j){asm {CMP $i, $j; alloc REG::8; return SETLE REG;}}
+        function operator unsafe inline bool BitwiseAnd(bool i, bool j){asm {return AND $i, $j;}}
+        function operator unsafe inline bool BitwiseOr(bool i, bool j){asm {return OR $i, $j;}}
+        function operator unsafe inline bool BitwiseXor(bool i, bool j){asm {return XOR $i, $j;}}
+        function operator unsafe inline bool Not(bool i){asm {return XOR $i, 1;}}
+
+        function unsafe inline uint8 ToUint8(){asm {return $this;}}
+        function unsafe inline int8 ToInt8(){asm {return $this;}}
+
+        function inline string ToString(){ if (this) { return "true"; } return "false"; }
+    }
+
+
+
+    primitive class uint8 sizeof 1 extends UnsignedInteger 
+    {
+        function operator unsafe inline uint8 Add(uint8 i, uint8 j){asm {return ADD $i, $j;}}
+        function operator unsafe inline uint8 Subtract(uint8 i, uint8 j){asm {return SUB $i, $j;}}
+        function operator unsafe inline uint8 Multiply(uint8 i, uint8 j){asm {return MUL $i, $j;}}
+        function operator unsafe inline uint8 Divide(uint8 i, uint8 j){asm {DIV $i, $j;alloc AL;return AL;}}
+        function operator unsafe inline uint8 Modulo(uint8 i, uint8 j){asm {DIV $i, $j;alloc DL;return DL;}}
+        function operator unsafe inline uint8 Increment(ref uint8 i){asm {INC $i;}return i;}
+        function operator unsafe inline uint8 Decrement(ref uint8 i){asm {DEC $i;}return i;}
+
+        function operator unsafe inline bool EqualTo(uint8 i, uint8 j){asm {CMP $i, $j; alloc REG::8; return SETE REG;}}
+        function operator unsafe inline bool NotEqualTo(uint8 i, uint8 j){asm {CMP $i, $j; alloc REG::8; return SETNE REG;}}
+        function operator unsafe inline bool GreaterThan(uint8 i, uint8 j){asm {CMP $i, $j; alloc REG::8; return SETA REG;}}
+        function operator unsafe inline bool LessThan(uint8 i, uint8 j){asm {CMP $i, $j; alloc REG::8; return SETB REG;}}
+        function operator unsafe inline bool GreaterThanOrEqualTo(uint8 i, uint8 j){asm {CMP $i, $j; alloc REG::8; return SETAE REG;}}
+        function operator unsafe inline bool LessThanOrEqualTo(uint8 i, uint8 j){asm {CMP $i, $j; alloc REG::8; return SETBE REG;}}
+
+        function operator unsafe inline uint8 BitwiseShiftLeft(uint8 i, uint8 j){asm {return SAL $i, $j;}}
+        function operator unsafe inline uint8 BitwiseShiftRight(uint8 i, uint8 j){asm {return SAR $i, $j;}}
+        function operator unsafe inline uint8 BitwiseAnd(uint8 i, uint8 j){asm {return AND $i, $j;}}
+        function operator unsafe inline uint8 BitwiseOr(uint8 i, uint8 j){asm {return OR $i, $j;}}
+        function operator unsafe inline uint8 BitwiseXor(uint8 i, uint8 j){asm {return XOR $i, $j;}}
+
+        function unsafe inline int8 ToInt8(){asm {return $this;}}
+    }
+    
+    primitive class uint16 sizeof 2 extends UnsignedInteger 
+    {
+        function operator unsafe inline uint16 Add(uint16 i, uint16 j){asm {return ADD $i, $j;}}
+        function operator unsafe inline uint16 Subtract(uint16 i, uint16 j){asm {return SUB $i, $j;}}
+        function operator unsafe inline uint16 Multiply(uint16 i, uint16 j){asm {return MUL $i, $j;}}
+        function operator unsafe inline uint16 Divide(uint16 i, uint16 j){asm {DIV $i, $j;alloc AX;return AX;}}
+        function operator unsafe inline uint16 Modulo(uint16 i, uint16 j){asm {DIV $i, $j;alloc DX;return DX;}}
+        function operator unsafe inline uint16 Increment(ref uint16 i){asm {INC $i;}return i;}
+        function operator unsafe inline uint16 Decrement(ref uint16 i){asm {DEC $i;}return i;}
+
+        function operator unsafe inline bool EqualTo(uint16 i, uint16 j){asm {CMP $i, $j; alloc REG::8; return SETE REG;}}
+        function operator unsafe inline bool NotEqualTo(uint16 i, uint16 j){asm {CMP $i, $j; alloc REG::8; return SETNE REG;}}
+        function operator unsafe inline bool GreaterThan(uint16 i, uint16 j){asm {CMP $i, $j; alloc REG::8; return SETA REG;}}
+        function operator unsafe inline bool LessThan(uint16 i, uint16 j){asm {CMP $i, $j; alloc REG::8; return SETB REG;}}
+        function operator unsafe inline bool GreaterThanOrEqualTo(uint16 i, uint16 j){asm {CMP $i, $j; alloc REG::8; return SETAE REG;}}
+        function operator unsafe inline bool LessThanOrEqualTo(uint16 i, uint16 j){asm {CMP $i, $j; alloc REG::8; return SETBE REG;}}
+
+        function operator unsafe inline uint16 BitwiseShiftLeft(uint16 i, uint16 j){asm {return SAL $i, $j;}}
+        function operator unsafe inline uint16 BitwiseShiftRight(uint16 i, uint16 j){asm {return SAR $i, $j;}}
+        function operator unsafe inline uint16 BitwiseAnd(uint16 i, uint16 j){asm {return AND $i, $j;}}
+        function operator unsafe inline uint16 BitwiseOr(uint16 i, uint16 j){asm {return OR $i, $j;}}
+        function operator unsafe inline uint16 BitwiseXor(uint16 i, uint16 j){asm {return XOR $i, $j;}}
+
+        function unsafe inline int16 ToInt16(){asm {return $this;}}
+    }
+    
+    primitive class uint sizeof 4 extends UnsignedInteger 
+    {
+        function operator unsafe inline uint Add(uint i, uint j){asm {return ADD $i, $j;}}
+        function operator unsafe inline uint Subtract(uint i, uint j){asm {return SUB $i, $j;}}
+        function operator unsafe inline uint Multiply(uint i, uint j){asm {return MUL $i, $j;}}
+        function operator unsafe inline uint Divide(uint i, uint j){asm {DIV $i, $j;alloc EAX;return EAX;}}
+        function operator unsafe inline uint Modulo(uint i, uint j){asm {DIV $i, $j;alloc EDX;return EDX;}}
+        function operator unsafe inline uint Increment(ref uint i){asm {INC $i;}return i;}
+        function operator unsafe inline uint Decrement(ref uint i){asm {DEC $i;}return i;}
+
+        function operator unsafe inline bool EqualTo(uint i, uint j){asm {CMP $i, $j; alloc REG::8; return SETE REG;}}
+        function operator unsafe inline bool NotEqualTo(uint i, uint j){asm {CMP $i, $j; alloc REG::8; return SETNE REG;}}
+        function operator unsafe inline bool GreaterThan(uint i, uint j){asm {CMP $i, $j; alloc REG::8; return SETA REG;}}
+        function operator unsafe inline bool LessThan(uint i, uint j){asm {CMP $i, $j; alloc REG::8; return SETB REG;}}
+        function operator unsafe inline bool GreaterThanOrEqualTo(uint i, uint j){asm {CMP $i, $j; alloc REG::8; return SETAE REG;}}
+        function operator unsafe inline bool LessThanOrEqualTo(uint i, uint j){asm {CMP $i, $j; alloc REG::8; return SETBE REG;}}
+
+        function operator unsafe inline uint BitwiseShiftLeft(uint i, uint j){asm {return SAL $i, $j;}}
+        function operator unsafe inline uint BitwiseShiftRight(uint i, uint j){asm {return SAR $i, $j;}}
+        function operator unsafe inline uint BitwiseAnd(uint i, uint j){asm {return AND $i, $j;}}
+        function operator unsafe inline uint BitwiseOr(uint i, uint j){asm {return OR $i, $j;}}
+        function operator unsafe inline uint BitwiseXor(uint i, uint j){asm {return XOR $i, $j;}}
+        
+        function unsafe inline int ToInt(){asm {return $this;}}
+    }
+
+    primitive class uint64 sizeof 8 extends UnsignedInteger 
+    {
+        function operator unsafe inline uint64 Add(uint64 i, uint64 j){asm {return ADD $i, $j;}}
+        function operator unsafe inline uint64 Subtract(uint64 i, uint64 j){asm {return SUB $i, $j;}}
+        function operator unsafe inline uint64 Multiply(uint64 i, uint64 j){asm {return MUL $i, $j;}}
+        function operator unsafe inline uint64 Divide(uint64 i, uint64 j){asm {DIV $i, $j;alloc RAX;return RAX;}}
+        function operator unsafe inline uint64 Modulo(uint64 i, uint64 j){asm {DIV $i, $j;alloc RDX;return RDX;}}
+        function operator unsafe inline uint64 Increment(ref uint64 i){asm {INC $i;}return i;}
+        function operator unsafe inline uint64 Decrement(ref uint64 i){asm {DEC $i;}return i;}
+
+        function operator unsafe inline bool EqualTo(uint64 i, uint64 j){asm {CMP $i, $j; alloc REG::8; return SETE REG;}}
+        function operator unsafe inline bool NotEqualTo(uint64 i, uint64 j){asm {CMP $i, $j; alloc REG::8; return SETNE REG;}}
+        function operator unsafe inline bool GreaterThan(uint64 i, uint64 j){asm {CMP $i, $j; alloc REG::8; return SETA REG;}}
+        function operator unsafe inline bool LessThan(uint64 i, uint64 j){asm {CMP $i, $j; alloc REG::8; return SETB REG;}}
+        function operator unsafe inline bool GreaterThanOrEqualTo(uint64 i, uint64 j){asm {CMP $i, $j; alloc REG::8; return SETAE REG;}}
+        function operator unsafe inline bool LessThanOrEqualTo(uint64 i, uint64 j){asm {CMP $i, $j; alloc REG::8; return SETBE REG;}}
+
+        function operator unsafe inline uint64 BitwiseShiftLeft(uint64 i, uint64 j){asm {return SAL $i, $j;}}
+        function operator unsafe inline uint64 BitwiseShiftRight(uint64 i, uint64 j){asm {return SAR $i, $j;}}
+        function operator unsafe inline uint64 BitwiseAnd(uint64 i, uint64 j){asm {return AND $i, $j;}}
+        function operator unsafe inline uint64 BitwiseOr(uint64 i, uint64 j){asm {return OR $i, $j;}}
+        function operator unsafe inline uint64 BitwiseXor(uint64 i, uint64 j){asm {return XOR $i, $j;}}
+        
+        function unsafe inline int64 ToInt64(){asm {return $this;}}
+    }
+
+
+
+    primitive class int8 sizeof 1 extends Integer 
+    {
+        function operator unsafe inline int8 Add(int8 i, int8 j){asm {return ADD $i, $j;}}
+        function operator unsafe inline int8 Subtract(int8 i, int8 j){asm {return SUB $i, $j;}}
+        function operator unsafe inline int8 Subtract(int8 i){asm {return NEG $i;}}
+        function operator unsafe inline int8 Multiply(int8 i, int8 j){asm {return IMUL $i, $j;}}
+        function operator unsafe inline int8 Divide(int8 i, int8 j){asm {IDIV $i, $j;alloc AL;return AL;}}
+        function operator unsafe inline int8 Modulo(int8 i, int8 j){asm {IDIV $i, $j;alloc DL;return DL;}}
+        function operator unsafe inline int8 Increment(ref int8 i){asm {INC $i;}return i;}
+        function operator unsafe inline int8 Decrement(ref int8 i){asm {DEC $i;}return i;}
+
+        function operator unsafe inline bool EqualTo(int8 i, int8 j){asm {CMP $i, $j; alloc REG::8; return SETE REG;}}
+        function operator unsafe inline bool NotEqualTo(int8 i, int8 j){asm {CMP $i, $j; alloc REG::8; return SETNE REG;}}
+        function operator unsafe inline bool GreaterThan(int8 i, int8 j){asm {CMP $i, $j; alloc REG::8; return SETG REG;}}
+        function operator unsafe inline bool LessThan(int8 i, int8 j){asm {CMP $i, $j; alloc REG::8; return SETL REG;}}
+        function operator unsafe inline bool GreaterThanOrEqualTo(int8 i, int8 j){asm {CMP $i, $j; alloc REG::8; return SETGE REG;}}
+        function operator unsafe inline bool LessThanOrEqualTo(int8 i, int8 j){asm {CMP $i, $j; alloc REG::8; return SETLE REG;}}
+
+        function operator unsafe inline int8 BitwiseShiftLeft(int8 i, int8 j){asm {return SAL $i, $j;}}
+        function operator unsafe inline int8 BitwiseShiftRight(int8 i, int8 j){asm {return SAR $i, $j;}}
+        function operator unsafe inline int8 BitwiseAnd(int8 i, int8 j){asm {return AND $i, $j;}}
+        function operator unsafe inline int8 BitwiseOr(int8 i, int8 j){asm {return OR $i, $j;}}
+        function operator unsafe inline int8 BitwiseXor(int8 i, int8 j){asm {return XOR $i, $j;}}
+        
+        function unsafe inline uint8 ToUint8(){asm {return $this;}}
+    }
+    
+    primitive class int16 sizeof 2 extends Integer 
+    {
+        function operator unsafe inline int16 Add(int16 i, int16 j){asm {return ADD $i, $j;}}
+        function operator unsafe inline int16 Subtract(int16 i, int16 j){asm {return SUB $i, $j;}}
+        function operator unsafe inline int16 Subtract(int16 i){asm {return NEG $i;}}
+        function operator unsafe inline int16 Multiply(int16 i, int16 j){asm {return IMUL $i, $j;}}
+        function operator unsafe inline int16 Divide(int16 i, int16 j){asm {IDIV $i, $j;alloc AX;return AX;}}
+        function operator unsafe inline int16 Modulo(int16 i, int16 j){asm {IDIV $i, $j;alloc DX;return DX;}}
+        function operator unsafe inline int16 Increment(ref int16 i){asm {INC $i;}return i;}
+        function operator unsafe inline int16 Decrement(ref int16 i){asm {DEC $i;}return i;}
+
+        function operator unsafe inline bool EqualTo(int16 i, int16 j){asm {CMP $i, $j; alloc REG::8; return SETE REG;}}
+        function operator unsafe inline bool NotEqualTo(int16 i, int16 j){asm {CMP $i, $j; alloc REG::8; return SETNE REG;}}
+        function operator unsafe inline bool GreaterThan(int16 i, int16 j){asm {CMP $i, $j; alloc REG::8; return SETG REG;}}
+        function operator unsafe inline bool LessThan(int16 i, int16 j){asm {CMP $i, $j; alloc REG::8; return SETL REG;}}
+        function operator unsafe inline bool GreaterThanOrEqualTo(int16 i, int16 j){asm {CMP $i, $j; alloc REG::8; return SETGE REG;}}
+        function operator unsafe inline bool LessThanOrEqualTo(int16 i, int16 j){asm {CMP $i, $j; alloc REG::8; return SETLE REG;}}
+
+        function operator unsafe inline int16 BitwiseShiftLeft(int16 i, int16 j){asm {return SAL $i, $j;}}
+        function operator unsafe inline int16 BitwiseShiftRight(int16 i, int16 j){asm {return SAR $i, $j;}}
+        function operator unsafe inline int16 BitwiseAnd(int16 i, int16 j){asm {return AND $i, $j;}}
+        function operator unsafe inline int16 BitwiseOr(int16 i, int16 j){asm {return OR $i, $j;}}
+        function operator unsafe inline int16 BitwiseXor(int16 i, int16 j){asm {return XOR $i, $j;}}
+        
+        function unsafe inline uint16 ToUint16(){asm {return $this;}}
+    }
+    
+    primitive class int sizeof 4 extends Integer 
+    {
+        function operator unsafe inline int Add(int i, int j){asm {return ADD $i, $j;}}
+        function operator unsafe inline int Subtract(int i, int j){asm {return SUB $i, $j;}}
+        function operator unsafe inline int Subtract(int i){asm {return NEG $i;}}
+        function operator unsafe inline int Multiply(int i, int j){asm {return IMUL $i, $j;}}
+        function operator unsafe inline int Divide(int i, int j){asm {IDIV $i, $j;alloc EAX;return EAX;}}
+        function operator unsafe inline int Modulo(int i, int j){asm {IDIV $i, $j;alloc EDX;return EDX;}}
+        function operator unsafe inline int Increment(ref int i){asm {INC $i;}return i;}
+        function operator unsafe inline int Decrement(ref int i){asm {DEC $i;}return i;}
+
+        function operator unsafe inline bool EqualTo(int i, int j){asm {CMP $i, $j; alloc REG::8; return SETE REG;}}
+        function operator unsafe inline bool NotEqualTo(int i, int j){asm {CMP $i, $j; alloc REG::8; return SETNE REG;}}
+        function operator unsafe inline bool GreaterThan(int i, int j){asm {CMP $i, $j; alloc REG::8; return SETG REG;}}
+        function operator unsafe inline bool LessThan(int i, int j){asm {CMP $i, $j; alloc REG::8; return SETL REG;}}
+        function operator unsafe inline bool GreaterThanOrEqualTo(int i, int j){asm {CMP $i, $j; alloc REG::8; return SETGE REG;}}
+        function operator unsafe inline bool LessThanOrEqualTo(int i, int j){asm {CMP $i, $j; alloc REG::8; return SETLE REG;}}
+
+        function operator unsafe inline int BitwiseShiftLeft(int i, int j){asm {return SAL $i, $j;}}
+        function operator unsafe inline int BitwiseShiftRight(int i, int j){asm {return SAR $i, $j;}}
+        function operator unsafe inline int BitwiseAnd(int i, int j){asm {return AND $i, $j;}}
+        function operator unsafe inline int BitwiseOr(int i, int j){asm {return OR $i, $j;}}
+        function operator unsafe inline int BitwiseXor(int i, int j){asm {return XOR $i, $j;}}
+        
+        function unsafe inline uint ToUint(){asm {return $this;}}
+        function unsafe inline char ToChar(){asm {alloc REG::32; MOV REG, $this; free REG; alloc REG::8; return REG; free REG; }}
+
+        function unsafe String ToString()
+        {
+            if (this < 0)
+            {
+                int num = -this;
+                return "-" + num.ToString();
+            }
+
+            int num = this;
+            uint64 length = 1u;
+            while (num > 9) 
+            {
+                length++;
+                num /= 10;
+            }
+
+            String result = new String(length);
+            num = this;
+                
+            for (uint64 i = length-1u; i != (-1).ToUint64(); i--)
+            {
+                result[i] = ((num % 10) + 48).ToChar();
+                num /= 10;
+            }
+
+            return result;
+
+        }
+    }
+
+    primitive class int64 sizeof 8 extends Integer 
+    {
+        function operator unsafe inline int64 Add(int64 i, int64 j){asm {return ADD $i, $j;}}
+        function operator unsafe inline int64 Subtract(int64 i, int64 j){asm {return SUB $i, $j;}}
+        function operator unsafe inline int64 Subtract(int64 i){asm {return NEG $i;}}
+        function operator unsafe inline int64 Multiply(int64 i, int64 j){asm {return IMUL $i, $j;}}
+        function operator unsafe inline int64 Divide(int64 i, int64 j){asm {IDIV $i, $j;alloc RAX;return RAX;}}
+        function operator unsafe inline int64 Modulo(int64 i, int64 j){asm {IDIV $i, $j;alloc RDX;return RDX;}}
+        function operator unsafe inline int64 Increment(ref int64 i){asm {INC $i;}return i;}
+        function operator unsafe inline int64 Decrement(ref int64 i){asm {DEC $i;}return i;}
+
+        function operator unsafe inline bool EqualTo(int64 i, int64 j){asm {CMP $i, $j; alloc REG::8; return SETE REG;}}
+        function operator unsafe inline bool NotEqualTo(int64 i, int64 j){asm {CMP $i, $j; alloc REG::8; return SETNE REG;}}
+        function operator unsafe inline bool GreaterThan(int64 i, int64 j){asm {CMP $i, $j; alloc REG::8; return SETG REG;}}
+        function operator unsafe inline bool LessThan(int64 i, int64 j){asm {CMP $i, $j; alloc REG::8; return SETL REG;}}
+        function operator unsafe inline bool GreaterThanOrEqualTo(int64 i, int64 j){asm {CMP $i, $j; alloc REG::8; return SETGE REG;}}
+        function operator unsafe inline bool LessThanOrEqualTo(int64 i, int64 j){asm {CMP $i, $j; alloc REG::8; return SETLE REG;}}
+
+        function operator unsafe inline int64 BitwiseShiftLeft(int64 i, int64 j){asm {return SAL $i, $j;}}
+        function operator unsafe inline int64 BitwiseShiftRight(int64 i, int64 j){asm {return SAR $i, $j;}}
+        function operator unsafe inline int64 BitwiseAnd(int64 i, int64 j){asm {return AND $i, $j;}}
+        function operator unsafe inline int64 BitwiseOr(int64 i, int64 j){asm {return OR $i, $j;}}
+        function operator unsafe inline int64 BitwiseXor(int64 i, int64 j){asm {return XOR $i, $j;}}
+
+        function unsafe inline uint64 ToUint64(){asm {return $this;}}
+    }
+
+
+
+    primitive class float sizeof 4 extends Floating 
+    {
+	    function inline static operator unsafe float Add(float a, float b){asm {return ADDSS $a, $b;}}
+
+	    function inline unsafe int ToInt() {asm {alloc REG::32; CVTTSS2SI REG, $this; return REG;}}
+	    function inline unsafe float64 ToFloat64() {asm {alloc REG:x:; CVTSS2SD REG, $this; return REG;}}
+    }
+
+    primitive class float64 sizeof 8 extends Floating 
+    {
+	    function inline static operator unsafe float64 Add(float64 a, float64 b){asm {return ADDSD $a, $b;}}
+
+	    function inline unsafe int ToInt() {asm {alloc REG::32; CVTTSD2SI REG, $this; return REG;}}
+	    function inline unsafe float ToFloat() {asm {alloc REG:x:; CVTSD2SS REG, $this; return REG;}}
+    }
+
+
+
+    primitive class char sizeof 1 extends String 
+    {
+        function unsafe inline uint8 ToByte()
+        {
+            asm { return $this; }
+        }
+        function operator unsafe inline bool NotEqualTo(char i, uint8 j)
+        {
+            asm {
+                CMP $i, $j; alloc REG::8; return SETNE REG;
+            }
+        }
+
+        function bool IsNumeric()
+        {
+            return this.ToByte() >= '0'.ToByte() && this.ToByte() <= '9'.ToByte();
+        }
+        function bool IsLower()
+        {
+            return this.ToByte() >= 'a'.ToByte() && this.ToByte() <= 'z'.ToByte();
+        }
+        function bool IsUpper()
+        {
+            return this.ToByte() >= 'A'.ToByte() && this.ToByte() <= 'Z'.ToByte();
+        }
+        function bool IsAlpha()
+        {
+            return IsLower() || IsUpper();
+        }
+        function bool IsAlphaNumeric()
+        {
+            return IsAlpha() || IsNumeric();
+        }
+    }
+
+    primitive class string sizeof 8 extends RefString
+    {
+        function operator unsafe static String Add(string s1, string s2)
+        {
+            uint64 s1Len = s1.Length();
+            uint64 s2Len = s2.Length();
+
+            uint64 total = s1Len + s2Len;
+
+            String result = new String(total);
+            
+            for (uint64 i = 0u; i < s1Len; i++)
+            {
+                result[i] = s1[i];
+            }
+            for (uint64 i = s1Len; i < total; i++)
+            {
+                result[i] = s2[i - s1Len];
+            }
+
+            return result;
+        }
+
+        function unsafe static inline string NullString()
+        {
+            asm {
+                return 0;
+            }
+        }
+        function operator unsafe inline static char Indexer(string s, uint64 index)
+        {
+            asm {
+                ADD $s, $index;
+                return BYTE [$s];
+            }
+        }
+        function unsafe inline uint64 Length()
+        {
+            uint64 count = 0u;
+            while (this[count] != 0u)
+            {
+                count++;
+            }
+            return count;
+        }
+    }
+
+    function static Print(Std.string s)
+    {
+        Console.WriteLine(s);
+    }
+    function static Print(String s)
+    {
+        Console.WriteLine(s.ToStdString());
+    }
+}
+
+class Console
+{
+    function static WriteLine(Std.string s)
+    {
+        Write(s + "\n");
+    }
+    function static Write(Std.string s)
+    {
+	    System.Syscalls.SYS_WRITE(1u, s, s.Length());
+    }
+    function static Write(String s)
+    { 
+        Write(s.ToStdString());
+    }
+    function static WriteLine(String s)
+    { 
+        Write(s.ToStdString() + "\n");
+    }
+}
+
+class HeapData
+{
+	function unsafe operator static ref Std.int Indexer(HeapData arr, Std.int i)
+	{
+		asm {
+			alloc REG::64;
+
+			MOVSX REG, $i;
+            ADD $arr, REG;
+            return $arr;
+
+			free REG;
+		}
+	}
+    function unsafe operator inline static ref Std.uint8 Indexer(HeapData arr, Std.uint64 i)
+	{
+		asm {
+            ADD $arr, $i;
+            return $arr;
+		}
+	}
+}

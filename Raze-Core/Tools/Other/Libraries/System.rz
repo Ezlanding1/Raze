@@ -1,0 +1,147 @@
+import String from Strings;
+import Runtime from Runtime;
+
+class Syscalls
+{
+	# x86-64 Linux Syscalls
+
+	function unsafe static int64 SYS_READ(uint fd, String buf, uint64 count)
+	{
+		asm {
+			alloc RAX;
+			alloc EDI;
+			alloc RSI;
+			alloc RDX;
+
+			MOV RAX, 0;
+			MOV EDI, $fd;
+			MOV RSI, $buf;
+			MOV RDX, $count;
+			SYSCALL;
+
+			return RAX;
+		}
+	}
+
+	function unsafe static int64 SYS_WRITE(uint fd, string buf, uint64 count)
+	{
+		asm {
+			alloc RAX;
+			alloc EDI;
+			alloc RSI;
+			alloc RDX;
+
+			MOV RAX, 1;
+			MOV EDI, $fd;
+			MOV RSI, $buf;
+			MOV RDX, $count;
+			SYSCALL;
+
+			return RAX;
+		}
+	}
+
+	function unsafe static int64 SYS_OPEN(string filename, int flags, uint16 mode)
+	{
+		asm {
+			alloc RAX;
+			alloc RDI;
+			alloc ESI;
+			alloc DX;
+
+			MOV RAX, 2;
+			MOV RDI, $filename;
+			MOV ESI, $flags;
+			MOV DX, $mode;
+			SYSCALL;
+
+			return RAX;
+		}
+	}
+
+	function unsafe static int64 SYS_CLOSE(uint fd)
+	{
+		asm {
+			alloc RAX;
+			alloc EDI;
+
+			MOV RAX, 3;
+			MOV EDI, $fd;
+			SYSCALL;
+
+			return RAX;
+		}
+	}
+
+
+	function unsafe inline static int64 SYS_BRK(uint64 brk)
+	{
+		asm {
+			alloc RAX;
+			alloc RDI;
+
+			MOV RAX, 12;
+			MOV RDI, $brk;
+			SYSCALL;
+
+			return RAX;
+		}
+	}
+
+	function unsafe inline static int64 SYS_EXIT(int error_code)
+	{
+		asm {
+			alloc EDI;
+
+			MOV EDI, $error_code;
+			MOV RAX, 60;
+			SYSCALL;
+
+			return RAX;
+		}
+	}
+
+
+	function unsafe static int64 SYS_ACCESS(string filename, int mode)
+	{
+		asm {
+			alloc RAX;
+			alloc RDI;
+			alloc ESI;
+
+			MOV RAX, 21;
+			MOV RDI, $filename;
+			MOV ESI, $mode;
+			SYSCALL;
+
+			return RAX;
+		}
+	}
+
+}
+
+class x86_64_Linux_Runtime extends Runtime
+{
+	function inline uint64 Sbrk(uint64 inc)
+	{
+		int64 brkLocation = Syscalls.SYS_BRK(0u);
+
+		if (brkLocation < 0)
+		{
+			return (-1).ToUint64();
+		}
+
+		Syscalls.SYS_BRK(brkLocation.ToUint64() + inc).ToUint64();
+		return brkLocation.ToUint64();
+	}
+
+	function uint64 New(uint64 inc)
+	{
+		return Sbrk(inc);
+	}
+
+	function inline Exit(int errorCode)
+	{
+		Syscalls.SYS_EXIT(errorCode);
+	}
+}

@@ -1,0 +1,68 @@
+function int Max(int i, int j)
+{
+    if (i >= j)
+    {
+        return i;
+    }
+    return j;
+}
+
+function int Min(int i, int j)
+{
+    if (i >= j)
+    {
+        return j;
+    }
+    return i;
+}
+
+function int Abs(int i)
+{
+    if (i >= 0)
+    {
+        return i;
+    }
+    return -i;
+}
+
+function int Clamp(int value, int min, int max)
+{
+    if (value < min)
+    {
+        return min;
+    }
+    else if (value > max)
+    {
+        return max;
+    }
+
+    return value;
+}
+
+function int Ceil(float f)
+{
+    int i = f.ToInt();
+
+    if (i >= 0)
+    {
+        return i + 1;
+    }
+    return i;
+}
+
+function int Floor(float f)
+{
+    int i = f.ToInt();
+
+    if (i >= 0)
+    {
+        return i;
+    }
+    return i - 1;
+}
+
+function inline float64 E() { return 2.718281828459045; }
+
+function inline float64 Pi() { return 3.141592653589793; }
+
+function inline float64 Tau() { return 6.283185307179586; }

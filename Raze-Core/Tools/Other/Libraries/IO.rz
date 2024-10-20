@@ -1,0 +1,25 @@
+class File
+{
+	function static bool Exists(string fileName)
+	{
+		return System.Syscalls.SYS_ACCESS(fileName, 0) == 0;
+	}
+
+	function int64 Create(string pathname, uint16 mode)
+	{
+		int O_CREAT = 00000100;
+		int O_TRUNC = 00001000;
+		int O_WRONLY = 00000001;
+		return Open(pathname, O_CREAT | O_TRUNC | O_WRONLY, mode);
+	}
+
+	function int64 Open(string pathname, int flags, uint16 mode)
+	{
+		return System.Syscalls.SYS_OPEN(pathname, flags, mode);
+	}
+
+	function static int64 Close(uint fd)
+	{
+		return System.Syscalls.SYS_CLOSE(fd);
+	}
+}
