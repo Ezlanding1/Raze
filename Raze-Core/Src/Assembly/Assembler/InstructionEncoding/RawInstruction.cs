@@ -13,7 +13,6 @@ public partial class Assembler
     {
         // Raw Instruction Byte Data. (1-15 bytes). Required
         // For instructions that do not match any existing pattern, and must be encoded as raw bits
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct RawInstruction : IInstruction
         {
             byte[] _data;

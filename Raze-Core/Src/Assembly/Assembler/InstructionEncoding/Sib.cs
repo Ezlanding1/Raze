@@ -12,7 +12,6 @@ public partial class Assembler
     public partial struct Instruction
     {
         // Scaled Index Byte (1 byte). Optional
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct SIB : IInstruction
         {
             public byte _data;

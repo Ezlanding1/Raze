@@ -12,7 +12,6 @@ public partial class Assembler
     public partial struct Instruction
     {
         // REX Prefix (1 byte). Optional
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct RexPrefix : IInstruction
         {
             private byte _data;
@@ -59,7 +58,6 @@ public partial class Assembler
         }
 
         // Prefix (1 byte). Optional
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Prefix : IInstruction
         {
             byte _data;

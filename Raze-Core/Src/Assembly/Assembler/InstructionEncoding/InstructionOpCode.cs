@@ -13,7 +13,6 @@ public partial class Assembler
     public partial struct Instruction
     {
         // Instruction Opcode (1 byte). Required
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct InstructionOpCode : IInstruction
         {
             byte[] _data;

@@ -13,7 +13,6 @@ public partial class Assembler
     public partial struct Instruction
     {
         // MOD_Reg_R/M byte (1 byte). Optional
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct ModRegRm : IInstruction
         {
             byte _data = 0;

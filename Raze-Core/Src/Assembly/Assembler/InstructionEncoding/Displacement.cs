@@ -13,7 +13,6 @@ public partial class Assembler
     public partial struct Instruction
     {
         // Displacement. (1 or 4 bytes). Optional
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Displacement8 : IInstruction
         {
             // 1 byte Displacement
@@ -27,7 +26,6 @@ public partial class Assembler
             public byte[] GetBytes() => new byte[] { (byte)this._data };
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Displacement32 : IInstruction
         {
             // 4 byte Displacement

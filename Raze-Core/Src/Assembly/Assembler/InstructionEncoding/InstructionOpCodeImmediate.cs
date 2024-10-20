@@ -13,7 +13,6 @@ public partial class Assembler
     public partial struct Instruction
     {
         // Instruction Opcode For Immediate Operand (1 byte). Required
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct InstructionOpCodeImmediate : IInstruction
         {
             byte _data = 0;

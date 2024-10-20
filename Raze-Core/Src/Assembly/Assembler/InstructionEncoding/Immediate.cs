@@ -12,7 +12,6 @@ public partial class Assembler
     public partial struct Instruction
     {
         // Immediate Data. (1, 2, or 4 bytes). Optional
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         internal struct Immediate : IInstruction
         {
             byte[] _data;
