@@ -133,10 +133,11 @@ public abstract partial class Expr
         public StackData stack = new();
         public bool classScoped;
 
-        internal Declare(ExprUtils.QueueList<Token> typeName, Token name, bool _ref, Expr? value) : base(name)
+        internal Declare(ExprUtils.QueueList<Token> typeName, Token name, bool _ref, bool _readonly, Expr? value) : base(name)
         {
             this.typeName = typeName;
             this.stack._ref = _ref;
+            this.stack._readonly = _readonly;
             this.value = value;
         }
 
@@ -444,6 +445,7 @@ public abstract partial class Expr
         internal AssemblyExpr.IValue value;
         internal int size => type.allocSize;
         internal bool _ref;
+        internal bool _readonly;
         internal bool inlinedData;
         internal AssemblyExpr.Pointer ValueAsPointer => (AssemblyExpr.Pointer)value;
         internal AssemblyExpr.Register ValueAsRegister => (AssemblyExpr.Register)value;
@@ -452,10 +454,11 @@ public abstract partial class Expr
         {
         }
 
-        public StackData(DataType type, bool _ref)
+        public StackData(DataType type, bool _ref, bool _readonly)
         {
             this.type = type;
             this._ref = _ref;
+            this._readonly = _readonly;
         }
 
         public AssemblyExpr.Pointer CreateValueAsPointer(AssemblyExpr.Register.RegisterName name, int offset)

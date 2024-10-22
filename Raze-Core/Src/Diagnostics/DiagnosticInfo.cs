@@ -95,6 +95,9 @@ public abstract partial class Diagnostic
         { DiagnosticName.InvalidRefModifier, ("Non-variable values ({0}s) may mot be marked 'ref'", Severity.Error) },
         { DiagnosticName.InvalidRefModifier_Location, ("Variables marked 'ref' may not be used in a {0}", Severity.Error) },
         { DiagnosticName.RequiredRuntimeTypeNotFound, ("Required runtime type '{0}' from '{1}' not found", Severity.Error) },
+        { DiagnosticName.ReadonlyFieldModified, ("Variables marked 'readonly' may not be modified (except in constructors)", Severity.Error) },
+        { DiagnosticName.ReadonlyFieldModified_Ref, ("Variables marked 'readonly' may not be assigned as a 'ref' non-'readonly' variable (except in constructors)", Severity.Error) },
+        { DiagnosticName.InvalidReadonlyModifier, ("The 'readonly' modifier is not valid in this context", Severity.Error) },
         
         // BackendError
         { DiagnosticName.InvalidLiteralSize, ("{0} literal '{1}' exceeds size of assigned data type '{2}'", Severity.Error) },

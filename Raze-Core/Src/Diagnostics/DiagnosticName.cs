@@ -97,6 +97,9 @@ public abstract partial class Diagnostic
         InvalidRefModifier,
         InvalidRefModifier_Location,
         RequiredRuntimeTypeNotFound,
+        ReadonlyFieldModified,
+        ReadonlyFieldModified_Ref,
+        InvalidReadonlyModifier,
 
         // BackendError
         InvalidLiteralSize,

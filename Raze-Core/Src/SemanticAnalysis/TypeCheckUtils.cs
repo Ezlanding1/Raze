@@ -53,17 +53,31 @@ public partial class Analyzer
         public static RuntimeLibrarySingletonFunction exitFunction = new("System", [Diagnostics.runtimeName], "Exit", [new("Raze.Std", ["Std", "int"])]);
 
 
-        public static void MustMatchType(Expr.Type type1, Expr.Type type2, bool _ref1, Expr expr2, bool declare, bool _return) =>
-            MustMatchType(type1, type2, _ref1, IsVariableWithRefModifier(expr2), declare, _return);
-
-        public static void MustMatchType(Expr.Type type1, Expr.Type type2, bool _ref1, bool _ref2, bool declare, bool _return)
+        public static void MustMatchType(Expr.Type type1, Expr.Type type2, bool _ref1, bool _readonly1, Expr expr2, bool declare, bool _return) =>
+            MustMatchType((type1, type2), (_ref1, IsVariableWithRefModifier(expr2)), (_readonly1, GetVariableModifiers(expr2)._readonly), declare, _return);
+        
+        public static void MustMatchType(
+            (Expr.Type type1, Expr.Type type2) types,
+            (bool _ref1, bool _ref2) _refs, 
+            (bool _readonly1, bool _readonly2) _readonlys, 
+            bool declare, 
+            bool _return)
         {
-            if (!type2.Matches(type1) || IsInvalidRef(declare, _ref1, _ref2))
+            if (_refs._ref1 && _readonlys._readonly2 && !_readonlys._readonly1)
+            {
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
+                    Diagnostic.DiagnosticName.ReadonlyFieldModified_Ref,
+                    "readonly " + types.type2.ToString(),
+                    "ref " + types.type1.ToString()
+                ));
+            }
+
+            if (!types.type2.Matches(types.type1) || IsInvalidRef(declare, _refs._ref1, _refs._ref2))
             {
                 Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
                     _return? Diagnostic.DiagnosticName.TypeMismatch_Return : Diagnostic.DiagnosticName.TypeMismatch,
-                    (_ref2 ? "ref " : "") + type2.ToString(),
-                    (_ref1 ? "ref " : "") + type1.ToString()
+                    (_refs._ref2 ? "ref " : "") + types.type2.ToString(),
+                    (_refs._ref1 ? "ref " : "") + types.type1.ToString()
                 ));
             }
         }
@@ -73,8 +87,10 @@ public partial class Analyzer
         public static bool IsVariableWithRefModifier(Expr expr) =>
             expr is Expr.GetReference getRef && getRef._ref;
 
-        public static bool IsRefVariable(Expr expr) =>
-            !CannotBeRef(expr, out var getRef) && getRef.GetLastData()?._ref == true;
+        public static (bool _ref, bool _readonly) GetVariableModifiers(Expr expr) =>
+            !CannotBeRef(expr, out var getRef) ?
+                (getRef.GetLastData()?._ref == true, getRef.GetLastData()?._readonly == true) :
+                (false, false);
 
         public static bool CannotBeRef(Expr expr, out Expr.GetReference getRef) =>
             (getRef = expr as Expr.GetReference) == null || getRef.IsMethodCall();
@@ -107,7 +123,7 @@ public partial class Analyzer
             {
                 if (type != null)
                 {
-                    MustMatchType(expr._returnType.type, type, expr.refReturn, _ref, true, true);
+                    MustMatchType((expr._returnType.type, type), (expr.refReturn, _ref), (false, false), true, true);
                 }
             }
             if (!symbolTable.returnFrameData.initialized && !Primitives.IsVoidType(expr._returnType.type))
@@ -148,9 +164,22 @@ public partial class Analyzer
         }
         public static void ValidateFunctionParameterModifiers(Expr.Invokable invokable)
         {
-            for (int i = 0; i < invokable.internalFunction.Arity && invokable.internalFunction.parameters[i].modifiers["ref"]; i++)
+            for (int i = 0; i < invokable.internalFunction.Arity; i++)
             {
-                ValidateRefVariable(invokable.Arguments[i], invokable.internalFunction.parameters[i].stack.type, true, invokable is Expr.Call);
+                if (invokable.internalFunction.parameters[i].modifiers["ref"])
+                {
+                    if (!(SymbolTableSingleton.SymbolTable.Current is Expr.Function { constructor: true }) 
+                        && GetVariableModifiers(invokable.Arguments[i])._readonly 
+                        && !invokable.internalFunction.parameters[i].modifiers["readonly"])
+                    {
+                        Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
+                            Diagnostic.DiagnosticName.ReadonlyFieldModified_Ref,
+                            "readonly " + ((Expr.GetReference)invokable.Arguments[i]).GetLastType().ToString(),
+                            "ref " + invokable.internalFunction.parameters[i].stack.type.ToString()
+                        ));
+                    }
+                    ValidateRefVariable(invokable.Arguments[i], invokable.internalFunction.parameters[i].stack.type, true, invokable is Expr.Call);
+                }
             }
         }
         public static void ValidateRefVariable(Expr expr, Expr.Type type, bool assign, bool call)

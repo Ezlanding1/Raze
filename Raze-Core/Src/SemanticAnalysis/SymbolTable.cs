@@ -24,7 +24,7 @@ public partial class Analyzer
         public Dictionary<Expr.StackData, FrameData> frameData = new();
         public ReturnFrameData returnFrameData = new();
 
-        private static Expr.StackData VarNotFoundData = new(TypeCheckUtils.anyType, false);
+        private static Expr.StackData VarNotFoundData = new(TypeCheckUtils.anyType, false, false);
         private static Expr.Class ClassNotFoundDefinition = TypeCheckUtils.anyType;
         public Expr.Function FunctionNotFoundDefinition = SpecialObjects.GenerateAnyFunction();
 

@@ -98,7 +98,8 @@ internal abstract partial class ExprUtils
         {
             var modifiers = new Modifiers(
                 "ref", 
-                "inlineRef"
+                "inlineRef",
+                "readonly"
             );
             modifiers["inlineRef"] = true;
 

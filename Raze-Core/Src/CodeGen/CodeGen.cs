@@ -769,7 +769,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         var _ref = false;
         var type = expr.member.GetLastType();
 
-        bool valueIsRefVariable = Analyzer.TypeCheckUtils.IsRefVariable(expr.value);
+        bool valueIsRefVariable = Analyzer.TypeCheckUtils.GetVariableModifiers(expr.value)._ref;
         bool valueHasRefModifier = Analyzer.TypeCheckUtils.IsVariableWithRefModifier(expr.value);
 
         if (valueIsRefVariable && valueHasRefModifier)
@@ -1155,7 +1155,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         _ref ? new AssemblyExpr.Pointer(register.NonPointerNonLiteral(this, null).nameBox, 0, size) : register;
 
     private protected static (AssemblyExpr.Instruction, AssemblyExpr.IValue) PreserveRefPtrVariable(Expr expr, AssemblyExpr.Pointer pointer) =>
-      Analyzer.TypeCheckUtils.IsRefVariable(expr) ? (AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(((AssemblyExpr.Register)pointer.value).nameBox, InstructionUtils.SYS_SIZE)) : (AssemblyExpr.Instruction.LEA, pointer);
+      Analyzer.TypeCheckUtils.GetVariableModifiers(expr)._ref ? (AssemblyExpr.Instruction.MOV, new AssemblyExpr.Register(((AssemblyExpr.Register)pointer.value).nameBox, InstructionUtils.SYS_SIZE)) : (AssemblyExpr.Instruction.LEA, pointer);
 
     private protected static AssemblyExpr.IValue PreserveRefPtrVariable(bool _ref, AssemblyExpr.IValue pointer) =>
         _ref ? new AssemblyExpr.Register(((AssemblyExpr.Pointer)pointer).value.nameBox, InstructionUtils.SYS_SIZE) : pointer;

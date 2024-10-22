@@ -99,7 +99,8 @@ internal partial class TokenList
         "from",
         "extends",
         "trait",
-        "heapalloc"
+        "heapalloc",
+        "readonly"
     };
 
     /*

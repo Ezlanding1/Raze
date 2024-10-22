@@ -187,9 +187,10 @@ public partial class Parser
 
                     ExprUtils.Modifiers paramModifers = ExprUtils.Modifiers.ParameterModifierTemplate();
 
-                    paramModifers["ref"] = ReservedValueMatch("ref");
+                    Advance();
+                    (paramModifers["ref"], paramModifers["readonly"]) = ParseRefReadonlyModifiers();
 
-                    if (TypeMatch(Token.TokenType.IDENTIFIER))
+                    if (Previous().type == Token.TokenType.IDENTIFIER)
                     {
                         var typeName = GetTypeReference();
                         if (Expect(Token.TokenType.IDENTIFIER, "identifier as function parameter"))
@@ -621,9 +622,11 @@ public partial class Parser
                 getter = heapAlloc;
             }
 
-            if ((getter != null && current.type == Token.TokenType.DOT) || (getter == null && (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this", "ref"))))
+            if ((getter != null && current.type == Token.TokenType.DOT) || (getter == null && (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this", "ref", "readonly"))))
             {
-                var variable = GetReference((getter is Expr.Getter || getter == null) ? (Expr.Getter)getter : new Expr.Grouping(getter));
+                (bool _ref, bool _readonly) = ParseRefReadonlyModifiers();
+
+                var variable = GetReference((getter is Expr.Getter || getter == null) ? (Expr.Getter)getter : new Expr.Grouping(getter), _ref);
 
                 if (TypeMatch(Token.TokenType.EQUALS))
                 {
@@ -631,6 +634,11 @@ public partial class Parser
                     {
                         Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssignStatement, Previous().location, "method"));
                     }
+                    if (_readonly)
+                    {
+                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidReadonlyModifier, Previous().location));
+                    }
+
                     return new Expr.Assign(variable, NoSemicolon());
                 }
                 else if (TypeMatch([Token.TokenType.PLUS, Token.TokenType.MINUS, Token.TokenType.MULTIPLY, Token.TokenType.DIVIDE, Token.TokenType.MODULO], [Token.TokenType.EQUALS]))
@@ -639,21 +647,36 @@ public partial class Parser
                     {
                         Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssignStatement, Previous().location, "method"));
                     }
+                    if (_readonly)
+                    {
+                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidReadonlyModifier, Previous().location));
+                    }
+
                     var op = tokens[index - 2];
                     return new Expr.Assign(variable, new Expr.Binary(variable, op, NoSemicolon()));
                 }
                 else if (TypeMatch(Token.TokenType.LBRACKET))
                 {
+                    if (_readonly)
+                    {
+                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidReadonlyModifier, Previous().location));
+                    }
+
                     var binary = new Expr.Binary(variable, Previous(), NoSemicolon());
                     Expect(Token.TokenType.RBRACKET, "']' after indexer");
                     return binary;
                 }
                 else if (!variable.IsMethodCall() && (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this")))
                 {
-                    return (Expr)Declare(variable) ?? new Expr.InvalidExpr();
+                    return (Expr)Declare(variable, _readonly) ?? new Expr.InvalidExpr();
                 }
                 else
                 {
+                    if (_readonly)
+                    {
+                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidReadonlyModifier, Previous().location));
+                    }
+
                     return variable;
                 }
             }
@@ -675,15 +698,17 @@ public partial class Parser
 
     private Expr.Declare? FullDeclare()
     {
-        if (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("ref"))
+        if (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("ref", "readonly"))
         {
             Expr.Declare? declare;
 
-            var variable = GetReference(null);
+            (bool _ref, bool _readonly) = ParseRefReadonlyModifiers();
+            
+            var variable = GetReference(null, _ref);
 
             if (TypeMatch(Token.TokenType.IDENTIFIER))
             {
-                declare = Declare(variable);
+                declare = Declare(variable, _readonly);
             }
             else
             {
@@ -702,7 +727,7 @@ public partial class Parser
         return null;
     }
 
-    private Expr.Declare? Declare(Expr.GetReference variable)
+    private Expr.Declare? Declare(Expr.GetReference variable, bool _readonly)
     {
         if (variable is not Expr.AmbiguousGetReference getRef)
         {
@@ -720,18 +745,15 @@ public partial class Parser
         if (TypeMatch(Token.TokenType.SEMICOLON))
         {
             MovePrevious();
-            return new Expr.Declare(getRef.typeName, name, getRef._ref, null);
+            return new Expr.Declare(getRef.typeName, name, getRef._ref, _readonly, null);
         }
         Expect(Token.TokenType.EQUALS, "'=' when declaring variable");
 
-        return new Expr.Declare(getRef.typeName, name, getRef._ref, NoSemicolon());
+        return new Expr.Declare(getRef.typeName, name, getRef._ref, _readonly, NoSemicolon());
     }
 
-    private Expr.GetReference GetReference(Expr.Getter? expr)
+    private Expr.GetReference GetReference(Expr.Getter? expr, bool _ref)
     {
-        bool _ref = Previous().lexeme == "ref";
-        if (_ref) Advance();
-
         List<Expr.Getter> getters = new();
 
         if (expr == null)
@@ -817,6 +839,19 @@ public partial class Parser
     private void End()
     {
         Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.ExpressionReachedUnexpectedEnd, current?.location ?? Location.NoLocation, (current == null)? Previous().lexeme : current.lexeme));
+    }
+
+    private (bool _ref, bool _readonly) ParseRefReadonlyModifiers()
+    {
+        bool _readonly, _ref;
+        var lastTwoLexemes = new List<string> { Previous().lexeme, current.lexeme };
+
+        if (_ref = lastTwoLexemes.Contains("ref"))
+            Advance();
+        if (_readonly = lastTwoLexemes.Contains("readonly"))
+            Advance();
+
+        return (_ref, _readonly);
     }
 
     private List<Expr> GetArgs()

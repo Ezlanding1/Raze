@@ -96,8 +96,8 @@ public partial class Analyzer
             }
 
             expr.internalFunction = GetResolvedFunction();
-            TypeCheckUtils.ValidateFunctionParameterModifiers(expr);
             symbolTable.SetContext(context);
+            TypeCheckUtils.ValidateFunctionParameterModifiers(expr);
             return expr.internalFunction._returnType.type;
         }
 
@@ -129,14 +129,15 @@ public partial class Analyzer
             }
 
             expr.internalFunction = GetResolvedFunction();
-            TypeCheckUtils.ValidateFunctionParameterModifiers(expr);
             callReturn = new List<string>() { "Increment", "Decrement" }.Contains(name);
             symbolTable.SetContext(context);
+            TypeCheckUtils.ValidateFunctionParameterModifiers(expr);
             return expr.internalFunction._returnType.type;
         }
 
         public override Expr.Type VisitCallExpr(Expr.Call expr)
         {
+            var context = symbolTable.Current;
             Expr.Type[] argumentTypes = expr.arguments.Select(arg => arg.Accept(this)).ToArray();
 
             if (expr.callee != null)
@@ -151,7 +152,6 @@ public partial class Analyzer
             }
             else
             {
-                var context = symbolTable.Current;
                 symbolTable.SetContext(null);
                 if (symbolTable.TryGetFunction(expr.name.lexeme, argumentTypes, out var symbol))
                 {
@@ -166,15 +166,16 @@ public partial class Analyzer
 
             expr.internalFunction = GetResolvedFunction();
 
+            callReturn = true;
+
             if (expr.internalFunction == symbolTable.FunctionNotFoundDefinition)
             {
-                callReturn = true;
+                symbolTable.SetContext(context);
                 return expr.internalFunction._returnType.type;
             }
 
+            symbolTable.SetContext(context);
             TypeCheckUtils.ValidateCall(expr, expr.internalFunction);
-
-            callReturn = true;
             return expr.internalFunction._returnType.type;
         }
 
@@ -249,7 +250,7 @@ public partial class Analyzer
 
             if (assignType != null)
             {
-                TypeCheckUtils.MustMatchType(expr.stack.type, assignType, expr.stack._ref, expr.value, true, false);
+                TypeCheckUtils.MustMatchType(expr.stack.type, assignType, expr.stack._ref, expr.stack._readonly, expr.value, true, false);
             }
             symbolTable.AddVariable(name, expr.stack, assignType != null);
 
@@ -283,6 +284,7 @@ public partial class Analyzer
                     Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.DoubleDeclaration, paramExpr.name.location, "variable", paramExpr.name.lexeme));
                 }
                 paramExpr.stack._ref = paramExpr.modifiers["ref"];
+                paramExpr.stack._readonly = paramExpr.modifiers["readonly"];
 
                 symbolTable.AddParameter(paramExpr.name, paramExpr.stack);
             }
@@ -338,6 +340,15 @@ public partial class Analyzer
                 assigns = false;
             }
 
+            if (expr.member.GetLastData()?._readonly == true && !(symbolTable.Current is Expr.Function { constructor: true }))
+            {
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
+                    Diagnostic.DiagnosticName.ReadonlyFieldModified, 
+                    memberName.location, 
+                    memberName.lexeme
+                ));
+            }
+
             bool initialized = true;
             if (expr.member.GetLastData() != null && symbolTable.frameData.TryGetValue(expr.member.GetLastData(), out var fd))
             {
@@ -345,7 +356,8 @@ public partial class Analyzer
                 fd.initialized = true;
             }
 
-            TypeCheckUtils.MustMatchType(expr.member.GetLastType(), assignType, TypeCheckUtils.IsRefVariable(expr.member), expr.value, !initialized, false);
+            var (_ref, _readonly) = TypeCheckUtils.GetVariableModifiers(expr.member);
+            TypeCheckUtils.MustMatchType(expr.member.GetLastType(), assignType, _ref, _readonly, expr.value, !initialized, false);
 
             if (symbolTable.Current is Expr.Function function && 
                     TypeCheckUtils.IsVariableWithRefModifier(expr.value) && 
@@ -482,8 +494,8 @@ public partial class Analyzer
                 expr.right.Accept(this)
             };
 
-            TypeCheckUtils.MustMatchType(argumentTypes[0], TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Boolean], false, expr.left, false, false);
-            TypeCheckUtils.MustMatchType(argumentTypes[1], TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Boolean], false, expr.right, false, false);
+            TypeCheckUtils.MustMatchType(argumentTypes[0], TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Boolean], false, false, expr.left, false, false);
+            TypeCheckUtils.MustMatchType(argumentTypes[1], TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Boolean], false, false, expr.right, false, false);
 
             return TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Boolean];
         }
@@ -562,7 +574,7 @@ public partial class Analyzer
 
         public override Expr.Type VisitHeapAllocExpr(Expr.HeapAlloc expr)
         {
-            TypeCheckUtils.MustMatchType(expr.size.Accept(this), TypeCheckUtils.literalTypes[Parser.LiteralTokenType.UnsignedInteger], false, false, false, false);
+            TypeCheckUtils.MustMatchType((expr.size.Accept(this), TypeCheckUtils.literalTypes[Parser.LiteralTokenType.UnsignedInteger]), (false, false), (false, false), false, false);
             return TypeCheckUtils.heapallocType.Value;
         }
 
