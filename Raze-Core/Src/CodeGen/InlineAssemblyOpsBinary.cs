@@ -45,7 +45,7 @@ public abstract partial class CodeGen
                 DeallocVariables(codeGen, (binary.operand1, op1), (binary.operand2, op2));
             }
             
-            public static void IDIV_DIV(CodeGen codeGen, Expr.InlineAssembly.BinaryInstruction binary)
+            public static void MUL_IDIV_DIV(CodeGen codeGen, Expr.InlineAssembly.BinaryInstruction binary)
             {
                 var op1 = binary.operand1.ToOperand(codeGen, AssemblyExpr.Register.RegisterSize._32Bits);
 

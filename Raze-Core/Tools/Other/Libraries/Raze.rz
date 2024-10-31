@@ -27,7 +27,7 @@ class Std
     {
         function operator unsafe inline uint8 Add(uint8 i, uint8 j){asm {return ADD $i, $j;}}
         function operator unsafe inline uint8 Subtract(uint8 i, uint8 j){asm {return SUB $i, $j;}}
-        function operator unsafe inline uint8 Multiply(uint8 i, uint8 j){asm {return MUL $i, $j;}}
+        function operator unsafe inline uint8 Multiply(uint8 i, uint8 j){asm {MUL $i, $j;alloc AL;return AL;}}
         function operator unsafe inline uint8 Divide(uint8 i, uint8 j){asm {DIV $i, $j;alloc AL;return AL;}}
         function operator unsafe inline uint8 Modulo(uint8 i, uint8 j){asm {DIV $i, $j;alloc DL;return DL;}}
         function operator unsafe inline uint8 Increment(ref uint8 i){asm {INC $i;}return i;}
@@ -53,7 +53,7 @@ class Std
     {
         function operator unsafe inline uint16 Add(uint16 i, uint16 j){asm {return ADD $i, $j;}}
         function operator unsafe inline uint16 Subtract(uint16 i, uint16 j){asm {return SUB $i, $j;}}
-        function operator unsafe inline uint16 Multiply(uint16 i, uint16 j){asm {return MUL $i, $j;}}
+        function operator unsafe inline uint16 Multiply(uint16 i, uint16 j){asm {MUL $i, $j;alloc AX;return AX;}}
         function operator unsafe inline uint16 Divide(uint16 i, uint16 j){asm {DIV $i, $j;alloc AX;return AX;}}
         function operator unsafe inline uint16 Modulo(uint16 i, uint16 j){asm {DIV $i, $j;alloc DX;return DX;}}
         function operator unsafe inline uint16 Increment(ref uint16 i){asm {INC $i;}return i;}
@@ -79,7 +79,7 @@ class Std
     {
         function operator unsafe inline uint Add(uint i, uint j){asm {return ADD $i, $j;}}
         function operator unsafe inline uint Subtract(uint i, uint j){asm {return SUB $i, $j;}}
-        function operator unsafe inline uint Multiply(uint i, uint j){asm {return MUL $i, $j;}}
+        function operator unsafe inline uint Multiply(uint i, uint j){asm {MUL $i, $j;alloc EAX;return EAX;}}
         function operator unsafe inline uint Divide(uint i, uint j){asm {DIV $i, $j;alloc EAX;return EAX;}}
         function operator unsafe inline uint Modulo(uint i, uint j){asm {DIV $i, $j;alloc EDX;return EDX;}}
         function operator unsafe inline uint Increment(ref uint i){asm {INC $i;}return i;}
@@ -105,7 +105,7 @@ class Std
     {
         function operator unsafe inline uint64 Add(uint64 i, uint64 j){asm {return ADD $i, $j;}}
         function operator unsafe inline uint64 Subtract(uint64 i, uint64 j){asm {return SUB $i, $j;}}
-        function operator unsafe inline uint64 Multiply(uint64 i, uint64 j){asm {return MUL $i, $j;}}
+        function operator unsafe inline uint64 Multiply(uint64 i, uint64 j){asm {MUL $i, $j;alloc RAX;return RAX;}}
         function operator unsafe inline uint64 Divide(uint64 i, uint64 j){asm {DIV $i, $j;alloc RAX;return RAX;}}
         function operator unsafe inline uint64 Modulo(uint64 i, uint64 j){asm {DIV $i, $j;alloc RDX;return RDX;}}
         function operator unsafe inline uint64 Increment(ref uint64 i){asm {INC $i;}return i;}

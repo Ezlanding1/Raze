@@ -148,7 +148,7 @@ public partial class Analyzer
             {
                 var assigningVars = instruction.GetAssignedVars();
 
-                foreach (var stack in assigningVars.Select(x => { x.variable.Accept(this); return x.variable.GetLastData(); }))
+                foreach (var stack in assigningVars.Select(x => { x?.variable.Accept(this); return x?.variable.GetLastData(); }))
                 {
                     SetInlineRef(stack);
                 }

@@ -20,7 +20,7 @@ public abstract partial class Expr
         {
             public bool _return = false;
 
-            public abstract List<Variable> GetAssignedVars();
+            public abstract List<Variable?> GetAssignedVars();
         }
 
         public class BinaryInstruction(AssemblyExpr.Instruction instruction, Operand operand1, Operand operand2)
@@ -32,46 +32,27 @@ public abstract partial class Expr
 
             public override void Accept(CodeGen codeGen)
             {
-                switch (instruction)
+                if (CodeGen.InlineAssemblyOps.supportedInstructionsBinary.TryGetValue(instruction, out var value))
                 {
-                    case AssemblyExpr.Instruction.IMUL:
-                        CodeGen.InlineAssemblyOps.Binary.IMUL(codeGen, this);
-                        return;
-                    case AssemblyExpr.Instruction.IDIV:
-                    case AssemblyExpr.Instruction.DIV:
-                        CodeGen.InlineAssemblyOps.Binary.IDIV_DIV(codeGen, this);
-                        return;
-                    case AssemblyExpr.Instruction.SAL:
-                    case AssemblyExpr.Instruction.SAR:
-                        CodeGen.InlineAssemblyOps.Binary.SAL_SAR(codeGen, this);
-                        return;
-                    case AssemblyExpr.Instruction.ADDSS:
-                    case AssemblyExpr.Instruction.ADDSD:
-                        CodeGen.InlineAssemblyOps.Binary.DefaultFloatingInstruction(codeGen, this);
-                        return;
-                    default:
-                        CodeGen.InlineAssemblyOps.Binary.DefaultInstruction(codeGen, this);
-                        return;
+                    value.Item2(codeGen, this);
+                    return;
                 }
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UnsupportedInstruction, instruction.ToString()));
             }
 
-            public override List<Variable> GetAssignedVars()
+            public override List<Variable?> GetAssignedVars()
             {
-                return (instruction switch
+                if (CodeGen.InlineAssemblyOps.supportedInstructionsBinary.TryGetValue(instruction, out var value))
                 {
-                    AssemblyExpr.Instruction.MOV or
-                    AssemblyExpr.Instruction.ADD or
-                    AssemblyExpr.Instruction.SUB or
-                    AssemblyExpr.Instruction.AND or
-                    AssemblyExpr.Instruction.OR or
-                    AssemblyExpr.Instruction.XOR or
-                    AssemblyExpr.Instruction.LEA or
-                    AssemblyExpr.Instruction.SAL or
-                    AssemblyExpr.Instruction.ADDSS or
-                    AssemblyExpr.Instruction.MOVSS or
-                    AssemblyExpr.Instruction.SAR => [operand1.GetVariable()],                                                                                                                                                                                                                                                                                                                                       //case "MOD":
-                    _ => new List<Variable?>() { }
-                }).OfType<Variable>().ToList();
+                    return value.Item1 switch
+                    {
+                        0 => [],
+                        1 => [operand1.GetVariable()],
+                        2 => [operand2.GetVariable()],
+                        (1|2) => [operand1.GetVariable(), operand2.GetVariable()],
+                    };
+                }
+                return [];
             }
 
             public override List<Operand> GetOperands() => [operand1, operand2];
@@ -85,26 +66,25 @@ public abstract partial class Expr
 
             public override void Accept(CodeGen codeGen)
             {
-                switch (instruction)
+                if (CodeGen.InlineAssemblyOps.supportedInstructionsUnary.TryGetValue(instruction, out var value))
                 {
-                    case AssemblyExpr.Instruction.SYSCALL:
-                        CodeGen.InlineAssemblyOps.Unary.SYSCALL(codeGen, this);
-                        return;
-                    default:
-                        CodeGen.InlineAssemblyOps.Unary.DefaultInstruction(codeGen, this);
-                        return;
+                    value.Item2(codeGen, this);
+                    return;
                 }
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UnsupportedInstruction, instruction.ToString()));
             }
 
-            public override List<Variable> GetAssignedVars()
+            public override List<Variable?> GetAssignedVars()
             {
-                return (instruction switch
+                if (CodeGen.InlineAssemblyOps.supportedInstructionsUnary.TryGetValue(instruction, out var value))
                 {
-                    AssemblyExpr.Instruction.INC or
-                    AssemblyExpr.Instruction.NEG or
-                    AssemblyExpr.Instruction.DEC => [operand.GetVariable()],                                                                                                                                                                                                                                                                             //case "MOD":
-                    _ => new List<Variable?>() { }
-                }).OfType<Variable>().ToList();
+                    return value.Item1 switch
+                    {
+                        0 => [],
+                        1 => [operand.GetVariable()],
+                    };
+                }
+                return [];
             }
 
             public override List<Operand> GetOperands() => [operand];
@@ -113,14 +93,19 @@ public abstract partial class Expr
         public class NullaryInstruction(AssemblyExpr.Instruction instruction) 
             : Instruction
         {
-            AssemblyExpr.Instruction instruction = instruction;
+            public AssemblyExpr.Instruction instruction = instruction;
 
             public override void Accept(CodeGen codeGen)
             {
-                codeGen.Emit(new AssemblyExpr.Nullary(instruction));
+                if (CodeGen.InlineAssemblyOps.supportedInstructionsNullary.TryGetValue(instruction, out var value))
+                {
+                    value(codeGen, this);
+                    return;
+                }
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.UnsupportedInstruction, instruction.ToString()));
             }
 
-            public override List<Variable> GetAssignedVars() => [];
+            public override List<Variable?> GetAssignedVars() => [];
 
             public override List<Operand> GetOperands() => [];
         }
