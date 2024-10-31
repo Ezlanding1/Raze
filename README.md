@@ -76,6 +76,7 @@ See all the examples [here](Raze-Driver/Examples)
 - [ ] Unit testing
 - [ ] LSP Server
 - [ ] Compiler rewrite in C/C++?
+- [ ] Implement a Roslyn analyzer to ensure marshalled structs have pack 1
 
 ## Releases
 
