@@ -122,7 +122,7 @@ class Syscalls
 
 class x86_64_Linux_Runtime extends Runtime
 {
-	function inline uint64 Sbrk(uint64 inc)
+	function static inline uint64 Sbrk(uint64 inc)
 	{
 		int64 brkLocation = Syscalls.SYS_BRK(0u);
 
@@ -135,12 +135,12 @@ class x86_64_Linux_Runtime extends Runtime
 		return brkLocation.ToUint64();
 	}
 
-	function uint64 New(uint64 inc)
+	function static uint64 New(uint64 inc)
 	{
 		return Sbrk(inc);
 	}
 
-	function inline Exit(int errorCode)
+	function static inline Exit(int errorCode)
 	{
 		Syscalls.SYS_EXIT(errorCode);
 	}
