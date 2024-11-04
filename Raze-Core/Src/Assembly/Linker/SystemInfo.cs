@@ -46,7 +46,8 @@ public class SystemInfo
     public enum OsAbi
     {
         System_V = Linker.Elf64.Elf64_Ehdr.EI_OSABI.System_V,
-        Linux = Linker.Elf64.Elf64_Ehdr.EI_OSABI.Linux
+        Linux = Linker.Elf64.Elf64_Ehdr.EI_OSABI.Linux,
+        Windows
     }
 
     // Note: 32-Bit Format is not currently supported
@@ -81,7 +82,12 @@ public class SystemInfo
         {
             OsAbi.Linux or
             OsAbi.System_V => "x86_64_Linux_Runtime",
+            OsAbi.Windows => "x86_64_Windows_Runtime",
             _ => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Runtime name not found for OsAbi {osabi}"))
         };
     }
+
+    public bool OutputElf() => osabi != OsAbi.Windows;
+
+    public string GetDefualtFileExtension() => OutputElf() ? ".elf" : ".exe";
 }

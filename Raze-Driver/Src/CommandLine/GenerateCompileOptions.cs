@@ -44,7 +44,7 @@ internal partial class Shell
             name: "--output",
             description: "Name of output binary"
         );
-        outputOption.SetDefaultValue("output.elf");
+        outputOption.SetDefaultValue(null);
         outputOption.AddAlias("-o");
 
         var libraryOption = new Option<string[]?>(

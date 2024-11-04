@@ -32,6 +32,7 @@ internal partial class Shell
         public static SystemInfo.OsAbi GetOsabi => Environment.OSVersion.Platform switch
         {
             PlatformID.Unix => SystemInfo.OsAbi.Linux,
+            PlatformID.Win32NT => SystemInfo.OsAbi.Windows,
 
             _ =>
                 throw Diagnostics.Panic(new Diagnostic.DriverDiagnostic(

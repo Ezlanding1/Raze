@@ -14,7 +14,7 @@ internal partial class Shell
     class CompileOptions
     {
         public required FileInfo FileArgument { get; init; }
-        public required string OutputOption { get; init; }
+        public required string OutputOption { get; set; }
 
         public bool DebugOption
         {
@@ -106,6 +106,8 @@ internal partial class Shell
 
         protected override CompileOptions GetBoundValue(BindingContext bindingContext)
         {
+            const string defaultFileName = "output";
+
             var compileOptions = new CompileOptions
             (
                 ParseSystemInfoOption<SystemInfo.CPU_Architecture>(bindingContext.ParseResult.GetValueForOption(Architecture), Diagnostic.DiagnosticName.UnsupportedSystem_CPU_Architecture),
@@ -125,6 +127,7 @@ internal partial class Shell
                 AssemblyFlavorOption = bindingContext.ParseResult.GetValueForOption(AssemblyFlavorOption)
             };
             compileOptions.DebugOption = bindingContext.ParseResult.GetValueForOption(DebugOption);
+            compileOptions.OutputOption ??= defaultFileName + compileOptions.SystemInfo.GetDefualtFileExtension();
 
             return compileOptions;
         }
