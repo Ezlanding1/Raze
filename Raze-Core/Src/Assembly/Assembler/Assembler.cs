@@ -26,6 +26,9 @@ public partial class Assembler :
     internal bool nonResolvingPass = true;
     internal string enclosingLbl = string.Empty;
 
+    internal ulong textVirtualAddress;
+    internal ulong dataVirtualAddress;
+
     public void Assemble(CodeGen.Assembly assembly)
     {
         AssembleTextSection(CodeGen.ISection.Text.GenerateDriverInstructions());
@@ -33,28 +36,23 @@ public partial class Assembler :
         AssembleTextSection(assembly.text);
 
         AssembleDataSection(assembly.data);
+
+        AssembleIDataSection(assembly.idata);
     }
 
-    private void AssembleTextSection(CodeGen.ISection.Text section)
+    private void AssembleSection(CodeGen.ISection section, List<byte>? asmSection)
     {
         foreach (var assemblyExpr in section)
         {
             foreach (byte[] bytes in assemblyExpr.Accept(this).ToBytes())
             {
-                text.AddRange(bytes);
+                asmSection?.AddRange(bytes);
             }
         }
     }
-    private void AssembleDataSection(CodeGen.ISection.Data section)
-    {
-        foreach (var assemblyExpr in section)
-        {
-            foreach (byte[] bytes in assemblyExpr.Accept(this).ToBytes())
-            {
-                data.AddRange(bytes);
-            }
-        }
-    }
+    private void AssembleTextSection(CodeGen.ISection.Text section) => AssembleSection(section, text);
+    private void AssembleDataSection(CodeGen.ISection.Data section) => AssembleSection(section, data);
+    private void AssembleIDataSection(CodeGen.ISection.IData section) => AssembleSection(section, null);
 
     public Instruction VisitBinary(AssemblyExpr.Binary instruction)
     {
@@ -130,7 +128,8 @@ public partial class Assembler :
 
                 if (nonResolvingPass)
                 {
-                    symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(instruction, DataLocation, data[^1].GetBytes().Length, false));
+                    int size = data[^1].GetBytes().Length;
+                    symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(instruction, DataLocation, size, false, size));
                 }
             }
             else
@@ -327,5 +326,11 @@ public partial class Assembler :
     {
         // No ModRegRm byte is emitted for a unary literal operand
         return new Instruction(new IInstruction[] { Encoder.EncodingUtils.GetImmInstruction(encoding.operands[0].size, imm, this, encoding.encodingType) });
+    }
+
+    public Instruction VisitInclude(AssemblyExpr.Include include)
+    {
+        symbolTable.includes.Add(include);
+        return new Instruction();
     }
 }

@@ -145,3 +145,18 @@ class x86_64_Linux_Runtime extends Runtime
 		Syscalls.SYS_EXIT(errorCode);
 	}
 }
+
+class x86_64_Windows_Runtime extends Runtime
+{
+	function extern dll ExitProcess(int exitCode) from "kernel32.dll";
+
+	function static uint64 New(uint64 inc)
+	{
+		return 0u;
+	}
+
+	function static inline Exit(int errorCode)
+	{
+		ExitProcess(errorCode);
+	}
+}

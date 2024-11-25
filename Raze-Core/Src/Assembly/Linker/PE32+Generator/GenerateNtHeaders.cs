@@ -19,28 +19,21 @@ public partial class Linker
                 _ => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Unsupported PE32+ systemInfo architecture '{systemInfo.architecture}'"))
             };
 
-            ushort numberOfSections = checked((ushort)(
-                Convert.ToUInt32(assembler.text.Count != 0) +
-                Convert.ToUInt32(assembler.data.Count != 0) +
-                0
-            ));
+            ushort numberOfSections = checked((ushort)PeUtils.NumberOfSections(assembler));
 
-            var fileAlignment = PE32Plus.IMAGE_OPTIONAL_HEADER64.DefaultFileAlignment;
-            uint virtualAlignment = checked((uint)systemInfo.alignment);
+            uint fileAlignment = PeUtils.FileAlignment;
+            uint virtualAlignment = PeUtils.VirtualAlignment(systemInfo);
 
-            uint codeSize = AlignTo(checked((uint)assembler.text.Count), fileAlignment);
-            uint initializedDataSize = AlignTo(checked((uint)assembler.data.Count), fileAlignment);
+            uint codeSize = PeUtils.AlignTo(checked((uint)assembler.text.Count), fileAlignment);
+            uint initializedDataSize = PeUtils.AlignTo(checked((uint)(assembler.data.Count + PeUtils.GetIDataSize(assembler.symbolTable))), fileAlignment);
 
 
-            uint sizeOfHeadersRaw = (uint)(Marshal.SizeOf<PE32Plus.IMAGE_DOS_HEADER>() +
-                Marshal.SizeOf<PE32Plus.MS_DOS_STUB>() +
-                Marshal.SizeOf<PE32Plus.IMAGE_NT_HEADERS64>() +
-                (Marshal.SizeOf<PE32Plus.IMAGE_SECTION_HEADER>() * numberOfSections));
+            uint sizeOfHeadersRaw = PeUtils.GetHeadersSizeRaw(assembler);
 
             firstSectionAddressUnaligned = sizeOfHeadersRaw;
 
             // Text section is always the first section, right after the headers
-            uint textSectionRVA = AlignTo(
+            uint textSectionRVA = PeUtils.AlignTo(
                 sizeOfHeadersRaw,
                 virtualAlignment
             );
@@ -75,7 +68,7 @@ public partial class Linker
                         0x6,
                         0,
                         checked((uint)((numberOfSections + 1) * systemInfo.alignment)),
-                        AlignTo(sizeOfHeadersRaw, fileAlignment),
+                        PeUtils.AlignTo(sizeOfHeadersRaw, fileAlignment),
                         0,
                         PE32Plus.IMAGE_OPTIONAL_HEADER64._Subsystem.IMAGE_SUBSYSTEM_WINDOWS_CUI,
                         PE32Plus.IMAGE_OPTIONAL_HEADER64._DllCharacteristics.IMAGE_DLLCHARACTERISTICS_HIGH_ENTROPY_VA | PE32Plus.IMAGE_OPTIONAL_HEADER64._DllCharacteristics.MAGE_DLLCHARACTERISTICS_DYNAMIC_BASE | PE32Plus.IMAGE_OPTIONAL_HEADER64._DllCharacteristics.IMAGE_DLLCHARACTERISTICS_NX_COMPAT | PE32Plus.IMAGE_OPTIONAL_HEADER64._DllCharacteristics.IMAGE_DLLCHARACTERISTICS_TERMINAL_SERVER_AWARE,
@@ -83,21 +76,43 @@ public partial class Linker
                         SizeOfStackCommit,
                         SizeOfHeapReserve, 
                         SizeOfHeapCommit,
-                        []
+                        new PE32Plus.IMAGE_DATA_DIRECTORY[]
+                        {
+                            // Export Directory
+                            new(0, 0),
+                            // Import Directory
+                            new(PeUtils.GetIDataSectionDataDirRVA(assembler, systemInfo), PeUtils.SizeOfImageImportTable(assembler.symbolTable)),
+                            // Resource Directory
+                            new(0, 0),
+                            // Exception Directory
+                            new(0, 0),
+                            // Security Directory
+                            new(0, 0),
+                            // Base Relocation Table
+                            new(PeUtils.GetRelocSectionDataDirRVA(assembler, systemInfo), PeUtils.GetRelocSectionSize(assembler, systemInfo)),
+                            // Debug Directory
+                            new(0, 0),
+                            // Architecture Specific Data
+                            new(0, 0),
+                            // RVA of GP
+                            new(0, 0),
+                            // TLS Directory
+                            new(0, 0), 
+                            // Load Configuration Directory
+                            new(0, 0), 
+                            // Bound Import Directory in headers
+                            new(0, 0), 
+                            // Import Address Table
+                            new(PeUtils.GetIatLocationDataDirRVA(assembler, systemInfo), PeUtils.GetIDataSectionTablesLocations(assembler.symbolTable).iltTablesLocation),
+                            // Delay Load Import Descriptors
+                            new(0, 0), 
+                            // COM Runtime descriptor
+                            new(0, 0),
+                            // Null Directory
+                            new(0, 0)
+                        }
                     )
                 );
-        }
-
-        private static uint AlignTo(uint value, uint align)
-        {
-            uint result;
-
-            uint remainder = value % align;
-            result = remainder == 0 ?
-                value :
-                value + align - remainder;
-
-            return result;
         }
     }
 }

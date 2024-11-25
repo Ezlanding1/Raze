@@ -48,6 +48,7 @@ public abstract partial class Diagnostic
         InlineAssemblyInvalidRegisterOption,
         InlineAssemblyInvalidPtrOffset,
         InlineAssemblyInvalidFreeOperand,
+        MultipleCallingConventionsSpecified,
 
         // AnalyzerError
         TypeMismatch,
@@ -100,6 +101,8 @@ public abstract partial class Diagnostic
         ReadonlyFieldModified,
         ReadonlyFieldModified_Ref,
         InvalidReadonlyModifier,
+        ExternWithoutExternFileName,
+        ExternWithBlock,
 
         // BackendError
         InvalidLiteralSize,
@@ -109,6 +112,8 @@ public abstract partial class Diagnostic
         InvalidInstructionOperandType_Arity2,
         InstructionOperandsSizeMismatch,
         InlineAssemblySizeMismatchReturn_NonPrimitive,
-        InlineAssemblySizeMismatchReturn_Primitive
+        InlineAssemblySizeMismatchReturn_Primitive,
+        ExternFileExtensionNotSupported,
+        UnsupportedOsAbiForImportType
     };
 }

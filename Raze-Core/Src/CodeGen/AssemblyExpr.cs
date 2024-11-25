@@ -18,11 +18,13 @@ public abstract partial class AssemblyExpr
         public T VisitUnary(Unary instruction);
         public T VisitZero(Nullary instruction);
         public T VisitComment(Comment instruction);
+        public T VisitInclude(Include instruction);
     }
 
     public abstract class TopLevelExpr : AssemblyExpr { }
     public abstract class TextExpr : AssemblyExpr { }
     public abstract class DataExpr : AssemblyExpr { }
+    public abstract class IDataExpr : AssemblyExpr { }
 
     public class Global : TopLevelExpr
     {
@@ -658,6 +660,46 @@ public abstract partial class AssemblyExpr
         public override T Accept<T>(IVisitor<T> visitor)
         {
             return visitor.VisitComment(this);
+        }
+    }
+
+    public class Include : IDataExpr
+    {
+        public enum IncludeType
+        {
+            // Library, // Statically linked windows files
+            DynamicLinkLibrary, // Dynamically linked windows files
+
+            // Object // Statically linked linux files
+            // SharedObject, // Dynamically linked linux files
+        }
+        public readonly IncludeType includeType;
+        public readonly string importedFunctionName;
+        public readonly string importedFileName;
+        public readonly string mangledName;
+
+        public Include(IncludeType includeType, string importedFunctionName, string importedFileName, string mangledName)
+        {
+            this.includeType = includeType;
+            this.importedFunctionName = importedFunctionName;
+            this.importedFileName = importedFileName;
+            this.mangledName = mangledName;
+        }
+
+        public override T Accept<T>(IVisitor<T> visitor)
+        {
+            return visitor.VisitInclude(this);
+        }
+
+        public void ValidateImportPlatform(SystemInfo.OsAbi osAbi)
+        {
+            if (osAbi != includeType switch
+            {
+                IncludeType.DynamicLinkLibrary => SystemInfo.OsAbi.Windows
+            })
+            {
+                Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.UnsupportedOsAbiForImportType, includeType, osAbi));
+            }
         }
     }
 }

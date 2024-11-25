@@ -87,7 +87,7 @@ public abstract partial class CodeGen
                 if (!op2.IsLiteral())
                 {
                     codeGen.alloc.ReserveRegister(codeGen, AssemblyExpr.Register.RegisterName.RCX);
-                    var cl = new AssemblyExpr.Register(InstructionUtils.paramRegister[3], AssemblyExpr.Register.RegisterSize._8Bits);
+                    var cl = new AssemblyExpr.Register(InstructionUtils.GetParamRegisters(false)[3], AssemblyExpr.Register.RegisterSize._8Bits);
 
                     if (op2.Size != AssemblyExpr.Register.RegisterSize._8Bits)
                     {

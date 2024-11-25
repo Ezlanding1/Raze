@@ -26,6 +26,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
     );
     internal RegisterAlloc alloc = new();
 
+    public CodeGen(SystemInfo systemInfo)
+    {
+        FunctionPushPreserved.SetRedZoneSize(systemInfo.OutputElf());
+    }
+
     public Assembly Generate()
     {
         Analyzer.SpecialObjects.ParentExprsToImportTopLevelWrappers();
@@ -49,8 +54,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
     private AssemblyExpr.IValue? HandleInvokable(Expr.Invokable invokable)
     {
         bool instance = !invokable.internalFunction.modifiers["static"];
+        var cconv = invokable.internalFunction.callingConvention;
 
-        var localParams = new AssemblyExpr.Register[Math.Min(invokable.Arguments.Count + Convert.ToInt32(instance), 6)];
+        var localParams = new AssemblyExpr.Register[Math.Min(invokable.Arguments.Count + Convert.ToInt32(instance), InstructionUtils.GetParamRegisters(false, cconv).Length)];
 
         if (instance)
         {
@@ -60,14 +66,14 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                 if (call.callee != null)
                 {
                     var callee = call.callee.Accept(this);
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.AllocParam(0, InstructionUtils.ToRegisterSize(call.callee.GetLastSize()), localParams, call.callee.GetLastType(), this), callee));
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.AllocParam(0, InstructionUtils.ToRegisterSize(call.callee.GetLastSize()), localParams, call.callee.GetLastType(), cconv, this), callee));
                     alloc.Free(callee);
                 }
                 else
                 {
                     var enclosing = SymbolTableSingleton.SymbolTable.NearestEnclosingClass(call.internalFunction);
                     var size = enclosing.allocSize;
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.AllocParam(0, InstructionUtils.ToRegisterSize(size), localParams, enclosing, this), new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, -size, (AssemblyExpr.Register.RegisterSize)size)));
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, alloc.AllocParam(0, InstructionUtils.ToRegisterSize(size), localParams, enclosing, cconv, this), new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, -size, (AssemblyExpr.Register.RegisterSize)size)));
                 }
             }
             else
@@ -81,7 +87,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             AssemblyExpr.IValue arg = invokable.Arguments[i].Accept(this)
                 .IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)invokable.internalFunction.parameters[i].stack.size);
 
-            if (i + Convert.ToUInt16(instance) < InstructionUtils.paramRegister.Length)
+            if (i + Convert.ToUInt16(instance) < InstructionUtils.GetParamRegisters(IsFloatingType(invokable.internalFunction.parameters[i].stack.type), cconv).Length)
             {
                 bool _ref = invokable.internalFunction.parameters[i].modifiers["ref"];
                 if (_ref)
@@ -92,11 +98,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
                 if (_ref)
                 {
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, alloc.AllocParam(Convert.ToInt16(instance) + i, InstructionUtils.SYS_SIZE, localParams, null, this), arg));
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, alloc.AllocParam(Convert.ToInt16(instance) + i, InstructionUtils.SYS_SIZE, localParams, null, cconv, this), arg));
                 }
                 else
                 {
-                    var paramReg = alloc.AllocParam(Convert.ToInt16(instance) + i, InstructionUtils.ToRegisterSize(invokable.internalFunction.parameters[i].stack.size), localParams, invokable.internalFunction.parameters[i].stack.type, this);
+                    var paramReg = alloc.AllocParam(Convert.ToInt16(instance) + i, InstructionUtils.ToRegisterSize(invokable.internalFunction.parameters[i].stack.size), localParams, invokable.internalFunction.parameters[i].stack.type, cconv, this);
 
                     if (!(arg.IsRegister() && HandleSeteOptimization((AssemblyExpr.Register)arg, paramReg)))
                     {
@@ -130,12 +136,15 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             alloc.Free(arg);
         }
 
-        alloc.SaveScratchRegistersBeforeCall(this, invokable.Arguments.Count + Convert.ToInt32(instance));
+        alloc.SaveScratchRegistersBeforeCall(this, invokable.internalFunction);
 
         for (int i = 0; i < localParams.Length; i++)
         {
-            alloc.FreeParameter(i, localParams[i], this);
+            alloc.FreeParameter(i, localParams[i], cconv, this);
         }
+
+        if (alloc.Current != null)
+            alloc.Current.size += InstructionUtils.GetCallingConvention(cconv).shadowSpace;
 
         if (invokable.internalFunction.modifiers["virtual"])
         {
@@ -157,15 +166,24 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
             alloc.FreeRegister(reg);
         }
+        else if (invokable.internalFunction.externFileName?.EndsWith(".dll") == true)
+        {
+            EmitCall(new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL, new AssemblyExpr.Pointer(null, new AssemblyExpr.ProcedureRef(ToMangledName(invokable.internalFunction)), InstructionUtils.SYS_SIZE)));
+        }
         else
         {
             EmitCall(new AssemblyExpr.Unary(AssemblyExpr.Instruction.CALL, new AssemblyExpr.ProcedureRef(ToMangledName(invokable.internalFunction))));
         }
 
-
-        if (invokable.Arguments.Count > InstructionUtils.paramRegister.Length && alloc.fncPushPreserved.leaf)
+        int resetStackOffset =
+            ((invokable.Arguments.Count - InstructionUtils.GetParamRegisters(false, cconv).Length) * 8);
+        if (resetStackOffset > 0)
         {
-            Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.ADD, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE), new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes((invokable.Arguments.Count - InstructionUtils.paramRegister.Length) * 8))));
+            Emit(new AssemblyExpr.Binary(
+                AssemblyExpr.Instruction.ADD, 
+                new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE), 
+                new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes(resetStackOffset))
+            ));
         }
 
         return invokable.internalFunction.constructor ?
@@ -175,9 +193,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                 alloc.NeededAlloc(
                     InstructionUtils.ToRegisterSize(invokable.internalFunction._returnType.type.allocSize), 
                     this, 
-                    IsFloatingType(invokable.internalFunction.refReturn ? null : invokable.internalFunction._returnType.type) ? 
-                        AssemblyExpr.Register.RegisterName.XMM0 : 
-                        AssemblyExpr.Register.RegisterName.RAX
+                    InstructionUtils.GetCallingConvention(cconv).returnRegisters.GetRegisters(
+                        IsFloatingType(invokable.internalFunction.refReturn ? 
+                            null : 
+                            invokable.internalFunction._returnType.type
+                        )
+                    )[0]
                 ), 
                 invokable.internalFunction._returnType.type
             );
@@ -314,7 +335,30 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
     public AssemblyExpr.IValue? VisitFunctionExpr(Expr.Function expr)
     {
-        if (expr.modifiers["inline"] || expr.dead || expr.Abstract)
+        if (!expr.dead && expr.modifiers["extern"])
+        {
+            string fileExtension = expr.externFileName[expr.externFileName.LastIndexOf('.')..];
+            AssemblyExpr.Include.IncludeType? includeType = fileExtension switch
+            {
+                ".dll" => AssemblyExpr.Include.IncludeType.DynamicLinkLibrary,
+                _ => null
+            };
+
+            if (includeType == null)
+            {
+                Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.ExternFileExtensionNotSupported, fileExtension));
+                return null;
+            }
+
+            assembly.idata.Add(new AssemblyExpr.Include(
+                (AssemblyExpr.Include.IncludeType)includeType,
+                expr.name.lexeme,
+                expr.externFileName,
+                ToMangledName(expr)
+            ));
+        }
+
+        if (expr.modifiers["inline"] || expr.dead || expr.Abstract || expr.modifiers["extern"])
         {
             return null;
         }
@@ -701,9 +745,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
     public virtual AssemblyExpr.IValue? VisitReturnExpr(Expr.Return expr)
     {
-        if (!expr.IsVoid(alloc.Current))
+        var function = (Expr.Function)alloc.Current;
+        var cconv = function.callingConvention;
+
+        if (!expr.IsVoid(function._returnType.type))
         {
-            var function = (Expr.Function)alloc.Current;
             AssemblyExpr.Instruction instruction = GetMoveInstruction(function.refReturn, function._returnType.type);
 
             AssemblyExpr.IValue operand = expr.value.Accept(this)
@@ -714,9 +760,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                 (instruction, operand) = PreserveRefPtrVariable(expr.value, (AssemblyExpr.Pointer)operand);
             }
 
-            var _returnRegister = IsFloatingType(function.refReturn ? null : function._returnType.type) ? 
-                new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.XMM0, AssemblyExpr.Register.RegisterSize._128Bits) :
-                new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, operand.Size);
+            bool isFloatingType = IsFloatingType(function.refReturn ? null : function._returnType.type);
+            var _returnRegister = new AssemblyExpr.Register(
+                InstructionUtils.GetCallingConvention(cconv).returnRegisters.GetRegisters(isFloatingType)[0],
+                isFloatingType ? AssemblyExpr.Register.RegisterSize._128Bits : operand.Size
+            );
 
             if ((operand.IsRegister(out var register) && (register.Name != _returnRegister.Name))
                 || operand.IsPointer())
@@ -741,7 +789,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         {
             Emit(new AssemblyExpr.Binary(
                 AssemblyExpr.Instruction.MOV, 
-                new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, InstructionUtils.SYS_SIZE), 
+                new AssemblyExpr.Register(InstructionUtils.GetCallingConvention(cconv).returnRegisters.integer[0], InstructionUtils.SYS_SIZE), 
                 new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, [0])
             ));
         }
@@ -1027,6 +1075,11 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
     public static string ToMangledName(Expr.Function function)
     {
+        if (function.externFileName != null)
+        {
+            return function.name.lexeme;
+        }
+
         return (function.enclosing != null ?
                     function.enclosing.ToString() + "." :
                     "")

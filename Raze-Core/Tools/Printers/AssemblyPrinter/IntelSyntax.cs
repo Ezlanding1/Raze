@@ -106,6 +106,11 @@ partial class Syntaxes
                 return $"{instruction.instruction}";
             }
 
+            public string VisitInclude(AssemblyExpr.Include instruction)
+            {
+                return $"extern {instruction.importedFunctionName}";
+            }
+
             private string PointerToString(AssemblyExpr.Pointer instruction)
             {
                 if (instruction.GetRegister()?.Name == AssemblyExpr.Register.RegisterName.TMP)

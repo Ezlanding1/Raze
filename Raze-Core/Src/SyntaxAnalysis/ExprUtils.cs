@@ -90,7 +90,10 @@ internal abstract partial class ExprUtils
                 "operator",
                 "inline",
                 "virtual",
-                "override"
+                "override",
+                "extern",
+                "dll",
+                "fastcall"
             );
         }
 

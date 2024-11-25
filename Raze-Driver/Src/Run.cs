@@ -34,7 +34,7 @@ internal partial class Shell
         Raze.Diagnostics.ThrowCompilerErrors();
 
         // Lower AST to ASM
-        Raze.CodeGen codeGen = new Raze.InlinedCodeGen();
+        Raze.CodeGen codeGen = new Raze.InlinedCodeGen(systemInfo);
         var assembly = codeGen.Generate();
 
         DebugPrinter.PrintAssembly(compileOptions, assembly);

@@ -31,5 +31,37 @@ public partial class Linker
                 this.SizeOfBlock = sizeOfBlock;
             }
         }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        internal struct IMAGE_BASE_RELOCATION_BLOCK
+        {
+            WORD _data;
+
+            public IMAGE_BASE_RELOCATION_BLOCK(BaseRelocationType baseRelocationType, WORD offset)
+            {
+                this._data = offset;
+                this._data = (WORD)((_data & 0xF) | ((WORD)baseRelocationType << 12));
+            }
+
+            public enum BaseRelocationType : WORD
+            {
+                IMAGE_REL_BASED_ABSOLUTE = 0,
+                IMAGE_REL_BASED_HIGH = 1,
+                IMAGE_REL_BASED_LOW = 2,
+                IMAGE_REL_BASED_HIGHLOW = 3,
+                IMAGE_REL_BASED_HIGHADJ = 4,
+                IMAGE_REL_BASED_MIPS_JMPADDR = 5,
+                IMAGE_REL_BASED_ARM_MOV32 = 5,
+                IMAGE_REL_BASED_RISCV_HIGH20 = 5,
+                // Reserved, must be zero = 6
+                IMAGE_REL_BASED_THUMB_MOV32 = 7,
+                IMAGE_REL_BASED_RISCV_LOW12I = 7,
+                IMAGE_REL_BASED_RISCV_LOW12S = 8,
+                IMAGE_REL_BASED_LOONGARCH32_MARK_LA = 8,
+                IMAGE_REL_BASED_LOONGARCH64_MARK_LA = 8,
+                IMAGE_REL_BASED_MIPS_JMPADDR16 = 9,
+                IMAGE_REL_BASED_DIR64 = 10,
+            }
+        }
     }
 }

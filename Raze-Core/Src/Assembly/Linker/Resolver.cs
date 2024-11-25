@@ -10,6 +10,25 @@ public partial class Linker
 {
     internal static class Resolver
     {
+        internal static void ResolveIncludes(Assembler assembler, SystemInfo systemInfo)
+        {
+            foreach (var include in assembler.symbolTable.includes)
+            {
+                include.ValidateImportPlatform(systemInfo.osabi);
+
+                switch (include.includeType)
+                {
+                    case AssemblyExpr.Include.IncludeType.DynamicLinkLibrary:
+                    {
+                        uint idataOffsetFromText = PeUtils.GetIDataSectionRVA(assembler, systemInfo) - PeUtils.GetTextSectionRVA(assembler, systemInfo);
+                        uint iatTablesLocation = PeUtils.GetIDataSectionTablesLocations(assembler.symbolTable).iatTablesLocation;
+                        assembler.symbolTable.definitions.Add("text." + include.mangledName, (int)(idataOffsetFromText + iatTablesLocation));
+                    }
+                    break;
+                }
+            }
+        }
+
         private static int ResolveLabelCalculateNewSize(List<byte> section, ReferenceInfo reference, Assembler.Instruction instruction)
         {
             section.RemoveRange(reference.location, reference.size);
@@ -24,8 +43,19 @@ public partial class Linker
             return reference.size;
         }
 
-        internal static void ResolveReferences(Assembler assembler)
+        internal static void ResolveReferences(Assembler assembler, SystemInfo systemInfo)
         {
+            if (systemInfo.OutputElf())
+            {
+                assembler.textVirtualAddress = Elf64.Elf64_Shdr.textVirtualAddress;
+                assembler.dataVirtualAddress = Elf64.Elf64_Shdr.dataVirtualAddress;
+            }
+            else
+            {
+                assembler.textVirtualAddress = PE32Plus.IMAGE_OPTIONAL_HEADER64.DefaultImageBase + PeUtils.GetTextSectionRVA(assembler, systemInfo);
+                assembler.dataVirtualAddress = PE32Plus.IMAGE_OPTIONAL_HEADER64.DefaultImageBase + PeUtils.GetDataSectionRVA(assembler, systemInfo);
+            }
+
             assembler.nonResolvingPass = false;
             bool stablePass;
 

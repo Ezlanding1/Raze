@@ -35,6 +35,14 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             }
         }
 
+        public class IData : List<AssemblyExpr.IDataExpr>, ISection
+        {
+            public static TopLevel GenerateHeaderInstructions()
+            {
+                return new TopLevel() { new AssemblyExpr.Section("idata") };
+            }
+        }
+
         IEnumerator<AssemblyExpr> IEnumerable<AssemblyExpr>.GetEnumerator()
         {
             return GetEnumerator();

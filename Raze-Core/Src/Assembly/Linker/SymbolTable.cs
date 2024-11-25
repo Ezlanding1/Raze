@@ -14,6 +14,8 @@ public partial class Linker
         internal int sTableUnresRefIdx = -1;
 
         internal Dictionary<string, int> definitions = new();
+
+        internal List<AssemblyExpr.Include> includes = [];
     }
 
     internal abstract class RefOrDefSymbolTableInfo
@@ -46,13 +48,19 @@ public partial class Linker
         public int location;
         public int size;
         public bool textSection;
+        public bool absoluteAddress = true;
+        public int dataSize;
 
-        public ReferenceInfo(AssemblyExpr instruction, int location, int size, bool textSection) : base(true)
+        public ReferenceInfo(AssemblyExpr instruction, int location, int size, bool textSection, int dataSize) : base(true)
         {
             this.instruction = instruction;
             this.location = location;
             this.size = size;
             this.textSection = textSection;
+            this.dataSize = dataSize;
+        }
+        public ReferenceInfo(AssemblyExpr instruction, int location, int size, bool textSection) : this(instruction, location, size, textSection, (int)InstructionUtils.SYS_SIZE)
+        {
         }
     }
 }

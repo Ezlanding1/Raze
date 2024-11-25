@@ -11,56 +11,94 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 {
     internal class FunctionPushPreserved
     {
+        private static bool stackStartsAligned;
+        private static int redZoneSize;
+
+        public static void SetRedZoneSize(bool outputElf)
+        {
+            const int linuxRedZoneSize = 128;
+            const int windowsRedZoneSize = 0;
+
+            (stackStartsAligned, redZoneSize) = outputElf ?
+                    (true, linuxRedZoneSize) :
+                    (false, windowsRedZoneSize);
+        }
+
         public bool leaf = true;
-        
-        bool[] registers = new bool[InstructionUtils.storageRegisters.Length - InstructionUtils.ScratchRegisterCount];
+
+        Dictionary<AssemblyExpr.Register.RegisterName, bool> registers =
+            InstructionUtils.GetCallingConvention().nonVolatileRegisters.ToDictionary(x => x, x => false);
+
         public int size;
         int count;
         Stack<int> footers = new();
+
+        bool StackAllocNeeded => !((leaf || size == 0) && size <= redZoneSize);
 
         public FunctionPushPreserved(int count)
         {
             this.count = count;
         }
 
-        public void IncludeRegister(int idx) => registers[idx - InstructionUtils.NonSseScratchRegisterCount] = true;
+        public void IncludeRegister(AssemblyExpr.Register.RegisterName register) => registers[register] = true;
 
-        public void GenerateHeader(ISection.Text assemblyExprs)
+        public void GenerateHeader(ISection.Text assemblyExprs, bool firstCall=false)
         {
-            while (footers.Count > 0)
+            if (!firstCall)
             {
-                int location = footers.Pop();
-                GenerateFooter(assemblyExprs, location);
+                while (footers.Count > 0)
+                {
+                    int location = footers.Pop();
+                    GenerateFooter(assemblyExprs, location);
+                }
+
+                assemblyExprs.Insert(count++, new AssemblyExpr.Unary(AssemblyExpr.Instruction.PUSH, AssemblyExpr.Register.RegisterName.RBP));
+                assemblyExprs.Insert(count++, new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, AssemblyExpr.Register.RegisterName.RBP, AssemblyExpr.Register.RegisterName.RSP));
             }
 
-            assemblyExprs.Insert(count++, new AssemblyExpr.Unary(AssemblyExpr.Instruction.PUSH, AssemblyExpr.Register.RegisterName.RBP));
-            assemblyExprs.Insert(count++, new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, AssemblyExpr.Register.RegisterName.RBP, AssemblyExpr.Register.RegisterName.RSP));
-
-            if (!((leaf || size == 0) && size <= 128))
+            if (StackAllocNeeded)
             {
-                assemblyExprs.Insert(count++, GenerateStackAlloc((size > 128) ? size - 128 : size));
+                assemblyExprs.Insert(count++, GenerateStackAlloc((size > redZoneSize) ? size - redZoneSize : size, firstCall));
             }
 
-            for (int i = 0; i < registers.Length; i++)
+            if (!firstCall)
             {
-                if (registers[i])
-                    assemblyExprs.Insert(count++,
-                        new AssemblyExpr.Unary(AssemblyExpr.Instruction.PUSH, new AssemblyExpr.Register(InstructionUtils.storageRegisters[i + InstructionUtils.NonSseScratchRegisterCount].Name, AssemblyExpr.Register.RegisterSize._64Bits)));
+                foreach (var register in InstructionUtils.GetCallingConvention().nonVolatileRegisters)
+                {
+                    if (registers[register])
+                    {
+                        assemblyExprs.Insert(
+                            count++,
+                            new AssemblyExpr.Unary(
+                                AssemblyExpr.Instruction.PUSH,
+                                new AssemblyExpr.Register(register, AssemblyExpr.Register.RegisterSize._64Bits)
+                            )
+                        );
+                    }
+                }
             }
         }
 
         private void GenerateFooter(ISection.Text assemblyExprs, int location)
         {
-            for (int i = registers.Length - 1; i >= 0; i--)
+            foreach (var register in InstructionUtils.GetCallingConvention().nonVolatileRegisters.Reverse())
             {
-                if (registers[i])
-                    assemblyExprs.Insert(location++, new AssemblyExpr.Unary(AssemblyExpr.Instruction.POP, new AssemblyExpr.Register(InstructionUtils.storageRegisters[i + InstructionUtils.NonSseScratchRegisterCount].Name, AssemblyExpr.Register.RegisterSize._64Bits)));
+                if (registers[register])
+                {
+                    assemblyExprs.Insert(
+                        location++, 
+                        new AssemblyExpr.Unary(
+                            AssemblyExpr.Instruction.POP, 
+                            new AssemblyExpr.Register(register, AssemblyExpr.Register.RegisterSize._64Bits)
+                        )
+                    );
+                }
             }
 
             assemblyExprs.Insert(location++,
-                leaf ?
-                new AssemblyExpr.Unary(AssemblyExpr.Instruction.POP, AssemblyExpr.Register.RegisterName.RBP) :
-                new AssemblyExpr.Nullary(AssemblyExpr.Instruction.LEAVE)
+                StackAllocNeeded ?
+                new AssemblyExpr.Nullary(AssemblyExpr.Instruction.LEAVE) :
+                new AssemblyExpr.Unary(AssemblyExpr.Instruction.POP, AssemblyExpr.Register.RegisterName.RBP)
             );
 
             assemblyExprs.Insert(location, new AssemblyExpr.Nullary(AssemblyExpr.Instruction.RET));
@@ -68,10 +106,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         public void RegisterFooter(ISection.Text assemblyExprs) => footers.Push(assemblyExprs.Count);
 
-        private static AssemblyExpr.Binary GenerateStackAlloc(int allocSize)
+        private static AssemblyExpr.Binary GenerateStackAlloc(int allocSize, bool firstCall)
         {
+            int callOffset = (firstCall && stackStartsAligned) ? 0 : 8;
+
             return new AssemblyExpr.Binary(AssemblyExpr.Instruction.SUB, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE),
-                new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes(AlignTo16(allocSize))));
+                new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes(AlignTo16(allocSize) + callOffset)));
         }
 
         private static int AlignTo16(int i)

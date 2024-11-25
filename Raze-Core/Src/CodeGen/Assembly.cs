@@ -12,5 +12,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
     {
         public readonly ISection.Text text = new();
         public readonly ISection.Data data = new();
+        public readonly ISection.IData idata = new();
     }
 }

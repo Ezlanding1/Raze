@@ -70,15 +70,20 @@ public partial class Assembler
                             5
                         );
 
-                    ShrinkSignedDisplacement(ref offset, 4);
-
                     int location = 0;
                     if (!assembler.nonResolvingPass)
                     {
                         var refInfo = (Linker.ReferenceInfo)assembler.symbolTable.unresolvedReferences[assembler.symbolTable.sTableUnresRefIdx];
+                        refInfo.absoluteAddress = false;
                         location = refInfo.location + refInfo.size;
                     }
-                    offset = BitConverter.GetBytes(checked(BitConverter.ToInt32(offset) - location - (int)Linker.Elf64.Elf64_Shdr.textVirtualAddress));
+
+                    var newOffset = new byte[8];
+                    Array.Copy(offset, newOffset, offset.Length);
+                    offset = newOffset;
+
+                    offset = BitConverter.GetBytes(checked((int)((ulong)BitConverter.ToInt64(offset) - (ulong)location - assembler.textVirtualAddress)));
+                    ShrinkSignedDisplacement(ref offset, 4);
 
                     instructions.Instructions[1] = new Instruction.Immediate(offset);
 

@@ -10,6 +10,8 @@ public partial class InlinedCodeGen : CodeGen
     }
     internal InlineState? inlineState = null;
 
+    public InlinedCodeGen(SystemInfo systemInfo) : base(systemInfo) { }
+
     public override AssemblyExpr.IValue? VisitUnaryExpr(Expr.Unary expr)
     {
         if (expr.internalFunction == null)
@@ -183,11 +185,11 @@ public partial class InlinedCodeGen : CodeGen
         {
             return base.VisitReturnExpr(expr);
         }
+        
+        var current = (Expr.Function)alloc.Current;
 
-        if (!expr.IsVoid(alloc.Current))
+        if (!expr.IsVoid(current._returnType.type))
         {
-            Expr.Function current = (Expr.Function)alloc.Current;
-
             AssemblyExpr.Instruction instruction = GetMoveInstruction(current.refReturn, current._returnType.type);
                 
             var returnSize = InstructionUtils.ToRegisterSize(current._returnType.type.allocSize);

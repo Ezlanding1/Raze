@@ -60,6 +60,24 @@ public partial class Analyzer
                 expr._returnType.type = TypeCheckUtils._voidType;
             }
 
+            if (expr.externFileName != null)
+            {
+                expr.modifiers["extern"] = true;
+            }
+            if (expr.modifiers["extern"])
+            {
+                if (expr.externFileName == null)
+                {
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.ExternWithoutExternFileName, expr.name.lexeme));
+                }
+                if (expr.block != null)
+                {
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.ExternWithBlock, expr.name.lexeme));
+                    expr.block = null;
+                }
+                expr.modifiers["static"] = true;
+            }
+
             if (expr.modifiers["operator"])
             {
                 expr.modifiers["static"] = true;
@@ -116,10 +134,19 @@ public partial class Analyzer
             {
                 Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.AbstractFunctionNotInTrait, expr.name.location, []));
             }
-            if (expr.modifiers["virtual"] && expr.modifiers["inline"])
+
+            if (expr.modifiers["inline"])
             {
-                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifierPair, expr.name.location, "virtual", "inline"));
-                expr.modifiers["inline"] = false;
+                if (expr.modifiers["virtual"])
+                {
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifierPair, expr.name.location, "virtual", "inline"));
+                    expr.modifiers["inline"] = false;
+                }
+                if (expr.modifiers["extern"])
+                {
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidFunctionModifierPair, expr.name.location, "extern", "inline"));
+                    expr.modifiers["inline"] = false;
+                }
             }
 
             if (expr.name.lexeme == "Main")

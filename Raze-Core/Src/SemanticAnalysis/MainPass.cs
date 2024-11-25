@@ -289,7 +289,7 @@ public partial class Analyzer
                 symbolTable.AddParameter(paramExpr.name, paramExpr.stack);
             }
 
-            if (!expr.Abstract)
+            if (!expr.Abstract && !expr.modifiers["extern"])
             {
                 expr.block.Accept(this);
                 TypeCheckUtils.HandleFunctionReturns(expr);

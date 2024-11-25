@@ -33,6 +33,7 @@ public partial class Analyzer
             { "true", literalTypes[Parser.LiteralTokenType.Boolean] },
             { "false", literalTypes[Parser.LiteralTokenType.Boolean] },
             { "null", new SpecialObjects.Null() },
+            { "void", literalTypes[Parser.VoidTokenType] }
         };
 
 

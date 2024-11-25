@@ -54,7 +54,7 @@ public partial class Assembler
                 if (op2Expr.type == AssemblyExpr.Literal.LiteralType.RefData)
                 {
                     return assembler.symbolTable.definitions.ContainsKey(((AssemblyExpr.LabelLiteral)op2Expr).Name) ? 
-                        GenerateImmFromSignedInt(size, assembler.symbolTable.definitions[((AssemblyExpr.LabelLiteral)op2Expr).Name] + (long)Linker.Elf64.Elf64_Shdr.dataVirtualAddress) : 
+                        GenerateImmFromSignedInt(size, assembler.symbolTable.definitions[((AssemblyExpr.LabelLiteral)op2Expr).Name] + (long)assembler.dataVirtualAddress) : 
                         DefaultUnresolvedReference;
                 }
                 else if (op2Expr.type == AssemblyExpr.Literal.LiteralType.RefProcedure || op2Expr.type == AssemblyExpr.Literal.LiteralType.RefLocalProcedure)
@@ -64,8 +64,8 @@ public partial class Assembler
                             CalculateJumpLocation(
                                 encodingTypes.HasFlag(Encoding.EncodingTypes.RelativeJump),
                                 assembler.symbolTable.definitions[((AssemblyExpr.LabelLiteral)op2Expr).Name],
-                                ((Linker.ReferenceInfo)assembler.symbolTable.unresolvedReferences[assembler.symbolTable.sTableUnresRefIdx]).location,
-                                ((Linker.ReferenceInfo)assembler.symbolTable.unresolvedReferences[assembler.symbolTable.sTableUnresRefIdx]).size
+                                (Linker.ReferenceInfo)assembler.symbolTable.unresolvedReferences[assembler.symbolTable.sTableUnresRefIdx],
+                                assembler
                            )
                         ) : 
                         DefaultUnresolvedReference;
@@ -73,13 +73,18 @@ public partial class Assembler
                 return new Instruction.Immediate(op2Expr.value);
             }
 
-            private static long CalculateJumpLocation(bool relativeJump, int symbolLocation, int location, int size)
+            private static long CalculateJumpLocation(bool relativeJump, int symbolLocation, Linker.ReferenceInfo refInfo, Assembler assembler)
+            {
+                refInfo.absoluteAddress = !relativeJump;
+                return _CalculateJumpLocation(relativeJump, symbolLocation, refInfo.location, refInfo.size, assembler);
+            }
+            private static long _CalculateJumpLocation(bool relativeJump, int symbolLocation, int location, int size, Assembler assembler)
             {
                 if (relativeJump)
                 {
                     return symbolLocation - (location + size);
                 }
-                return (long)((ulong)symbolLocation + Linker.Elf64.Elf64_Shdr.textVirtualAddress);
+                return (long)((ulong)symbolLocation + assembler.textVirtualAddress);
             }
 
             private static IInstruction GenerateImmFromSignedInt(Operand.OperandSize size, long value)
@@ -198,8 +203,8 @@ public partial class Assembler
                     else
                     {
                         return (
-                            SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + Linker.Elf64.Elf64_Shdr.dataVirtualAddress),
-                            SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + (Linker.Elf64.Elf64_Shdr.dataVirtualAddress - Linker.Elf64.Elf64_Shdr.textVirtualAddress))
+                            SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + assembler.dataVirtualAddress),
+                            SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + (assembler.dataVirtualAddress - assembler.textVirtualAddress))
                         );
                     }
                 }
@@ -218,12 +223,12 @@ public partial class Assembler
                     else
                     {
                         return (
-                            SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + Linker.Elf64.Elf64_Shdr.textVirtualAddress),
+                            SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + assembler.textVirtualAddress),
                             SizeOfIntegerSigned(CalculateJumpLocation(
                                 true,
                                 assembler.symbolTable.definitions[literal.Name],
-                                ((Linker.ReferenceInfo)assembler.symbolTable.unresolvedReferences[assembler.symbolTable.sTableUnresRefIdx]).location,
-                                ((Linker.ReferenceInfo)assembler.symbolTable.unresolvedReferences[assembler.symbolTable.sTableUnresRefIdx]).size
+                                (Linker.ReferenceInfo)assembler.symbolTable.unresolvedReferences[assembler.symbolTable.sTableUnresRefIdx],
+                                assembler
                             ))
                         );
                     }
@@ -243,12 +248,12 @@ public partial class Assembler
                     else
                     {
                         return (
-                            SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + Linker.Elf64.Elf64_Shdr.textVirtualAddress),
+                            SizeOfIntegerUnsigned((ulong)assembler.symbolTable.definitions[literal.Name] + assembler.textVirtualAddress),
                             SizeOfIntegerSigned(CalculateJumpLocation(
                                 true,
                                 assembler.symbolTable.definitions[literal.Name],
-                                ((Linker.ReferenceInfo)assembler.symbolTable.unresolvedReferences[assembler.symbolTable.sTableUnresRefIdx]).location,
-                                ((Linker.ReferenceInfo)assembler.symbolTable.unresolvedReferences[assembler.symbolTable.sTableUnresRefIdx]).size
+                                (Linker.ReferenceInfo)assembler.symbolTable.unresolvedReferences[assembler.symbolTable.sTableUnresRefIdx],
+                                assembler
                             ))
                         );
                     }

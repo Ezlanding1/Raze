@@ -606,6 +606,13 @@ public abstract partial class Expr
 
     public class Function : Definition
     {
+        public enum CallingConvention
+        {
+            RazeCall, 
+            FastCall
+        }
+
+        public CallingConvention callingConvention;
         public List<Parameter> parameters;
         public bool refReturn;
         public TypeReference _returnType;
@@ -617,15 +624,37 @@ public abstract partial class Expr
         public bool constructor;
         public bool dead = true;
         public Block? block;
-        public bool Abstract => block == null;
+        public bool Abstract => block == null && !modifiers["extern"];
+        public string? externFileName;
 
-        internal Function(ExprUtils.Modifiers modifiers, bool refReturn, TypeReference _returnType, Token name, List<Parameter> parameters, Block? block) : base(name)
+        internal Function(ExprUtils.Modifiers modifiers, bool refReturn, TypeReference _returnType, Token name, List<Parameter> parameters, Block? block, string? externFileName) : base(name)
         {
             this.modifiers = modifiers;
             this.refReturn = refReturn;
             this._returnType = _returnType;
             this.parameters = parameters;
             this.block = block;
+            this.externFileName = externFileName;
+
+            ParseCallingConvention(modifiers);
+        }
+
+        private void ParseCallingConvention(ExprUtils.Modifiers modifiers)
+        {
+            var callingConventions = new Dictionary<string, CallingConvention>()
+            {
+                { "dll", CallingConvention.FastCall },
+                { "fastcall", CallingConvention.FastCall }
+            };
+
+            var selectedCconvs = modifiers.EnumerateTrueModifiers().Intersect(callingConventions.Keys).Select(x => callingConventions[x]);
+
+            if (selectedCconvs.Count() > 1)
+            {
+                Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.MultipleCallingConventionsSpecified, this.name.lexeme));
+            }
+
+            callingConvention = selectedCconvs.FirstOrDefault();
         }
 
         public override string ToString()

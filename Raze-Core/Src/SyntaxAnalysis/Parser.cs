@@ -176,7 +176,7 @@ public partial class Parser
                     if (IsAtEnd())
                     {
                         Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.UnexpectedEndInFunctionParameters, name.location, name.lexeme));
-                        return new Expr.Function(modifiers, refReturn, _return, name, parameters, new(new()));
+                        return new Expr.Function(modifiers, refReturn, _return, name, parameters, new(new()), null);
                     }
 
                     if (TypeMatch(SynchronizationTokens) || TypeMatch(Token.TokenType.LBRACE))
@@ -213,12 +213,19 @@ public partial class Parser
 
                 Expect(Token.TokenType.RPAREN, "')' after function name");
 
+                string? externFileName = null;
+                if (ReservedValueMatch("from"))
+                {
+                    Expect(Token.TokenType.REF_STRING, "extern file name after 'from'");
+                    externFileName = Previous().lexeme;
+                }
+
                 if (TypeMatch(Token.TokenType.SEMICOLON))
                 {
-                    modifiers["virtual"] = true;
-                    return new Expr.Function(modifiers, refReturn, _return, name, parameters, null);
+                    modifiers["virtual"] = externFileName == null;
+                    return new Expr.Function(modifiers, refReturn, _return, name, parameters, null, externFileName);
                 }
-                return new Expr.Function(modifiers, refReturn, _return, name, parameters, GetBlock(definitionType.lexeme));
+                return new Expr.Function(modifiers, refReturn, _return, name, parameters, GetBlock(definitionType.lexeme), externFileName);
             }
             else if (definitionType.lexeme == "class" || definitionType.lexeme == "trait")
             {

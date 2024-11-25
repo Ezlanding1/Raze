@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Raze;
 
-public class InstructionUtils
+internal static class InstructionUtils
 {
     internal const AssemblyExpr.Register.RegisterSize SYS_SIZE = AssemblyExpr.Register.RegisterSize._64Bits;
 
@@ -26,63 +26,54 @@ public class InstructionUtils
     internal static AssemblyExpr.Instruction ConditionalJump(AssemblyExpr.Instruction instruction) => Jumps[instruction].Item1;
     internal static AssemblyExpr.Instruction ConditionalJumpReversed(AssemblyExpr.Instruction instruction) => Jumps[instruction].Item2;
 
-    internal readonly static AssemblyExpr.Register.RegisterName[] paramRegister = new AssemblyExpr.Register.RegisterName[]
-    {
-        AssemblyExpr.Register.RegisterName.RDI,
-        AssemblyExpr.Register.RegisterName.RSI,
-        AssemblyExpr.Register.RegisterName.RDX,
+    public static CodeGen.CallingConvention GetCallingConvention(Expr.Function.CallingConvention callingConvention = Expr.Function.CallingConvention.RazeCall)
+        => CodeGen.CallingConvention.callingConventions[callingConvention];
+
+    public static CodeGen.CallingConvention.TypeRegisterVariant GetParamRegisters(Expr.Function.CallingConvention callingConvention = Expr.Function.CallingConvention.RazeCall)
+        => CodeGen.CallingConvention.callingConventions[callingConvention].paramRegisters;
+
+    public static AssemblyExpr.Register.RegisterName[] GetParamRegisters(bool floating, Expr.Function.CallingConvention callingConvention = Expr.Function.CallingConvention.RazeCall)
+        => CodeGen.CallingConvention.callingConventions[callingConvention].paramRegisters.GetRegisters(floating);
+
+    public static bool IsScratchRegister(AssemblyExpr.Register.RegisterName register, Expr.Function.CallingConvention callingConvention = Expr.Function.CallingConvention.RazeCall)
+        => !GetCallingConvention(callingConvention).nonVolatileRegisters.Contains(register);
+
+    internal readonly static AssemblyExpr.Register.RegisterName[] storageRegisters =
+    [
+        AssemblyExpr.Register.RegisterName.RAX,
         AssemblyExpr.Register.RegisterName.RCX,
+        AssemblyExpr.Register.RegisterName.RDX,
+        AssemblyExpr.Register.RegisterName.RSI,
+        AssemblyExpr.Register.RegisterName.RDI,
         AssemblyExpr.Register.RegisterName.R8,
-        AssemblyExpr.Register.RegisterName.R9
-    };
+        AssemblyExpr.Register.RegisterName.R9,
+        AssemblyExpr.Register.RegisterName.R10,
+        AssemblyExpr.Register.RegisterName.R11,
+        AssemblyExpr.Register.RegisterName.RBX,
+        AssemblyExpr.Register.RegisterName.R12,
+        AssemblyExpr.Register.RegisterName.R13,
+        AssemblyExpr.Register.RegisterName.R14,
+        AssemblyExpr.Register.RegisterName.R15,
 
-    internal readonly static string[] ReturnOverload = new string[]
-    {
-        "r15",
-        "r14",
-        "r13",
-        "r12",
-        "rbx"
-    };
-
-    internal readonly static (AssemblyExpr.Register.RegisterName Name, bool IsScratchRegister)[] storageRegisters = new (AssemblyExpr.Register.RegisterName, bool)[]
-    {
-        (AssemblyExpr.Register.RegisterName.RAX, true),
-        (AssemblyExpr.Register.RegisterName.RCX, true),
-        (AssemblyExpr.Register.RegisterName.RDX, true),
-        (AssemblyExpr.Register.RegisterName.RSI, true),
-        (AssemblyExpr.Register.RegisterName.RDI, true),
-        (AssemblyExpr.Register.RegisterName.R8, true),
-        (AssemblyExpr.Register.RegisterName.R9, true),
-        (AssemblyExpr.Register.RegisterName.R10, true),
-        (AssemblyExpr.Register.RegisterName.R11, true),
-        (AssemblyExpr.Register.RegisterName.RBX, false),
-        (AssemblyExpr.Register.RegisterName.R12, false),
-        (AssemblyExpr.Register.RegisterName.R13, false),
-        (AssemblyExpr.Register.RegisterName.R14, false),
-        (AssemblyExpr.Register.RegisterName.R15, false),
-
-
-        (AssemblyExpr.Register.RegisterName.XMM0, true),
-        (AssemblyExpr.Register.RegisterName.XMM1, true),
-        (AssemblyExpr.Register.RegisterName.XMM2, true),
-        (AssemblyExpr.Register.RegisterName.XMM3, true),
-        (AssemblyExpr.Register.RegisterName.XMM4, true),
-        (AssemblyExpr.Register.RegisterName.XMM5, true),
-        (AssemblyExpr.Register.RegisterName.XMM6, true),
-        (AssemblyExpr.Register.RegisterName.XMM7, true),
-        (AssemblyExpr.Register.RegisterName.XMM8, true),
-        (AssemblyExpr.Register.RegisterName.XMM9, true),
-        (AssemblyExpr.Register.RegisterName.XMM10, true),
-        (AssemblyExpr.Register.RegisterName.XMM11, true),
-        (AssemblyExpr.Register.RegisterName.XMM12, true),
-        (AssemblyExpr.Register.RegisterName.XMM13, true),
-        (AssemblyExpr.Register.RegisterName.XMM14, true),
-        (AssemblyExpr.Register.RegisterName.XMM15, true),
-    };
-    internal readonly static int ScratchRegisterCount = storageRegisters.Where(x => x.IsScratchRegister).Count();
-    internal readonly static int NonSseScratchRegisterCount = storageRegisters.Where(x => x.Name < AssemblyExpr.Register.RegisterName.XMM0 && x.IsScratchRegister).Count();
-    internal readonly static int SseRegisterOffset = storageRegisters.ToList().FindIndex(x => x.Name >= AssemblyExpr.Register.RegisterName.XMM0);
+        AssemblyExpr.Register.RegisterName.XMM0,
+        AssemblyExpr.Register.RegisterName.XMM1,
+        AssemblyExpr.Register.RegisterName.XMM2,
+        AssemblyExpr.Register.RegisterName.XMM3,
+        AssemblyExpr.Register.RegisterName.XMM4,
+        AssemblyExpr.Register.RegisterName.XMM5,
+        AssemblyExpr.Register.RegisterName.XMM6,
+        AssemblyExpr.Register.RegisterName.XMM7,
+        AssemblyExpr.Register.RegisterName.XMM8,
+        AssemblyExpr.Register.RegisterName.XMM9,
+        AssemblyExpr.Register.RegisterName.XMM10,
+        AssemblyExpr.Register.RegisterName.XMM11,
+        AssemblyExpr.Register.RegisterName.XMM12,
+        AssemblyExpr.Register.RegisterName.XMM13,
+        AssemblyExpr.Register.RegisterName.XMM14,
+        AssemblyExpr.Register.RegisterName.XMM15
+    ];
+    internal readonly static int NonSseScratchRegisterCount = storageRegisters.Where(x => x < AssemblyExpr.Register.RegisterName.XMM0 && IsScratchRegister(x)).Count();
+    internal readonly static int SseRegisterOffset = storageRegisters.ToList().FindIndex(x => x >= AssemblyExpr.Register.RegisterName.XMM0);
 
 
     internal readonly static Dictionary<string, (AssemblyExpr.Register.RegisterName, AssemblyExpr.Register.RegisterSize)> Registers = new()

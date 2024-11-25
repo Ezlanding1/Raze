@@ -186,6 +186,11 @@ partial class Syntaxes
                 }
             }
 
+            public string VisitInclude(AssemblyExpr.Include include)
+            {
+                throw new NotImplementedException();
+            }
+
             private string SizeMnemonic(AssemblyExpr.Register.RegisterSize size) => size switch
             { 
                 AssemblyExpr.Register.RegisterSize._8Bits => "b",

@@ -48,6 +48,7 @@ public abstract partial class Diagnostic
         { DiagnosticName.InlineAssemblyInvalidRegisterOption, ("A register allocation may only have the register options: 'r', 'x', and the size options: '8', '16', '32', '64'. Got: '{0}'", Severity.Error) },
         { DiagnosticName.InlineAssemblyInvalidPtrOffset, ("The offset of an inline assembly pointer must be a valid signed 32-bit integer. Got: '{0}'", Severity.Error) },
         { DiagnosticName.InlineAssemblyInvalidFreeOperand, ("The operand of the inline assembly 'free' expression must be a valid allocated resource. Got: '{0}'", Severity.Error) },
+        { DiagnosticName.MultipleCallingConventionsSpecified, ("Function '{0}' may not have multiple calling conventions specified", Severity.Error) },
         
         // AnalyzerError
         { DiagnosticName.TypeMismatch, ("You cannot assign type '{0}' to type '{1}'", Severity.Error) },
@@ -98,6 +99,8 @@ public abstract partial class Diagnostic
         { DiagnosticName.ReadonlyFieldModified, ("Variables marked 'readonly' may not be modified (except in constructors)", Severity.Error) },
         { DiagnosticName.ReadonlyFieldModified_Ref, ("Variables marked 'readonly' may not be assigned as a 'ref' non-'readonly' variable (except in constructors)", Severity.Error) },
         { DiagnosticName.InvalidReadonlyModifier, ("The 'readonly' modifier is not valid in this context", Severity.Error) },
+        { DiagnosticName.ExternWithoutExternFileName, ("Function '{0}' marked extern must specify an extern file name", Severity.Error) },
+        { DiagnosticName.ExternWithBlock, ("Function '{0}' marked extern may not have a function body", Severity.Error) },
         
         // BackendError
         { DiagnosticName.InvalidLiteralSize, ("{0} literal '{1}' exceeds size of assigned data type '{2}'", Severity.Error) },
@@ -108,5 +111,7 @@ public abstract partial class Diagnostic
         { DiagnosticName.InstructionOperandsSizeMismatch, ("Instruction operand sizes don't match", Severity.Error) },
         { DiagnosticName.InlineAssemblySizeMismatchReturn_NonPrimitive, ("Only primitive types may be the return type of a value returned from an inline assembly expression", Severity.Error) },
         { DiagnosticName.InlineAssemblySizeMismatchReturn_Primitive, ("You cannot return an inline assembly value with size '{0}' from type '{1}'", Severity.Error) },
+        { DiagnosticName.ExternFileExtensionNotSupported, ("Externs for the file extension '{0}' are not supported", Severity.Error) },
+        { DiagnosticName.UnsupportedOsAbiForImportType, ("Import type '{0}' is not supported for the platform '{1}'", Severity.Error) },
     };
 }
