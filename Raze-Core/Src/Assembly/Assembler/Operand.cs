@@ -78,11 +78,11 @@ public partial class Assembler
             {
                 ThrowTMP(reg);
 
-                OperandType type = reg.Name switch
+                OperandType type = reg.name switch
                 {
                     AssemblyExpr.Register.RegisterName.RAX => OperandType.A,
                     AssemblyExpr.Register.RegisterName.RCX => OperandType.C,
-                    _ when reg.Name >= AssemblyExpr.Register.RegisterName.XMM0 && reg.Name <= AssemblyExpr.Register.RegisterName.XMM15 => OperandType.XMM,
+                    _ when reg.name >= AssemblyExpr.Register.RegisterName.XMM0 && reg.name <= AssemblyExpr.Register.RegisterName.XMM15 => OperandType.XMM,
                     _ => OperandType.R
                 };
                 OperandSize size = (OperandSize)Math.Max(1, (int)reg.Size);
@@ -92,7 +92,7 @@ public partial class Assembler
 
             internal static void ThrowTMP(AssemblyExpr.Register reg)
             {
-                if (reg.Name == AssemblyExpr.Register.RegisterName.TMP)
+                if (reg.name == AssemblyExpr.Register.RegisterName.TMP)
                 {
                     Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("TMP Register Emitted"));
                 }

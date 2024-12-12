@@ -49,6 +49,7 @@ public abstract partial class Diagnostic
         InlineAssemblyInvalidPtrOffset,
         InlineAssemblyInvalidFreeOperand,
         MultipleCallingConventionsSpecified,
+        CallingConventionWithoutExtern,
 
         // AnalyzerError
         TypeMismatch,

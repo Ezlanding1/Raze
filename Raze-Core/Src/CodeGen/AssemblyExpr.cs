@@ -81,7 +81,8 @@ public abstract partial class AssemblyExpr
                 }
                 else
                 {
-                    reg = ptr.AsRegister(codeGen);
+                    codeGen.alloc.Free(ptr);
+                    reg = codeGen.alloc.NextRegister(ptr.Size);
                     codeGen.Emit(new Binary(Instruction.MOV, reg, this));
                 }
                 return reg;
@@ -120,15 +121,19 @@ public abstract partial class AssemblyExpr
             }
             return this;
         }
+
+        internal Register? GetRegisterOrDefualt()
+        {
+            return
+                IsPointer(out var ptr) ? ptr.value :
+                IsRegister(out var reg) ? reg :
+                null;
+        }
     }
 
     public interface IRegisterPointer : IValue
     {
         new public Register.RegisterSize Size { get; set; }
-        public Register? GetRegister();
-        // Note: This method should always shallow-clone the returned register
-        public Register AsRegister(CodeGen assembler);
-        public IRegisterPointer Clone();
     }
 
     public interface IRegisterLiteral : IValue
@@ -188,19 +193,14 @@ public abstract partial class AssemblyExpr
             XMM15 = 0b111 + 24,
         }
 
-        public StrongBox<RegisterName> nameBox;
-        public RegisterName Name
-        {
-            get => nameBox.Value;
-            set => nameBox.Value = value;
-        }
+        public RegisterName name;
 
         private RegisterSize _size;
         public RegisterSize Size { get => _size; set => _size = value; }
 
-        public Register(RegisterName register, RegisterSize size)
+        public Register(RegisterName name, RegisterSize size)
         {
-            this.nameBox = new(register);
+            this.name = name;
             this.Size = size;
         }
 
@@ -208,17 +208,7 @@ public abstract partial class AssemblyExpr
         {
         }
 
-        public Register(StrongBox<RegisterName> _name, RegisterSize size)
-        {
-            this.nameBox = _name;
-            this.Size = size;
-        }
-
         internal static bool IsSseRegister(RegisterName name) => name >= RegisterName.XMM0 && name <= RegisterName.XMM15;
-
-        public Register GetRegister() => this;
-        public Register AsRegister(CodeGen assembler) => (Register)Clone();
-        public IRegisterPointer Clone() => new Register(nameBox, Size);
 
         public T Accept<T>(IUnaryOperandVisitor<T> visitor)
         {
@@ -264,13 +254,10 @@ public abstract partial class AssemblyExpr
             this.offset = offset;
         }
         internal Pointer(Register value, int offset, Register.RegisterSize _size) 
-            : this(value, new Literal(Literal.LiteralType.Integer, ImmediateGenerator.MinimizeImmediate(Literal.LiteralType.Integer, BitConverter.GetBytes(offset))), _size)
+            : this(value, new Literal(Literal.LiteralType.Integer, BitConverter.GetBytes(offset)), _size)
         {
         }
         internal Pointer(Register value, Literal offset, int size) : this(value, offset, (Register.RegisterSize)size)
-        {
-        }
-        internal Pointer(StrongBox<Register.RegisterName> register, int offset, Register.RegisterSize size) : this(new Register(register, Register.RegisterSize._64Bits), offset, size)
         {
         }
         internal Pointer(Register.RegisterName register, Literal offset, Register.RegisterSize size) : this(new Register(register, Register.RegisterSize._64Bits), offset, size)
@@ -280,15 +267,11 @@ public abstract partial class AssemblyExpr
         {
         }
 
-        public Register? GetRegister() => value;
-
-        public bool IsOnStack() => value.Name == Register.RegisterName.RBP;
-
+        public bool IsOnStack() => value.name == Register.RegisterName.RBP;
         public Register AsRegister(CodeGen assembler)
         {
-            return (value == null || IsOnStack()) ? assembler.alloc.NextRegister(Size) : new Register(value!.nameBox, Size);
+            return (value == null || IsOnStack()) ? assembler.alloc.NextRegister(Size) : value;
         }
-        public IRegisterPointer Clone() => new Pointer(value, offset, Size);
 
         public T Accept<T>(IUnaryOperandVisitor<T> visitor)
         {

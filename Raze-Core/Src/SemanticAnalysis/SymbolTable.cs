@@ -254,8 +254,7 @@ public partial class Analyzer
                             if (key.lexeme == "this")
                             {
                                 isClassScoped = false;
-                                Expr.DataType.This(8).type = x;
-                                return Expr.DataType.This(8);
+                                return Expr.ThisStackData.SetThis(x, 8);
                             }
                         }
                         break;
@@ -264,8 +263,7 @@ public partial class Analyzer
                             if (key.lexeme == "this")
                             {
                                 isClassScoped = false;
-                                Expr.DataType.This(primitive.size).type = x;
-                                return Expr.DataType.This(primitive.size);
+                                return Expr.ThisStackData.SetThis(x);
                             }
                         }
                         break;

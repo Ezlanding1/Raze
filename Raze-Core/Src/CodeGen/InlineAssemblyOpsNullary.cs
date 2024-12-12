@@ -20,8 +20,8 @@ public abstract partial class CodeGen
 
             public static void SYSCALL(CodeGen codeGen, Expr.InlineAssembly.NullaryInstruction nullary)
             {
-                codeGen.alloc.FreeRegister(codeGen.alloc.ReserveScratchRegister(codeGen, AssemblyExpr.Register.RegisterName.RCX, AssemblyExpr.Register.RegisterSize._64Bits));
-                codeGen.alloc.FreeRegister(codeGen.alloc.ReserveScratchRegister(codeGen, AssemblyExpr.Register.RegisterName.R11, AssemblyExpr.Register.RegisterSize._64Bits));
+                codeGen.alloc.ReserveRegisterAndFree(AssemblyExpr.Register.RegisterName.RCX);
+                codeGen.alloc.ReserveRegisterAndFree(AssemblyExpr.Register.RegisterName.R11);
 
                 codeGen.Emit(new AssemblyExpr.Nullary(nullary.instruction));
             }

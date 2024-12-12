@@ -137,7 +137,7 @@ public abstract partial class Expr
 
             public override Type Type()
             {
-                return AssemblyExpr.Register.IsSseRegister(register.Name) ?
+                return AssemblyExpr.Register.IsSseRegister(register.name) ?
                     Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Floating] :
                     Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Integer];
             }
@@ -146,7 +146,7 @@ public abstract partial class Expr
         internal class StandardRegister(AssemblyExpr.Register? register) : NamedRegister(register)
         {
             public override AssemblyExpr.Register ToOperand(CodeGen codeGen, AssemblyExpr.Register.RegisterSize defaultSize)
-                => new(register!.Name, register.Size);
+                => new(register!.name, register.Size);
         }
 
         internal class UnnamedRegister(Parser.LiteralTokenType type, AssemblyExpr.Register.RegisterSize size) : Register
@@ -222,8 +222,8 @@ public abstract partial class Expr
 
             public override void Accept(CodeGen codeGen)
             {
-                codeGen.alloc.ReserveRegister(codeGen, name);
-                register.register = codeGen.alloc.NeededAlloc(size, codeGen, name);
+                register.register = codeGen.alloc.ReserveRegister(name, size);
+                codeGen.alloc.Lock(register.register);
             }
 
             public override List<Operand> GetOperands() => [];
@@ -237,6 +237,7 @@ public abstract partial class Expr
             public override void Accept(CodeGen codeGen)
             {
                 register.register = codeGen.alloc.NextRegister(size, Analyzer.TypeCheckUtils.literalTypes[type]);
+                codeGen.alloc.Lock(register.register);
             }
 
             public override List<Operand> GetOperands() => [];
@@ -248,7 +249,7 @@ public abstract partial class Expr
 
             public override void Accept(CodeGen codeGen)
             {
-                codeGen.alloc.FreeRegister(register.register);
+                codeGen.alloc.UnlockAndFree(register.register);
             }
 
             public override List<Operand> GetOperands() => [];
@@ -260,42 +261,42 @@ public abstract partial class Expr
 
             public override void Accept(CodeGen codeGen)
             {
-                ReturnOperand(codeGen, value, value.ToOperand(codeGen, (AssemblyExpr.Register.RegisterSize)((Function)codeGen.alloc.Current)._returnType.type.allocSize));
+                ReturnOperand(codeGen, value.ToOperand(codeGen, (AssemblyExpr.Register.RegisterSize)((Function)codeGen.alloc.Current)._returnType.type.allocSize));
             }
 
-            public static void ReturnOperand(CodeGen codeGen, Operand operand, AssemblyExpr.IValue op)
+            public static void ReturnOperand(CodeGen codeGen, AssemblyExpr.IValue op)
             {
-                Function currentFunction = (Function)codeGen.alloc.Current;
+                Function function = (Function)codeGen.alloc.Current;
 
-                if (codeGen is InlinedCodeGen inlinedCodeGen && inlinedCodeGen.inlineState != null)
+                if (((InlinedCodeGen)codeGen).inlineState != null)
                 {
-                    var nonLiteral = op.NonLiteral(codeGen, currentFunction._returnType.type);
-                    inlinedCodeGen.inlineState.callee = nonLiteral;
-                    inlinedCodeGen.LockOperand(nonLiteral);
+                    AssemblyExpr.Instruction instruction = CodeGen.GetMoveInstruction(false, function._returnType.type);
+
+                    var returnSize = function.refReturn ?
+                        InstructionUtils.SYS_SIZE :
+                        (AssemblyExpr.Register.RegisterSize)function._returnType.type.allocSize;
+
+                    ((InlinedCodeGen)codeGen).InlinedReturnIValue(op, instruction, returnSize, function._returnType.type);
                 }
                 else
                 {
-                    var instruction = CodeGen.GetMoveInstruction(false, currentFunction._returnType.type);
-                    var _returnRegister = CodeGen.IsFloatingType(operand.Type()) ?
-                        new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.XMM0, AssemblyExpr.Register.RegisterSize._128Bits) :
-                        new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RAX, op.Size);
+                    var instruction = CodeGen.GetMoveInstruction(false, function._returnType.type);
 
-                    if (op.IsRegister(out var reg))
-                    {
-                        if (reg.Name != _returnRegister.Name)
-                            codeGen.Emit(new AssemblyExpr.Binary(instruction, _returnRegister, reg));
-                    }
-                    else
-                    {
-                        codeGen.Emit(new AssemblyExpr.Binary(instruction, _returnRegister, op));
-                    }
+                    var isFloatingType = CodeGen.IsFloatingType(function._returnType.type);
+                    var _returnRegister =
+                        new AssemblyExpr.Register(
+                            InstructionUtils.GetCallingConvention().returnRegisters.GetRegisters(isFloatingType)[0],
+                            isFloatingType ? AssemblyExpr.Register.RegisterSize._128Bits : op.Size
+                        );
+
+                    codeGen.Emit(new AssemblyExpr.Binary(instruction, _returnRegister, op));
 
                     codeGen.alloc.Free(op);
                 }
-
-                if (currentFunction._returnType.type is Primitive primitive)
+                
+                if (function._returnType.type is Primitive primitive)
                 {
-                    int primitiveSize = currentFunction.refReturn ? 8 : primitive.size;
+                    int primitiveSize = function.refReturn ? 8 : primitive.size;
                     if (primitiveSize != (int)op.Size)
                     {
                         if (!(Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Floating].Matches(primitive) && op.Size == AssemblyExpr.Register.RegisterSize._128Bits && (primitiveSize == 4 || primitiveSize == 8)))

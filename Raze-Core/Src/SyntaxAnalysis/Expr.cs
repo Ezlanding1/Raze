@@ -291,7 +291,6 @@ public abstract partial class Expr
         {
             return visitor.VisitAmbiguousGetReferenceExpr(this);
         }
-
     }
 
     public class InstanceGetReference : GetReference
@@ -473,11 +472,39 @@ public abstract partial class Expr
         }
     }
 
-    public class ThisStackData : StackData
+    public static class ThisStackData
     {
-        public ThisStackData(int size)
+        public static AssemblyExpr.Pointer GeneratePtr(int size)
         {
-            value = new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, -size, (AssemblyExpr.Register.RegisterSize)size);
+            return new AssemblyExpr.Pointer(
+                AssemblyExpr.Register.RegisterName.RBP, 
+                -size,
+                (AssemblyExpr.Register.RegisterSize)size
+            );
+        }
+
+        private static Dictionary<int, StackData> GenerateThisTable()
+        {
+            Dictionary<int, StackData> result = new();
+            foreach (int size in new List<int> { 1, 2, 4, 8 })
+            {
+                var stackData = new StackData
+                {
+                    value = GeneratePtr(size)
+                };
+                result.Add(size, stackData);
+            }
+            return result;
+        }
+        private static readonly Dictionary<int, StackData> _thisTable = GenerateThisTable();
+
+        public static StackData GetThis(int size) => _thisTable[size];
+        public static StackData SetThis(DataType type) => SetThis(type, type.size);
+        public static StackData SetThis(DataType type, int size) 
+        { 
+            var _this = GetThis(size);
+            _this.type = type;
+            return _this; 
         }
     }
 
@@ -654,6 +681,11 @@ public abstract partial class Expr
                 Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.MultipleCallingConventionsSpecified, this.name.lexeme));
             }
 
+            if (selectedCconvs.Count() != 0 && !modifiers["extern"])
+            {
+                Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.CallingConventionWithoutExtern, this.name.lexeme)); 
+            }
+
             callingConvention = selectedCconvs.FirstOrDefault();
         }
 
@@ -679,15 +711,6 @@ public abstract partial class Expr
         abstract public Type SuperclassType { get; }
 
         public List<Definition> definitions;
-
-        private static Dictionary<int, ThisStackData> _thisTable = new()
-        {
-            { 1, new(1) },
-            { 2, new(2) },
-            { 4, new(4) },
-            { 8, new(8) }
-        };
-        public static ThisStackData This(int size) => _thisTable[size];
 
         public abstract int allocSize { get; }
 

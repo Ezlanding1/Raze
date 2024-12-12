@@ -72,9 +72,10 @@ internal static class InstructionUtils
         AssemblyExpr.Register.RegisterName.XMM14,
         AssemblyExpr.Register.RegisterName.XMM15
     ];
-    internal readonly static int NonSseScratchRegisterCount = storageRegisters.Where(x => x < AssemblyExpr.Register.RegisterName.XMM0 && IsScratchRegister(x)).Count();
     internal readonly static int SseRegisterOffset = storageRegisters.ToList().FindIndex(x => x >= AssemblyExpr.Register.RegisterName.XMM0);
 
+    public static int NameToIdx(AssemblyExpr.Register.RegisterName name) => 
+        Array.IndexOf(storageRegisters.Select(x => x).ToArray(), name);
 
     internal readonly static Dictionary<string, (AssemblyExpr.Register.RegisterName, AssemblyExpr.Register.RegisterSize)> Registers = new()
     {

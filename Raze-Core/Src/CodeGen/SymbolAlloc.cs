@@ -99,20 +99,19 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             }
         }
 
-        public void InitializeFunction(Expr.Function function, CodeGen codeGen)
+        public void InitializeFunction(Expr.Function function)
         {
-            fncPushPreserved = new(codeGen.assembly.text.Count);
             Current = function;
             CreateBlock();
+            FunctionPushPreserved.totalSizes.Add(0);
         }
 
         public void CreateBlock() => frameSize.Push(Current.size);
-
         public void RemoveBlock()
         {
             if (Current is Expr.Function)
             {
-                fncPushPreserved.size = Math.Max(fncPushPreserved.size, Current.size);
+                FunctionPushPreserved.totalSizes[^1] = Math.Max(FunctionPushPreserved.totalSizes[^1], Current.size);
             }
             Current.size = frameSize.Pop();
         }

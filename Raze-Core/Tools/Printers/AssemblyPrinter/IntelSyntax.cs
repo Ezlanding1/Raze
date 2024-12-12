@@ -83,12 +83,12 @@ partial class Syntaxes
 
             public string VisitRegister(AssemblyExpr.Register instruction)
             {
-                if (instruction.Name == AssemblyExpr.Register.RegisterName.TMP)
+                if (instruction.name == AssemblyExpr.Register.RegisterName.TMP)
                 {
                     Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("TMP Register Cannot Be Emitted"));
                 }
 
-                return $"{RegisterToString[(instruction.Name, instruction.Size)]}";
+                return $"{RegisterToString[(instruction.name, instruction.Size)]}";
             }
 
             public string VisitSection(AssemblyExpr.Section instruction)
@@ -113,7 +113,7 @@ partial class Syntaxes
 
             private string PointerToString(AssemblyExpr.Pointer instruction)
             {
-                if (instruction.GetRegister()?.Name == AssemblyExpr.Register.RegisterName.TMP)
+                if (instruction.value?.name == AssemblyExpr.Register.RegisterName.TMP)
                 {
                     Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("TMP Register Cannot Be Emitted"));
                 }

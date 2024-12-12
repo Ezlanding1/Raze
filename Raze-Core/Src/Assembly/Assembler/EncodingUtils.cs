@@ -20,14 +20,14 @@ public partial class Assembler
                 return Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Invalid/Unsupported Instruction"));
             }
 
-            internal static Instruction.ModRegRm.RegisterCode ExprRegisterToModRegRmRegister(AssemblyExpr.Register register) => (register.Name, register.Size) switch
+            internal static Instruction.ModRegRm.RegisterCode ExprRegisterToModRegRmRegister(AssemblyExpr.Register register) => (register.name, register.Size) switch
             {
                 (AssemblyExpr.Register.RegisterName.RAX, AssemblyExpr.Register.RegisterSize._8BitsUpper) => Instruction.ModRegRm.RegisterCode.AH,
                 (AssemblyExpr.Register.RegisterName.RBX, AssemblyExpr.Register.RegisterSize._8BitsUpper) => Instruction.ModRegRm.RegisterCode.BH,
                 (AssemblyExpr.Register.RegisterName.RCX, AssemblyExpr.Register.RegisterSize._8BitsUpper) => Instruction.ModRegRm.RegisterCode.CH,
                 (AssemblyExpr.Register.RegisterName.RDX, AssemblyExpr.Register.RegisterSize._8BitsUpper) => Instruction.ModRegRm.RegisterCode.DH,
                 (_, AssemblyExpr.Register.RegisterSize._8BitsUpper) => throw EncodingError(),
-                _ => (Instruction.ModRegRm.RegisterCode)ToRegCode(register.Name)
+                _ => (Instruction.ModRegRm.RegisterCode)ToRegCode(register.name)
             };
 
             private static int ToRegCode(AssemblyExpr.Register.RegisterName register)
@@ -42,12 +42,12 @@ public partial class Assembler
             internal static bool SetSizePrefix(Encoding.EncodingTypes encodingType) => encodingType.HasFlag(Encoding.EncodingTypes.SizePrefix);
 
             internal static bool BaseAddressingModeMustHaveDisplacement(AssemblyExpr.Register register) =>
-                register.Name == AssemblyExpr.Register.RegisterName.RBP ||
-                register.Name == AssemblyExpr.Register.RegisterName.R13;
+                register.name == AssemblyExpr.Register.RegisterName.RBP ||
+                register.name == AssemblyExpr.Register.RegisterName.R13;
 
             internal static bool BaseAddressingModeMustHaveSIB(AssemblyExpr.Register register) =>
-                register.Name == AssemblyExpr.Register.RegisterName.RSP ||
-                register.Name == AssemblyExpr.Register.RegisterName.R12;
+                register.name == AssemblyExpr.Register.RegisterName.RSP ||
+                register.name == AssemblyExpr.Register.RegisterName.R12;
 
             internal static IInstruction GetImmInstruction(Operand.OperandSize size, AssemblyExpr.Literal op2Expr, Assembler assembler, Encoding.EncodingTypes encodingTypes)
             {
@@ -151,11 +151,11 @@ public partial class Assembler
             {
                 if (op is AssemblyExpr.Register register)
                 {
-                    return ((int)register.Name / 8 % 2) == 1;
+                    return ((int)register.name / 8 % 2) == 1;
                 }
                 else if (op is AssemblyExpr.Pointer pointer && pointer.value != null)
                 {
-                    return ((int)pointer.value.Name / 8 % 2) == 1;
+                    return ((int)pointer.value.name / 8 % 2) == 1;
                 }
                 return false;
             }

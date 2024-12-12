@@ -21,7 +21,7 @@ public abstract partial class CodeGen
         {
             if (instruction._return && op != null)
             {
-                Expr.InlineAssembly.Return.ReturnOperand(codeGen, operand, op);
+                Expr.InlineAssembly.Return.ReturnOperand(codeGen, op);
             }
         }
 

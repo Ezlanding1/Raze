@@ -49,6 +49,7 @@ public abstract partial class Diagnostic
         { DiagnosticName.InlineAssemblyInvalidPtrOffset, ("The offset of an inline assembly pointer must be a valid signed 32-bit integer. Got: '{0}'", Severity.Error) },
         { DiagnosticName.InlineAssemblyInvalidFreeOperand, ("The operand of the inline assembly 'free' expression must be a valid allocated resource. Got: '{0}'", Severity.Error) },
         { DiagnosticName.MultipleCallingConventionsSpecified, ("Function '{0}' may not have multiple calling conventions specified", Severity.Error) },
+        { DiagnosticName.CallingConventionWithoutExtern, ("Calling conventions may only be specified for externs", Severity.Error) },
         
         // AnalyzerError
         { DiagnosticName.TypeMismatch, ("You cannot assign type '{0}' to type '{1}'", Severity.Error) },

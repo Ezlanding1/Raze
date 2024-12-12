@@ -50,7 +50,7 @@ See all the examples [here](Raze-Driver/Examples)
 - [ ] RIL (Raze Intermediate Language)
 - [ ] CodeGen optimizations
 - [ ] Constant propagation
-- [ ] Fix register allocation (refactor, liveness analysis, graph coloring)
+- [x] Fix register allocation (refactor, liveness analysis, graph coloring)
 - [ ] Managed heap & GC
 - [ ] Support for more platforms (Windows, Mac)
 - [ ] Support for more backends/architectures (LLVM, RISC-V, ARM, etc.)

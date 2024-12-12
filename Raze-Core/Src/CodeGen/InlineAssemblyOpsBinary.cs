@@ -44,27 +44,21 @@ public abstract partial class CodeGen
                 ReturnOperand(codeGen, binary, binary.operand1, op1);
                 DeallocVariables(codeGen, (binary.operand1, op1), (binary.operand2, op2));
             }
-            
+
             public static void MUL_IDIV_DIV(CodeGen codeGen, Expr.InlineAssembly.BinaryInstruction binary)
             {
                 var op1 = binary.operand1.ToOperand(codeGen, AssemblyExpr.Register.RegisterSize._32Bits);
 
-                if (op1 is not AssemblyExpr.IRegisterPointer rp || rp.GetRegister().Name != AssemblyExpr.Register.RegisterName.RAX)
-                {
-                    codeGen.alloc.ReserveRegister(codeGen, AssemblyExpr.Register.RegisterName.RAX);
-                }
-
                 op1 = op1.NonPointerNonLiteral(codeGen, null);
                 var op2 = binary.operand2.ToOperand(codeGen, op1.Size).NonLiteral(codeGen, null);
 
-                var rax = codeGen.alloc.GetRegister(AssemblyExpr.Register.RegisterName.RAX, op1.Size);
-                codeGen.alloc.ReserveRegister(codeGen, AssemblyExpr.Register.RegisterName.RDX);
-                var rdx = codeGen.alloc.GetRegister(AssemblyExpr.Register.RegisterName.RDX, op1.Size);
+                codeGen.alloc.Free(op1);
+                codeGen.alloc.SetSuggestedRegister(op1, AssemblyExpr.Register.RegisterName.RAX);
 
-                if (!(op1.IsRegister(out var register) && register.Name == AssemblyExpr.Register.RegisterName.RAX))
-                {
-                    codeGen.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, op1));
-                }
+                var rax = codeGen.alloc.ReserveRegister(AssemblyExpr.Register.RegisterName.RAX, op1.Size);
+                var rdx = codeGen.alloc.ReserveRegister(AssemblyExpr.Register.RegisterName.RDX, op1.Size);
+
+                codeGen.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, rax, op1));
 
                 codeGen.Emit(binary.instruction == AssemblyExpr.Instruction.DIV ?
                     new AssemblyExpr.Binary(AssemblyExpr.Instruction.XOR, rdx, rdx) :
@@ -73,8 +67,8 @@ public abstract partial class CodeGen
 
                 codeGen.Emit(new AssemblyExpr.Unary(binary.instruction, op2));
 
-                codeGen.alloc.FreeRegister(rax);
-                codeGen.alloc.FreeRegister(rdx);
+                codeGen.alloc.Free(rax);
+                codeGen.alloc.Free(rdx);
 
                 DeallocVariables(codeGen, (binary.operand1, op1), (binary.operand2, op2));
             }
@@ -86,13 +80,10 @@ public abstract partial class CodeGen
 
                 if (!op2.IsLiteral())
                 {
-                    codeGen.alloc.ReserveRegister(codeGen, AssemblyExpr.Register.RegisterName.RCX);
-                    var cl = new AssemblyExpr.Register(InstructionUtils.GetParamRegisters(false)[3], AssemblyExpr.Register.RegisterSize._8Bits);
+                    codeGen.alloc.Free(op2);
+                    codeGen.alloc.SetSuggestedRegister(op2, AssemblyExpr.Register.RegisterName.RCX);
 
-                    if (op2.Size != AssemblyExpr.Register.RegisterSize._8Bits)
-                    {
-                        Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.InstructionOperandsSizeMismatch));
-                    }
+                    var cl = codeGen.alloc.ReserveRegister(AssemblyExpr.Register.RegisterName.RCX, AssemblyExpr.Register.RegisterSize._8Bits);
 
                     codeGen.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, cl, op2));
                     codeGen.Emit(new AssemblyExpr.Binary(binary.instruction, op1, cl));
@@ -100,6 +91,11 @@ public abstract partial class CodeGen
                 else
                 {
                     codeGen.Emit(new AssemblyExpr.Binary(binary.instruction, op1, op2));
+                }
+
+                if (op2.Size != AssemblyExpr.Register.RegisterSize._8Bits)
+                {
+                    Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.InstructionOperandsSizeMismatch));
                 }
 
                 ReturnOperand(codeGen, binary, binary.operand1, op1);

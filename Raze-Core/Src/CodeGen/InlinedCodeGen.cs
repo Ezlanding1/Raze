@@ -1,4 +1,5 @@
-﻿namespace Raze;
+﻿
+namespace Raze;
 
 public partial class InlinedCodeGen : CodeGen
 {
@@ -57,50 +58,42 @@ public partial class InlinedCodeGen : CodeGen
         var saveInlineState = new SaveInlineStateInline(this, expr.internalFunction);
 
         (AssemblyExpr.IValue? enclosingThisStackDataValue, int thisSize) = (null, -1);
-        bool lastThisIsLocked = false;
 
         if (!expr.internalFunction.modifiers["static"])
         {
             thisSize = SymbolTableSingleton.SymbolTable.NearestEnclosingClass(expr.internalFunction)!.allocSize;
-            enclosingThisStackDataValue = Expr.DataType.This(thisSize).value;
-            Expr.DataType.This(thisSize).inlinedData = true;
+            var _this = Expr.ThisStackData.GetThis(thisSize);
+            enclosingThisStackDataValue = _this.value;
+            _this.inlinedData = true;
 
             if (!expr.constructor)
             {
                 if (expr.callee != null)
                 {
-                    Expr.DataType.This(thisSize).value = expr.callee.Accept(this);
+                    _this.value = expr.callee.Accept(this);
                 }
                 else
                 {
                     var enclosing = SymbolTableSingleton.SymbolTable.NearestEnclosingClass(expr.internalFunction);
                     var size = enclosing.allocSize;
-                    Expr.DataType.This(thisSize).value = new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, -8, (AssemblyExpr.Register.RegisterSize)size);
+                    _this.value = new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, -size, (AssemblyExpr.Register.RegisterSize)size);
                 }
             }
             else
             {
-                Expr.DataType.This(thisSize).value = alloc.GetRegister(AssemblyExpr.Register.RegisterName.RBX, InstructionUtils.SYS_SIZE);
+                _this.value = heapAllocResultValue;
             }
-
-
-            if (Expr.DataType.This(thisSize).value.IsRegister(out var register))
-            {
-                lastThisIsLocked = !alloc.IsLocked(register.Name);
-                alloc.Lock(register);
-            }
-
+            alloc.Lock(_this.value);
         }
 
         var ret = HandleInvokable(expr);
 
         if (enclosingThisStackDataValue != null)
         {
-            Expr.DataType.This(thisSize).inlinedData = false;
-            bool retIsThis = !(ret?.IsLiteral() != false) && !Expr.DataType.This(thisSize).value.IsLiteral() && ((AssemblyExpr.IRegisterPointer)Expr.DataType.This(thisSize).value).GetRegister().Name == ((AssemblyExpr.IRegisterPointer)ret).GetRegister().Name;
-            if (!retIsThis)
-                alloc.Free(Expr.DataType.This(thisSize).value, lastThisIsLocked);
-            Expr.DataType.This(thisSize).value = enclosingThisStackDataValue;
+            var _this = Expr.ThisStackData.GetThis(thisSize);
+            _this.inlinedData = false;
+            alloc.UnlockAndFree(_this.value);
+            _this.value = enclosingThisStackDataValue;
         }
 
         saveInlineState.Dispose();
@@ -121,25 +114,27 @@ public partial class InlinedCodeGen : CodeGen
         for (int i = 0; i < invokable.Arguments.Count; i++)
         {
             invokable.internalFunction.parameters[i].stack.inlinedData = true;
-            invokable.internalFunction.parameters[i].stack.value = LockOperand(HandleParameterRegister(invokable.internalFunction.parameters[i], args[i]));
+
+            var inlinedArgument = HandleParameterRegister(invokable.internalFunction.parameters[i], args[i]);
+            alloc.Lock(inlinedArgument);
+
+            invokable.internalFunction.parameters[i].stack.value = inlinedArgument;
         }
 
         foreach (var bodyExpr in invokable.internalFunction.block.block)
         {
-            alloc.Free(bodyExpr.Accept(this), false);
+            alloc.Free(bodyExpr.Accept(this));
         }
 
         var ret = inlineState.callee;
-        RegisterState? state = alloc.SaveRegisterState(ret);
 
         for (int i = 0; i < invokable.Arguments.Count; i++)
         {
             invokable.internalFunction.parameters[i].stack.inlinedData = false;
-            alloc.Free(invokable.internalFunction.parameters[i].stack.value, true);
+            alloc.UnlockAndFree(invokable.internalFunction.parameters[i].stack.value);
         }
-        alloc.SetRegisterState(state, ref ret, this);
 
-        UnlockOperand(ret);
+        alloc.Unlock(ret);
 
         HandleInlinedReturnOptimization();
 
@@ -200,26 +195,7 @@ public partial class InlinedCodeGen : CodeGen
                 (instruction, operand) = PreserveRefPtrVariable(expr.value, (AssemblyExpr.Pointer)operand);
             }
 
-            if (inlineState.callee == null)
-            {
-                alloc.Free(operand);
-                inlineState.callee = alloc.NextRegister(returnSize, current._returnType.type);
-            }
-
-            if (operand.IsRegister(out var op))
-            {
-                if (!inlineState.callee.IsRegister(out var reg) || op.Name != reg.Name)
-                {
-                    if (!HandleSeteOptimization(op, inlineState.callee))
-                    {
-                        Emit(new AssemblyExpr.Binary(instruction, inlineState.callee, operand));
-                    }
-                }
-            }
-            else
-            {
-                Emit(new AssemblyExpr.Binary(instruction, inlineState.callee, operand));
-            }
+            InlinedReturnIValue(operand, instruction, returnSize, current._returnType.type);
         }
         else
         {
@@ -240,33 +216,42 @@ public partial class InlinedCodeGen : CodeGen
         return null;
     }
 
-    public AssemblyExpr.IValue LockOperand(AssemblyExpr.IValue operand)
+    public void InlinedReturnIValue(AssemblyExpr.IValue operand, AssemblyExpr.Instruction instruction, AssemblyExpr.Register.RegisterSize returnSize, Expr.Type returnType)
     {
-        if (operand.IsRegister(out var register))
+        bool operandIsCallee = false;
+
+        if (inlineState.callee == null)
         {
-            alloc.Lock(register);
-        }
-        else if (operand.IsPointer(out var pointer) && pointer.value != null && !pointer.IsOnStack())
-        {
-            alloc.Lock(pointer.value);
-        }
-        return operand;
-    }
-    private void UnlockOperand(AssemblyExpr.IValue? operand)
-    {
-        if (operand == null)
-        {
-            return;
+            if (operand.IsRegister() && !alloc.IsLocked(operand))
+            {
+                alloc.Lock(operand);
+                inlineState.callee = operand;
+                operandIsCallee = true;
+            }
+            else
+            {
+                alloc.Free(operand);
+                inlineState.callee = alloc.NextRegister(returnSize, returnType);
+                alloc.Lock(inlineState.callee);
+            }
         }
 
-        if (operand.IsRegister(out var register))
+        if (!operandIsCallee)
         {
-            alloc.Unlock(register);
+            if (operand.IsRegister(out var op))
+            {
+                if (!HandleSeteOptimization(op, inlineState.callee))
+                {
+                    Emit(new AssemblyExpr.Binary(instruction, inlineState.callee, operand));
+                }
+            }
+            else
+            {
+                Emit(new AssemblyExpr.Binary(instruction, inlineState.callee, operand));
+            }
         }
-        else if (operand.IsPointer(out var pointer) && pointer.value != null && !pointer.IsOnStack())
-        {
-            alloc.Unlock(pointer.value);
-        }
+
+        alloc.Free(operand);
     }
 
     private AssemblyExpr.IValue HandleParameterRegister(Expr.Parameter parameter, AssemblyExpr.IValue arg)

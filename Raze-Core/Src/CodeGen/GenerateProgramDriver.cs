@@ -10,7 +10,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 {
     void GenerateProgramDriver()
     {
-        alloc.InitializeFunction(new(new(), false, null, null, null, null, null), this);
+        alloc.InitializeFunction(new(new(), false, null, null, null, null, null));
 
         var mainCall = Analyzer.SpecialObjects.GenerateRuntimeCall([], SymbolTableSingleton.SymbolTable.main);
         alloc.Free(mainCall.Accept(this));
@@ -20,8 +20,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                 new Expr.Literal(new(Parser.LiteralTokenType.Integer, "0", Location.NoLocation)) :
                 new Expr.Keyword("EAX");
 
-        alloc.NeededAlloc(AssemblyExpr.Register.RegisterSize._64Bits, this, 0);
-        alloc.NullReg(0);
         alloc.Free(
             Analyzer.SpecialObjects.GenerateRuntimeCall(
                 [exitParameter],
@@ -30,7 +28,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         );
 
         alloc.RemoveBlock();
-        alloc.fncPushPreserved.GenerateHeader(assembly.text, true);
         alloc.UpContext();
     }
 }
