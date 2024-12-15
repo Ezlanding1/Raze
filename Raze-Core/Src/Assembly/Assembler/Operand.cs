@@ -92,10 +92,10 @@ public partial class Assembler
 
             internal static void ThrowTMP(AssemblyExpr.Register reg)
             {
-                if (reg.name == AssemblyExpr.Register.RegisterName.TMP)
-                {
-                    Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("TMP Register Emitted"));
-                }
+                Diagnostics.Assert(
+                    reg.name != AssemblyExpr.Register.RegisterName.TMP,
+                    "TMP Register Cannot Be Emitted"
+                );
             }
         }
     }

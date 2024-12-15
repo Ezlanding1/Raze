@@ -319,10 +319,12 @@ public partial class Assembler
             internal static void ShrinkSignedDisplacement(ref byte[] disp, int newSize)
             {
                 disp = AssemblyExpr.ImmediateGenerator.MinimizeImmediate(AssemblyExpr.Literal.LiteralType.Integer, disp);
-                if (disp.Length > newSize)
-                {
-                    throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Invalid displacement length: " + disp.Length));
-                }
+
+                Diagnostics.Assert(
+                    disp.Length <= newSize,
+                    "Invalid displacement length: " + disp.Length
+                );
+
                 AssemblyExpr.ImmediateGenerator.ResizeSignedInteger(ref disp, newSize);
             }
         }

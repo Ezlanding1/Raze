@@ -55,6 +55,14 @@ public static class Diagnostics
         return new();
     }
 
+    public static void Assert(bool condition, string? message = null)
+    {
+        if (!condition)
+        {
+            Panic(new Diagnostic.ImpossibleDiagnostic(message ?? "Assertion Failed"));
+        }
+    }
+
     private static void PrintDiagnostic(Diagnostic diagnostic, ConsoleColor consoleColor)
     {
         Console.ForegroundColor = consoleColor;

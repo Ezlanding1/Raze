@@ -17,8 +17,10 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         public void UpContext()
         {
-            if (current == null)
-                Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Up Context Called On 'GLOBAL' context (no enclosing) in assembler"));
+            Diagnostics.Assert(
+                current != null,
+                "Up Context Called On 'GLOBAL' context (no enclosing) in assembler"
+            );
 
             current = (Expr.Definition)Current.enclosing;
         }

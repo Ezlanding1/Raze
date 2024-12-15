@@ -18,10 +18,10 @@ public partial class Assembler
         {
             var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Raze.Src.Assembly.Assembler.Resources.EncodingSchema.json");
 
-            if (stream is null)
-            {
-                Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Could not locate Encoding Schema file"));
-            }
+            Diagnostics.Assert(
+                stream is not null, 
+                "Could not locate Encoding Schema file"
+            );
 
             instructionEncodings = JsonSerializer.Deserialize<Dictionary<string, List<Encoding>>>(stream);
         }

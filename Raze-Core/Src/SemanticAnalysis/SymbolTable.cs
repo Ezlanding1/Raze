@@ -323,10 +323,10 @@ public partial class Analyzer
                 return null;
             }
 
-            if (current is Expr.Function)
-            {
-                Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Requested function's definitions"));
-            }
+            Diagnostics.Assert(
+                current is not Expr.Function,
+                "Requested function's definitions"
+            );
 
             if (TryGetValue(((Expr.DataType)current).definitions, key, out var value))
             {
@@ -464,8 +464,10 @@ public partial class Analyzer
 
         public void UpContext()
         {
-            if (current == null)
-                Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("Up Context Called On 'GLOBAL' context (no enclosing)"));
+            Diagnostics.Assert(
+                current != null,
+                "Up Context Called On 'GLOBAL' context (no enclosing)"
+            );
 
             current = (Expr.Definition)current.enclosing;
         }
