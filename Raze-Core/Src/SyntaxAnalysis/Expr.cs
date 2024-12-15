@@ -499,10 +499,9 @@ public abstract partial class Expr
         private static readonly Dictionary<int, StackData> _thisTable = GenerateThisTable();
 
         public static StackData GetThis(int size) => _thisTable[size];
-        public static StackData SetThis(DataType type) => SetThis(type, type.size);
-        public static StackData SetThis(DataType type, int size) 
+        public static StackData SetThis(DataType type) 
         { 
-            var _this = GetThis(size);
+            var _this = GetThis(type.allocSize);
             _this.type = type;
             return _this; 
         }

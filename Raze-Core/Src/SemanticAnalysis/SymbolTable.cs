@@ -239,36 +239,22 @@ public partial class Analyzer
                 }
             }
 
-            if (!ignoreEnclosing && !(current is Expr.Function && (((Expr.Function)current).modifiers["static"])))
+            if (!ignoreEnclosing && !(current is Expr.Function func && func.modifiers["static"]))
             {
                 var x = NearestEnclosingClass();
-                switch (x)
+
+                if (x != null)
                 {
-                    case Expr.Class:
-                        {
-                            if (TryGetValue(((Expr.Class)x).declarations, key, out var value))
-                            {
-                                isClassScoped = true;
-                                return value.stack;
-                            }
-                            if (key.lexeme == "this")
-                            {
-                                isClassScoped = false;
-                                return Expr.ThisStackData.SetThis(x, 8);
-                            }
-                        }
-                        break;
-                    case Expr.Primitive primitive:
-                        {
-                            if (key.lexeme == "this")
-                            {
-                                isClassScoped = false;
-                                return Expr.ThisStackData.SetThis(x);
-                            }
-                        }
-                        break;
-                    case null:
-                        break;
+                    if (key.lexeme == "this")
+                    {
+                        isClassScoped = false;
+                        return Expr.ThisStackData.SetThis(x);
+                    }
+                    else if (x is Expr.Class _class && TryGetValue(_class.declarations, key, out var value))
+                    {
+                        isClassScoped = true;
+                        return value.stack;
+                    }
                 }
             }
             isClassScoped = false;
