@@ -51,13 +51,16 @@ public partial class Assembler
                             )
                         ];
                     }
+
+                    var disp = GetDispInstruction(offset);
+
                     return [ // [Base + Displacement]
                         new Instruction.ModRegRm(
-                            GetDispSize(offset),
+                            GetDispSize(disp.GetBytes()),
                             operand2,
                             ExprRegisterToModRegRmRegister(ptr1.value)
                         ),
-                        GetDispInstruction(offset)
+                        disp
                     ];
                 }
                 else if (assembler.encoding.operands[ptrIdx].type != Operand.OperandType.MOFFS) // [Rip + Displacement]
