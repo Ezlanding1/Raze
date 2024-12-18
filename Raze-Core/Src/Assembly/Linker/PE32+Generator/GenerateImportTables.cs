@@ -67,7 +67,7 @@ public partial class Linker
                     )
                 );
 
-                currentIatOffset += (uint)(0x8 * (includeGroup.Count() + 1));
+                currentIatOffset += (uint)(PeUtils.IatEntrySize() * (includeGroup.Count() + 1));
 
                 imageImportByName.AddRange(Encoding.ASCII.GetBytes(includeGroup.Key + "\0"));
                 currentNameTableOffset += (uint)(includeGroup.Key.Length + 1);

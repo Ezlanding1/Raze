@@ -12,11 +12,14 @@ public partial class Assembler
 {
     public partial class Encoder
     {
+        private const string EncodingSchemaPath = "Raze.Src.Assembly.Assembler.Resources.EncodingSchema.json";
         Dictionary<string, List<Encoding>> instructionEncodings;
 
         internal Encoder() 
         {
-            var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("Raze.Src.Assembly.Assembler.Resources.EncodingSchema.json");
+            var stream = Assembly
+                .GetExecutingAssembly()
+                .GetManifestResourceStream(EncodingSchemaPath);
 
             Diagnostics.Assert(
                 stream is not null, 

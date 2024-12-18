@@ -10,22 +10,40 @@ public partial class Linker
 {
     internal static class Resolver
     {
+        private static void ResolveDlls(Assembler assembler, SystemInfo systemInfo)
+        {
+            var groupedIncludes = PeUtils.GroupIncludesByDllName(assembler.symbolTable);
+
+            uint idataOffsetFromText = PeUtils.GetIDataSectionRVA(assembler, systemInfo) - PeUtils.GetTextSectionRVA(assembler, systemInfo);
+            uint iatTablesLocation = PeUtils.GetIDataSectionTablesLocations(assembler.symbolTable).iatTablesLocation;
+            uint iatOffset = 0;
+
+            foreach (var dll in groupedIncludes)
+            {
+                foreach (var include in dll)
+                {
+                    assembler.symbolTable.definitions.Add(
+                        "text." + include.mangledName, 
+                        (int)(idataOffsetFromText + iatTablesLocation + iatOffset)
+                    );
+                    iatOffset += PeUtils.IatEntrySize();
+                }
+                iatOffset += PeUtils.IatEntrySize();
+            }
+        }
+
         internal static void ResolveIncludes(Assembler assembler, SystemInfo systemInfo)
         {
             foreach (var include in assembler.symbolTable.includes)
             {
                 include.ValidateImportPlatform(systemInfo.osabi);
+            }
 
-                switch (include.includeType)
-                {
-                    case AssemblyExpr.Include.IncludeType.DynamicLinkLibrary:
-                    {
-                        uint idataOffsetFromText = PeUtils.GetIDataSectionRVA(assembler, systemInfo) - PeUtils.GetTextSectionRVA(assembler, systemInfo);
-                        uint iatTablesLocation = PeUtils.GetIDataSectionTablesLocations(assembler.symbolTable).iatTablesLocation;
-                        assembler.symbolTable.definitions.Add("text." + include.mangledName, (int)(idataOffsetFromText + iatTablesLocation));
-                    }
+            switch (systemInfo.osabi)
+            {
+                case SystemInfo.OsAbi.Windows:
+                    ResolveDlls(assembler, systemInfo);
                     break;
-                }
             }
         }
 

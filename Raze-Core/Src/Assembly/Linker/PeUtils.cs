@@ -90,7 +90,11 @@ public partial class Linker
         }
 
         public static IEnumerable<IGrouping<string, AssemblyExpr.Include>> GroupIncludesByDllName(SymbolTable symbolTable) =>
-            symbolTable.includes.GroupBy(x => x.importedFileName);
+            symbolTable.includes
+                .Where(x => x.includeType == AssemblyExpr.Include.IncludeType.DynamicLinkLibrary)
+                .GroupBy(x => x.importedFileName);
+
+        public static uint IatEntrySize() => 0x8;
 
         public static uint GetIDataSize(SymbolTable symbolTable)
         {
