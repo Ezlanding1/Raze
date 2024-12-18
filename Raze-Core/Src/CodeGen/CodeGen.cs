@@ -157,6 +157,25 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         alloc.SaveScratchRegistersBeforeCall(paramRegisters, invokable.internalFunction);
 
+        int shadowSpace = InstructionUtils.GetCallingConvention(cconv).shadowSpace;
+        if (alloc.Current != null)
+        {
+            if (shadowSpace != 0)
+            {
+                Emit(new AssemblyExpr.Binary(
+                    AssemblyExpr.Instruction.SUB,
+                    new AssemblyExpr.Register(
+                        AssemblyExpr.Register.RegisterName.RSP, 
+                        InstructionUtils.SYS_SIZE
+                    ),
+                    new AssemblyExpr.Literal(
+                        AssemblyExpr.Literal.LiteralType.Integer, 
+                        BitConverter.GetBytes(shadowSpace)
+                    )
+                ));
+            }
+        }
+        
         if (invokable.internalFunction.modifiers["virtual"])
         {
             var call = (Expr.Call)invokable;
@@ -198,11 +217,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             alloc.Free(argRegister);
         }
 
-        if (alloc.Current != null)
-            alloc.Current.size += InstructionUtils.GetCallingConvention(cconv).shadowSpace;
-
         int resetStackOffset =
             ((invokable.Arguments.Count - InstructionUtils.GetParamRegisters(false, cconv).Length) * 8);
+
         if (resetStackOffset > 0)
         {
             Emit(new AssemblyExpr.Binary(
@@ -949,7 +966,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
             if (result.IsLiteral(out var resultLitBase))
             {
-                int literalSize = Analyzer.TypeCheckUtils.newFunction.Value._returnType.type.allocSize;
+                int literalSize = Analyzer.TypeCheckUtils.newFunction.Value!._returnType.type.allocSize;
                 var resultLit = resultLitBase.CreateRawLiteral((AssemblyExpr.Register.RegisterSize)literalSize);
                 ptr = new AssemblyExpr.Pointer(null, resultLit, InstructionUtils.SYS_SIZE);
             }
@@ -990,9 +1007,14 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
     public AssemblyExpr.IValue VisitAsExpr(Expr.As expr)
     {
+        if (expr.overloadedCast?.internalFunction != null)
+        {
+            return expr.overloadedCast.Accept(this);
+        }
+
         if (expr._is.value != null)
         {
-            return new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Boolean, ((bool)expr._is.value) ? [1] : [0]);
+            return (bool)expr._is.value ? expr._is.left.Accept(this) : NullLiteral;
         }
         else
         {
@@ -1022,7 +1044,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
     public AssemblyExpr.IValue? VisitHeapAllocExpr(Expr.HeapAlloc expr)
     {
-        var call = Analyzer.SpecialObjects.GenerateRuntimeCall([expr.size], Analyzer.TypeCheckUtils.newFunction.Value);
+        var call = Analyzer.SpecialObjects.GenerateRuntimeCall([expr.size], Analyzer.TypeCheckUtils.newFunction.Value!);
         return call.Accept(this);
     }
     
@@ -1037,7 +1059,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         }
         Emit(new AssemblyExpr.Binary(
             AssemblyExpr.Instruction.CMP,
-            new AssemblyExpr.Pointer((AssemblyExpr.Register)left, -8, AssemblyExpr.Register.RegisterSize._64Bits),
+            new AssemblyExpr.Pointer((AssemblyExpr.Register)left, -0, AssemblyExpr.Register.RegisterSize._64Bits),
             new AssemblyExpr.DataRef("VTABLE_FOR_" + expr.right.type.name.lexeme)
         ));
         return left;

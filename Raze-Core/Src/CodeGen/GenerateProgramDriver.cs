@@ -23,7 +23,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         alloc.Free(
             Analyzer.SpecialObjects.GenerateRuntimeCall(
                 [exitParameter],
-                Analyzer.TypeCheckUtils.exitFunction.Value
+                Analyzer.TypeCheckUtils.exitFunction.Value!
             ).Accept(this)
         );
 

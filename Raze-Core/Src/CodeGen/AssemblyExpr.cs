@@ -270,7 +270,8 @@ public abstract partial class AssemblyExpr
         public bool IsOnStack() => value.name == Register.RegisterName.RBP;
         public Register AsRegister(CodeGen assembler)
         {
-            return (value == null || IsOnStack()) ? assembler.alloc.NextRegister(Size) : value;
+            assembler.alloc.Free(this);
+            return assembler.alloc.NextRegister(Size);
         }
 
         public T Accept<T>(IUnaryOperandVisitor<T> visitor)
@@ -678,7 +679,10 @@ public abstract partial class AssemblyExpr
         {
             if (osAbi != includeType switch
             {
+                // IncludeType.Library => SystemInfo.OsAbi.Windows,
                 IncludeType.DynamicLinkLibrary => SystemInfo.OsAbi.Windows
+                // IncludeType.Object => SystemInfo.OsAbi.Windows
+                // IncludeType.SharedObject => SystemInfo.OsAbi.Windows
             })
             {
                 Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.UnsupportedOsAbiForImportType, includeType, osAbi));

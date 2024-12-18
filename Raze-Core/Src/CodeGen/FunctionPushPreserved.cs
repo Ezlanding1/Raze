@@ -54,10 +54,10 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         public void GenerateHeader(ResolvedRegistersPass resolvedRegistersPass)
         {
             bool firstCall = count == 0;
-            count++;
 
             if (!firstCall)
             {
+                count++;
                 while (footers.Count > 0)
                 {
                     int location = footers.Pop();
@@ -67,7 +67,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                 resolvedRegistersPass.InsertInstruction(count++, new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, AssemblyExpr.Register.RegisterName.RBP, AssemblyExpr.Register.RegisterName.RSP));
             }
 
-            if (StackAllocNeeded)
+            if (StackAllocNeeded || StackAlignmentNeeded(firstCall, stackStartsAligned))
             {
                 resolvedRegistersPass.InsertInstruction(count++, GenerateStackAlloc((size > redZoneSize) ? size - redZoneSize : size, firstCall));
             }
@@ -88,8 +88,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                     }
                 }
             }
-
-            
         }
 
         private void GenerateFooter(ResolvedRegistersPass resolvedRegistersPass, int location)
@@ -120,8 +118,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         private static AssemblyExpr.Binary GenerateStackAlloc(int allocSize, bool firstCall)
         {
-            int callOffset = (firstCall && stackStartsAligned) ? 0 : 8;
-
+            int callOffset = StackAlignmentNeeded(firstCall, stackStartsAligned) ? 8 : 0;
+            
             return new AssemblyExpr.Binary(AssemblyExpr.Instruction.SUB, new AssemblyExpr.Register(AssemblyExpr.Register.RegisterName.RSP, InstructionUtils.SYS_SIZE),
                 new AssemblyExpr.Literal(AssemblyExpr.Literal.LiteralType.Integer, BitConverter.GetBytes(AlignTo16(allocSize) + callOffset)));
         }
@@ -130,5 +128,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         {
             return (((int)Math.Ceiling(i / 16f)) * 16);
         }
+        
+        private static bool StackAlignmentNeeded(bool firstCall, bool stackStartsAligned) =>
+            firstCall && !stackStartsAligned;
     }
 }
