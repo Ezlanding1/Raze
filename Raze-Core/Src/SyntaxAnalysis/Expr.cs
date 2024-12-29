@@ -730,7 +730,7 @@ public abstract partial class Expr
             {
                 return virtualMethods;
             }
-            virtualMethods = new List<(Function, bool)>((SuperclassType as DataType)?.GetVirtualMethods(false) ?? []);
+            virtualMethods = [.. (SuperclassType as DataType)?.GetVirtualMethods(false) ?? []];
 
             foreach (var function in definitions.Where(x => x is Function func && (func.Abstract || func.modifiers["virtual"] || func.modifiers["override"])).Cast<Function>())
             {
@@ -766,7 +766,6 @@ public abstract partial class Expr
         {
             this.declarations = declarations;
             this.superclass = superclass;
-            this.superclass.typeName ??= new([new Token(Token.TokenType.IDENTIFIER, "object", Location.NoLocation)]);
             this.trait = trait;
         }
 
@@ -872,6 +871,7 @@ public abstract partial class Expr
     public class As(Expr left, TypeReference right) : Expr
     {
         public readonly Is _is = new(left, right);
+        public Call? overloadedCast = null;
 
         public override T Accept<T>(IVisitor<T> visitor)
         {

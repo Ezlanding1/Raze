@@ -267,22 +267,23 @@ public abstract partial class Expr
             public static void ReturnOperand(CodeGen codeGen, AssemblyExpr.IValue op)
             {
                 Function function = (Function)codeGen.alloc.Current;
+                DataType retType = function._returnType.type;
 
                 if (((InlinedCodeGen)codeGen).inlineState != null)
                 {
-                    AssemblyExpr.Instruction instruction = CodeGen.GetMoveInstruction(false, function._returnType.type);
+                    AssemblyExpr.Instruction instruction = CodeGen.GetMoveInstruction(false, retType);
 
                     var returnSize = function.refReturn ?
                         InstructionUtils.SYS_SIZE :
-                        (AssemblyExpr.Register.RegisterSize)function._returnType.type.allocSize;
+                        (AssemblyExpr.Register.RegisterSize)retType.allocSize;
 
-                    ((InlinedCodeGen)codeGen).InlinedReturnIValue(op, instruction, returnSize, function._returnType.type);
+                    ((InlinedCodeGen)codeGen).InlinedReturnIValue(op, instruction, returnSize, retType);
                 }
                 else
                 {
-                    var instruction = CodeGen.GetMoveInstruction(false, function._returnType.type);
+                    var instruction = CodeGen.GetMoveInstruction(false, retType);
 
-                    var isFloatingType = CodeGen.IsFloatingType(function._returnType.type);
+                    var isFloatingType = CodeGen.IsFloatingType(retType);
                     var _returnRegister =
                         new AssemblyExpr.Register(
                             InstructionUtils.GetCallingConvention().returnRegisters.GetRegisters(isFloatingType)[0],
@@ -294,18 +295,13 @@ public abstract partial class Expr
                     codeGen.alloc.Free(op);
                 }
                 
-                if (function._returnType.type is Primitive primitive)
+                int retSize = 
+                    function.refReturn ? 8 : (retType as Primitive)?.size ?? 8;
+                            
+                if (retSize != (int)op.Size)
                 {
-                    int primitiveSize = function.refReturn ? 8 : primitive.size;
-                    if (primitiveSize != (int)op.Size)
-                    {
-                        if (!(Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Floating].Matches(primitive) && op.Size == AssemblyExpr.Register.RegisterSize._128Bits && (primitiveSize == 4 || primitiveSize == 8)))
-                            Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.InlineAssemblySizeMismatchReturn_Primitive, op.Size, primitive.name.lexeme));
-                    }
-                }
-                else
-                {
-                    Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.InlineAssemblySizeMismatchReturn_NonPrimitive));
+                    if (!(Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Floating].Matches(retType) && op.Size == AssemblyExpr.Register.RegisterSize._128Bits && (retSize == 4 || retSize == 8)))
+                        Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.InlineAssemblySizeMismatchReturn_Primitive, op.Size, retType.name.lexeme));
                 }
             }
 

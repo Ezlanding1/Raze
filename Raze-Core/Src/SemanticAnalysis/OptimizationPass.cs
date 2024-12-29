@@ -12,7 +12,7 @@ public partial class Analyzer
     internal class OptimizationPass : Pass<object?>
     {
         SymbolTable symbolTable = SymbolTableSingleton.SymbolTable;
-        HashSet<Expr.Class> classesToCalculateSize = new();
+        readonly HashSet<Expr.Class> classesToCalculateSize = [];
 
         public OptimizationPass(List<Expr> expressions) : base(expressions)
         {
@@ -20,7 +20,7 @@ public partial class Analyzer
 
         internal override void Run()
         {
-            TypeCheckUtils.exitFunction.Value.Accept(this);
+            TypeCheckUtils.exitFunction.Value?.Accept(this);
             symbolTable.main?.Accept(this);
             classesToCalculateSize.ToList().ForEach(_class => _class.CalculateSizeAndAllocateVariables());
         }
@@ -61,7 +61,7 @@ public partial class Analyzer
                 expr.call.Accept(this);
                 using (new SaveContext())
                 {
-                    TypeCheckUtils.newFunction.Value.Accept(this);
+                    TypeCheckUtils.newFunction.Value?.Accept(this);
                     expr.internalClass.Accept(this);
                 }
             }
@@ -75,7 +75,7 @@ public partial class Analyzer
         public override object VisitHeapAllocExpr(Expr.HeapAlloc expr)
         {
             using (new SaveContext())
-                TypeCheckUtils.newFunction.Value.Accept(this);
+                TypeCheckUtils.newFunction.Value?.Accept(this);
 
             expr.size.Accept(this);
             return null;
@@ -142,7 +142,15 @@ public partial class Analyzer
             return null;
         }
 
-        public override object VisitInlineAssemblyExpr(Expr.InlineAssembly expr)
+        public override object? VisitAsExpr(Expr.As expr)
+        {
+            if (expr.overloadedCast?.internalFunction != null)
+                expr.overloadedCast.Accept(this);
+                
+            return base.VisitAsExpr(expr);
+        }
+
+        public override object? VisitInlineAssemblyExpr(Expr.InlineAssembly expr)
         {
             foreach (var instruction in expr.instructions.OfType<Expr.InlineAssembly.Instruction>())
             {

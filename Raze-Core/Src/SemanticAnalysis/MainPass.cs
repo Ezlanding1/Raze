@@ -406,11 +406,8 @@ public partial class Analyzer
             return expr.internalClass;
         }
 
-        public override Expr.Type VisitIsExpr(Expr.Is expr)
+        private void CheckIsExprMatches(Expr.Is expr, Expr.Type leftType, Expr.Type rightType)
         {
-            var leftType = expr.left.Accept(this);
-            var rightType = expr.right.Accept(this);
-
             if ((expr.value = leftType.Matches(rightType)) != true)
             {
                 if (rightType.Matches(leftType))
@@ -424,13 +421,50 @@ public partial class Analyzer
                     expr.value = false;
                 }
             }
+        }
+
+        public override Expr.Type VisitIsExpr(Expr.Is expr)
+        {
+            var leftType = expr.left.Accept(this);
+            var rightType = expr.right.Accept(this);
+
+            CheckIsExprMatches(expr, leftType, rightType);
 
             return TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Boolean];
         }
 
         public override Expr.Type VisitAsExpr(Expr.As expr)
         {
-            expr._is.Accept(this);
+            var leftType = expr._is.left.Accept(this);
+            var rightType = expr._is.right.Accept(this);
+
+            using (new SaveContext())
+            {
+                symbolTable.SetContext(rightType as Expr.Definition);
+
+                Token name = new(Token.TokenType.IDENTIFIER, "Cast", Location.NoLocation);
+
+                expr.overloadedCast = new Expr.Call(name, [expr._is.left], null);
+
+                if (symbolTable.TryGetFunction(
+                    name.lexeme,
+                    [TypeCheckUtils.ToDataTypeOrDefault(leftType)],
+                    out expr.overloadedCast.internalFunction
+                ))
+                {
+                    return expr.overloadedCast.internalFunction._returnType.type;
+                }
+                else if (rightType is Expr.Primitive)
+                {
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
+                        Diagnostic.DiagnosticName.NoConversionFound, 
+                        leftType,
+                        rightType
+                    ));
+                }
+            }
+                
+            CheckIsExprMatches(expr._is, leftType, rightType);
             return expr._is.right.type;
         }
 

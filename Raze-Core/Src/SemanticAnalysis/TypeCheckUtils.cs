@@ -13,7 +13,6 @@ public partial class Analyzer
     {
         // Primitive Types:
 
-        public readonly static Expr.Class objectType = new SpecialObjects.Object();
         public readonly static Expr.Class anyType = new SpecialObjects.Any(new(Token.TokenType.IDENTIFIER, "any", Location.NoLocation));
         public readonly static Expr.Class _voidType = new Expr.Class(new(Token.TokenType.RESERVED, "void", Location.NoLocation), new(), new(), new(null));
 

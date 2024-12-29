@@ -12,9 +12,8 @@ public partial class Analyzer
     {
         public class Null() : Expr.Class(new(Token.TokenType.RESERVED, "null", Location.NoLocation), new(), new(), new(null))
         {
-            public override bool Matches(Type type) => type.Matches(TypeCheckUtils.objectType);
+            public override bool Matches(Type type) => type.Matches(TypeCheckUtils.objectType.Value);
         }
-        public class Object() : Expr.Class(new(Token.TokenType.IDENTIFIER, "object", Location.NoLocation), new(), new(), new(null));
 
         public class Any(Token name) : Expr.Class(name, new(), new(), new(null))
         {

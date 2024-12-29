@@ -118,6 +118,7 @@ public partial class Analyzer
                     case "Increment":
                     case "Decrement":
                     case "Not":
+                    case "Cast":
                         if (expr.Arity != 1)
                         {
                             Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidOperatorArity, expr.name.location, expr.name.lexeme, 1));
@@ -151,7 +152,13 @@ public partial class Analyzer
 
             if (expr.name.lexeme == "Main")
             {
-                symbolTable.main = expr;
+                if (symbolTable.main == null)
+                    symbolTable.main = expr;
+                else 
+                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
+                        Diagnostic.DiagnosticName.MainDoubleDeclaration, 
+                        expr.name.location
+                    ));
             }
 
             HandleConstructor();
@@ -195,7 +202,17 @@ public partial class Analyzer
         {
             symbolTable.AddDefinition(expr);
 
-            expr.superclass.Accept(this);
+            var objectType = TypeCheckUtils.objectType.Value;
+            if (expr != objectType && expr.superclass.typeName == null)
+            {
+                expr.superclass.typeName = new();
+                expr.superclass.type = objectType;
+            }
+            else
+            {
+                expr.superclass.Accept(this);
+            }
+            
             if (expr.superclass.type?.Matches(expr) == true)
             {
                 Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.CircularInheritance, expr.name.location, expr.ToString(), expr.superclass.type.ToString()));
@@ -207,7 +224,7 @@ public partial class Analyzer
 
             if (!symbolTable.TryGetDefinition(expr.name, out _))
             {
-                expr.definitions.Add(new SpecialObjects.DefaultConstructor(((Expr.Class)symbolTable.Current).name));
+                expr.definitions.Add(new SpecialObjects.DefaultConstructor(expr.name));
             }
 
             if (expr.superclass.type is Expr.Class _class)
@@ -305,6 +322,25 @@ public partial class Analyzer
 
             expr.member.Accept(this);
             return base.VisitAssignExpr(expr);
+        }
+
+        public override object? VisitHeapAllocExpr(Expr.HeapAlloc expr)
+        {
+            expr.size.Accept(this);
+            return null;
+        }
+
+        public override object? VisitIsExpr(Expr.Is expr)
+        {
+            expr.left.Accept(this);
+            expr.right.Accept(this);
+            return null;
+        }
+
+        public override object? VisitAsExpr(Expr.As expr)
+        {
+            expr._is.Accept(this);
+            return null;
         }
 
         public override object? VisitPrimitiveExpr(Expr.Primitive expr)
