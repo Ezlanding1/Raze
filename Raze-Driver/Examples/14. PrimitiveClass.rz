@@ -1,7 +1,7 @@
 # Primitive classes are a way to represent primitive data-types that are allocated on stack
-# The below primitive number is 1 byte and is an integer (equivalent to an int8).
-# Primitive classes may one day be replaces by structs...
-primitive class number sizeof 1 extends Integer
+# The below primitive number is 2 byte and is an integer (equivalent to an int16).
+# Primitive classes may one day be replaced by structs...
+primitive class number sizeof 2 extends Integer
 {
 }
 

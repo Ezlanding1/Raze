@@ -81,8 +81,8 @@ public class SystemInfo
         return osabi switch
         {
             OsAbi.Linux or
-            OsAbi.System_V => "x86_64_Linux_Runtime",
-            OsAbi.Windows => "x86_64_Windows_Runtime",
+            OsAbi.System_V => "x86_64_Linux_Runtime.rz",
+            OsAbi.Windows => "x86_64_Windows_Runtime.rz",
             _ => throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic($"Runtime name not found for OsAbi {osabi}"))
         };
     }

@@ -1,0 +1,22 @@
+# Create a class 'Student', storing the student's age and name
+class Student
+{
+    int age;
+    string name;
+
+    # A function with the same name as the enclosing class and no return type is a constructor
+    function Student(int age, string name)
+    {
+        # 'this' will reference only the enclosing class instance, allowing variable shadowing
+        this.age = age;
+        this.name = name;
+    }
+}
+
+function Main()
+{
+    Student student = new Student(15, "Bob");
+
+    Print(student.age.ToString());
+    Print(student.name);
+}

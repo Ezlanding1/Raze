@@ -12,7 +12,7 @@ class Car extends Vehicle
 {
     function Car(int capacity, string license)
     {
-        this.capacity = 20;
+        this.capacity = capacity;
         this.license = license;
     }
 
@@ -24,9 +24,9 @@ class Car extends Vehicle
 
 class Bus extends Vehicle
 {
-    function Car(int capacity, string license)
+    function Bus(int capacity, string license)
     {
-        this.capacity = 5;
+        this.capacity = capacity;
         this.license = license;
     }
 
@@ -38,9 +38,9 @@ class Bus extends Vehicle
 
 function Main()
 {
-    Bus bus = new Bus("ABC123");
+    Bus bus = new Bus(50, "ABC123");
     bus.Drive();
 
-    Car car = new Car("DEF456");
+    Car car = new Car(6, "DEF456");
     car.Drive();
 }

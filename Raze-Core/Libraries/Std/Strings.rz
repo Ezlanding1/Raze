@@ -1,5 +1,3 @@
-import HeapData from Raze;
-
 class String
 {
 	HeapData data;
@@ -41,6 +39,11 @@ class String
 		}
 	}
 
+    function unsafe operator inline static ref char Indexer(String str, int i)
+	{
+        return ref str[i as uint64];
+	}
+
     function String()
     {
     }
@@ -63,5 +66,29 @@ class String
     function unsafe string ToStdString()
     {
         asm { return $data; }
+    }
+
+    function static int StringToInt(String str)
+    {
+        int result = 0;
+        int sign = 1;
+        int i = 0;
+
+        while (str[i].IsWhitespace()) { i++; }
+
+        if (str[i] == '-') 
+        {
+            sign = -1;
+            i++;
+        }
+
+        while (str[i].IsNumeric())
+        {
+            result *= 10;
+            result += (str[i].ToByte() - 48u) as int;
+            i++;
+        }
+
+        return result * sign;
     }
 }

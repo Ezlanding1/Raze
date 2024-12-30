@@ -1,5 +1,5 @@
 # The ref keyword allows a reference to a type to be passed into function
-function int Foo(ref int i)
+function Foo(ref int i)
 {
     i = 100;
 }

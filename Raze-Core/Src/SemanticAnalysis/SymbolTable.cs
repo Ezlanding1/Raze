@@ -142,25 +142,25 @@ public partial class Analyzer
         public readonly static Dictionary<string, Expr.Import> runtimeImports = new()
         {
             {
-                "Raze.Std",
+                "Core.Types",
                 new Expr.Import(
-                    new Expr.Import.FileInfo("Raze.rz"),
+                    new Expr.Import.FileInfo("Types.rz"),
                     false,
-                    new(new([new(Token.TokenType.IDENTIFIER, "Std", Location.NoLocation)]), true)
+                    new(new(null), true)
                 )
             },
             {
-                "System",
+                "Runtime",
                 new Expr.Import(
-                    new Expr.Import.FileInfo("System.rz"),
+                    new Expr.Import.FileInfo(Diagnostics.runtimeName),
                     false,
-                    new(new(null), false)
+                    new(new([new(Token.TokenType.IDENTIFIER, "Runtime", Location.NoLocation)]), false)
                 )
             }
         };
 
         // Standard Library Imports
-
+        
         public readonly static List<Expr.Import> standardLibraryImports = new()
         {
             new Expr.Import(
@@ -171,12 +171,12 @@ public partial class Analyzer
             )
         };
 
-        public ImportData GetRuntimeImport(Expr.Import.FileInfo fileInfo)
+        public ImportData? GetRuntimeImport(Expr.Import.FileInfo fileInfo)
         {
-            return imports[fileInfo];
+            return imports.GetValueOrDefault(fileInfo);
         }
 
-        private static List<Expr.Definition> NewGlobals() => [TypeCheckUtils.objectType];
+        private static List<Expr.Definition> NewGlobals() => [];
 
         public void AddVariable(Token name, Expr.StackData variable, bool initializedOnDeclaration)
         {

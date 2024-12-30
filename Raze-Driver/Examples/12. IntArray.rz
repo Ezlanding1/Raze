@@ -1,18 +1,16 @@
-# Import the heapData type, the return type of a 'heapalloc'
-import HeapData from Raze;
-
 # This is the definition for an IntArray, an array of ints on heap
 class IntArray 
 {
 	HeapData data;
 
-	function IntArray(int i)
+	function IntArray(int64 i)
 	{
         # The 'heapalloc' expr allcoates an arbitrary amount of data on the heap, and returns an instance of HeapData 
-		data = heapalloc((i * 4).ToUint());
+		data = heapalloc((i*4) as uint64);
 	}
 
     # The indexer '[]' operator is overloaded
+	# Returns a reference to array's data
 	function operator static ref int Indexer(IntArray arr, int i)
 	{
 		return ref arr.data[i*4];
@@ -22,8 +20,8 @@ class IntArray
 function int Main()
 {
 	IntArray arr = new IntArray(2);
-	arr[1] = 20;
 	arr[0] = 5;
+	arr[1] = 20;
 	arr[1] += arr[0];
-	return arr[1];
+	return arr[0] + arr[1];
 }

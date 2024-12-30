@@ -1,22 +1,26 @@
-# Inline assembly is possible by using the 'asm' block
+# Inline assembly can be written using an 'asm' block
 function int Main()
 {
     return Foo(true);
 }
 
-# A function with inline assembly must contain the 'unsafe' modifier
+# Functions containing inline assembly must be marked as 'unsafe'
+# This function directly converts a bool into an integer
+# Raze defines the 'true' keyword to have the value of 1 and the 'false' keyword as 0
+# (though in practice, a true boolean can interally have any truthy (nonzero) value)
 function unsafe int Foo(bool b)
 {
     asm {
-        # Allocate a register named 'REG' with a size of 32-bits
+        # Allocate a 32-bit general-purpose register named 'REG'
         alloc REG::32;
 
-        # Use '$' to reference a variable
-        MOVZX REG, $b; 
-        SUB REG, 1;
+        # Move the boolean value into REG, zero-extending it to 32 bits
+        MOVZX REG, $b;
 
+        # Return the value in the register
         return REG;
 
+        # Release the allocated register
         free REG;
     }
 }

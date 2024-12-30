@@ -13,15 +13,24 @@ class IntWrapper
 
     # Operators may be overloaded
     # Use the function modifiers 'operator' 'static' 'inline' to tell the compiler that this function is an operator, static, and must be inlined
-    function operator static inline Add(IntWrapper i, IntWrapper j)
+    function operator static inline IntWrapper Add(IntWrapper i, IntWrapper j)
     {
         return new IntWrapper(i.i + j.i);
     }
+
+    function operator static inline IntWrapper Subtract(IntWrapper i, IntWrapper j)
+    {
+        return new IntWrapper(i.i - j.i);
+    }
 }
 
-function int Main()
+function Main()
 {
-    a = new IntWrapper();
-    b = new IntWrapper();
-    return (a + b).i;
+    IntWrapper a = new IntWrapper();
+    IntWrapper b = new IntWrapper(12);
+    IntWrapper c = new IntWrapper(3);
+
+    IntWrapper result = a + b - c;
+    
+    Print(result.i.ToString());
 }

@@ -1,0 +1,15 @@
+﻿class LinkedList
+{
+	int val;
+	LinkedList next = null;
+
+	function LinkedList(int val)
+	{
+		this.val = val;
+	}
+	function LinkedList(int val, LinkedList next)
+	{
+		this.val = val;
+		this.next = next;
+	}
+}

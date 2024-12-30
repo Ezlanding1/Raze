@@ -1,0 +1,15 @@
+
+class IntArray 
+{
+	HeapData data;
+
+	function IntArray(int64 i)
+	{
+		data = heapalloc((i*4) as uint64);
+	}
+
+	function operator static ref int Indexer(IntArray arr, int i)
+	{
+		return ref arr.data[i*4];
+	}
+}

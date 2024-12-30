@@ -1,0 +1,18 @@
+# Example: Swap
+
+function Swap(ref int a, ref int b)
+{
+    int tmp = a;
+    a = b;
+    b = tmp;
+}
+
+function Main()
+{
+    int a = 5;
+    int b = 10;
+
+    Swap(ref a, ref b);
+    
+    Print("The value of 'a' is " + a.ToString() + " and the value of 'b' is " + b.ToString());
+}

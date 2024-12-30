@@ -1,0 +1,18 @@
+# Example: Fibonacci
+
+function Main()
+{
+	int input = 15;
+    int result = Fib(input);
+	Print("Number #" + input.ToString() + " of the Fibonacci Sequence is " + result.ToString());
+}
+
+function int Fib(int i)
+{
+    if (i == 0 || i == 1)
+    {
+        return i;
+    }
+
+    return Fib(i - 1) + Fib(i - 2);
+}

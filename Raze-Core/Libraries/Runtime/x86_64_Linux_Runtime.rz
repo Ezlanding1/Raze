@@ -1,11 +1,50 @@
 import String from Strings;
-import Runtime from Runtime;
+import RazeRuntime from RazeRuntime;
+
+class Runtime extends RazeRuntime
+{
+	function static inline uint64 Sbrk(uint64 inc)
+	{
+		int64 brkLocation = Syscalls.SYS_BRK(0u);
+
+		if (brkLocation < 0)
+		{
+			return 0u;
+		}
+		Syscalls.SYS_BRK((brkLocation as uint64) + inc);
+		return brkLocation as uint64;
+	}
+
+	function unsafe static uint64 Read(uint64 fd, string buffer, uint64 len)
+	{
+		return Syscalls.SYS_READ(fd as uint, buffer, len) as uint64;
+	}
+
+
+	function static Write(uint64 fd, string str, uint64 len)
+	{
+	    Syscalls.SYS_WRITE(fd as uint, str, len);
+	}
+
+	function static inline uint64 GetStdFd(uint64 code) 
+	{
+		return code;
+	}
+
+	function static uint64 New(uint64 inc)
+	{
+		return Sbrk(inc);
+	}
+
+	function static inline Exit(int errorCode)
+	{
+		Syscalls.SYS_EXIT(errorCode);
+	}
+}
 
 class Syscalls
 {
-	# x86-64 Linux Syscalls
-
-	function unsafe static int64 SYS_READ(uint fd, String buf, uint64 count)
+	function unsafe static int64 SYS_READ(uint fd, string buf, uint64 count)
 	{
 		asm {
 			alloc RAX;
@@ -118,45 +157,4 @@ class Syscalls
 		}
 	}
 
-}
-
-class x86_64_Linux_Runtime extends Runtime
-{
-	function static inline uint64 Sbrk(uint64 inc)
-	{
-		int64 brkLocation = Syscalls.SYS_BRK(0u);
-
-		if (brkLocation < 0)
-		{
-			return (-1).ToUint64();
-		}
-
-		Syscalls.SYS_BRK(brkLocation.ToUint64() + inc).ToUint64();
-		return brkLocation.ToUint64();
-	}
-
-	function static uint64 New(uint64 inc)
-	{
-		return Sbrk(inc);
-	}
-
-	function static inline Exit(int errorCode)
-	{
-		Syscalls.SYS_EXIT(errorCode);
-	}
-}
-
-class x86_64_Windows_Runtime extends Runtime
-{
-	function extern dll ExitProcess(int exitCode) from "kernel32.dll";
-
-	function static uint64 New(uint64 inc)
-	{
-		return 0u;
-	}
-
-	function static inline Exit(int errorCode)
-	{
-		ExitProcess(errorCode);
-	}
 }

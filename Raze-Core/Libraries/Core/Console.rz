@@ -1,0 +1,22 @@
+import String from Strings;
+
+
+function static WriteLine(string s)
+{
+    Write(s + "\n");
+}
+
+function static Write(string s)
+{
+    Runtime.Write(Runtime.GetStdFd(1u), s, s.Length());
+}
+
+function static Write(String s)
+{ 
+    Write(s.ToStdString());
+}
+
+function static WriteLine(String s)
+{ 
+    Write(s.ToStdString() + "\n");
+}

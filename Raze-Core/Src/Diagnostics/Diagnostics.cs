@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -16,6 +17,19 @@ public static class Diagnostics
     public static FileInfo mainFile;
     public static List<DirectoryInfo> importDirs;
     public static string runtimeName;
+
+    static Diagnostics()
+    {
+        string exePath = Path.GetFullPath(Assembly.GetExecutingAssembly().Location);
+        string exeDir = Path.GetDirectoryName(exePath)!;
+        string libRoot = Path.Combine(exeDir, "Libraries");
+
+        importDirs = new(
+            Directory.EnumerateDirectories(libRoot).Select(
+                lib => new DirectoryInfo(lib)
+            )
+        );
+    }
 
     public static void ThrowCompilerErrors()
     {

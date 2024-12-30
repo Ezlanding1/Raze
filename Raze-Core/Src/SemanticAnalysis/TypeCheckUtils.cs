@@ -40,17 +40,18 @@ public partial class Analyzer
 
         public static Dictionary<Parser.LiteralTokenType, RuntimeLibrarySingletonDataType> defualtLiteralTypes = new()
         {
-            { Parser.LiteralTokenType.Integer,  new("Raze.Std", ["Std", "int64"]) },
-            { Parser.LiteralTokenType.UnsignedInteger, new("Raze.Std", ["Std", "uint64"]) },
-            { Parser.LiteralTokenType.Floating, new("Raze.Std", ["Std", "float64"]) },
-            { Parser.LiteralTokenType.String, new("Raze.Std", ["Std", "char"]) },
-            { Parser.LiteralTokenType.Boolean, new("Raze.Std", ["Std", "bool"]) },
-            { Parser.LiteralTokenType.RefString, new("Raze.Std", ["Std", "string"]) },
+            { Parser.LiteralTokenType.Integer,  new("Core.Types", ["int64"]) },
+            { Parser.LiteralTokenType.UnsignedInteger, new("Core.Types", ["uint64"]) },
+            { Parser.LiteralTokenType.Floating, new("Core.Types", ["float64"]) },
+            { Parser.LiteralTokenType.String, new("Core.Types", ["char"]) },
+            { Parser.LiteralTokenType.Boolean, new("Core.Types", ["bool"]) },
+            { Parser.LiteralTokenType.RefString, new("Core.Types", ["string"]) },
         };
 
-        public static RuntimeLibrarySingletonDataType heapallocType = new("Raze.Std", "HeapData");
-        public static RuntimeLibrarySingletonFunction newFunction = new("System", [Diagnostics.runtimeName], "New", [defualtLiteralTypes[Parser.LiteralTokenType.UnsignedInteger]]);
-        public static RuntimeLibrarySingletonFunction exitFunction = new("System", [Diagnostics.runtimeName], "Exit", [new("Raze.Std", ["Std", "int"])]);
+        public static RuntimeLibrarySingletonDataType objectType = new("Core.Types", "Object");
+        public static RuntimeLibrarySingletonDataType heapallocType = new("Core.Types", "HeapData");
+        public static RuntimeLibrarySingletonFunction newFunction = new("Runtime", ["Runtime"], "New", [defualtLiteralTypes[Parser.LiteralTokenType.UnsignedInteger]]);
+        public static RuntimeLibrarySingletonFunction exitFunction = new("Runtime", ["Runtime"], "Exit", [new("Core.Types", "int")]);
 
 
         public static void MustMatchType(Expr.Type type1, Expr.Type type2, bool _ref1, bool _readonly1, Expr expr2, bool declare, bool _return) =>

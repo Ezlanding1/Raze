@@ -1,3 +1,5 @@
+# Raze has full support for OOP: encapsulation, abstraction, inheritance, and polymorphism
+
 # Traits cannot be instantiated and may have abstract methods (functions declared without a body)
 trait Shape
 {
@@ -50,6 +52,7 @@ function int Main()
 {
 	Shape rectangle = new Rectangle(4, 5);
 	Shape square = new Square(5);
+
 	return AddAreaAndPerimeter(rectangle) + AddAreaAndPerimeter(square);
 }
 

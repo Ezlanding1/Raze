@@ -1,0 +1,67 @@
+import String from Strings;
+import RazeRuntime from RazeRuntime;
+
+class Runtime extends RazeRuntime
+{
+	function extern dll ExitProcess(int exitCode) from "kernel32.dll";
+
+	function extern dll uint64 GetStdHandle(
+		int nStdHandle
+	) from "kernel32.dll";
+
+	function extern dll uint ReadFile(
+		uint64 hFile,
+		string lpBuffer,
+		uint nNumberOfBytesToRead,
+		ref uint lpNumberOfBytesRead,
+		uint64 lpOverlapped
+	) from "kernel32.dll";
+
+	function extern dll uint WriteFile(
+		uint64 hFile,
+		string lpBuffer,
+		uint nNumberOfBytesToWrite,
+		ref uint lpNumberOfBytesWritten,
+		uint64 lpOverlapped
+	) from "kernel32.dll";
+	
+	function extern dll uint64 VirtualAlloc(
+		uint64 lpAddress,
+		uint64 dwSize,
+		uint flAllocationType,
+		uint flProtect
+	) from "kernel32.dll";
+
+	function static uint64 New(uint64 inc)
+	{
+		uint64 addr = VirtualAlloc(0u, inc, 0x3000u, 0x04u);
+		return addr;
+	}
+
+	function unsafe static uint64 Read(uint64 fd, string buffer, uint64 len)
+	{
+		uint read = 0u;
+		ReadFile(fd, buffer, len as uint, ref read, 0u);
+		return read as uint64;
+	}
+
+
+	function unsafe static Write(uint64 fd, string str, uint64 len)
+	{
+		uint written = 0u;
+		WriteFile(fd, str, len as uint, ref written, 0u);
+	}
+
+	function static uint64 GetStdFd(uint64 code)
+	{
+		int winapi_handle_code = -((code + 10u) as int);
+		uint64 handle = GetStdHandle(winapi_handle_code);
+
+		return handle;
+	}
+
+	function static inline Exit(int errorCode)
+	{
+		ExitProcess(errorCode);
+	}
+}

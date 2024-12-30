@@ -1,0 +1,10 @@
+# A supported platform in Raze must implement the following trait
+trait RazeRuntime
+{
+	function uint64 Read(uint64 fd, string str, uint64 len);
+	function Write(uint64 fd, string str, uint64 len);
+	# 0 = stdin, 1 = stdout, 2 = stderr
+	function uint64 GetStdFd(uint64 code);
+	function uint64 New(uint64 inc);
+	function Exit(int errorCode);
+}

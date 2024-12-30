@@ -1,28 +1,31 @@
-class Foo { }
+trait Foo { }
 
 class Bar extends Foo
 {
-    function bool ReturnTrue()
+    int i = 9;
+
+    function PrintMessage()
     {
-        return true;
+        Print("Hello!");
     }
 }
 
-class Baz extends Foo { }
+class Baz extends Foo {}
 
-function int8 Main()
+function Main()
 {
     Foo foo = new Bar();
 
     # The 'is' operator will return 'true' if the expression on the left is an instance of the type on the right
-    bool b = foo is Bar;
+    # Note that, if the declaration of 'foo' above was changed to be an instance of Baz, the variable below would be false
+    bool isBar = foo is Bar;
 
-    # The 'as' operator will cast an oject to a derived class if possible. If not, it will return 'null'
-    Bar bar = foo as Bar;
-    if (b != null)
+    if (isBar == true)
     {
-        b |= b.ReturnTrue();
+        # The 'as' operator will cast an oject to a derived class if possible. If not, it will return 'null'
+        Bar bar = foo as Bar;
+        # Since the cast succeeded, we can now access bar's fields
+        bar.PrintMessage();
+        Print(bar.i.ToString());
     }
-
-    return b.ToInt8();
 }

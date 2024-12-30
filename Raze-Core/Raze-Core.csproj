@@ -21,4 +21,11 @@
     <EmbeddedResource Include="Src\Assembly\Assembler\Resources\EncodingSchema.yml" />
   </ItemGroup>
 
+ <ItemGroup>
+    <Content Include="Libraries/**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

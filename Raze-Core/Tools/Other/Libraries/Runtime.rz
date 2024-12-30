@@ -1,6 +1,0 @@
-# A supported platform in Raze must implement the following trait
-trait Runtime
-{
-	function uint64 New(uint64 inc);
-	function Exit(int errorCode);
-}

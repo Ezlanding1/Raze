@@ -1,0 +1,57 @@
+import String from Strings;
+
+function String Read() 
+{
+    return File.Read(0u, 128u);
+}
+function int ReadInt() 
+{
+    return String.StringToInt(Read());
+}
+
+function Main()
+{
+    Print("Raze Calculator Demo");
+
+    Print("Enter first number:");
+    int a = ReadInt();
+
+    Print("Enter operator (+, -, *, /):");
+    String op = Read();
+
+    Print("Enter second number:");
+    int b = ReadInt();
+
+    int result = 0;
+    bool valid = true;
+
+    if (op[0u] == '+')
+    {
+        result = a + b;
+    }
+    else if (op[0u] == '-')
+    {
+        result = a - b;
+    }
+    else if (op[0u] == '*')
+    {
+        result = a * b;
+    }
+    else if (op[0u] == '/')
+    {
+        result = a / b;
+    }
+    else
+    {
+        valid = false;
+    }
+
+    if (valid)
+    {
+        Print("Result: " + result.ToString());
+    }
+    else
+    {
+        Print("Unknown operator.");
+    }
+}

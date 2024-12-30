@@ -4,10 +4,10 @@
 # import Classes;
 
 # This variation of the import expression will import all the definitions from Classes.rz into the current context, allowing usage of 'Student' and 'Main'
-# import * from Classes; 
+#import * from Classes; 
 
 # Since we only need the 'Student' class, the following syntax can be used
-import Student from Classes;
+#import Student from Classes;
 
 function Main()
 {

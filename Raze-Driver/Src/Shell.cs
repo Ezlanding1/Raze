@@ -71,7 +71,7 @@ internal partial class Shell
     {
         Diagnostics.mainFile = compileOptions.FileArgument;
         Diagnostics.debugErrors = compileOptions.DebugErrorsOption;
-        Diagnostics.importDirs = compileOptions.libraries;
+        Diagnostics.importDirs.AddRange(compileOptions.libraries);
         Diagnostics.runtimeName = compileOptions.SystemInfo.GetRuntimeName();
         try
         {

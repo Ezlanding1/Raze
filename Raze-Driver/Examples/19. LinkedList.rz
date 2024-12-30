@@ -1,0 +1,40 @@
+class Node {
+    int value;
+    Node next;
+
+    function Node(int v) {
+        this.value = v;
+    }
+}
+
+function Append(Node head, int value) {
+    Node current = head;
+
+    while (current.next != null) {
+        current = current.next;
+    }
+
+    current.next = new Node(value);
+}
+
+function int SumList(Node head) {
+    int sum = 0;
+
+    Node current = head;
+
+    while (current != null) {
+        sum += current.value;
+        current = current.next;
+    }
+
+    return sum;
+}
+
+function Main() {
+    Node list = new Node(10);
+    Append(list, 14);
+    Append(list, 22);
+    Append(list, 8);
+
+    Print(SumList(list).ToString());
+}
