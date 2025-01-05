@@ -1,5 +1,3 @@
-import Raze;
-
 function Main()
 {
     Print("Hello, World!");
