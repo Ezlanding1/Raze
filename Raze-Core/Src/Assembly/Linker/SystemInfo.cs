@@ -87,6 +87,8 @@ public class SystemInfo
         };
     }
 
+    public bool IsUnix() => osabi != OsAbi.Windows;
+
     public bool OutputElf() => osabi != OsAbi.Windows;
 
     public string GetDefualtFileExtension() => OutputElf() ? ".elf" : ".exe";

@@ -81,5 +81,7 @@ internal partial class Shell
         {
             Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic(exception));
         }
+        
+        MakeExecutable(compileOptions.OutputOption, compileOptions.SystemInfo);
     }
 }
