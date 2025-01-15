@@ -107,10 +107,11 @@ Binary ::= Expression BinaryOp Expression
 Unary ::= UnaryOp Expression
 
 # 5.2 GetReference
-GetReference ::= IDENTIFIER { "." IDENTIFIER | Call }
+GetReference ::= IDENTIFIER | New { "." IDENTIFIER | Call }
 
 # 5.3 Functions
 Call ::= GetReference "(" [ ArgumentList ] ")"
+New ::= "new" GetReference "(" [ ArgumentList ] ")"
 ArgumentList ::= Expression { "," Expression }
 
 # 5.4 Type-Related Expressions
