@@ -1,5 +1,13 @@
 # Raze
 
+![GitHub Release](https://img.shields.io/github/v/release/Ezlanding1/Raze)
+![GitHub Release Date](https://img.shields.io/github/release-date/Ezlanding1/Raze)
+![GitHub language count](https://img.shields.io/github/languages/count/Ezlanding1/Raze)
+![Supported Platforms](https://img.shields.io/badge/%F0%9F%92%BB%20supports-%20Linux%20|%20Windows%20-blue)
+![License](https://img.shields.io/github/license/Ezlanding1/Raze)
+![GitHub stars](https://img.shields.io/github/stars/Ezlanding1/Raze)
+
+
 ### Raze Lang
 
 <!-- ![Raze-Logo](https://theaustincommon.com/wp-content/uploads/2015/11/Your-Logo-Here.png) -->
@@ -8,7 +16,7 @@
 
 ## About
 
-Raze is a Compiled, Object Oriented, Statically & Strictly typed toy programming language that combines all the intuitive features from languages such as C, C#, and Python into a neat syntax, while also offering access to lower level programming.
+Raze is a Compiled, Object Oriented, Statically & Strictly typed programming language that combines all the intuitive features from languages such as C, C#, and Python into a neat syntax, while also offering access to lower level programming.
 
 ## Syntax
 
@@ -31,52 +39,68 @@ function Main()
 
 ```
 
-See all the examples [here](Raze-Driver/Examples)
+For a more formal writeup of Raze, see the CFG [here](CFG.md)
 
-<!-- ## How to Install and Run
+See all the code examples [here](Raze-Driver/Examples)
 
+## How to Install and Run
 
+### Install from Release
 
-![](https://miro.medium.com/max/1400/1*zGZSsGmCMrAF3PEkrvUgKg.gif) -->
+Download the latest version of the Raze compiler from the [Releases Page](github.com/Ezlanding1/Raze/releases) and add the executable's location to PATH
+
+### Build from Source
+> Requires .NET 8.0 or greater
+
+Clone the repository:
+```bash
+git clone https://github.com/Ezlanding1/Raze.git
+cd Raze
+```
+Restore dependencies and build:
+```bash
+dotnet restore
+dotnet publish -c Release
+```
+
+The compiled binary will be located at `Raze-Driver/bin/Release/net8.0/Raze-Driver`
+
+Add this directory to your PATH to use Raze globally.
+
+## Compile & Run Code
+Create a file ending with `.rz`, or use `raze init` to create a sample program.
+
+Run the Raze program with
+```bash
+raze run Program.rz
+```
+
+Alternatively, use the `compile` option to compile the file to a standalone executable without running it
+```bash
+raze compile Program.rz
+```
+
+## Output Target Support
+
+### Supported Platforms
+
+| Operating System | Support | Notes |
+|-----------------|:---:|-------|
+| Windows         | ✅ | |
+| Linux           | ✅ | |
+| MacOS           | ❌ | Planned support |
+
+### Supported Architectures
+
+| Operating System | Support | Notes |
+|-----------------|:---:|-------|
+| x86-64         | ✅ | |
+| arm64          | ❌ | Planned support |
+| webassembly    | ❌ | Planned support |
+| riscv64        | ❌ | |
 
 ## TODO
-### Types
-- [ ] Type Nullability 
-- [ ] Generics & Arrays (`function Main(Array<string> args)`)
-- [ ] Fix string types
-- [ ] Interfaces
-- [ ] Multiple inheritance?
-### CodeGen and Backend
-- [ ] RIL (Raze Intermediate Language)
-- [ ] CodeGen optimizations
-- [ ] Constant propagation
-- [x] Fix register allocation (refactor, liveness analysis, graph coloring)
-- [ ] Managed heap & GC
-- [ ] Support for more platforms (Windows, Mac)
-- [ ] Support for more backends/architectures (LLVM, RISC-V, ARM, etc.)
-### Exprs
-- [ ] Structs, `stackalloc`, and structure alignment
-- [ ] `break` and `continue` keywords
-- [ ] Full constexpr (compile time evaluation) support
-- [ ] `static` and `const` variables
-- [ ] First class and higher order functions
-- [ ] Enums
-- [ ] `switch` statements
-- [ ] Anonynmous functions, classes, and enums
-- [ ] Decorators
-- [ ] Snytax cleanup
-### Compiler Messages
-- [ ] Add Compiler warnings and messages
-- [ ] Improve error line number reporting
-- [ ] Stack traces
-### Other
-- [ ] `constexpr` system (also to replace Primitives.cs)
-- [ ] Cleanups
-- [ ] Speed tests
-- [ ] Unit testing
-- [ ] LSP Server
-- [ ] Compiler rewrite in C/C++?
-- [ ] Implement a Roslyn analyzer to ensure marshalled structs have pack 1
+See the complete [TODO List](TODO.md) 
 
 ## Releases
 
