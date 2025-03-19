@@ -49,17 +49,17 @@ internal partial class Shell
                 }
 
                 CompileProgram(compileOptions);
-                Process.Start(compileOptions.OutputOption);
+
+                if (!compileOptions.DryRunOption)
+                    Process.Start(compileOptions.OutputOption);
             },
             compileOptions
         );
 
         initCommand.SetHandler((fileArgument) =>
             {
-                using (var fs = File.Create(fileArgument))
-                {
-                    InitTemplates.DefaultTemplate.CopyTo(fs);
-                }
+                using var fs = File.Create(fileArgument);
+                InitTemplates.DefaultTemplate.CopyTo(fs);
             },
             initOptions.FileArgument
         );
@@ -82,6 +82,6 @@ internal partial class Shell
             Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic(exception));
         }
         
-        MakeExecutable(compileOptions.OutputOption, compileOptions.SystemInfo);
+        MakeExecutable(compileOptions.OutputOption, compileOptions.SystemInfo, compileOptions.DryRunOption);
     }
 }

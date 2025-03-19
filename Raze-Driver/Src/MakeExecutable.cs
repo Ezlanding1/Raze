@@ -6,8 +6,10 @@ namespace Raze_Driver;
 
 internal partial class Shell
 {
-    public static void MakeExecutable(string path, SystemInfo systemInfo)
+    public static void MakeExecutable(string path, SystemInfo systemInfo, bool dryrun)
     {
+        if (dryrun) return;
+
         if (!File.Exists(path))
         {
             Diagnostics.Report(new Diagnostic.ImpossibleDiagnostic("Output executable file not found!"));
