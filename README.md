@@ -1,4 +1,10 @@
+<div align="center">
+
 # Raze
+
+<img src="logo.png" alt="Raze Logo" width="400">
+
+**A Modern C-Like Programming Language**
 
 ![GitHub Release](https://img.shields.io/github/v/release/Ezlanding1/Raze)
 ![GitHub Release Date](https://img.shields.io/github/release-date/Ezlanding1/Raze)
@@ -7,12 +13,11 @@
 ![License](https://img.shields.io/github/license/Ezlanding1/Raze)
 ![GitHub stars](https://img.shields.io/github/stars/Ezlanding1/Raze)
 
+<br>
 
-### Raze Lang
 
-<!-- ![Raze-Logo](https://theaustincommon.com/wp-content/uploads/2015/11/Your-Logo-Here.png) -->
+</div>
 
-> A Modern C-Like Programming Language
 
 ## About
 
@@ -42,6 +47,10 @@ function Main()
 For a more formal writeup of Raze, see the CFG [here](CFG.md)
 
 See all the code examples [here](Raze-Driver/Examples)
+
+### Syntax Highlighting
+
+Please refer to the [Raze Language Support](https://github.com/Ezlanding1/Raze-Language-Support) repo for instructions on adding syntax highlighting in Raze.
 
 ## How to Install and Run
 
