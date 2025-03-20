@@ -72,7 +72,7 @@ dotnet restore
 dotnet publish -c Release
 ```
 
-The compiled binary will be located at `Raze-Driver/bin/Release/net8.0/Raze-Driver`
+The compiled binary will be located at `Raze-Driver/bin/Release/net8.0/raze`
 
 Add this directory to your PATH to use Raze globally.
 

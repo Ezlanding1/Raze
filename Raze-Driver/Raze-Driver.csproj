@@ -6,6 +6,8 @@
     <RootNamespace>Raze_Driver</RootNamespace>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <Version>0.0.1</Version>
+    <AssemblyName>raze</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
