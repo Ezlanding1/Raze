@@ -30,6 +30,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
     public CodeGen(SystemInfo systemInfo)
     {
+        AssemblyExpr.LabelLiteral.SetLabelLiteralSize(systemInfo.OutputElf());
         FunctionPushPreserved.SetRedZoneSize(systemInfo.OutputElf());
     }
 
@@ -963,6 +964,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         if (expr.internalClass.HasVTable)
         {
             AssemblyExpr.Pointer ptr;
+            AssemblyExpr.IValue right;
 
             if (result.IsLiteral(out var resultLitBase))
             {
@@ -979,8 +981,10 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             Emit(new AssemblyExpr.Binary(
                 AssemblyExpr.Instruction.MOV,
                 ptr,
-                new AssemblyExpr.DataRef("VTABLE_FOR_" + expr.internalClass.name.lexeme)
+                right = MoveImmediate64ToMemory(new AssemblyExpr.DataRef("VTABLE_FOR_" + expr.internalClass.name.lexeme))
             ));
+            
+            alloc.Free(right);
         }
 
         alloc.Free(expr.call.Accept(this));
@@ -1051,6 +1055,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
     private AssemblyExpr.IValue CompareVTables(Expr.Is expr)
     {
         var left = expr.left.Accept(this);
+        AssemblyExpr.IValue right;
+
         if (left.IsPointer())
         {
             var reg = alloc.NextRegister(AssemblyExpr.Register.RegisterSize._64Bits);
@@ -1060,8 +1066,10 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         Emit(new AssemblyExpr.Binary(
             AssemblyExpr.Instruction.CMP,
             new AssemblyExpr.Pointer((AssemblyExpr.Register)left, -0, AssemblyExpr.Register.RegisterSize._64Bits),
-            new AssemblyExpr.DataRef("VTABLE_FOR_" + expr.right.type.name.lexeme)
+            right = MoveImmediate64ToMemory(new AssemblyExpr.DataRef("VTABLE_FOR_" + expr.right.type.name.lexeme))
         ));
+
+        alloc.Free(right);
         return left;
     }
 

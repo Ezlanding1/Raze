@@ -386,7 +386,7 @@ public abstract partial class AssemblyExpr
         }
         internal LiteralType type;
         public byte[] value;
-        public Register.RegisterSize Size => (Register.RegisterSize)value.Length;
+        public virtual Register.RegisterSize Size => (Register.RegisterSize)value.Length;
 
         private protected Literal(LiteralType type)
         {
@@ -441,6 +441,9 @@ public abstract partial class AssemblyExpr
             get => Encoding.ASCII.GetString(this.value);
             set => this.value = Encoding.ASCII.GetBytes(value);
         }
+        private static Register.RegisterSize? size = null;
+        public override Register.RegisterSize Size => 
+            size ?? throw Diagnostics.Panic(new Diagnostic.ImpossibleDiagnostic("LabelLiteral size unset!"));
 
         private protected LabelLiteral(LiteralType type, string name) : base(type)
         {
@@ -454,6 +457,10 @@ public abstract partial class AssemblyExpr
         {
             this.value = ImmediateGenerator.Generate(type, name, dataTypeSize);
         }
+
+        // In ELF files the .data section is at a 32-bit offset, whereas it's at a 64-bit offset in PE32+ files
+        public static void SetLabelLiteralSize(bool isElf) => 
+            size = isElf ? Register.RegisterSize._32Bits : Register.RegisterSize._64Bits;
 
         public override Assembler.Encoder.Operand ToAssemblerOperand()
         {
