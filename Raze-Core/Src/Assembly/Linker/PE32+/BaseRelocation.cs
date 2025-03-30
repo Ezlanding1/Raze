@@ -40,7 +40,7 @@ public partial class Linker
             public IMAGE_BASE_RELOCATION_BLOCK(BaseRelocationType baseRelocationType, WORD offset)
             {
                 this._data = offset;
-                this._data = (WORD)((_data & 0xF) | ((WORD)baseRelocationType << 12));
+                this._data = (WORD)((_data & 0xFFF) | ((WORD)baseRelocationType << 12));
             }
 
             public enum BaseRelocationType : WORD
