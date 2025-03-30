@@ -1,0 +1,9 @@
+function Main() 
+{
+    # 'readonly' variables may not be modified
+    readonly int i = 9;
+    # Uncommenting the following line would cause an error
+    # i += 7;
+    readonly int j = i + 7;
+    Print(j.ToString());
+}
