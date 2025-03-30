@@ -46,7 +46,19 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         public object? VisitMemoryRegister(AssemblyExpr.Pointer ptr1, AssemblyExpr.Register reg2) => null;
         public object? VisitRegister(AssemblyExpr.Register reg) => null;
         public object? VisitRegisterImmediate(AssemblyExpr.Register reg1, AssemblyExpr.Literal imm2) => null;
-        public object? VisitRegisterMemory(AssemblyExpr.Register reg1, AssemblyExpr.Pointer ptr2) => null;
+        
+        public object? VisitRegisterMemory(AssemblyExpr.Register reg1, AssemblyExpr.Pointer ptr2)
+        {
+            if (instruction == AssemblyExpr.Instruction.LEA &&
+                ptr2.offset.value.All(x => x == 0) &&
+                reg1.name == ptr2.value?.name &&
+                reg1.Size == ptr2.value.Size &&
+                reg1.Size == InstructionUtils.SYS_SIZE)
+            {
+                RemoveCurrentInstruction();
+            }
+            return null;
+        }
 
         public object? VisitRegisterRegister(AssemblyExpr.Register reg1, AssemblyExpr.Register reg2)
         {

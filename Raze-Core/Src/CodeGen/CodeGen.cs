@@ -815,10 +815,16 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             }
 
             bool isFloatingType = IsFloatingType(function.refReturn ? null : function._returnType.type);
-            var _returnRegister = new AssemblyExpr.Register(
-                InstructionUtils.GetCallingConvention(cconv).returnRegisters.GetRegisters(isFloatingType)[0],
-                isFloatingType ? AssemblyExpr.Register.RegisterSize._128Bits : operand.Size
-            );
+
+            var regName = InstructionUtils.GetCallingConvention(cconv).returnRegisters.GetRegisters(isFloatingType)[0];
+            var regSize = instruction switch
+            {
+                AssemblyExpr.Instruction.LEA => InstructionUtils.SYS_SIZE,
+                _ when isFloatingType => AssemblyExpr.Register.RegisterSize._128Bits,
+                _ => operand.Size
+            };
+
+            var _returnRegister = new AssemblyExpr.Register(regName, regSize);
 
             if (!operand.IsLiteral() && operand.Size < AssemblyExpr.Register.RegisterSize._32Bits)
             {
