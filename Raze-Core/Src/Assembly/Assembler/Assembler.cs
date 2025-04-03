@@ -129,7 +129,7 @@ public partial class Assembler :
                 if (nonResolvingPass)
                 {
                     int size = data[^1].GetBytes().Length;
-                    symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(instruction, DataLocation, size, false, size));
+                    symbolTable.unresolvedReferences.Add(new Linker.ReferenceInfo(instruction, DataLocation, size, false));
                 }
             }
             else

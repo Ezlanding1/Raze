@@ -124,10 +124,8 @@ public partial class Linker
             return GetRefsWithAbsoluteAddressing(assembler.symbolTable)
                 .GroupBy(x =>
                 {
-                    if (x.textSection)
-                        return textLocation + (((ulong)x.location / virtualAlignment) * virtualAlignment);
-                    else
-                        return textLocation + (((ulong)x.location / virtualAlignment) * virtualAlignment);
+                    ulong baseLocation = x.textSection ? textLocation : dataLocation;
+                    return baseLocation + (((ulong)x.location / virtualAlignment) * virtualAlignment);
                 });
         }
 

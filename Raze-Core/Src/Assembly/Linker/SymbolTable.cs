@@ -49,18 +49,13 @@ public partial class Linker
         public int size;
         public bool textSection;
         public bool absoluteAddress = true;
-        public int dataSize;
 
-        public ReferenceInfo(AssemblyExpr instruction, int location, int size, bool textSection, int dataSize) : base(true)
+        public ReferenceInfo(AssemblyExpr instruction, int location, int size, bool textSection) : base(true)
         {
             this.instruction = instruction;
             this.location = location;
             this.size = size;
             this.textSection = textSection;
-            this.dataSize = dataSize;
-        }
-        public ReferenceInfo(AssemblyExpr instruction, int location, int size, bool textSection) : this(instruction, location, size, textSection, (int)InstructionUtils.SYS_SIZE)
-        {
         }
     }
 }

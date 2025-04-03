@@ -26,7 +26,9 @@ public partial class Linker
 
                 foreach (var refInfo in refInfoGroup)
                 {
-                    ushort location = (ushort)((ulong)refInfo.location - refInfoGroup.Key + textLocation + (ulong)refInfo.size - (ulong)refInfo.dataSize);
+                    ulong dataSize = 8;
+                    ulong pageOffset = (ulong)refInfo.location - refInfoGroup.Key + textLocation;
+                    ushort location = (ushort)(pageOffset + (ulong)refInfo.size - dataSize);
                     blocks.Add(new(PE32Plus.IMAGE_BASE_RELOCATION_BLOCK.BaseRelocationType.IMAGE_REL_BASED_DIR64, location));
                 }
 
