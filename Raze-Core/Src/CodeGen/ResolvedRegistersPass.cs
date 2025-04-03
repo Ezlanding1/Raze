@@ -61,6 +61,19 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                     instruction.operand2 = new AssemblyExpr.Pointer(ptr.value, ptr.offset, instruction.operand1.Size);
                 }
             }
+            // MOVZX R64, R/M32 is not encodable, and instead MOV R32, R/M32 zero-extends
+            // To handle this in inline asm, instructions of the former type are legal and converted into the latter here
+            else if (instruction.instruction == AssemblyExpr.Instruction.MOVZX &&
+                instruction.operand1.Size == AssemblyExpr.Register.RegisterSize._64Bits &&
+                instruction.operand2.Size == AssemblyExpr.Register.RegisterSize._32Bits)
+            {
+                instruction.instruction = AssemblyExpr.Instruction.MOV;
+                // We can safely assume that operand1 is a register
+                var reg1 = (AssemblyExpr.Register)instruction.operand1;
+
+                instruction.operand1 = new AssemblyExpr.Register(reg1.name, instruction.operand2.Size);
+            }
+
             instruction.operand1.Accept(this);
             instruction.operand2.Accept(this);
             return null;
