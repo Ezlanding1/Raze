@@ -94,9 +94,14 @@ public partial class Analyzer
 
         public virtual T VisitIfExpr(Expr.If expr)
         {
-            expr.conditionals[0].condition.Accept(this);
-            expr.conditionals[0].block.Accept(this);
+            foreach (var conditional in expr.conditionals)
+            {
+                conditional.condition.Accept(this);
+                conditional.block.Accept(this);
+            }
 
+            expr._else?.Accept(this);
+            
             return default;
         }
 
