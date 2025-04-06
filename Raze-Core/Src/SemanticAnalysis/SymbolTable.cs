@@ -106,7 +106,7 @@ public partial class Analyzer
             using (new SaveContext())
             {
                 SetContext(importClass);
-                if (import.importType.typeRef.typeName != null)
+                if (import.importType.typeRef.typeName != null && import.importType.typeRef.typeName.Count > 0)
                 {
                     InitialPass.HandleTypeNameReference(import.importType.typeRef.typeName);
                 }
