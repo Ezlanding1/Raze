@@ -39,27 +39,27 @@ function int Clamp(int value, int min, int max)
     return value;
 }
 
-function int Ceil(float f)
-{
-    int i = f.ToInt();
+# function int Ceil(float f)
+# {
+#     int i = f as int;
 
-    if (i >= 0)
-    {
-        return i + 1;
-    }
-    return i;
-}
+#     if (f > i)
+#     {
+#         return i + 1;
+#     }
+#     return i;
+# }
 
-function int Floor(float f)
-{
-    int i = f.ToInt();
+# function int Floor(float f)
+# {
+#     int i = f as int;
 
-    if (i >= 0)
-    {
-        return i;
-    }
-    return i - 1;
-}
+#     if (f < i)
+#     {
+#         return i - 1;
+#     }
+#     return i;
+# }
 
 function inline float64 E() { return 2.718281828459045; }
 

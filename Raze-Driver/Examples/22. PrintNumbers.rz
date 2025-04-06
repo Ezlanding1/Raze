@@ -1,0 +1,16 @@
+# Example: Print Numbers
+
+import String from Strings;
+
+function int Main()
+{
+    String s = new String("");
+
+    for (int i = 0; i < 20; i++)
+    {
+        s += i.ToString();
+    }
+
+    Print(s);
+    return s.Length() as int;
+}

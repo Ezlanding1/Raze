@@ -1,0 +1,35 @@
+# Examples: Sieve of Eratosthenes
+
+import BoolArray from Arrays;
+
+function Main()
+{
+    readonly int n = 50;
+    Print("Prime numbers up to " + n.ToString() + ":\n");
+
+    # true = not prime, false = prime
+    BoolArray isNotPrime = new BoolArray((n + 1) as int64);
+
+    isNotPrime[0] = true;
+    isNotPrime[1] = true;
+
+    for (int i = 2; i * i <= n; i++)
+    {
+        if (!isNotPrime[i])
+        {
+            for (int j = i * i; j <= n; j += i)
+            {
+                isNotPrime[j] = true;
+            }
+        }
+    }
+
+    # Print primes
+    for (int i = 2; i <= n; i++)
+    {
+        if (!isNotPrime[i])
+        {
+            Print(i.ToString());
+        }
+    }
+}

@@ -7,7 +7,9 @@
 #import * from Classes; 
 
 # Since we only need the 'Student' class, the following syntax can be used
-#import Student from Classes;
+import Student from Classes;
+
+# If you copy this code elsewhere, don't forget to bring 'Classes.rz' as well!
 
 function Main()
 {

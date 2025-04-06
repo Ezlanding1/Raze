@@ -1,15 +1,39 @@
 
 class IntArray 
 {
+	int64 length;
 	HeapData data;
 
-	function IntArray(int64 i)
+	function IntArray(int64 length)
 	{
-		data = heapalloc((i*4) as uint64);
+		this.length = length;
+		data = heapalloc((length*4) as uint64);
 	}
 
 	function operator static ref int Indexer(IntArray arr, int i)
 	{
 		return ref arr.data[i*4];
+	}
+}
+
+class BoolArray 
+{
+	int64 length;
+	HeapData data;
+
+	function BoolArray(int64 length)
+	{
+		this.length = length;
+		data = heapalloc((length*4) as uint64);
+	}
+
+	function operator static ref bool Indexer(BoolArray arr, uint64 i)
+	{
+		return ref HeapData.GetBool(arr.data, i);
+	}
+
+	function operator static ref bool Indexer(BoolArray arr, int i)
+	{
+		return ref HeapData.GetBool(arr.data, i as uint64);
 	}
 }

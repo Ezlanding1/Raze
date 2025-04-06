@@ -1,0 +1,26 @@
+# Example: Largest Number
+
+import String from Strings;
+# Using the 'import *' syntax, we don't have to specify 'Math.Max', and can just use 'Max'
+import * from Math;
+
+function int ReadInt()
+{
+    return String.StringToInt(File.Read(0u, 128u));
+}
+
+function Main()
+{
+    Print("Get Maximum Number\n");
+
+    int max = 0;
+
+    bool run = true;
+    while (run)
+    {
+        Print("Enter an integer:");
+        int newNum = ReadInt();
+        max = Max(max, newNum);
+        Print("Current Max: " + max.ToString());
+    }
+}

@@ -23,6 +23,9 @@ primitive class bool sizeof 1 extends Boolean
     function operator unsafe inline bool BitwiseXor(bool i, bool j){asm {return XOR $i, $j;}}
     function operator unsafe inline bool Not(bool i){asm {return XOR $i, 1;}}
 
+    function operator unsafe inline bool Cast(uint8 i) {asm {return $i;}}
+    function operator unsafe inline bool Cast(int8 i) {asm {return $i;}}
+
     function inline string ToString(){ if (this) { return "true"; } return "false"; }
 }
 
@@ -61,6 +64,8 @@ primitive class uint8 sizeof 1 extends UnsignedInteger
 
     function operator unsafe inline uint8 Cast(bool b){asm {return $b;}}
     function operator unsafe inline uint8 Cast(char c){asm {return $c;}}
+
+    function String ToString() { return (this as uint64).ToString(); }
 }
 
 primitive class uint16 sizeof 2 extends UnsignedInteger 
@@ -95,6 +100,8 @@ primitive class uint16 sizeof 2 extends UnsignedInteger
     function operator unsafe inline uint16 Cast(int16 i) {asm {return $i;}}
     function operator unsafe inline uint16 Cast(int i) {asm {alloc REG::16; CAST REG, $i; return REG;}}
     function operator unsafe inline uint16 Cast(int64 i) {asm {alloc REG::16; CAST REG, $i; return REG;}}
+
+    function String ToString() { return (this as uint64).ToString(); }
 }
 
 primitive class uint sizeof 4 extends UnsignedInteger 
@@ -130,6 +137,7 @@ primitive class uint sizeof 4 extends UnsignedInteger
     function operator unsafe inline uint Cast(int i) {asm {return $i;}}
     function operator unsafe inline uint Cast(int64 i) {asm {alloc REG::32; CAST REG, $i; return REG;}}
 
+    function String ToString() { return (this as uint64).ToString(); }
 }
 
 primitive class uint64 sizeof 8 extends UnsignedInteger 
@@ -164,6 +172,28 @@ primitive class uint64 sizeof 8 extends UnsignedInteger
     function operator unsafe inline uint64 Cast(int16 i) {asm {alloc REG::64; MOVSX REG, $i; return REG;}}
     function operator unsafe inline uint64 Cast(int i) {asm {alloc REG::64; MOVSX REG, $i; return REG;}}
     function operator unsafe inline uint64 Cast(int64 i) {asm {return $i;}}
+
+    function unsafe String ToString()
+    {
+        uint64 num = this;
+        uint64 length = 1u;
+        while (num > 9u) 
+        {
+            length++;
+            num /= 10u;
+        }
+
+        String result = new String(length);
+        num = this;
+
+        for (int64 i = (length as int64) - 1; i >= 0; i--)
+        {
+            result[i as uint64] = ((num % 10u) + 48u) as uint8 as char;
+            num /= 10u;
+        }
+
+        return result;
+    }
 }
 
 primitive class int8 sizeof 1 extends Integer 
@@ -202,6 +232,11 @@ primitive class int8 sizeof 1 extends Integer
 
     function operator unsafe inline int8 Cast(bool b){asm {return $b;}}
     function operator unsafe inline int8 Cast(char c){asm {return $c;}}
+
+    function operator unsafe inline int8 Cast(float f) { return f as int as int8; }
+    function operator unsafe inline int8 Cast(float64 f) { return f as int as int8; }
+
+    function String ToString() { return (this as int64).ToString(); }
 }
 
 primitive class int16 sizeof 2 extends Integer 
@@ -237,6 +272,11 @@ primitive class int16 sizeof 2 extends Integer
     function operator unsafe inline int16 Cast(int16 i) {asm {return $i;}}
     function operator unsafe inline int16 Cast(int i) {asm {alloc REG::16; CAST REG, $i; return REG;}}
     function operator unsafe inline int16 Cast(int64 i) {asm {alloc REG::16; CAST REG, $i; return REG;}}
+
+    function operator unsafe inline int16 Cast(float f) { return f as int as int16; }
+    function operator unsafe inline int16 Cast(float64 f) { return f as int as int16; }
+
+    function String ToString() { return (this as int64).ToString(); }
 }
 
 primitive class int sizeof 4 extends Integer 
@@ -273,36 +313,10 @@ primitive class int sizeof 4 extends Integer
     function operator unsafe inline int Cast(int i) {asm {return $i;}}
     function operator unsafe inline int Cast(int64 i) {asm {alloc REG::32; CAST REG, $i; return REG;}}
 
-    function inline unsafe int Cast(float f) {asm {alloc REG::32; CVTTSS2SI REG, $f; return REG;}}
-    function inline unsafe int Cast(float64 f) {asm {alloc REG::32; CVTTSD2SI REG, $f; return REG;}}
+    function operator unsafe inline int Cast(float f) {asm {alloc REG::32; CVTTSS2SI REG, $f; return REG;}}
+    function operator unsafe inline int Cast(float64 f) {asm {alloc REG::32; CVTTSD2SI REG, $f; return REG;}}
 
-    function unsafe String ToString()
-    {
-        if (this < 0)
-        {
-            int num = -this;
-            return "-" + num.ToString();
-        }
-
-        int num = this;
-        uint64 length = 1u;
-        while (num > 9) 
-        {
-            length++;
-            num /= 10;
-        }
-
-        String result = new String(length);
-        num = this;
-            
-        for (int64 i = (length as int64) - 1; i >= 0; i--)
-        {
-            result[i as uint64] = ((num % 10) + 48) as uint8 as char;
-            num /= 10;
-        }
-
-        return result;
-    }
+    function String ToString() { return (this as int64).ToString(); }
 }
 
 primitive class int64 sizeof 8 extends Integer 
@@ -338,6 +352,23 @@ primitive class int64 sizeof 8 extends Integer
     function operator unsafe inline int64 Cast(int16 i) {asm {alloc REG::64; MOVSX REG, $i; return REG;}}
     function operator unsafe inline int64 Cast(int i) {asm {alloc REG::64; MOVSX REG, $i; return REG;}}
     function operator unsafe inline int64 Cast(int64 i) {asm {return $i;}}
+
+    function operator unsafe inline int64 Cast(float f) {asm {alloc REG::64; CVTTSS2SI REG, $f; return REG;}}
+    function operator unsafe inline int64 Cast(float64 f) {asm {alloc REG::64; CVTTSD2SI REG, $f; return REG;}}
+
+    function String ToString()
+    {
+        if (this < 0)
+        {
+            uint64 unsigned = (-this) as uint64;
+            return "-" + unsigned.ToString();
+        }
+        else
+        {
+            uint64 unsigned = this as uint64;
+            return unsigned.ToString();
+        }
+    }
 }
 
 primitive class float sizeof 4 extends Floating 
@@ -478,6 +509,14 @@ class HeapData
 	}
 	
     function unsafe operator inline static ref uint8 Indexer(HeapData arr, uint64 i)
+	{
+		asm {
+            ADD $arr, $i;
+            return $arr;
+		}
+	}
+
+    function unsafe inline static ref bool GetBool(HeapData arr, uint64 i)
 	{
 		asm {
             ADD $arr, $i;

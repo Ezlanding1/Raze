@@ -1,0 +1,23 @@
+# Example: Tower of Hanoi
+
+import String from Strings;
+
+function MoveDisk(int n, string source, string target, string auxiliary)
+{
+    if (n == 1)
+    {
+        Print("Move disk 1 from " + source + " to " + target);
+    }
+    else
+    {
+        MoveDisk(n - 1, source, auxiliary, target);
+        Print("Move disk " + n.ToString() + " from " + source + " to " + target);
+        MoveDisk(n - 1, auxiliary, target, source);
+    }
+}
+
+function Main()
+{
+    int numDisks = 3;
+    MoveDisk(numDisks, "A", "C", "B");
+}

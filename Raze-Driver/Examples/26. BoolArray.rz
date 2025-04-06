@@ -1,0 +1,24 @@
+# Example: Bool Array
+
+import BoolArray from Arrays;
+import String from Strings;
+
+function Main()
+{
+    BoolArray arr = new BoolArray(50);
+
+    # Set array to alternating values of 'true' and 'false'
+    for (int i = 0; i < 50; i++) 
+    {
+        arr[i as uint64] = i % 2 == 0;
+    }
+
+    # Print array
+    String result = new String("");
+    for (int i = 0; i < 50; i++)
+    {
+        result += arr[i as uint64].ToString() + " ";
+    }
+
+    Print(result);
+}

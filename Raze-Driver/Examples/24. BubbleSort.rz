@@ -1,0 +1,42 @@
+# Example: Bubble Sort
+
+import IntArray from Arrays;
+
+function Swap(ref int a, ref int b)
+{
+    int tmp = a;
+    a = b;
+    b = tmp;
+}
+
+function Main()
+{
+    readonly int len = 6;
+    IntArray arr = new IntArray(len as int64);
+
+    arr[0] = 64;
+    arr[1] = 34;
+    arr[2] = 25;
+    arr[3] = 12;
+    arr[4] = 22;
+    arr[5] = 11;
+
+
+    # Bubble Sort
+    for (int i = 0; i < len - 1; i++)
+    {
+        for (int j = 0; j < len - i - 1; j++)
+        {
+            if (arr[j] > arr[j + 1])
+            {
+                Swap(ref arr[j], ref arr[j + 1]);
+            }
+        }
+    }
+
+    # Print sorted array
+    for (int i = 0; i < len; i++)
+    {
+        Print(arr[i].ToString());
+    }
+}
