@@ -826,7 +826,7 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
             var _returnRegister = new AssemblyExpr.Register(regName, regSize);
 
-            if (!operand.IsLiteral() && operand.Size < AssemblyExpr.Register.RegisterSize._32Bits)
+            if (!operand.IsLiteral() && regSize < AssemblyExpr.Register.RegisterSize._32Bits)
             {
                 Emit(PartialRegisterOptimize(((Expr.Function)alloc.Current)._returnType.type, _returnRegister, operand));
             }
