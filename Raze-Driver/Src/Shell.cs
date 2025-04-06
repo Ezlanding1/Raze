@@ -51,7 +51,14 @@ internal partial class Shell
                 CompileProgram(compileOptions);
 
                 if (!compileOptions.DryRunOption)
-                    Process.Start(compileOptions.OutputOption);
+                {
+                    var fileName = Path.Combine(
+                        Environment.CurrentDirectory, 
+                        compileOptions.OutputOption
+                    );
+
+                    Process.Start(fileName)?.WaitForExit();
+                }
             },
             compileOptions
         );
