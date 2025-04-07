@@ -6,8 +6,7 @@
 
 **A Modern C-Like Programming Language**
 
-![GitHub Release](https://img.shields.io/github/v/release/Ezlanding1/Raze)
-![GitHub Release Date](https://img.shields.io/github/release-date/Ezlanding1/Raze)
+![GitHub Release](https://img.shields.io/github/v/release/Ezlanding1/Raze?include_prereleases)
 ![GitHub language count](https://img.shields.io/github/languages/count/Ezlanding1/Raze)
 ![Supported Platforms](https://img.shields.io/badge/%F0%9F%92%BB%20supports-%20Linux%20|%20Windows%20-blue)
 ![License](https://img.shields.io/github/license/Ezlanding1/Raze)
@@ -56,7 +55,9 @@ Please refer to the [Raze Language Support](https://github.com/Ezlanding1/Raze-L
 
 ### Install from Release
 
-Download the latest version of the Raze compiler from the [Releases Page](github.com/Ezlanding1/Raze/releases) and add the executable's location to PATH
+Download the latest version of the Raze compiler from the [Releases Page](https://github.com/Ezlanding1/Raze/releases) and add the executable's location to PATH (or run the `raze`/`raze.exe` program in the unzipped folder directly)
+
+Feel free to familiarize yourself with the language with the [examples](Raze-Driver/Examples/)
 
 ### Build from Source
 > Requires .NET 8.0 or greater
@@ -107,6 +108,13 @@ raze compile Program.rz
 | arm64          | ❌ | Planned support |
 | webassembly    | ❌ | Planned support |
 | riscv64        | ❌ | |
+
+## Cross-Compiling
+To compile a Raze program for another platform, use the `--sysinfo-osabi=Platform` and `--sysinfo-architecture=Architecture` flags. For instance, I could compile `Program.rz` for a x86-64 Windows machine with
+```bash
+raze compile --sysinfo-osabi=Windows Program.rz
+```
+and the compiler will generate an `output.exe` file for Windows
 
 ## TODO
 See the complete [TODO List](TODO.md) 
