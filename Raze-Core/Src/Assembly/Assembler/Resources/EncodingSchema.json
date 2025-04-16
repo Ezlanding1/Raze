@@ -35,7 +35,7 @@
     {
       "Instruction": "ADC RM8, R8",
       "OpCode": "10",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     },
     {
       "Instruction": "ADC RM16, R16",
@@ -50,7 +50,7 @@
     {
       "Instruction": "ADC R8, RM8",
       "OpCode": "12",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     },
     {
       "Instruction": "ADC R16, RM16",
@@ -65,12 +65,12 @@
     {
       "Instruction": "ADC AX, IMM16",
       "OpCode": "15",
-      "EncodingType": "SizePrefix | NoModRegRM"
+      "EncodingType": "NoModRegRM | SizePrefix"
     },
     {
       "Instruction": "ADC RM8, IMM8",
       "OpCode": "80",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix",
       "OpCodeExtension": 2
     },
     {
@@ -99,7 +99,7 @@
     {
       "Instruction": "ADC RAX, IMM32",
       "OpCode": "15",
-      "EncodingType": "RexWPrefix | SignExtends | NoModRegRM"
+      "EncodingType": "NoModRegRM | RexWPrefix | SignExtends"
     },
     {
       "Instruction": "ADC RM32, IMM32",
@@ -160,7 +160,7 @@
     {
       "Instruction": "ADD RM8, R8",
       "OpCode": "00",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     },
     {
       "Instruction": "ADD RM16, R16",
@@ -175,7 +175,7 @@
     {
       "Instruction": "ADD R8, RM8",
       "OpCode": "02",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     },
     {
       "Instruction": "ADD R16, RM16",
@@ -190,12 +190,12 @@
     {
       "Instruction": "ADD AX, IMM16",
       "OpCode": "05",
-      "EncodingType": "SizePrefix | NoModRegRM"
+      "EncodingType": "NoModRegRM | SizePrefix"
     },
     {
       "Instruction": "ADD RM8, IMM8",
       "OpCode": "80",
-      "EncodingType": "RexPrefix | SignExtends | NoUpper8BitEncoding",
+      "EncodingType": "NoUpper8BitEncoding | SignExtends | RexPrefix",
       "OpCodeExtension": 0
     },
     {
@@ -224,7 +224,7 @@
     {
       "Instruction": "ADD RAX, IMM32",
       "OpCode": "05",
-      "EncodingType": "RexWPrefix | SignExtends | NoModRegRM"
+      "EncodingType": "NoModRegRM | RexWPrefix | SignExtends"
     },
     {
       "Instruction": "ADD RM32, IMM32",
@@ -357,7 +357,7 @@
     {
       "Instruction": "AND RM8, R8",
       "OpCode": "20",
-      "EncodingType": "RexPrefix | SignExtends | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | SignExtends | RexPrefix"
     },
     {
       "Instruction": "AND RM16, R16",
@@ -372,7 +372,7 @@
     {
       "Instruction": "AND R8, RM8",
       "OpCode": "22",
-      "EncodingType": "RexPrefix | SignExtends | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | SignExtends | RexPrefix"
     },
     {
       "Instruction": "AND R16, RM16",
@@ -387,12 +387,12 @@
     {
       "Instruction": "AND AX, IMM16",
       "OpCode": "25",
-      "EncodingType": "SizePrefix | NoModRegRM"
+      "EncodingType": "NoModRegRM | SizePrefix"
     },
     {
       "Instruction": "AND RM8, IMM8",
       "OpCode": "80",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix",
       "OpCodeExtension": 4
     },
     {
@@ -421,7 +421,7 @@
     {
       "Instruction": "AND RAX, IMM32",
       "OpCode": "25",
-      "EncodingType": "RexWPrefix | SignExtends | NoModRegRM"
+      "EncodingType": "NoModRegRM | RexWPrefix | SignExtends"
     },
     {
       "Instruction": "AND RM32, IMM32",
@@ -512,7 +512,7 @@
     {
       "Instruction": "BSWAP R64",
       "OpCode": "0F C8",
-      "EncodingType": "RexWPrefix | NoModRegRM | AddRegisterToOpCode"
+      "EncodingType": "AddRegisterToOpCode | RexWPrefix | NoModRegRM"
     }
   ],
   "BT": [
@@ -656,7 +656,7 @@
     {
       "Instruction": "CALL IMM32",
       "OpCode": "E8",
-      "EncodingType": "SignExtends | RelativeJump"
+      "EncodingType": "RelativeJump | SignExtends"
     }
   ],
   "CBW": [
@@ -1272,7 +1272,7 @@
     {
       "Instruction": "CMP RM8, R8",
       "OpCode": "38",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     },
     {
       "Instruction": "CMP RM16, R16",
@@ -1287,7 +1287,7 @@
     {
       "Instruction": "CMP R8, RM8",
       "OpCode": "3A",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     },
     {
       "Instruction": "CMP R16, RM16",
@@ -1302,12 +1302,12 @@
     {
       "Instruction": "CMP AX, IMM16",
       "OpCode": "3D",
-      "EncodingType": "SizePrefix | NoModRegRM"
+      "EncodingType": "NoModRegRM | SizePrefix"
     },
     {
       "Instruction": "CMP RM8, IMM8",
       "OpCode": "80",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix",
       "OpCodeExtension": 7
     },
     {
@@ -1336,7 +1336,7 @@
     {
       "Instruction": "CMP RAX, IMM32",
       "OpCode": "3D",
-      "EncodingType": "RexWPrefix | SignExtends | NoModRegRM"
+      "EncodingType": "NoModRegRM | RexWPrefix | SignExtends"
     },
     {
       "Instruction": "CMP RM32, IMM32",
@@ -1464,6 +1464,26 @@
       "OpCode": "F3 0F C2"
     }
   ],
+  "CMPXCHG": [
+    {
+      "Instruction": "CMPXCHG RM8, R8",
+      "OpCode": "0F B0"
+    },
+    {
+      "Instruction": "CMPXCHG RM32, R32",
+      "OpCode": "0F B1"
+    },
+    {
+      "Instruction": "CMPXCHG RM16, R16",
+      "OpCode": "0F B1",
+      "EncodingType": "SizePrefix"
+    },
+    {
+      "Instruction": "CMPXCHG RM64, R64",
+      "OpCode": "0F B1",
+      "EncodingType": "RexWPrefix"
+    }
+  ],
   "CMPXCHG8B": [
     {
       "Instruction": "CMPXCHG8B M64",
@@ -1509,7 +1529,7 @@
     {
       "Instruction": "CRC32 R32, RM8",
       "OpCode": "F2 0F 38 F0",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     },
     {
       "Instruction": "CRC32 R32, RM16",
@@ -1599,6 +1619,10 @@
     }
   ],
   "CVTSI2SD": [
+    {
+      "Instruction": "CVTSI2SD XMM, RM32",
+      "OpCode": "F2 0F 2A"
+    },
     {
       "Instruction": "CVTSI2SD XMM, RM64",
       "OpCode": "F2 0F 2A",
@@ -1714,7 +1738,7 @@
     {
       "Instruction": "DEC RM8",
       "OpCode": "FE",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix",
       "OpCodeExtension": 1
     },
     {
@@ -1744,7 +1768,7 @@
     {
       "Instruction": "DIV RM8",
       "OpCode": "F6",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix",
       "OpCodeExtension": 6
     },
     {
@@ -2454,7 +2478,7 @@
     {
       "Instruction": "IDIV RM8",
       "OpCode": "F6",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix",
       "OpCodeExtension": 7
     },
     {
@@ -2484,7 +2508,7 @@
     {
       "Instruction": "IMUL RM8",
       "OpCode": "F6",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix",
       "OpCodeExtension": 5
     },
     {
@@ -2564,7 +2588,7 @@
     {
       "Instruction": "IN AX, IMM8",
       "OpCode": "E5",
-      "EncodingType": "SizePrefix | NoModRegRM"
+      "EncodingType": "NoModRegRM | SizePrefix"
     },
     {
       "Instruction": "IN AX, DX",
@@ -2586,7 +2610,7 @@
     {
       "Instruction": "INC RM8",
       "OpCode": "FE",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix",
       "OpCodeExtension": 0
     },
     {
@@ -3131,12 +3155,12 @@
     {
       "Instruction": "JMP IMM8",
       "OpCode": "EB",
-      "EncodingType": "SignExtends | RelativeJump"
+      "EncodingType": "RelativeJump | SignExtends"
     },
     {
       "Instruction": "JMP IMM32",
       "OpCode": "E9",
-      "EncodingType": "SignExtends | RelativeJump"
+      "EncodingType": "RelativeJump | SignExtends"
     }
   ],
   "LDMXCSR": [
@@ -3453,7 +3477,7 @@
     {
       "Instruction": "MOV RM8, R8",
       "OpCode": "88",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     },
     {
       "Instruction": "MOV RM16, R16",
@@ -3468,7 +3492,7 @@
     {
       "Instruction": "MOV R8, RM8",
       "OpCode": "8A",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     },
     {
       "Instruction": "MOV R16, RM16",
@@ -3493,7 +3517,7 @@
     {
       "Instruction": "MOV R8, IMM8",
       "OpCode": "B0",
-      "EncodingType": "RexPrefix | NoModRegRM | NoUpper8BitEncoding | AddRegisterToOpCode"
+      "EncodingType": "NoUpper8BitEncoding | NoModRegRM | RexPrefix | AddRegisterToOpCode"
     },
     {
       "Instruction": "MOV RM8, IMM8",
@@ -3508,12 +3532,12 @@
     {
       "Instruction": "MOV R16, IMM16",
       "OpCode": "B8",
-      "EncodingType": "AddRegisterToOpCode | SizePrefix | NoModRegRM"
+      "EncodingType": "AddRegisterToOpCode | NoModRegRM | SizePrefix"
     },
     {
       "Instruction": "MOV RM8, IMM8",
       "OpCode": "C6",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix",
       "OpCodeExtension": 0
     },
     {
@@ -3557,7 +3581,7 @@
     {
       "Instruction": "MOV R64, IMM64",
       "OpCode": "B8",
-      "EncodingType": "RexWPrefix | NoModRegRM | AddRegisterToOpCode"
+      "EncodingType": "AddRegisterToOpCode | RexWPrefix | NoModRegRM"
     },
     {
       "Instruction": "MOV AL, MOFFS8",
@@ -3577,7 +3601,7 @@
     {
       "Instruction": "MOV MOFFS8, AL",
       "OpCode": "A2",
-      "EncodingType": "RexWPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexWPrefix"
     },
     {
       "Instruction": "MOV MOFFS16, AX",
@@ -3992,7 +4016,7 @@
     {
       "Instruction": "MOVSX R64, RM8",
       "OpCode": "0F BE",
-      "EncodingType": "RexWPrefix | SignExtends | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexWPrefix | SignExtends"
     },
     {
       "Instruction": "MOVSX R64, RM16",
@@ -4056,7 +4080,7 @@
     {
       "Instruction": "MOVZX R64, RM8",
       "OpCode": "0F B6",
-      "EncodingType": "RexWPrefix | ZeroExtends | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexWPrefix | ZeroExtends"
     },
     {
       "Instruction": "MOVZX R64, RM16",
@@ -4084,7 +4108,7 @@
     {
       "Instruction": "MUL RM8",
       "OpCode": "F6",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix",
       "OpCodeExtension": 4
     },
     {
@@ -4144,7 +4168,7 @@
     {
       "Instruction": "NEG RM8",
       "OpCode": "F6",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix",
       "OpCodeExtension": 3
     },
     {
@@ -4191,7 +4215,7 @@
     {
       "Instruction": "NOT RM8",
       "OpCode": "F6",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix",
       "OpCodeExtension": 2
     },
     {
@@ -4243,7 +4267,7 @@
     {
       "Instruction": "OR RM8, R8",
       "OpCode": "08",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     },
     {
       "Instruction": "OR RM16, R16",
@@ -4258,7 +4282,7 @@
     {
       "Instruction": "OR R8, RM8",
       "OpCode": "0A",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     },
     {
       "Instruction": "OR R16, RM16",
@@ -4273,12 +4297,12 @@
     {
       "Instruction": "OR AX, IMM16",
       "OpCode": "0D",
-      "EncodingType": "SizePrefix | NoModRegRM"
+      "EncodingType": "NoModRegRM | SizePrefix"
     },
     {
       "Instruction": "OR RM8, IMM8",
       "OpCode": "80",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix",
       "OpCodeExtension": 1
     },
     {
@@ -4307,7 +4331,7 @@
     {
       "Instruction": "OR RAX, IMM32",
       "OpCode": "0D",
-      "EncodingType": "RexWPrefix | SignExtends | NoModRegRM"
+      "EncodingType": "NoModRegRM | RexWPrefix | SignExtends"
     },
     {
       "Instruction": "OR RM32, IMM32",
@@ -4319,6 +4343,12 @@
       "OpCode": "81",
       "EncodingType": "RexWPrefix | SignExtends",
       "OpCodeExtension": 1
+    }
+  ],
+  "ORPD": [
+    {
+      "Instruction": "ORPD XMM, XMMRM128",
+      "OpCode": "66 0F 56"
     }
   ],
   "ORPS": [
@@ -4393,12 +4423,12 @@
     {
       "Instruction": "OUTS DX, RM8",
       "OpCode": "F3 6E",
-      "EncodingType": "RexPrefix | SizePrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix | SizePrefix"
     },
     {
       "Instruction": "OUTS DX, RM8",
       "OpCode": "F3 6E",
-      "EncodingType": "RexWPrefix | SizePrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexWPrefix | SizePrefix"
     },
     {
       "Instruction": "OUTS DX, RM32",
@@ -4970,6 +5000,12 @@
       "OpCode": "66 0F 38 22"
     }
   ],
+  "PMOVSXWD": [
+    {
+      "Instruction": "PMOVSXWD XMM, XMMRM64",
+      "OpCode": "66 0F 38 23"
+    }
+  ],
   "PMOVSXWQ": [
     {
       "Instruction": "PMOVSXWQ XMM, XMMRM32",
@@ -5094,7 +5130,7 @@
     {
       "Instruction": "POP R16",
       "OpCode": "58",
-      "EncodingType": "AddRegisterToOpCode | SizePrefix | NoModRegRM"
+      "EncodingType": "AddRegisterToOpCode | NoModRegRM | SizePrefix"
     },
     {
       "Instruction": "POP RM16",
@@ -5531,6 +5567,13 @@
       "OpCode": "66 0F 38 17"
     }
   ],
+  "PTWRITE": [
+    {
+      "Instruction": "PTWRITE RM32",
+      "OpCode": "F3 0F AE",
+      "OpCodeExtension": 4
+    }
+  ],
   "PUNPCKHBW": [
     {
       "Instruction": "PUNPCKHBW MMX, MMXRM64",
@@ -5617,7 +5660,7 @@
     {
       "Instruction": "PUSH R16",
       "OpCode": "50",
-      "EncodingType": "AddRegisterToOpCode | SizePrefix | NoModRegRM"
+      "EncodingType": "AddRegisterToOpCode | NoModRegRM | SizePrefix"
     },
     {
       "Instruction": "PUSH RM16",
@@ -6449,7 +6492,7 @@
     {
       "Instruction": "SBB RM8, R8",
       "OpCode": "18",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     },
     {
       "Instruction": "SBB RM16, R16",
@@ -6464,7 +6507,7 @@
     {
       "Instruction": "SBB R8, RM8",
       "OpCode": "1A",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     },
     {
       "Instruction": "SBB R16, RM16",
@@ -6479,12 +6522,12 @@
     {
       "Instruction": "SBB AX, IMM16",
       "OpCode": "1D",
-      "EncodingType": "SizePrefix | NoModRegRM"
+      "EncodingType": "NoModRegRM | SizePrefix"
     },
     {
       "Instruction": "SBB RM8, IMM8",
       "OpCode": "80",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix",
       "OpCodeExtension": 3
     },
     {
@@ -6513,7 +6556,7 @@
     {
       "Instruction": "SBB RAX, IMM32",
       "OpCode": "1D",
-      "EncodingType": "RexWPrefix | SignExtends | NoModRegRM"
+      "EncodingType": "NoModRegRM | RexWPrefix | SignExtends"
     },
     {
       "Instruction": "SBB RM32, IMM32",
@@ -6584,7 +6627,7 @@
     {
       "Instruction": "SETA RM8",
       "OpCode": "0F 97",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETAE": [
@@ -6595,7 +6638,7 @@
     {
       "Instruction": "SETAE RM8",
       "OpCode": "0F 93",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETB": [
@@ -6606,7 +6649,7 @@
     {
       "Instruction": "SETB RM8",
       "OpCode": "0F 92",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETBE": [
@@ -6617,7 +6660,7 @@
     {
       "Instruction": "SETBE RM8",
       "OpCode": "0F 96",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETC": [
@@ -6628,7 +6671,7 @@
     {
       "Instruction": "SETC RM8",
       "OpCode": "0F 92",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETE": [
@@ -6639,7 +6682,7 @@
     {
       "Instruction": "SETE RM8",
       "OpCode": "0F 94",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETG": [
@@ -6650,7 +6693,7 @@
     {
       "Instruction": "SETG RM8",
       "OpCode": "0F 9F",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETGE": [
@@ -6661,7 +6704,7 @@
     {
       "Instruction": "SETGE RM8",
       "OpCode": "0F 9D",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETL": [
@@ -6672,7 +6715,7 @@
     {
       "Instruction": "SETL RM8",
       "OpCode": "0F 9C",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETLE": [
@@ -6683,7 +6726,7 @@
     {
       "Instruction": "SETLE RM8",
       "OpCode": "0F 9E",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETNA": [
@@ -6694,7 +6737,7 @@
     {
       "Instruction": "SETNA RM8",
       "OpCode": "0F 96",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETNAE": [
@@ -6705,7 +6748,7 @@
     {
       "Instruction": "SETNAE RM8",
       "OpCode": "0F 92",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETNB": [
@@ -6716,7 +6759,7 @@
     {
       "Instruction": "SETNB RM8",
       "OpCode": "0F 93",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETNBE": [
@@ -6727,7 +6770,7 @@
     {
       "Instruction": "SETNBE RM8",
       "OpCode": "0F 97",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETNC": [
@@ -6738,7 +6781,7 @@
     {
       "Instruction": "SETNC RM8",
       "OpCode": "0F 93",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETNE": [
@@ -6749,7 +6792,7 @@
     {
       "Instruction": "SETNE RM8",
       "OpCode": "0F 95",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETNG": [
@@ -6760,7 +6803,7 @@
     {
       "Instruction": "SETNG RM8",
       "OpCode": "0F 9E",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETNGE": [
@@ -6771,7 +6814,7 @@
     {
       "Instruction": "SETNGE RM8",
       "OpCode": "0F 9C",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETNL": [
@@ -6782,7 +6825,7 @@
     {
       "Instruction": "SETNL RM8",
       "OpCode": "0F 9D",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETNLE": [
@@ -6793,7 +6836,7 @@
     {
       "Instruction": "SETNLE RM8",
       "OpCode": "0F 9F",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETNO": [
@@ -6804,7 +6847,7 @@
     {
       "Instruction": "SETNO RM8",
       "OpCode": "0F 91",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETNP": [
@@ -6815,7 +6858,7 @@
     {
       "Instruction": "SETNP RM8",
       "OpCode": "0F 9B",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETNS": [
@@ -6826,7 +6869,7 @@
     {
       "Instruction": "SETNS RM8",
       "OpCode": "0F 99",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETNZ": [
@@ -6837,7 +6880,7 @@
     {
       "Instruction": "SETNZ RM8",
       "OpCode": "0F 95",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETO": [
@@ -6848,7 +6891,7 @@
     {
       "Instruction": "SETO RM8",
       "OpCode": "0F 90",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETP": [
@@ -6859,7 +6902,7 @@
     {
       "Instruction": "SETP RM8",
       "OpCode": "0F 9A",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETPE": [
@@ -6870,7 +6913,7 @@
     {
       "Instruction": "SETPE RM8",
       "OpCode": "0F 9A",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETPO": [
@@ -6881,7 +6924,7 @@
     {
       "Instruction": "SETPO RM8",
       "OpCode": "0F 9B",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETS": [
@@ -6892,7 +6935,7 @@
     {
       "Instruction": "SETS RM8",
       "OpCode": "0F 98",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETZ": [
@@ -6903,7 +6946,7 @@
     {
       "Instruction": "SETZ RM8",
       "OpCode": "0F 94",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     }
   ],
   "SETSSBSY": [
@@ -7088,6 +7131,12 @@
       "OpCode": "0F 51"
     }
   ],
+  "SQRTSD": [
+    {
+      "Instruction": "SQRTSD XMM, XMMRM64",
+      "OpCode": "F2 0F 51"
+    }
+  ],
   "SQRTSS": [
     {
       "Instruction": "SQRTSS XMM, XMMRM32",
@@ -7201,7 +7250,7 @@
     {
       "Instruction": "SUB RM8, R8",
       "OpCode": "28",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     },
     {
       "Instruction": "SUB RM16, R16",
@@ -7216,7 +7265,7 @@
     {
       "Instruction": "SUB R8, RM8",
       "OpCode": "2A",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     },
     {
       "Instruction": "SUB R16, RM16",
@@ -7231,12 +7280,12 @@
     {
       "Instruction": "SUB AX, IMM16",
       "OpCode": "2D",
-      "EncodingType": "SizePrefix | NoModRegRM"
+      "EncodingType": "NoModRegRM | SizePrefix"
     },
     {
       "Instruction": "SUB RM8, IMM8",
       "OpCode": "80",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix",
       "OpCodeExtension": 5
     },
     {
@@ -7265,7 +7314,7 @@
     {
       "Instruction": "SUB RAX, IMM32",
       "OpCode": "2D",
-      "EncodingType": "RexWPrefix | SignExtends | NoModRegRM"
+      "EncodingType": "NoModRegRM | RexWPrefix | SignExtends"
     },
     {
       "Instruction": "SUB RM32, IMM32",
@@ -7360,7 +7409,7 @@
     {
       "Instruction": "TEST RM8, R8",
       "OpCode": "84",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     },
     {
       "Instruction": "TEST RM16, R16",
@@ -7375,12 +7424,12 @@
     {
       "Instruction": "TEST AX, IMM16",
       "OpCode": "A9",
-      "EncodingType": "SizePrefix | NoModRegRM"
+      "EncodingType": "NoModRegRM | SizePrefix"
     },
     {
       "Instruction": "TEST RM8, IMM8",
       "OpCode": "F6",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix",
       "OpCodeExtension": 0
     },
     {
@@ -7397,7 +7446,7 @@
     {
       "Instruction": "TEST RAX, IMM32",
       "OpCode": "A9",
-      "EncodingType": "RexWPrefix | SignExtends | NoModRegRM"
+      "EncodingType": "NoModRegRM | RexWPrefix | SignExtends"
     },
     {
       "Instruction": "TEST RM32, IMM32",
@@ -7601,7 +7650,7 @@
     {
       "Instruction": "XADD RM8, R8",
       "OpCode": "0F C0",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     },
     {
       "Instruction": "XADD RM16, R16",
@@ -7640,22 +7689,22 @@
     {
       "Instruction": "XCHG AX, R16",
       "OpCode": "90",
-      "EncodingType": "AddRegisterToOpCode | SizePrefix | NoModRegRM"
+      "EncodingType": "AddRegisterToOpCode | NoModRegRM | SizePrefix"
     },
     {
       "Instruction": "XCHG R16, AX",
       "OpCode": "90",
-      "EncodingType": "AddRegisterToOpCode | SizePrefix | NoModRegRM"
+      "EncodingType": "AddRegisterToOpCode | NoModRegRM | SizePrefix"
     },
     {
       "Instruction": "XCHG RAX, R64",
       "OpCode": "90",
-      "EncodingType": "RexWPrefix | NoModRegRM | AddRegisterToOpCode"
+      "EncodingType": "AddRegisterToOpCode | RexWPrefix | NoModRegRM"
     },
     {
       "Instruction": "XCHG R64, RAX",
       "OpCode": "90",
-      "EncodingType": "RexWPrefix | NoModRegRM | AddRegisterToOpCode"
+      "EncodingType": "AddRegisterToOpCode | RexWPrefix | NoModRegRM"
     },
     {
       "Instruction": "XCHG RM8, R8",
@@ -7676,12 +7725,12 @@
     {
       "Instruction": "XCHG RM8, R8",
       "OpCode": "86",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     },
     {
       "Instruction": "XCHG R8, RM8",
       "OpCode": "86",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     },
     {
       "Instruction": "XCHG RM16, R16",
@@ -7769,7 +7818,7 @@
     {
       "Instruction": "XOR RM8, R8",
       "OpCode": "30",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     },
     {
       "Instruction": "XOR RM16, R16",
@@ -7784,7 +7833,7 @@
     {
       "Instruction": "XOR R8, RM8",
       "OpCode": "32",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding"
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix"
     },
     {
       "Instruction": "XOR R16, RM16",
@@ -7799,12 +7848,12 @@
     {
       "Instruction": "XOR AX, IMM16",
       "OpCode": "35",
-      "EncodingType": "SizePrefix | NoModRegRM"
+      "EncodingType": "NoModRegRM | SizePrefix"
     },
     {
       "Instruction": "XOR RM8, IMM8",
       "OpCode": "80",
-      "EncodingType": "RexPrefix | NoUpper8BitEncoding",
+      "EncodingType": "NoUpper8BitEncoding | RexPrefix",
       "OpCodeExtension": 6
     },
     {
@@ -7833,7 +7882,7 @@
     {
       "Instruction": "XOR RAX, IMM32",
       "OpCode": "35",
-      "EncodingType": "RexWPrefix | SignExtends | NoModRegRM"
+      "EncodingType": "NoModRegRM | RexWPrefix | SignExtends"
     },
     {
       "Instruction": "XOR RM32, IMM32",
@@ -7845,6 +7894,12 @@
       "OpCode": "81",
       "EncodingType": "RexWPrefix | SignExtends",
       "OpCodeExtension": 6
+    }
+  ],
+  "XORPD": [
+    {
+      "Instruction": "XORPD XMM, XMMRM128",
+      "OpCode": "66 0F 57"
     }
   ],
   "XORPS": [

@@ -33,14 +33,15 @@ to_flags = {
     x : {} for x in FORMATTED_HEADERS
 }
 to_flags['instruction'] = [
-    ('8*', 'NoUpper8BitEncoding', '8'),
+    ('8\*', 'NoUpper8BitEncoding', '8'),
     ('81', 'NoUpper8BitEncoding', '8'),
-    ('8**', 'NoUpper8BitEncoding', '8'),
+    ('8\*\*', 'NoUpper8BitEncoding', '8'),
     ('r32a', '', 'r32'),
     ('r32b', '', 'r32'),
     ('r64a', '', 'r64'),
     ('r64b', '', 'r32'),
     ('Sreg2', '', 'Sreg'),
+    ('r32/m32', '', 'r/m32'),
     ('r/m82', '', 'r/m8'),
     ('r/m162', '', 'r/m16'),
     ('r/m642', '', 'r/m64'),
@@ -49,51 +50,22 @@ to_flags['instruction'] = [
     ('moffs323', '', 'moffs32'),
     ('moffs643', '', 'moffs64'),
     ('r16/r32/r64', '', 'reg'),
-    (' mm1/m', '', ' mm/m'),
-    (' mm2/m', '', ' mm/m'),
-    (' mm3/m', '', ' mm/m'),
-    (' mm1', '', ' mm'),
-    (' mm2', '', ' mm'),
-    (' mm3', '', ' mm'),
-    ('xmm1/m', '', 'xmm/m'),
-    ('xmm2/m', '', 'xmm/m'),
-    ('xmm3/m', '', 'xmm/m'),
-    ('xmm1', '', 'xmm'),
-    ('xmm2', '', 'xmm'),
-    ('xmm3', '', 'xmm'),
-    ('ymm1/m', '', 'ymm/m'),
-    ('ymm2/m', '', 'ymm/m'),
-    ('ymm3/m', '', 'ymm/m'),
-    ('ymm1', '', 'ymm'),
-    ('ymm2', '', 'ymm'),
-    ('ymm3', '', 'ymm'),
-    ('zmm1/m', '', 'zmm/m'),
-    ('zmm2/m', '', 'zmm/m'),
-    ('zmm3/m', '', 'zmm/m'),
-    ('zmm1', '', 'zmm'),
-    ('zmm2', '', 'zmm'),
-    ('zmm3', '',' zmm')
+    (r'( |x|y|z)mm[123]/m', '', r'\1mm/m'),
+    (r'( |x|y|z)mm[123]', '', r'\1mm')
 ]
 to_flags['opcode'] = [
-    ('REX + ', '', 'REX '),
-    ('REX.W + ', '', 'REX.W '),
+    ('REX \+ ', '', 'REX '),
+    ('REX.W \+ ', '', 'REX.W '),
     ('REX.w ', '', 'REX.W '),
     ('/r1', '', '/r'),
     ('/r2', '', '/r'),
-    ('+ rb', '' , '+rb'), 
-    ('+ rw', '' , '+rw'), 
-    ('+ rd', '' , '+rd'), 
-    ('+ ro', '' , '+ro'),
-    (' +rb', '' , '+rb'), 
-    (' +rw', '' , '+rw'), 
-    (' +rd', '' , '+rd'), 
-    (' +ro', '' , '+ro'),
+    (r'\s*\+\s*(r[bowd])', '', r'+\1'),
     ('/05', '', '/5'),
     ('01/7', '', '01 /7'),
     ('0F3A', '', '0F 3A'),
     ('0F38', '', '0F 38'),
     ('ib1', '', 'ib'),
-    ('13/r', '', '13 /r')
+    (r'([0-9])/r', '', r'\1 /r')
 ]
 to_flags['description'] = [
     ('sign extend', 'SignExtends', 'sign extend'),
@@ -135,9 +107,10 @@ def add_to_instructions(instructions: List[Dict[str, str]], idx: int, header: st
 
     if PARSE_FLAGS:
         for k, v, r in to_flags[header]:
-            if k in value and v not in instructions[idx]['flags']:
+            value, n = re.subn(k, r, value)
+
+            if n and v not in instructions[idx]['flags']:
                 instructions[idx]['flags'] += (v + ', ') if v else ''
-            value = value.replace(k, r)
 
     if not EXPORT_DESCRIPTIONS and header == 'description':
         return
