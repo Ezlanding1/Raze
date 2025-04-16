@@ -15,7 +15,7 @@ public partial class Assembler
             // Supports: [Base], [Base + Displacement], [Rip + Displacement], [Displacement]
             public static IList<IInstruction> EncodeMemoryOperand(AssemblyExpr.Pointer ptr1, byte operand2, Assembler assembler, int ptrIdx)
             {
-                byte[] offset = GetImmInstruction(assembler.encoding.operands[ptrIdx].size, ptr1.offset, assembler, assembler.encoding.encodingType).GetBytes();
+                byte[] offset = GetImmInstruction(Operand.OperandSize._64Bits, ptr1.offset, assembler, assembler.encoding.encodingType).GetBytes();
 
                 if (ptr1.value != null)
                 {
