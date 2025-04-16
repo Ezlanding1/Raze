@@ -280,7 +280,7 @@ public partial class Parser
             }
             else if (definitionType.lexeme == "primitive")
             {
-                ExpectValue(Token.TokenType.RESERVED, "class", "'class' keyword");
+                ExpectValue(Token.TokenType.RESERVED, ["class"], "'class' keyword");
                 Expect(Token.TokenType.IDENTIFIER, definitionType.lexeme + " name");
                 var name = Previous();
 
@@ -289,7 +289,7 @@ public partial class Parser
                     Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidPrimitiveName, name.location, name.lexeme));
                 }
 
-                ExpectValue(Token.TokenType.IDENTIFIER, "sizeof", "'sizeof' keyword");
+                ExpectValue(Token.TokenType.IDENTIFIER, ["sizeof"], "'sizeof' keyword");
 
                 int size = -1;
 
@@ -1032,14 +1032,14 @@ public partial class Parser
         return false;
     }
 
-    private void ExpectValue(Token.TokenType type, string value, string errorMessage)
+    private void ExpectValue(Token.TokenType type, IEnumerable<string> value, string errorMessage)
     {
-        if (current != null && current.type == type && current.lexeme == value)
+        if (current != null && current.type == type && value.Contains(current.lexeme))
         {
             Advance();
             return;
         }
-        Expected($"{{ {type} : {value} }}", errorMessage);
+        Expected($"{{ {type} : {string.Join(" or ", value)} }}", errorMessage);
     }
 
     private void Expected(string type, string errorMessage)

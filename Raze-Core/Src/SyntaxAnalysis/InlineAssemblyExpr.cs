@@ -192,12 +192,22 @@ public abstract partial class Expr
             public override Variable? GetVariable() => this;
         }
 
-        public class Literal(Expr.Literal literal) : Operand
+        public class Literal(Expr.Literal literal, Literal.FpSizeSuffix fpSizeSuffix) : Operand
         {
             Expr.Literal literal = literal;
+            public enum FpSizeSuffix
+            {
+                None,
+                Float = 4,
+                Double = 8
+            }
+            FpSizeSuffix fpSizeSuffix = fpSizeSuffix;
 
             public override AssemblyExpr.IValue ToOperand(CodeGen codeGen, AssemblyExpr.Register.RegisterSize defaultSize)
             {
+                if (fpSizeSuffix != FpSizeSuffix.None)
+                    defaultSize = (AssemblyExpr.Register.RegisterSize)fpSizeSuffix;
+
                 return ((AssemblyExpr.ILiteralBase)literal.Accept(codeGen)!).CreateLiteral(defaultSize);
             }
 

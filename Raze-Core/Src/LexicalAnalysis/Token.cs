@@ -20,6 +20,9 @@ public partial class Token
         this.location = location;
     }
 
+    internal LiteralToken ToLiteralToken()
+        => new((Parser.LiteralTokenType)type, lexeme, location);
+
     public override string ToString()
     {
         return $"{{ {type} }}:{{ {lexeme} }}";

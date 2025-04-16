@@ -185,7 +185,19 @@ public partial class Parser
             }
             else if (parser.TypeMatch(Token.TokenType.INTEGER, Token.TokenType.REF_STRING, Token.TokenType.FLOATING, Token.TokenType.STRING))
             {
-                return new Expr.InlineAssembly.Literal(new(new((LiteralTokenType)parser.Previous().type, parser.Previous().lexeme, parser.Previous().location)));
+                LiteralToken literal = parser.Previous().ToLiteralToken();
+
+                Expr.InlineAssembly.Literal.FpSizeSuffix fpSizeSuffix = Expr.InlineAssembly.Literal.FpSizeSuffix.None;
+                if (parser.Previous().type == Token.TokenType.FLOATING)
+                {
+                    string errMsg = "'d' (double) or 'f' (float) suffix after inline asm float literal";
+                    parser.ExpectValue(Token.TokenType.IDENTIFIER, [ "d", "f" ], errMsg);
+                    fpSizeSuffix = parser.Previous().lexeme == "f" ? 
+                        Expr.InlineAssembly.Literal.FpSizeSuffix.Float : 
+                        Expr.InlineAssembly.Literal.FpSizeSuffix.Double;
+                }
+
+                return new Expr.InlineAssembly.Literal(new(literal), fpSizeSuffix);
             }
             else
             {
