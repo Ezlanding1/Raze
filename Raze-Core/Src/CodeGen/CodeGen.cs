@@ -104,8 +104,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         if (instance)
         {
             var _thisArg = argValues[0];
-            alloc.AllocParam(0, _thisArg.Size, null, _thisArg, cconv, paramRegisters);
-            Emit(new AssemblyExpr.Binary(GetMoveInstruction(false, null), paramRegisters[^1], _thisArg));
+            var _thisType = invokable.internalFunction.enclosing;
+            alloc.AllocParam(0, _thisArg.Size, _thisType, _thisArg, cconv, paramRegisters);
+            Emit(new AssemblyExpr.Binary(GetMoveInstruction(false, _thisType as Expr.DataType), paramRegisters[^1], _thisArg));
             alloc.Free(_thisArg);
         }
         for (int i = 0; i < invokable.internalFunction.Arity; i++)

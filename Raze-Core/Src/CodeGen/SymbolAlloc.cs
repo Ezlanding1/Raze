@@ -47,11 +47,22 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             if (instance)
             {
                 var enclosing = SymbolTableSingleton.SymbolTable.NearestEnclosingClass(function);
+
+                Expr.Type? _thisType = enclosing;
+                bool _thisIsFloat = IsFloatingType(_thisType);
+
                 int size = enclosing!.allocSize;
+                var regSize = _thisIsFloat ?
+                    AssemblyExpr.Register.RegisterSize._128Bits :
+                    (AssemblyExpr.Register.RegisterSize)size;
+
+                var instruction = GetMoveInstruction(false, _thisType as Expr.DataType);
+                var regName = InstructionUtils.GetParamRegisters(_thisIsFloat)[0];
+
                 codeGen.Emit(new AssemblyExpr.Binary(
-                    AssemblyExpr.Instruction.MOV, 
+                    instruction, 
                     new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, -size, (AssemblyExpr.Register.RegisterSize)size), 
-                    new AssemblyExpr.Register(paramRegisters[0], size))
+                    new AssemblyExpr.Register(regName, regSize))
                 );
                 function.size += size;
             }
