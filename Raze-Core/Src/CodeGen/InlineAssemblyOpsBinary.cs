@@ -144,6 +144,44 @@ public abstract partial class CodeGen
                 ReturnOperand(codeGen, binary, binary.operand1, op1);
                 DeallocVariables(codeGen, (binary.operand1, op1), (binary.operand2, op2));
             }
+
+            // This method could be generalized to 'DefaultPackedFloatingInstruction' if needed
+            // Note: The Raze compiler will not align stack memory for this method! (The data section will be aligned, however)
+            // Please use the XORPS/XORPD instructions carefully to prevent alignment issues
+            public static void XORPS_XORPD(CodeGen codeGen, Expr.InlineAssembly.BinaryInstruction binary)
+            {
+                AssemblyExpr.IValue op1 = binary.operand1.ToOperand(codeGen, AssemblyExpr.Register.RegisterSize._32Bits).NonPointerNonLiteral(codeGen, binary.operand1.Type());
+                
+                int dataSectionSize = codeGen.currentDataSectionSize;
+                var op2 = binary.operand2.ToOperand(codeGen, op1.Size);
+                
+                if (op2.IsPointer(out var ptr) && ptr.offset.type == AssemblyExpr.Literal.LiteralType.RefData)
+                {
+                    ((AssemblyExpr.IRegisterPointer)op2).Size = op1.Size;
+
+                    // Align data section to 16-byte boundary
+                    int numPadBytes = 16 - (dataSectionSize % 16);
+                    if (numPadBytes != 16)
+                    {
+                        IEnumerable<byte[]> padBytes = Enumerable.Range(0, numPadBytes)
+                            .Select(_ => new byte[1]);
+
+                        codeGen.assembly.data.Insert(codeGen.assembly.data.Count - 1,
+                            new AssemblyExpr.Data(null,
+                                AssemblyExpr.Literal.LiteralType.Integer,
+                                padBytes
+                            )
+                        );
+                        codeGen.currentDataSectionSize += numPadBytes;
+                    }
+                }
+
+                codeGen.Emit(new AssemblyExpr.Binary(binary.instruction, op1, op2));
+
+                ReturnOperand(codeGen, binary, binary.operand1, op1);
+                DeallocVariables(codeGen, (binary.operand1, op1), (binary.operand2, op2));
+            }
+
         }
     }
 }

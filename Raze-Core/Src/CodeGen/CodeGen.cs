@@ -12,6 +12,8 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 {
     internal Assembly assembly = new();
 
+    internal int currentDataSectionSize = 0;
+
     private protected int conditionalCount;
     private protected string ConditionalLabel => CreateConditionalLabel(conditionalCount);
     private protected string CreateConditionalLabel(int i) => "L" + i;
@@ -1095,8 +1097,9 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         assembly.text.Add(instruction);
     }
 
-    internal void EmitData(AssemblyExpr.DataExpr instruction)
+    internal void EmitData(AssemblyExpr.Data instruction)
     {
+        currentDataSectionSize += instruction.literal.value.Sum(x => x.Length);
         assembly.data.Add(instruction);
     }
 

@@ -371,21 +371,89 @@ primitive class int64 sizeof 8 extends Integer
     }
 }
 
-primitive class float sizeof 4 extends Floating 
+primitive class float sizeof 4 extends Floating
 {
     function inline static operator unsafe float Add(float a, float b){asm {return ADDSS $a, $b;}}
+    function inline static operator unsafe float Subtract(float a, float b){asm {return SUBSS $a, $b;}}
+    function inline static operator unsafe float Subtract(float a){asm {return XORPS $a, -0.0f;}}
+    function inline static operator unsafe float Multiply(float a, float b){asm {return MULSS $a, $b;}}
+    function inline static operator unsafe float Divide(float a, float b){asm {return DIVSS $a, $b;}}
+    function inline static operator unsafe float Increment(ref float a){a += 1.0; return a;}
 
-    function inline static operator unsafe float Cast(float64 f) {asm {alloc REG:x:; CVTSD2SS REG, $f; return REG;}}
+    function inline static operator unsafe bool EqualTo(float a, float b){asm {UCOMISS $a, $b; alloc REG::8; return SETE REG;}}
+    function inline static operator unsafe bool NotEqualTo(float a, float b){asm {UCOMISS $a, $b; alloc REG::8; return SETNE REG;}}
+    function inline static operator unsafe bool GreaterThan(float a, float b){asm {UCOMISS $a, $b; alloc REG::8; return SETA REG;}}
+    function inline static operator unsafe bool LessThan(float a, float b){asm {UCOMISS $a, $b; alloc REG::8; return SETB REG;}}
+    function inline static operator unsafe bool GreaterThanOrEqualTo(float a, float b){asm {UCOMISS $a, $b; alloc REG::8; return SETAE REG;}}
+    function inline static operator unsafe bool LessThanOrEqualTo(float a, float b){asm {UCOMISS $a, $b; alloc REG::8; return SETBE REG;}}
+
+    function inline static operator unsafe float Cast(int i){asm {alloc REG:x:; CVTSI2SS REG, $i; return REG;}}
+    function inline static operator unsafe float Cast(int64 i){asm {alloc REG:x:; CVTSI2SS REG, $i; return REG;}}
+    function inline static operator unsafe float Cast(uint i){asm {alloc REG:x:; CVTSI2SS REG, $i; return REG;}}
+    function inline static operator unsafe float Cast(uint64 i){asm {alloc REG:x:; CVTSI2SS REG, $i; return REG;}}
+    function inline static operator unsafe float Cast(int8 i){asm {alloc REG:x:; CVTSI2SS REG, $i; return REG;}}
+    function inline static operator unsafe float Cast(int16 i){asm {alloc REG:x:; CVTSI2SS REG, $i; return REG;}}
+    function inline static operator unsafe float Cast(uint8 i){asm {alloc REG:x:; CVTSI2SS REG, $i; return REG;}}
+    function inline static operator unsafe float Cast(uint16 i){asm {alloc REG:x:; CVTSI2SS REG, $i; return REG;}}
+    function inline static operator unsafe float Cast(float64 f){asm {alloc REG:x:; CVTSD2SS REG, $f; return REG;}}
+
+    function String ToString() { return (this as float64).ToString(); }
 }
+
 
 primitive class float64 sizeof 8 extends Floating 
 {
     function inline static operator unsafe float64 Add(float64 a, float64 b){asm {return ADDSD $a, $b;}}
+    function inline static operator unsafe float64 Subtract(float64 a, float64 b){asm {return SUBSD $a, $b;}}
+    function inline static operator unsafe float64 Subtract(float64 a){asm {return XORPD $a, -0.0d;}}
+    function inline static operator unsafe float64 Multiply(float64 a, float64 b){asm {return MULSD $a, $b;}}
+    function inline static operator unsafe float64 Divide(float64 a, float64 b){asm {return DIVSD $a, $b;}}
+    function inline static operator unsafe float64 Increment(ref float64 a){a += 1.0; return a;}
 
-    function inline unsafe float64 Cast(float f) {asm {alloc REG:x:; CVTSS2SD REG, $f; return REG;}}
+    function inline static operator unsafe bool EqualTo(float64 a, float64 b){asm {UCOMISD $a, $b; alloc REG::8; return SETE REG;}}
+    function inline static operator unsafe bool NotEqualTo(float64 a, float64 b){asm {UCOMISD $a, $b; alloc REG::8; return SETNE REG;}}
+    function inline static operator unsafe bool GreaterThan(float64 a, float64 b){asm {UCOMISD $a, $b; alloc REG::8; return SETA REG;}}
+    function inline static operator unsafe bool LessThan(float64 a, float64 b){asm {UCOMISD $a, $b; alloc REG::8; return SETB REG;}}
+    function inline static operator unsafe bool GreaterThanOrEqualTo(float64 a, float64 b){asm {UCOMISD $a, $b; alloc REG::8; return SETAE REG;}}
+    function inline static operator unsafe bool LessThanOrEqualTo(float64 a, float64 b){asm {UCOMISD $a, $b; alloc REG::8; return SETBE REG;}}
+
+    function inline static operator unsafe float64 Cast(int i){asm {alloc REG:x:; CVTSI2SD REG, $i; return REG;}}
+    function inline static operator unsafe float64 Cast(int64 i){asm {alloc REG:x:; CVTSI2SD REG, $i; return REG;}}
+    function inline static operator unsafe float64 Cast(uint i){asm {alloc REG:x:; CVTSI2SD REG, $i; return REG;}}
+    function inline static operator unsafe float64 Cast(uint64 i){asm {alloc REG:x:; CVTSI2SD REG, $i; return REG;}}
+    function inline static operator unsafe float64 Cast(int8 i){asm {alloc REG:x:; CVTSI2SD REG, $i; return REG;}}
+    function inline static operator unsafe float64 Cast(int16 i){asm {alloc REG:x:; CVTSI2SD REG, $i; return REG;}}
+    function inline static operator unsafe float64 Cast(uint8 i){asm {alloc REG:x:; CVTSI2SD REG, $i; return REG;}}
+    function inline static operator unsafe float64 Cast(uint16 i){asm {alloc REG:x:; CVTSI2SD REG, $i; return REG;}}
+    function inline static operator unsafe float64 Cast(float f){asm {alloc REG:x:; CVTSS2SD REG, $f; return REG;}}
+
+    function String ToString()
+    {
+        if (this < 0.0)
+        {
+            float64 f = -this;
+            return "-" + f.ToString();
+        }
+
+        int64 intPart = this as int64;
+        float64 frac = this - (intPart as float64);
+
+        String digits = intPart.ToString();
+
+        readonly int precision = 7;
+        String fraction = new String(precision as uint64);
+
+        for (int i = 0; i < precision; i++)
+        {
+            frac = frac * 10.0;
+            int digit = frac as int;
+            fraction[i] = (digit + 48) as uint8 as char;
+            frac = frac - (digit as float64);
+        }
+
+        return digits + "." + fraction;
+    }
 }
-
-
 
 primitive class char sizeof 1 extends String 
 {
