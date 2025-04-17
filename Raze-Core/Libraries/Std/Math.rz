@@ -39,30 +39,119 @@ function int Clamp(int value, int min, int max)
     return value;
 }
 
-# function int Ceil(float f)
-# {
-#     int i = f as int;
+function unsafe float Sqrt(float value)
+{
+    asm {
+        alloc REG:x:;
+        SQRTSS REG, $value;
+        return REG;
+    }
+}
 
-#     if (f > i)
-#     {
-#         return i + 1;
-#     }
-#     return i;
-# }
+function unsafe float64 Sqrt(float64 value)
+{
+    asm {
+        alloc REG:x:;
+        SQRTSD REG, $value;
+        return REG;
+    }
+}
 
-# function int Floor(float f)
-# {
-#     int i = f as int;
+function float64 Pow(float64 base, int exp)
+{
+    float64 result = 1.0;
+    
+    int positiveExp = Abs(exp);
+    for (int i = 0; i < positiveExp; i++)
+    {
+        result *= base;
+    }
 
-#     if (f < i)
-#     {
-#         return i - 1;
-#     }
-#     return i;
-# }
+    if (exp < 0)
+    {
+        return 1.0 / result;
+    }
+    return result;
+}
+
+function int Factorial(int n)
+{
+    if (n <= 1) 
+    {
+        return 1;
+    }
+
+    int result = 1;
+    for (int i = 2; i <= n; i++)
+    {
+        result *= i;
+    }
+    return result;
+}
+
+function float Lerp(float a, float b, float t)
+{
+    return a + t * (b - a);
+}
+
+function int Sign(int i)
+{
+    if (i > 0)
+    {
+        return 1;
+    }
+    if (i < 0)
+    {
+        return -1;
+    }
+    return 0;
+}
+
+function int Sign(float i)
+{
+    if (i > 0.0)
+    {
+        return 1;
+    }
+    if (i < 0.0)
+    {
+        return -1;
+    }
+    return 0;
+}
+
+function int Sign(float64 i)
+{
+    if (i > 0.0)
+    {
+        return 1;
+    }
+    if (i < 0.0)
+    {
+        return -1;
+    }
+    return 0;
+}
+
+function int GCD(int a, int b)
+{
+    while (b != 0)
+    {
+        int t = b;
+        b = a % b;
+        a = t;
+    }
+    return a;
+}
+
+function int LCM(int a, int b)
+{
+    return (a / GCD(a, b)) * b;
+}
+
+function float64 DegToRad(float64 deg) { return deg * (Pi() / 180.0); }
+function float64 RadToDeg(float64 rad) { return rad * (180.0 / Pi()); }
 
 function inline float64 E() { return 2.718281828459045; }
-
 function inline float64 Pi() { return 3.141592653589793; }
-
 function inline float64 Tau() { return 6.283185307179586; }

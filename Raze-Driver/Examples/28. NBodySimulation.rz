@@ -1,0 +1,140 @@
+# Example: N Body Physics Simulation
+
+import Math;
+
+class Body
+{
+    float64 x;
+    float64 y;
+    float64 vx;
+    float64 vy;
+    float64 ax;
+    float64 ay;
+    float64 mass;
+    Body next = null;
+
+    function Body(float64 x, float64 y, float64 vx, float64 vy, float64 mass)
+    {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.mass = mass;
+        this.ax = 0.0;
+        this.ay = 0.0;
+    }
+}
+
+# Compute accelerations of bodies
+function ComputeAccelerations(float64 G, float64 eps2, Body bodies)
+{
+    # Reset accelerations
+    Body a = bodies;
+    while (a != null)
+    {
+        a.ax = 0.0;
+        a.ay = 0.0;
+        a = a.next;
+    }
+
+    # Pairwise gravity
+    a = bodies;
+    while (a != null)
+    {
+        Body b = a.next;
+        while (b != null)
+        {
+            float64 dx = b.x - a.x;
+            float64 dy = b.y - a.y;
+
+            float64 r2 = dx*dx + dy*dy + eps2;
+            float64 invR = 1.0 / Math.Sqrt(r2);
+            float64 invR3 = invR * invR * invR;
+
+            float64 f = G * invR3;
+
+            float64 fax = f * dx * b.mass;
+            float64 fay = f * dy * b.mass;
+
+            float64 fbx = -f * dx * a.mass;
+            float64 fby = -f * dy * a.mass;
+
+            a.ax += fax;
+            a.ay += fay;
+
+            b.ax += fbx;
+            b.ay += fby;
+
+            b = b.next;
+        }
+        a = a.next;
+    }
+}
+
+# Use leapfrog integration to solve motion ODEs
+function LeapfrogStep(float64 G, float64 dt, float64 eps2, Body bodies)
+{
+    # v(t + dt/2)
+    Body b = bodies;
+    while (b != null)
+    {
+        b.vx += 0.5 * b.ax * dt;
+        b.vy += 0.5 * b.ay * dt;
+        b = b.next;
+    }
+
+    # x(t + dt)
+    b = bodies;
+    while (b != null)
+    {
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+        b = b.next;
+    }
+
+    # a(t + dt)
+    ComputeAccelerations(G, eps2, bodies);
+
+    # v(t + dt)
+    b = bodies;
+    while (b != null)
+    {
+        b.vx += 0.5 * b.ax * dt;
+        b.vy += 0.5 * b.ay * dt;
+        b = b.next;
+    }
+}
+
+function Main()
+{
+    # Gravitational constant
+    readonly float64 G = 1.0;
+    # Time step
+    readonly float64 dt = 0.001;
+    # Softening^2
+    readonly float64 eps2 = 0.01;
+
+    Body b1 = new Body(2.0, -1.0, 1.0, 0.0, 10.0);
+    Body b2 = new Body(0.0, 1.0, 0.0,  0.0,  1.0);
+    Body b3 = new Body(0.0, -1.0, 0.0, -0.5,  1.0);
+
+    b1.next = b2;
+    b2.next = b3;
+
+    Body bodies = b1;
+
+    ComputeAccelerations(G, eps2, bodies);
+
+    readonly int steps = 50000;
+    for (int i = 0; i < steps; i++)
+    {
+        LeapfrogStep(G, dt, eps2, bodies);
+    }
+
+    Body b = bodies;
+    while (b != null)
+    {
+        Print("Body at (" + b.x.ToString() + ", " + b.y.ToString() + ")");
+        b = b.next;
+    }
+}
