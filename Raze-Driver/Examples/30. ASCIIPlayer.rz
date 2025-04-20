@@ -1,0 +1,67 @@
+# Example: ASCII Player
+
+# Note:
+#   Most Linux terminals will output the ASCII correctly.
+#   However, if you're on Windows, please use a terminal that supports ANSI escape codes and UTF-8.
+#   This means you should use Windows Terminal (and not Powershell or CMD).
+#   In addition, before running the program type 'chcp 65001' in Windows Terminal to switch to UTF-8.
+
+# If you're not seeing the correct ASCII art video, try resizing your terminal window to full screen.
+# If on Windows, run 'chcp 65001' in Windows Terminal before invoking the binary to switch to UTF-8 mode.
+
+# If you copy this code elsewhere, don't forget to bring 'design.txt' as well!
+
+import String from Strings;
+import Console;
+
+function String Read(string fn, uint64 fileSize, ref int64 fd) 
+{
+    fd = File.Open(fn);
+    if (fd < 0)
+    {
+        return new String("");
+    }
+
+    return File.Read(fd, fileSize); 
+}
+
+function Main()
+{
+    readonly float64 sleepTime = 0.02;
+    readonly uint64 fileSize = 2298634u;
+    readonly string fileName = "design.txt";
+    
+    int64 fd = 0;
+    String fileStr = Read(fileName, fileSize, ref fd);
+
+    if (fileStr.Length() == 0u)
+    {
+        Print("Could not find file " + fileName + "! (try copying it to the current directory from Raze-Driver/Examples/)");
+        return;
+    }
+
+    readonly uint64 bufSize = 5000u;
+    String buffer = new String(bufSize);
+    uint64 bufCount = 0u;
+
+    for (uint64 i = 0u; i < fileSize; i++)
+    {
+        if (bufCount == bufSize)
+        {
+            Console.Write(buffer);
+            bufCount = 0u;
+            Sleep(sleepTime);
+        }
+
+        buffer[bufCount] = fileStr[i];
+        bufCount++;
+    }
+
+    if (bufCount > 0u)
+    {
+        buffer[bufCount] = '\0';
+        Console.Write(buffer);
+    }
+
+    File.Close(fd);
+}
