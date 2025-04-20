@@ -111,15 +111,22 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             Emit(new AssemblyExpr.Binary(GetMoveInstruction(false, _thisType as Expr.DataType), paramRegisters[^1], _thisArg));
             alloc.Free(_thisArg);
         }
+        
         for (int i = 0; i < invokable.internalFunction.Arity; i++)
         {
             // 'i' does not account for callee parameter, 'parameterIdx' does
             int parameterIdx = i + Convert.ToInt32(instance);
-            var arg = argValues[parameterIdx];
+            AssemblyExpr.IValue arg;
             Expr.StackData parameterStackData = invokable.internalFunction.parameters[i].stack;
 
-            if (i + Convert.ToUInt16(instance) < InstructionUtils.GetParamRegisters(IsFloatingType(parameterStackData.type), cconv).Length)
+            int paramRegCount = InstructionUtils
+                .GetParamRegisters(IsFloatingType(parameterStackData.type), cconv)
+                .Length;
+
+            if (parameterIdx < paramRegCount)
             {
+                arg = argValues[parameterIdx];
+
                 bool _ref = invokable.internalFunction.parameters[i].modifiers["ref"];
                 if (_ref)
                 {
@@ -144,10 +151,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             }
             else
             {
+                arg = argValues[argValues.Count - (parameterIdx - paramRegCount) - 1];
+
                 if (invokable.internalFunction.parameters[i].modifiers["ref"])
                 {
-                    AssemblyExpr.Register refRegister;
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, (refRegister = alloc.NextRegister(InstructionUtils.SYS_SIZE)), arg));
+                    AssemblyExpr.Register refRegister = alloc.NextRegister(InstructionUtils.SYS_SIZE);
+                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, refRegister, arg));
                     Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.PUSH, refRegister));
                     alloc.Free(refRegister);
                 }

@@ -101,14 +101,22 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         private void AllocateParameter(Expr.StackData parameter, int i, int arity)
         {
-            if (i < InstructionUtils.GetParamRegisters(false).Length)
+            var paramRegisters = InstructionUtils.GetParamRegisters(false);
+            int registerCount = paramRegisters.Length;
+
+            if (i < registerCount)
             {
                 AllocateVariable(parameter);
             }
             else
             {
                 var variableSize = parameter._ref ? 8 : parameter.size;
-                parameter.value = new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, ((8 * (arity - i)) + 8), (AssemblyExpr.Register.RegisterSize)variableSize);
+                int offset = 16 + ((i - registerCount) * 8);
+                parameter.value = new AssemblyExpr.Pointer(
+                    AssemblyExpr.Register.RegisterName.RBP,
+                    offset,
+                    (AssemblyExpr.Register.RegisterSize)variableSize
+                );
             }
         }
 
