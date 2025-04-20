@@ -36,6 +36,30 @@ class Runtime extends RazeRuntime
 		int dwMilliseconds
 	) from "kernel32.dll";
 
+	function extern dll int64 CreateFileA(
+		string lpFileName,
+		uint  dwDesiredAccess,
+		uint  dwShareMode,
+		uint64 lpSecurityAttributes,
+		uint  dwCreationDisposition,
+		uint  dwFlagsAndAttributes,
+		uint64 hTemplateFile
+	) from "kernel32.dll";
+
+	function extern dll int CloseHandle(
+		uint64 hObject
+	) from "kernel32.dll";
+
+	function static int64 Open(string fn)
+	{
+		return CreateFileA(fn, 0x80000000u, 0x3u, 0u, 0x3u, 0x80u, 0u);
+	}
+
+	function static Close(uint64 fd)
+	{
+		CloseHandle(fd);
+	}
+
 	function static Sleep(int64 ns)
 	{
 		int ms = (ns / 1000000) as int;

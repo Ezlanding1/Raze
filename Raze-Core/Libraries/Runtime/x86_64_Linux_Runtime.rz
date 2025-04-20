@@ -3,6 +3,16 @@ import RazeRuntime from RazeRuntime;
 
 class Runtime extends RazeRuntime
 {
+	function static int64 Open(string fn)
+	{
+		return Syscalls.SYS_OPEN(fn, 0, 0u);
+	}
+
+	function static Close(uint64 fd)
+	{
+		Syscalls.SYS_CLOSE(fd as uint);
+	}
+
 	function static Sleep(int64 ns)
 	{
 		int64 seconds = ns / 1000000000;

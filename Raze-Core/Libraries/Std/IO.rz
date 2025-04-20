@@ -15,10 +15,10 @@ class File
 	# 	return Open(pathname, O_CREAT | O_TRUNC | O_WRONLY, mode);
 	# }
 
-	# function int64 Open(string pathname, int flags, uint16 mode)
-	# {
-	# # 	return System.Syscalls.SYS_OPEN(pathname, flags, mode);
-	# # }
+	function static int64 Open(string pathname)
+	{
+		return Runtime.Open(pathname);
+	}
 
 	function static String Read(uint fd, uint64 count)
 	{
@@ -28,8 +28,16 @@ class File
 		return str;
 	}
 
-	# function static int64 Close(uint fd)
-	# {
-	# 	return System.Syscalls.SYS_CLOSE(fd);
-	# }
+	function static String Read(int64 fd, uint64 count)
+	{
+		String str = new String(count);
+		uint64 bytesRead = Runtime.Read(fd as uint64, str.ToStdString(), count);
+		str[bytesRead] = '\0';
+		return str;
+	}
+
+	function static Close(int64 fd)
+	{
+		Runtime.Close(fd as uint64);
+	}
 }
