@@ -32,6 +32,16 @@ class Runtime extends RazeRuntime
 		uint flProtect
 	) from "kernel32.dll";
 
+	function extern dll Sleep(
+		int dwMilliseconds
+	) from "kernel32.dll";
+
+	function static Sleep(int64 ns)
+	{
+		int ms = (ns / 1000000) as int;
+		Sleep(ms);
+	}
+
 	function static uint64 New(uint64 inc)
 	{
 		uint64 addr = VirtualAlloc(0u, inc, 0x3000u, 0x04u);

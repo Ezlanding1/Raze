@@ -3,6 +3,14 @@ import RazeRuntime from RazeRuntime;
 
 class Runtime extends RazeRuntime
 {
+	function static Sleep(int64 ns)
+	{
+		int64 seconds = ns / 1000000000;
+		int64 nano = ns % 1000000000;
+		Syscalls.Timespec ts = new Syscalls.Timespec(seconds, nano);
+		Syscalls.SYS_NANOSLEEP(ts, null);
+	}
+
 	function static inline uint64 Sbrk(uint64 inc)
 	{
 		int64 brkLocation = Syscalls.SYS_BRK(0u);
@@ -157,4 +165,31 @@ class Syscalls
 		}
 	}
 
+	class Timespec
+	{
+		int64 tv_sec;
+		int64 tv_usec;
+
+		function Timespec(int64 tv_sec, int64 tv_usec)
+		{
+			this.tv_sec = tv_sec;
+			this.tv_usec = tv_usec;
+		}
+	}
+
+	function unsafe static int64 SYS_NANOSLEEP(Timespec rqtp, Timespec rmtp)
+	{
+		asm {
+			alloc RAX;
+			alloc RDI;
+			alloc RSI;
+
+			MOV RAX, 35;
+			MOV RDI, $rqtp;
+			MOV RSI, $rmtp;
+			SYSCALL;
+
+			return RAX;
+		}
+	}
 }

@@ -10,6 +10,15 @@ function static Print(String s)
     Console.WriteLine(s.ToStdString());
 }
 
+function Sleep(float64 seconds)
+{
+    int64 sec = seconds as int64;
+    float64 secF = sec as float64;
+    int64 nano = ((seconds - secF) * 1000000000.0) as int64;
+
+    Runtime.Sleep(sec * 1000000000 + nano);
+}
+
 primitive class bool sizeof 1 extends Boolean 
 {
     function operator unsafe inline bool NotEqualTo(bool i, bool j){asm {CMP $i, $j; alloc REG::8; return SETNE REG;}}
