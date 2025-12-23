@@ -104,6 +104,7 @@ public abstract partial class Diagnostic
         InvalidReadonlyModifier,
         ExternWithoutExternFileName,
         ExternWithBlock,
+        NoConversionFound,
 
         // BackendError
         InvalidLiteralSize,

@@ -22,7 +22,8 @@ public abstract partial class CodeGen
             { XOR, (1, Binary.DefaultInstruction) },
             { LEA, (1, Binary.DefaultInstruction) },
             { CMP, (0, Binary.DefaultInstruction) },
-            { MOVSX, (1, Binary.DefaultInstruction) },
+            { MOVZX, (1, Binary.DefaultInstruction) },
+            { MOVSX, (1, Binary.MOVSX) },
             { IMUL, (1, Binary.IMUL) },
             { IDIV, (0, Binary.MUL_IDIV_DIV) },
             { DIV, (0, Binary.MUL_IDIV_DIV) },
@@ -34,7 +35,8 @@ public abstract partial class CodeGen
             { CVTSD2SS, (1, Binary.DefaultFloatingInstruction) },
             { CVTTSD2SI, (1, Binary.DefaultFloatingInstruction) },
             { CVTSS2SD, (1, Binary.DefaultFloatingInstruction) },
-            { CVTTSS2SI, (1, Binary.DefaultFloatingInstruction) }
+            { CVTTSS2SI, (1, Binary.DefaultFloatingInstruction) },
+            { CAST, (1, Binary.CAST) },
         };
 
         public static readonly Dictionary<AssemblyExpr.Instruction, (int, Action<CodeGen, Expr.InlineAssembly.UnaryInstruction>)> supportedInstructionsUnary = new()

@@ -55,6 +55,7 @@ public abstract partial class AssemblyExpr
         AND,
         XOR,
         MOVSX,
+        MOVSXD,
         MOVZX,
         SAL,
         SAR,
@@ -79,8 +80,9 @@ public abstract partial class AssemblyExpr
         ADDSD,
         CVTSD2SI,
         CVTTSD2SI,
-        CVTSD2SS
+        CVTSD2SS,
 
         // Custom Instructions
+        CAST
     }
 }

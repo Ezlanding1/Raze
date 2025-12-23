@@ -102,6 +102,7 @@ public abstract partial class Diagnostic
         { DiagnosticName.InvalidReadonlyModifier, ("The 'readonly' modifier is not valid in this context", Severity.Error) },
         { DiagnosticName.ExternWithoutExternFileName, ("Function '{0}' marked extern must specify an extern file name", Severity.Error) },
         { DiagnosticName.ExternWithBlock, ("Function '{0}' marked extern may not have a function body", Severity.Error) },
+        { DiagnosticName.NoConversionFound, ("No cast conversion found between types '{0}' and '{1}'", Severity.Error) },
         
         // BackendError
         { DiagnosticName.InvalidLiteralSize, ("{0} literal '{1}' exceeds size of assigned data type '{2}'", Severity.Error) },

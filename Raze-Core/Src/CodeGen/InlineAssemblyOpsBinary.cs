@@ -39,7 +39,17 @@ public abstract partial class CodeGen
                 AssemblyExpr.IValue op1 = binary.operand1.ToOperand(codeGen, AssemblyExpr.Register.RegisterSize._32Bits).NonPointerNonLiteral(codeGen, binary.operand1.Type());
                 var op2 = ValidateOperand2(codeGen, binary.operand1, ref op1, binary.operand2, binary.operand2.ToOperand(codeGen, op1.Size));
 
-                codeGen.Emit(new AssemblyExpr.Binary(binary.instruction, op1, op2));
+
+                if (op2.IsLiteral())
+                {
+                    var reg = codeGen.alloc.CurrentRegister(op2.Size);
+                    codeGen.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, reg, op2));
+                    codeGen.Emit(new AssemblyExpr.Binary(binary.instruction, op1, reg));
+                }
+                else
+                {
+                    codeGen.Emit(new AssemblyExpr.Binary(binary.instruction, op1, op2));
+                }
 
                 ReturnOperand(codeGen, binary, binary.operand1, op1);
                 DeallocVariables(codeGen, (binary.operand1, op1), (binary.operand2, op2));
@@ -73,6 +83,28 @@ public abstract partial class CodeGen
                 DeallocVariables(codeGen, (binary.operand1, op1), (binary.operand2, op2));
             }
 
+            public static void MOVSX(CodeGen codeGen, Expr.InlineAssembly.BinaryInstruction binary)
+            {
+                AssemblyExpr.IValue op1 = binary.operand1.ToOperand(codeGen, AssemblyExpr.Register.RegisterSize._32Bits).NonLiteral(codeGen, binary.operand1.Type());
+                var op2 = ValidateOperand2(codeGen, binary.operand1, ref op1, binary.operand2, binary.operand2.ToOperand(codeGen, op1.Size));
+
+                var instruction = op2.IsLiteral() ? 
+                    AssemblyExpr.Instruction.MOV :
+                    (op1.Size, op2.Size) switch
+                    {
+                        (AssemblyExpr.Register.RegisterSize._16Bits, AssemblyExpr.Register.RegisterSize._16Bits) or
+                        (AssemblyExpr.Register.RegisterSize._32Bits, AssemblyExpr.Register.RegisterSize._32Bits) or
+                        (AssemblyExpr.Register.RegisterSize._64Bits, AssemblyExpr.Register.RegisterSize._32Bits)
+                            => AssemblyExpr.Instruction.MOVSXD,
+                        _ => AssemblyExpr.Instruction.MOVSX
+                    };
+
+                codeGen.Emit(new AssemblyExpr.Binary(instruction, op1, op2));
+
+                ReturnOperand(codeGen, binary, binary.operand1, op1);
+                DeallocVariables(codeGen, (binary.operand1, op1), (binary.operand2, op2));
+            }
+
             public static void SAL_SAR(CodeGen codeGen, Expr.InlineAssembly.BinaryInstruction binary)
             {
                 var op1 = binary.operand1.ToOperand(codeGen, AssemblyExpr.Register.RegisterSize._32Bits).NonPointerNonLiteral(codeGen, binary.operand1.Type());
@@ -97,6 +129,17 @@ public abstract partial class CodeGen
                 {
                     Diagnostics.Report(new Diagnostic.BackendDiagnostic(Diagnostic.DiagnosticName.InstructionOperandsSizeMismatch));
                 }
+
+                ReturnOperand(codeGen, binary, binary.operand1, op1);
+                DeallocVariables(codeGen, (binary.operand1, op1), (binary.operand2, op2));
+            }
+
+            public static void CAST(CodeGen codeGen, Expr.InlineAssembly.BinaryInstruction binary)
+            {
+                AssemblyExpr.IValue op1 = binary.operand1.ToOperand(codeGen, AssemblyExpr.Register.RegisterSize._32Bits).NonLiteral(codeGen, binary.operand1.Type());
+                var op2 = ValidateOperand2(codeGen, binary.operand1, ref op1, binary.operand2, binary.operand2.ToOperand(codeGen, op1.Size));
+
+                codeGen.Emit(new AssemblyExpr.Binary(binary.instruction, op1, op2));
 
                 ReturnOperand(codeGen, binary, binary.operand1, op1);
                 DeallocVariables(codeGen, (binary.operand1, op1), (binary.operand2, op2));

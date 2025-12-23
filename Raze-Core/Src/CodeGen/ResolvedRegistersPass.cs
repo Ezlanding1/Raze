@@ -49,6 +49,18 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             CheckIValueForStackSpill(ref instruction.operand1);
             CheckIValueForStackSpill(ref instruction.operand2);
 
+            if (instruction.instruction == AssemblyExpr.Instruction.CAST)
+            {
+                instruction.instruction = AssemblyExpr.Instruction.MOV;
+                if (instruction.operand2.IsRegister(out var reg))
+                {
+                    instruction.operand2 = new AssemblyExpr.Register(reg.name, instruction.operand1.Size);
+                }
+                else if (instruction.operand2.IsPointer(out var ptr))
+                {
+                    instruction.operand2 = new AssemblyExpr.Pointer(ptr.value, ptr.offset, instruction.operand1.Size);
+                }
+            }
             instruction.operand1.Accept(this);
             instruction.operand2.Accept(this);
             return null;
