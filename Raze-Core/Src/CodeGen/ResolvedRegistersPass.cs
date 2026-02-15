@@ -108,6 +108,17 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             {
                 functionPushPreserved.leaf = false;
             }
+            else if (instruction.instruction == AssemblyExpr.Instruction.PUSH)
+            {
+                if (instruction.operand.IsRegister(out var reg))
+                {
+                    instruction.operand = new AssemblyExpr.Register(reg.name, InstructionUtils.SYS_SIZE);
+                }
+                else if (instruction.operand.IsPointer(out var ptr))
+                {
+                    instruction.operand = new AssemblyExpr.Pointer(ptr.value, ptr.offset, InstructionUtils.SYS_SIZE);
+                }
+            }
             instruction.operand.Accept(this);
             return null;
         }
