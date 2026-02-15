@@ -22,11 +22,24 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             public readonly AssemblyExpr.Register.RegisterName[] integer = integer;
             public readonly AssemblyExpr.Register.RegisterName[] floating = floating;
 
-            public AssemblyExpr.Register.RegisterName[] GetRegisters(bool floating)
-                => floating ? this.floating : this.integer;
+            public AssemblyExpr.Register.RegisterName[] GetRegisters(bool _ref, Expr.Type? type)
+                => _ref ? this.integer : IsFloatingType(type) ? this.floating : this.integer;
 
             public void Deconstruct(out AssemblyExpr.Register.RegisterName[] integer, out AssemblyExpr.Register.RegisterName[] floating)
                 => (integer, floating) = (this.integer, this.floating);
+
+            public ParameterRegisterIterator ToIter() => new(this);
+        }
+
+        internal class ParameterRegisterIterator(TypeRegisterVariant typeRegisterVariant)
+        {
+            public readonly IEnumerator<AssemblyExpr.Register.RegisterName> integer = 
+                typeRegisterVariant.integer.ToList().GetEnumerator();
+            public readonly IEnumerator<AssemblyExpr.Register.RegisterName> floating =
+                typeRegisterVariant.floating.ToList().GetEnumerator();
+
+            public IEnumerator<AssemblyExpr.Register.RegisterName> GetIter(Expr.Type? type, bool _ref) =>
+                (!_ref && IsFloatingType(type)) ? floating : integer;
         }
 
         internal static readonly Dictionary<Expr.Function.CallingConvention, CallingConvention> callingConventions = new()

@@ -41,82 +41,55 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         public void AllocateParameters(Expr.Function function, CodeGen codeGen)
         {
             bool instance = !function.modifiers["static"];
-
-            (var paramRegisters, var floatParamRegisters) = InstructionUtils.GetParamRegisters();
+            var paramRegIter = InstructionUtils.GetParamRegisters().ToIter();
+            var stackRegName = AssemblyExpr.Register.RegisterName.RBP;
 
             if (instance)
             {
                 var enclosing = SymbolTableSingleton.SymbolTable.NearestEnclosingClass(function);
-
                 Expr.Type? _thisType = enclosing;
-                bool _thisIsFloat = IsFloatingType(_thisType);
+                var _thisSize = (AssemblyExpr.Register.RegisterSize)enclosing!.allocSize;
 
-                int size = enclosing!.allocSize;
-                var regSize = _thisIsFloat ?
-                    AssemblyExpr.Register.RegisterSize._128Bits :
-                    (AssemblyExpr.Register.RegisterSize)size;
+                var iter = paramRegIter.GetIter(enclosing, false);
+                iter.MoveNext();
 
-                var instruction = GetMoveInstruction(false, _thisType as Expr.DataType);
-                var regName = InstructionUtils.GetParamRegisters(_thisIsFloat)[0];
+                var regName = iter.Current;
+                var regSize = GetRegisterSize(_thisSize, _thisType, false);
 
                 codeGen.Emit(new AssemblyExpr.Binary(
-                    instruction, 
-                    new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, -size, (AssemblyExpr.Register.RegisterSize)size), 
+                    GetMoveInstruction(false, _thisType as Expr.DataType), 
+                    new AssemblyExpr.Pointer(stackRegName, -(int)_thisSize, _thisSize), 
                     new AssemblyExpr.Register(regName, regSize))
                 );
-                function.size += size;
+                function.size += (int)_thisSize;
             }
 
-            for (int i = 0; i < function.Arity; i++)
+            int currentStackParamOffset = 8;
+
+            foreach (var parameter in function.parameters)
             {
-                int instanceCount = i + Convert.ToInt32(instance);
+                var type = parameter.stack.type;
+                var _ref = parameter.modifiers["ref"];
+                var paramSize = (AssemblyExpr.Register.RegisterSize)parameter.stack.size;
+                var stackPtrSize = GetPointerSize(paramSize, _ref);
 
-                var paramExpr = function.parameters[i];
+                var iter = paramRegIter.GetIter(type, _ref);
 
-                AllocateParameter(paramExpr.stack, instanceCount, function.Arity);
-
-                if (instanceCount < paramRegisters.Length)
+                if (iter.MoveNext())
                 {
-                    if (paramExpr.modifiers["ref"])
-                    {
-                        codeGen.Emit(new AssemblyExpr.Binary(
-                            AssemblyExpr.Instruction.MOV,
-                            new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, paramExpr.stack.ValueAsPointer.offset, InstructionUtils.SYS_SIZE),
-                            new AssemblyExpr.Register(paramRegisters[instanceCount], 8)
-                        ));
-                    }
-                    else
-                    {
-                        codeGen.Emit(new AssemblyExpr.Binary(
-                            GetMoveInstruction(false, paramExpr.stack.type),
-                            new AssemblyExpr.Pointer(AssemblyExpr.Register.RegisterName.RBP, paramExpr.stack.ValueAsPointer.offset, (AssemblyExpr.Register.RegisterSize)paramExpr.stack.size),
-                            IsFloatingType(paramExpr.stack.type) ? 
-                                new AssemblyExpr.Register(floatParamRegisters[instanceCount], 16) :
-                                new AssemblyExpr.Register(paramRegisters[instanceCount], paramExpr.stack.size)
-                        ));
-                    }
+                    AllocateVariable(parameter.stack);
+
+                    codeGen.Emit(new AssemblyExpr.Binary(
+                        GetMoveInstruction(false, _ref ? null : parameter.stack.type),
+                        new AssemblyExpr.Pointer(stackRegName, parameter.stack.ValueAsPointer.offset, stackPtrSize),
+                        new AssemblyExpr.Register(iter.Current, GetRegisterSize(paramSize, type, _ref))
+                    ));   
                 }
-            }
-        }
-
-        private void AllocateParameter(Expr.StackData parameter, int i, int arity)
-        {
-            var paramRegisters = InstructionUtils.GetParamRegisters(false);
-            int registerCount = paramRegisters.Length;
-
-            if (i < registerCount)
-            {
-                AllocateVariable(parameter);
-            }
-            else
-            {
-                var variableSize = parameter._ref ? 8 : parameter.size;
-                int offset = 16 + ((i - registerCount) * 8);
-                parameter.value = new AssemblyExpr.Pointer(
-                    AssemblyExpr.Register.RegisterName.RBP,
-                    offset,
-                    (AssemblyExpr.Register.RegisterSize)variableSize
-                );
+                else
+                {
+                    currentStackParamOffset += 8;
+                    parameter.stack.value = new AssemblyExpr.Pointer(stackRegName, currentStackParamOffset, stackPtrSize);
+                }
             }
         }
 

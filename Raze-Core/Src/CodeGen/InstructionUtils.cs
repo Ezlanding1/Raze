@@ -32,9 +32,6 @@ internal static class InstructionUtils
     public static CodeGen.CallingConvention.TypeRegisterVariant GetParamRegisters(Expr.Function.CallingConvention callingConvention = Expr.Function.CallingConvention.RazeCall)
         => CodeGen.CallingConvention.callingConventions[callingConvention].paramRegisters;
 
-    public static AssemblyExpr.Register.RegisterName[] GetParamRegisters(bool floating, Expr.Function.CallingConvention callingConvention = Expr.Function.CallingConvention.RazeCall)
-        => CodeGen.CallingConvention.callingConventions[callingConvention].paramRegisters.GetRegisters(floating);
-
     public static bool IsScratchRegister(AssemblyExpr.Register.RegisterName register, Expr.Function.CallingConvention callingConvention = Expr.Function.CallingConvention.RazeCall)
         => !GetCallingConvention(callingConvention).nonVolatileRegisters.Contains(register);
 

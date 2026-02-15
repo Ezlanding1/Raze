@@ -100,75 +100,57 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                 .IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)invokable.internalFunction.parameters[i].stack.size));
         }
 
-
-        List<AssemblyExpr.Register> paramRegisters = [];
+        var paramRegIter = InstructionUtils.GetParamRegisters(cconv).ToIter();
+        List<AssemblyExpr.Register> usedRegs = [];
+        List<(bool, AssemblyExpr.IValue)> stackArgs = [];
+        int parameterIdx = 0;
 
         if (instance)
         {
-            var _thisArg = argValues[0];
+            var _thisArg = argValues[parameterIdx++];
             var _thisType = invokable.internalFunction.enclosing;
-            alloc.AllocParam(0, _thisArg.Size, _thisType, _thisArg, cconv, paramRegisters);
-            Emit(new AssemblyExpr.Binary(GetMoveInstruction(false, _thisType as Expr.DataType), paramRegisters[^1], _thisArg));
-            alloc.Free(_thisArg);
+
+            alloc.AllocParam(paramRegIter, _thisArg, _thisType, false, usedRegs, stackArgs);
+            Emit(new AssemblyExpr.Binary(GetMoveInstruction(false, _thisType as Expr.DataType), usedRegs[^1], _thisArg));
         }
         
-        for (int i = 0; i < invokable.internalFunction.Arity; i++)
+        foreach (var parameter in invokable.internalFunction.parameters)
         {
-            // 'i' does not account for callee parameter, 'parameterIdx' does
-            int parameterIdx = i + Convert.ToInt32(instance);
-            AssemblyExpr.IValue arg;
-            Expr.StackData parameterStackData = invokable.internalFunction.parameters[i].stack;
+            bool _ref = parameter.modifiers["ref"];
+            var arg = argValues[parameterIdx++];
 
-            int paramRegCount = InstructionUtils
-                .GetParamRegisters(IsFloatingType(parameterStackData.type), cconv)
-                .Length;
-
-            if (parameterIdx < paramRegCount)
+            if (_ref)
             {
-                arg = argValues[parameterIdx];
+                int argIdx = parameterIdx - 1 - Convert.ToInt32(instance);
+                (var instruction, arg) = PreserveRefPtrVariable(invokable.Arguments[argIdx], (AssemblyExpr.Pointer)arg);
+                _ref = instruction == AssemblyExpr.Instruction.LEA;
+            }
 
-                bool _ref = invokable.internalFunction.parameters[i].modifiers["ref"];
-                if (_ref)
-                {
-                    (var instruction, arg) = PreserveRefPtrVariable(invokable.Arguments[i], (AssemblyExpr.Pointer)arg);
-                    _ref = instruction == AssemblyExpr.Instruction.LEA;
-                }
+            if (alloc.AllocParam(paramRegIter, arg, parameter.stack.type, _ref, usedRegs, stackArgs))
+            {
+                var instruction = GetMoveInstruction(_ref, parameter.stack.type);
+                Emit(new AssemblyExpr.Binary(instruction, usedRegs[^1], arg));
+            }
+        }
 
-                if (_ref)
-                {
-                    alloc.AllocParam(parameterIdx, InstructionUtils.SYS_SIZE, null, arg, cconv, paramRegisters);
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, paramRegisters[^1], arg));
-                }
-                else
-                {
-                    AssemblyExpr.Register.RegisterSize size = invokable.internalFunction.parameters[i].modifiers["ref"] ?
-                        InstructionUtils.SYS_SIZE :
-                        InstructionUtils.ToRegisterSize(parameterStackData.size);
-
-                    alloc.AllocParam(parameterIdx, size, parameterStackData.type, arg, cconv, paramRegisters);
-                    Emit(new AssemblyExpr.Binary(GetMoveInstruction(false, parameterStackData.type), paramRegisters[^1], arg));
-                }
+        stackArgs.Reverse();
+        foreach ((bool _ref, var stackArg) in stackArgs)
+        {
+            if (_ref)
+            {
+                AssemblyExpr.Register refRegister = alloc.NextRegister(InstructionUtils.SYS_SIZE);
+                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, refRegister, stackArg));
+                Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.PUSH, refRegister));
+                alloc.Free(refRegister);
             }
             else
             {
-                arg = argValues[argValues.Count - (parameterIdx - paramRegCount) - 1];
-
-                if (invokable.internalFunction.parameters[i].modifiers["ref"])
-                {
-                    AssemblyExpr.Register refRegister = alloc.NextRegister(InstructionUtils.SYS_SIZE);
-                    Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, refRegister, arg));
-                    Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.PUSH, refRegister));
-                    alloc.Free(refRegister);
-                }
-                else
-                {
-                    Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.PUSH, arg));
-                }
+                Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.PUSH, stackArg));
             }
-            alloc.Free(arg);
+            alloc.Free(stackArg);
         }
 
-        alloc.SaveScratchRegistersBeforeCall(paramRegisters, invokable.internalFunction);
+        alloc.SaveScratchRegistersBeforeCall(usedRegs, invokable.internalFunction);
 
         int shadowSpace = InstructionUtils.GetCallingConvention(cconv).shadowSpace;
         if (alloc.Current != null)
@@ -225,13 +207,12 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             ));
         }
 
-        foreach (var argRegister in paramRegisters)
+        foreach (var argRegister in usedRegs)
         {
             alloc.Free(argRegister);
         }
 
-        int resetStackOffset =
-            ((invokable.Arguments.Count - InstructionUtils.GetParamRegisters(false, cconv).Length) * 8);
+        int resetStackOffset = stackArgs.Count * 8;
 
         if (resetStackOffset > 0)
         {
@@ -821,20 +802,19 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             AssemblyExpr.IValue operand = expr.value.Accept(this)
                 .IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)Math.Max((int)AssemblyExpr.Register.RegisterSize._32Bits, function._returnType.type.allocSize));
 
-            if (function.refReturn)
+            bool _ref = function.refReturn;
+            if (_ref)
             {
                 (instruction, operand) = PreserveRefPtrVariable(expr.value, (AssemblyExpr.Pointer)operand);
+                _ref = instruction == AssemblyExpr.Instruction.LEA;
             }
 
-            bool isFloatingType = IsFloatingType(function.refReturn ? null : function._returnType.type);
-
-            var regName = InstructionUtils.GetCallingConvention(cconv).returnRegisters.GetRegisters(isFloatingType)[0];
-            var regSize = instruction switch
-            {
-                AssemblyExpr.Instruction.LEA => InstructionUtils.SYS_SIZE,
-                _ when isFloatingType => AssemblyExpr.Register.RegisterSize._128Bits,
-                _ => operand.Size
-            };
+            var regName = InstructionUtils
+                .GetCallingConvention(cconv)
+                .returnRegisters
+                .GetRegisters(function.refReturn, function._returnType.type)[0];
+                
+            var regSize = GetRegisterSize(operand.Size, function._returnType.type, _ref);
 
             var _returnRegister = new AssemblyExpr.Register(regName, regSize);
 
@@ -1111,6 +1091,16 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         currentDataSectionSize += instruction.literal.value.Sum(x => x.Length);
         assembly.data.Add(instruction);
     }
+
+    internal static AssemblyExpr.Register.RegisterSize GetRegisterSize(AssemblyExpr.Register.RegisterSize size, Expr.Type? type, bool _ref)
+    {
+        if (_ref) 
+            return InstructionUtils.SYS_SIZE;
+
+        return IsFloatingType(type) ? AssemblyExpr.Register.RegisterSize._128Bits : size;   
+    }
+    internal static AssemblyExpr.Register.RegisterSize GetPointerSize(AssemblyExpr.Register.RegisterSize size, bool _ref) =>
+        _ref ? InstructionUtils.SYS_SIZE : size;  
 
     internal static bool IsFloatingType(Expr.Type? type) =>
         type != null && Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Floating].Matches(type);

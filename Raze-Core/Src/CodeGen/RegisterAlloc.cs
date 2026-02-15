@@ -82,19 +82,33 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             return node.register;
         }
 
-        // Allocate and return the ith parameter register for a function call
+        // Allocate and return the next parameter register for a function call
         // 'value' should be the value of the ith argument. It will be freed in this function
-        // The resulting allocated ith parameter register will be added to the end of 'paramRegisters'
-        public void AllocParam(int i, AssemblyExpr.Register.RegisterSize size, Expr.Type? type, AssemblyExpr.IValue value, Expr.Function.CallingConvention cconv, List<AssemblyExpr.Register> paramRegisters)
+        // The resulting allocated parameter register will be added to the end of 'usedRegs'
+        // If a parameter register is found, this function will return 'true'
+        // Otherwise, it will add the value to 'stackArgs' and return 'false'
+        public bool AllocParam(CallingConvention.ParameterRegisterIterator paramRegIter, 
+            AssemblyExpr.IValue value,
+            Expr.Type? type,
+            bool _ref,
+            List<AssemblyExpr.Register> usedRegs,
+            List<(bool, AssemblyExpr.IValue)> stackArgs)
         {
-            bool isFloatingType = IsFloatingType(type);
+            var iter = paramRegIter.GetIter(type, _ref);
+            
+            if (iter.MoveNext())
+            {
+                var regName = iter.Current;
+                var regSize = GetRegisterSize(value.Size, type, _ref);
 
-            var name = InstructionUtils.GetParamRegisters(isFloatingType, cconv)[i];
-            Free(value);
-            SetSuggestedRegister(value, name);
+                Free(value);
+                SetSuggestedRegister(value, regName);
+                usedRegs.Add(ReserveRegister(regName, regSize));
 
-            size = isFloatingType ? AssemblyExpr.Register.RegisterSize._128Bits : size;
-            paramRegisters.Add(ReserveRegister(name, size));
+                return true;
+            }
+            stackArgs.Add((_ref, value));
+            return false;
         }
 
         public AssemblyExpr.Register CallAllocReturnRegister(bool _ref, AssemblyExpr.Register.RegisterSize size, CodeGen codeGen, AssemblyExpr.Register.RegisterName name, bool isFloatingType)

@@ -283,9 +283,11 @@ public abstract partial class Expr
                 {
                     AssemblyExpr.Instruction instruction = CodeGen.GetMoveInstruction(false, retType);
 
-                    var returnSize = function.refReturn ?
-                        InstructionUtils.SYS_SIZE :
-                        (AssemblyExpr.Register.RegisterSize)retType.allocSize;
+                    var returnSize = CodeGen.GetRegisterSize(
+                        (AssemblyExpr.Register.RegisterSize)retType.allocSize,
+                        retType,
+                        function.refReturn
+                    );
 
                     ((InlinedCodeGen)codeGen).InlinedReturnIValue(op, instruction, returnSize, retType);
                 }
@@ -293,11 +295,10 @@ public abstract partial class Expr
                 {
                     var instruction = CodeGen.GetMoveInstruction(false, retType);
 
-                    var isFloatingType = CodeGen.IsFloatingType(retType);
                     var _returnRegister =
                         new AssemblyExpr.Register(
-                            InstructionUtils.GetCallingConvention().returnRegisters.GetRegisters(isFloatingType)[0],
-                            isFloatingType ? AssemblyExpr.Register.RegisterSize._128Bits : op.Size
+                            InstructionUtils.GetCallingConvention().returnRegisters.GetRegisters(function.refReturn, retType)[0],
+                            CodeGen.GetRegisterSize(op.Size, retType, function.refReturn)
                         );
 
                     codeGen.Emit(new AssemblyExpr.Binary(instruction, _returnRegister, op));
@@ -305,8 +306,7 @@ public abstract partial class Expr
                     codeGen.alloc.Free(op);
                 }
                 
-                int retSize = 
-                    function.refReturn ? 8 : (retType as Primitive)?.size ?? 8;
+                int retSize = function.refReturn ? 8 : retType.allocSize;
                             
                 if (retSize != (int)op.Size)
                 {
