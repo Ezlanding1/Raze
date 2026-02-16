@@ -637,10 +637,6 @@ public partial class Parser
 
                 if (TypeMatch(Token.TokenType.EQUALS))
                 {
-                    if (variable.IsMethodCall())
-                    {
-                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssignStatement, Previous().location, "method"));
-                    }
                     if (_readonly)
                     {
                         Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidReadonlyModifier, Previous().location));
@@ -650,10 +646,6 @@ public partial class Parser
                 }
                 else if (TypeMatch([Token.TokenType.PLUS, Token.TokenType.MINUS, Token.TokenType.MULTIPLY, Token.TokenType.DIVIDE, Token.TokenType.MODULO], [Token.TokenType.EQUALS]))
                 {
-                    if (variable.IsMethodCall())
-                    {
-                        Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssignStatement, Previous().location, "method"));
-                    }
                     if (_readonly)
                     {
                         Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidReadonlyModifier, Previous().location));
@@ -673,7 +665,7 @@ public partial class Parser
                     Expect(Token.TokenType.RBRACKET, "']' after indexer");
                     return binary;
                 }
-                else if (!variable.IsMethodCall() && (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this")))
+                else if (TypeMatch(Token.TokenType.IDENTIFIER) || ReservedValueMatch("this"))
                 {
                     return (Expr)Declare(variable, _readonly) ?? new Expr.InvalidExpr();
                 }

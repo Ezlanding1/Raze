@@ -93,8 +93,11 @@ public partial class Analyzer
                 (getRef.GetLastData()?._ref == true, getRef.GetLastData()?._readonly == true) :
                 (false, false);
 
-        public static bool CannotBeRef(Expr expr, out Expr.GetReference getRef) =>
-            (getRef = expr as Expr.GetReference) == null || getRef.IsMethodCall();
+        public static bool CannotBeRef(Expr expr, out Expr.GetReference getRef)
+            => (getRef = expr as Expr.GetReference) == null || CannotBeRef(getRef);
+
+        public static bool CannotBeRef(Expr.GetReference getRef)
+            => getRef.CannotBeAssignedTo();
 
         public static void RunConditionals(Expr.IVisitor<Expr.Type> visitor, string conditionalName, List<Expr.Conditional> conditionals)
         {

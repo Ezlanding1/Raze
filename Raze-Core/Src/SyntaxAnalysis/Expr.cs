@@ -69,7 +69,6 @@ public abstract partial class Expr
         }
 
         public override IList<Expr> Arguments => [left, right];
-        public override bool IsMethodCall => op.type != Token.TokenType.LBRACKET;
     }
 
     public class Unary : Invokable
@@ -101,7 +100,7 @@ public abstract partial class Expr
         }
 
         public override DataType Type => Analyzer.TypeCheckUtils.ToDataTypeOrDefault(type);
-        public override bool IsMethodCall => true;
+        public override bool CannotBeAssignedTo => true;
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
@@ -241,7 +240,7 @@ public abstract partial class Expr
         public abstract Token GetLastName();
         public abstract DataType GetLastType();
         public abstract int GetLastSize();
-        public abstract bool IsMethodCall();
+        public abstract bool CannotBeAssignedTo();
         public abstract bool HandleThis();
     }
 
@@ -276,7 +275,7 @@ public abstract partial class Expr
         public override Token GetLastName() => typeName[^1];
         public override DataType GetLastType() => GetLastData().type;
         public override int GetLastSize() => GetLastData().size;
-        public override bool IsMethodCall() => false;
+        public override bool CannotBeAssignedTo() => false;
         public override bool HandleThis()
         {
             if (typeName.Count == 1 && typeName.Peek().lexeme == "this")
@@ -307,7 +306,7 @@ public abstract partial class Expr
         public override Token GetLastName() => getters[^1].name;
         public override DataType GetLastType() => getters[^1].Type;
         public override int GetLastSize() => getters[^1].Type.allocSize;
-        public override bool IsMethodCall() => getters[^1].IsMethodCall;
+        public override bool CannotBeAssignedTo() => getters[^1].CannotBeAssignedTo;
         public override bool HandleThis()
         {
             if (getters.Count == 1 && getters[0].name.lexeme == "this")
@@ -329,7 +328,7 @@ public abstract partial class Expr
     {
         public Token name = name;
         public abstract DataType Type { get; }
-        public abstract bool IsMethodCall { get; }
+        public abstract bool CannotBeAssignedTo { get; }
     }
 
     public abstract class Invokable(Token name) : Getter(name)
@@ -337,7 +336,7 @@ public abstract partial class Expr
         public abstract IList<Expr> Arguments { get; }
         public Function internalFunction;
         public override DataType Type => internalFunction._returnType.type;
-        public override bool IsMethodCall => true;
+        public override bool CannotBeAssignedTo => !internalFunction.refReturn;
     }
 
     public class Call : Invokable
@@ -379,7 +378,7 @@ public abstract partial class Expr
     {
         public StackData data;
         public override DataType Type => data.type;
-        public override bool IsMethodCall => false;
+        public override bool CannotBeAssignedTo => false;
 
         public Get(Token name) : base(name) { }
 
@@ -533,7 +532,7 @@ public abstract partial class Expr
         }
 
         public override DataType Type => internalClass;
-        public override bool IsMethodCall => true;
+        public override bool CannotBeAssignedTo => true;
 
         public override T Accept<T>(IVisitor<T> visitor)
         {
@@ -971,7 +970,7 @@ public abstract partial class Expr
         }
 
         public override DataType Type => Analyzer.TypeCheckUtils.heapallocType.Value;
-        public override bool IsMethodCall => true;
+        public override bool CannotBeAssignedTo => true;
     }
 
     public abstract class NoOp : Expr

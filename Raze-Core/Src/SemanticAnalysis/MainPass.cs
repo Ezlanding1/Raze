@@ -360,6 +360,20 @@ public partial class Analyzer
                 }
             }
 
+            if (expr.member.CannotBeAssignedTo())
+            {
+                Diagnostics.Report(new Diagnostic.ParseDiagnostic(Diagnostic.DiagnosticName.InvalidAssignStatement, memberName.location, "method"));
+            }
+
+            if (expr.member._ref && expr.member.GetLastData()?._ref != true)
+            {
+                Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
+                    Diagnostic.DiagnosticName.InvalidRefModifier, 
+                    memberName.location,
+                    expr.member.GetLastData() is null ? "method" : "non-ref variable"
+                ));
+            }
+
             return TypeCheckUtils._voidType;
         }
 
@@ -499,12 +513,6 @@ public partial class Analyzer
                 {
                     symbolTable.SetContext(TypeCheckUtils.ToDataTypeOrDefault(getter.Accept(this)));
                 }
-
-                if (expr._ref && expr.IsMethodCall() && !((Expr.Invokable)expr.getters[^1]).internalFunction.refReturn)
-                {
-                    Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(Diagnostic.DiagnosticName.InvalidRefModifier, expr.GetLastName().location, "method"));
-                }
-
                 return symbolTable.Current;
             }
         }
