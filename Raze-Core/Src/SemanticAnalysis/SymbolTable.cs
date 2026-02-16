@@ -213,7 +213,7 @@ public partial class Analyzer
 
         public void RemoveBlock()
         {
-            for (int i = locals.Count-1; i > framePointer.Peek(); i--)
+            for (int i = locals.Count-1; i >= framePointer.Peek(); i--)
             {
                 frameData.Remove(locals[i].Item2);
             }

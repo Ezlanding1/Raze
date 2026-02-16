@@ -297,7 +297,7 @@ public partial class Analyzer
             if (expr._else != null)
             {
                 var sStates = symbolTable.GetFrameData().ToList();
-                var states = Enumerable.Repeat(true, symbolTable.frameData.Count + 1).ToList();
+                var states = Enumerable.Repeat(true, sStates.Count).ToList();
 
                 expr.conditionals.ForEach(x =>
                 {
@@ -307,7 +307,7 @@ public partial class Analyzer
                 TypeCheckUtils.TypeCheckConditional(this, "else", null, expr._else);
                 symbolTable.ResolveStates(states);
 
-                symbolTable.SetFrameDataStates(Enumerable.Range(0, symbolTable.frameData.Count + 1).Select(i => sStates[i] | states[i]));
+                symbolTable.SetFrameDataStates(Enumerable.Range(0, sStates.Count).Select(i => sStates[i] | states[i]));
             }
             else
             {
