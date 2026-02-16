@@ -56,8 +56,10 @@ internal partial class Shell
                         Environment.CurrentDirectory, 
                         compileOptions.OutputOption
                     );
-
-                    Process.Start(fileName)?.WaitForExit();
+                    
+                    var process = Process.Start(fileName);
+                    process.WaitForExit();
+                    Environment.Exit(process.ExitCode);
                 }
             },
             compileOptions
