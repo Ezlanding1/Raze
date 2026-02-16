@@ -111,23 +111,24 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             return false;
         }
 
-        public AssemblyExpr.Register CallAllocReturnRegister(bool _ref, AssemblyExpr.Register.RegisterSize size, CodeGen codeGen, AssemblyExpr.Register.RegisterName name, bool isFloatingType)
+        public AssemblyExpr.Register CallAllocReturnRegister(CodeGen codeGen, Expr.Function.CallingConvention cconv, bool _ref, Expr.DataType _returnType)
         {
-            ReserveRegisterAndFree(name);
+            var size = InstructionUtils.ToRegisterSize(_returnType.allocSize);
 
-            var node = registerGraph.AllocateNode();
+            var regName = InstructionUtils
+                .GetCallingConvention(cconv)
+                .returnRegisters
+                .GetRegisters(_ref, _returnType)[0];
 
-            if (isFloatingType)
-            {
-                node.SetState(StateUtils.sseRegisters);
-                size = AssemblyExpr.Register.RegisterSize._128Bits;
-            }
+            var regSize = GetRegisterSize(size, _returnType, _ref);
 
-            node.register.Size = size;
-            node.SetSuggestedRegister(name);
-            var reg = node.register;
+            var _returnReg = ReserveRegister(regName, regSize);
+            codeGen.alloc.Free(_returnReg);
 
-            codeGen.Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.MOV, reg, new AssemblyExpr.Register(name, _ref? InstructionUtils.SYS_SIZE : size)));
+            var reg = codeGen.alloc.NextRegister(size, _ref ? null : _returnType);
+            SetSuggestedRegister(reg, regName);
+
+            codeGen.Emit(new AssemblyExpr.Binary(GetMoveInstruction(false, _returnType), reg, _returnReg));
 
             return reg;
         }

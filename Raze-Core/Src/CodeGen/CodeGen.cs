@@ -226,23 +226,14 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         if (Analyzer.Primitives.IsVoidType(invokable.internalFunction._returnType.type))
             return null;
 
-        bool isFloatingType = 
-            IsFloatingType(invokable.internalFunction.refReturn ?
-                null :
-                invokable.internalFunction._returnType.type
-            );
-
         return
             HandleRefVariableDeref(
                 invokable.internalFunction.refReturn,
                 alloc.CallAllocReturnRegister(
-                    invokable.internalFunction.refReturn,
-                    InstructionUtils.ToRegisterSize(invokable.internalFunction._returnType.type.allocSize),
                     this,
-                    InstructionUtils.GetCallingConvention(cconv).returnRegisters.GetRegisters(
-                        isFloatingType
-                    )[0],
-                    isFloatingType
+                    cconv,
+                    invokable.internalFunction.refReturn,
+                    invokable.internalFunction._returnType.type
                 ),
                 invokable.internalFunction._returnType.type
             );
