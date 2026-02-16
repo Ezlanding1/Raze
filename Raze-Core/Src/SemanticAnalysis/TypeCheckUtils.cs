@@ -56,7 +56,7 @@ public partial class Analyzer
 
         public static void MustMatchType(Expr.Type type1, Expr.Type type2, bool _ref1, bool _readonly1, Expr expr2, bool declare, bool _return) =>
             MustMatchType((type1, type2), (_ref1, IsVariableWithRefModifier(expr2)), (_readonly1, GetVariableModifiers(expr2)._readonly), declare, _return);
-        
+
         public static void MustMatchType(
             (Expr.Type type1, Expr.Type type2) types,
             (bool _ref1, bool _ref2) _refs, 
@@ -73,7 +73,7 @@ public partial class Analyzer
                 ));
             }
 
-            if (!types.type2.Matches(types.type1) || IsInvalidRef(declare, _refs._ref1, _refs._ref2))
+            if (!types.type2.Matches(types.type1) || IsInvalidRef(_refs._ref1, _refs._ref2))
             {
                 Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
                     _return? Diagnostic.DiagnosticName.TypeMismatch_Return : Diagnostic.DiagnosticName.TypeMismatch,
@@ -83,7 +83,7 @@ public partial class Analyzer
             }
         }
 
-        private static bool IsInvalidRef(bool declare, bool _ref1, bool _ref2) => declare ? _ref1 ^ _ref2 : (!_ref1 && _ref2);
+        private static bool IsInvalidRef(bool _ref1, bool _ref2) => _ref1 ^ _ref2;
 
         public static bool IsVariableWithRefModifier(Expr expr) =>
             expr is Expr.GetReference getRef && getRef._ref;
@@ -202,7 +202,7 @@ public partial class Analyzer
 
             bool _ref2 = IsVariableWithRefModifier(expr);
 
-            if (IsInvalidRef(true, true, _ref2))
+            if (IsInvalidRef(true, _ref2))
             {
                 Diagnostics.Report(new Diagnostic.AnalyzerDiagnostic(
                     Diagnostic.DiagnosticName.TypeMismatch,

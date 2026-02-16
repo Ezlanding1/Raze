@@ -347,8 +347,8 @@ public partial class Analyzer
                 fd.initialized = true;
             }
 
-            var (_ref, _readonly) = TypeCheckUtils.GetVariableModifiers(expr.member);
-            TypeCheckUtils.MustMatchType(expr.member.GetLastType(), assignType, _ref, _readonly, expr.value, !initialized, false);
+            var (_, _readonly) = TypeCheckUtils.GetVariableModifiers(expr.member);
+            TypeCheckUtils.MustMatchType(expr.member.GetLastType(), assignType, expr.member._ref, _readonly, expr.value, !initialized, false);
 
             if (symbolTable.Current is Expr.Function function && 
                     TypeCheckUtils.IsVariableWithRefModifier(expr.value) && 
