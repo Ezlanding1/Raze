@@ -26,6 +26,17 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
 
         public object? VisitBinary(AssemblyExpr.Binary instruction)
         {
+            if (instruction.instruction == AssemblyExpr.Instruction.LEA)
+            {
+                var op2 = (AssemblyExpr.Pointer)instruction.operand2;
+
+                if (op2.offset.value.All(x => x == 0))
+                {
+                    instruction.instruction = AssemblyExpr.Instruction.MOV;
+                    instruction.operand2 = op2.value!;
+                }
+            }
+
             this.instruction = instruction.instruction;
             instruction.operand2.Accept(this, instruction.operand1);
             return null;
@@ -63,7 +74,20 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         public object? VisitRegisterRegister(AssemblyExpr.Register reg1, AssemblyExpr.Register reg2)
         {
             if (instruction == AssemblyExpr.Instruction.MOV &&
-                reg1.name == reg2.name)
+                reg1.name == reg2.name &&
+                reg1.Size == reg2.Size)
+            {
+                RemoveCurrentInstruction();
+            }
+            else if (instruction == AssemblyExpr.Instruction.MOVSS &&
+                reg1.name == reg2.name &&
+                reg1.Size == reg2.Size)
+            {
+                RemoveCurrentInstruction();
+            }
+            else if (instruction == AssemblyExpr.Instruction.MOVSD &&
+                reg1.name == reg2.name &&
+                reg1.Size == reg2.Size)
             {
                 RemoveCurrentInstruction();
             }
