@@ -190,11 +190,6 @@ public partial class InlinedCodeGen : CodeGen
             var returnSize = InstructionUtils.ToRegisterSize(current._returnType.type.allocSize);
             AssemblyExpr.IValue operand = expr.value.Accept(this).IfLiteralCreateLiteral(returnSize);
 
-            if (current.refReturn)
-            {
-                (instruction, operand) = PreserveRefPtrVariable(expr.value, (AssemblyExpr.Pointer)operand);
-            }
-
             InlinedReturnIValue(operand, instruction, returnSize, current._returnType.type);
         }
         else

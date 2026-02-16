@@ -119,13 +119,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
             bool _ref = parameter.modifiers["ref"];
             var arg = argValues[parameterIdx++];
 
-            if (_ref)
-            {
-                int argIdx = parameterIdx - 1 - Convert.ToInt32(instance);
-                (var instruction, arg) = PreserveRefPtrVariable(invokable.Arguments[argIdx], (AssemblyExpr.Pointer)arg);
-                _ref = instruction == AssemblyExpr.Instruction.LEA;
-            }
-
             if (alloc.AllocParam(paramRegIter, arg, parameter.stack.type, _ref, usedRegs, stackArgs))
             {
                 var instruction = GetMoveInstruction(_ref, parameter.stack.type);
@@ -134,20 +127,29 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         }
 
         stackArgs.Reverse();
-        foreach ((bool _ref, var stackArg) in stackArgs)
+        foreach (var stackArg in stackArgs)
         {
+            var _ref = stackArg.Item1;
+            var arg = stackArg.Item2;
+
+            if (_ref && ((AssemblyExpr.Pointer)arg).offset.value.All(x => x == 0))
+            {
+                arg = ((AssemblyExpr.Pointer)arg).value!;
+                _ref = false;
+            }
+
             if (_ref)
             {
                 AssemblyExpr.Register refRegister = alloc.NextRegister(InstructionUtils.SYS_SIZE);
-                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, refRegister, stackArg));
+                Emit(new AssemblyExpr.Binary(AssemblyExpr.Instruction.LEA, refRegister, arg));
                 Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.PUSH, refRegister));
                 alloc.Free(refRegister);
             }
             else
             {
-                Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.PUSH, stackArg));
+                Emit(new AssemblyExpr.Unary(AssemblyExpr.Instruction.PUSH, arg));
             }
-            alloc.Free(stackArg);
+            alloc.Free(arg);
         }
 
         alloc.SaveScratchRegistersBeforeCall(usedRegs, invokable.internalFunction);
@@ -794,11 +796,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
                 .IfLiteralCreateLiteral((AssemblyExpr.Register.RegisterSize)Math.Max((int)AssemblyExpr.Register.RegisterSize._32Bits, function._returnType.type.allocSize));
 
             bool _ref = function.refReturn;
-            if (_ref)
-            {
-                (instruction, operand) = PreserveRefPtrVariable(expr.value, (AssemblyExpr.Pointer)operand);
-                _ref = instruction == AssemblyExpr.Instruction.LEA;
-            }
 
             var regName = InstructionUtils
                 .GetCallingConvention(cconv)
@@ -848,59 +845,35 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
     {
         if (operand2 == null) return;
 
-        var _ref = false;
         var type = expr.member.GetLastType();
 
-        bool valueIsRefVariable = Analyzer.TypeCheckUtils.GetVariableModifiers(expr.value)._ref;
-        bool valueHasRefModifier = Analyzer.TypeCheckUtils.IsVariableWithRefModifier(expr.value);
+        bool _ref = Analyzer.TypeCheckUtils.IsVariableWithRefModifier(expr.value);
+        bool valueIsRefVariable = expr.member._ref;
 
-        if (valueIsRefVariable && valueHasRefModifier)
+        if (valueIsRefVariable && _ref)
         {
             operand1 = (AssemblyExpr.Pointer)((AssemblyExpr.Binary)assembly.text[^1]).operand2;
             assembly.text.RemoveAt(assembly.text.Count - 1);
-            operand2 = PreserveRefPtrVariable(true, operand2);
-        }
-        else if (valueHasRefModifier)
-        {
-            operand1 = (AssemblyExpr.Pointer)((AssemblyExpr.Binary)assembly.text[^1]).operand2;
-            assembly.text.RemoveAt(assembly.text.Count - 1);
-            (var instruction, operand2) = PreserveRefPtrVariable(expr, (AssemblyExpr.Pointer)operand2);
-            _ref = instruction == AssemblyExpr.Instruction.LEA;
         }
 
         if (operand2.IsPointer(out var op2Ptr))
         {
-            AssemblyExpr.Register reg = op2Ptr.AsRegister(this);
-            reg.Size = _ref ? InstructionUtils.SYS_SIZE : op2Ptr.Size;
-
-            if (!_ref && IsFloatingType(type))
-            {
-                alloc.Free(reg);
-                reg = alloc.NextSseRegister();
-                Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref, type), reg, operand2));
-            }
-            else
-            {
-                type = null;
-                Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref, null), reg, operand2));
-            }
-            _ref = false;
+            alloc.Free(op2Ptr);
+            var reg = alloc.NextRegister(GetRegisterSize(op2Ptr.Size, type, _ref), _ref ? null : type);
+            Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref, type), reg, operand2));
             operand2 = reg;
+            _ref = false;
         }
         else if (operand2.IsRegister(out var register))
         {
             if (HandleSeteOptimization(register, operand1))
-            {
                 return;
-            }
         }
         else
         {
             type = null;
             if (operand1.IsPointer())
-            {
                 operand2 = MoveImmediate64ToMemory((AssemblyExpr.Literal)operand2);
-            }
         }
 
         Emit(new AssemblyExpr.Binary(GetMoveInstruction(_ref, type), operand1, operand2));
@@ -1277,12 +1250,6 @@ public partial class CodeGen : Expr.IVisitor<AssemblyExpr.IValue?>
         reg.Size = InstructionUtils.SYS_SIZE;
         return new AssemblyExpr.Pointer(reg, 0, size);
     }
-
-    public static (AssemblyExpr.Instruction, AssemblyExpr.IValue) PreserveRefPtrVariable(Expr expr, AssemblyExpr.Pointer pointer) =>
-        Analyzer.TypeCheckUtils.GetVariableModifiers(expr)._ref ? (AssemblyExpr.Instruction.MOV, pointer.value!) : (AssemblyExpr.Instruction.LEA, pointer);
-
-    private protected static AssemblyExpr.IValue PreserveRefPtrVariable(bool _ref, AssemblyExpr.IValue pointer) =>
-        _ref ? ((AssemblyExpr.Pointer)pointer).value! : pointer;
 
     private static AssemblyExpr.Instruction GetMoveWithExtendInstruction(Expr.Type type) =>
         Analyzer.TypeCheckUtils.literalTypes[Parser.LiteralTokenType.Integer].Matches(type) ? AssemblyExpr.Instruction.MOVSX : AssemblyExpr.Instruction.MOVZX;
